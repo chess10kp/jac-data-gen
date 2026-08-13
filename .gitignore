@@ -1,0 +1,35 @@
+# --- caches & venvs ---
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+
+# --- nested repos ---
+jaseci/
+
+# --- editor / agent scratch ---
+.cursor/
+.jac/
+.pi-subagents/
+
+# --- scratch & debug files ---
+tmp_*.jac
+_tmp_*.jac
+tmp_*.json
+_*.jac
+
+# --- backups ---
+*.bak
+*.bak.*
+
+# --- js2jac intermediates (per-run work dirs, candidate harvests) ---
+scripts/js2jac_dataset/runs/**/work/
+scripts/js2jac_dataset/runs/**/batches/
+scripts/js2jac_dataset/source/runs/
+scripts/js2jac_dataset/source/*harvest*.jsonl
+scripts/js2jac_dataset/source/candidates.jsonl*
+scripts/js2jac_dataset/source/shadcn_cands.jsonl
+
+# --- large local-only artifacts (not part of this commit) ---
+golden_client*.jsonl
+low_resource_paper.pdf

@@ -1,0 +1,128 @@
+{
+  "_meta": {
+    "purpose": "Per-error policy for the LLM cleanup pass over js2jac harvest output. Keyed by converter error code. Derived from shadcn_harvest3.jsonl (74 converted repos).",
+    "actions": {
+      "strip":  "delete the offending construct; component logic continues without it",
+      "rewrite":"transform in place into a Jac-legal form that preserves behavior",
+      "reject": "do not emit this file into the dataset at all"
+    },
+    "fidelity": {
+      "preserving": "output still does what the React did",
+      "lossy":      "strip/rewrite drops real behavior -> keep ONLY for the surface-syntax dataset; REJECT for the faithful/round-trip dataset",
+      "na":         "structural, no behavior at stake"
+    },
+    "dataset_switch": "faithful_mode=true promotes every fidelity=lossy entry from its action to 'reject'"
+  },
+
+  "E7205": {
+    "family": "Unsupported top-level form (const-init wall). Dispatch on the init= tag.",
+    "volume": 119,
+    "dispatch": {
+      "tagged:styled | call:makeStyles | call:css | call:styled": {
+        "action": "reject", "fidelity": "lossy",
+        "rule": "CSS-in-JS. Unmodelable ceiling. Drop the whole file in faithful mode; in syntax mode strip the styled() call and inline a plain className string."
+      },
+      "call:Inter | call:localFont | call:Poppins | call:<font-loader>": {
+        "action": "strip", "fidelity": "lossy",
+        "rule": "Next.js font loader. Delete the const; replace `${font.className}` usages with an empty or literal className string."
+      },
+      "ObjectExpression | ArrayExpression": {
+        "action": "rewrite", "fidelity": "preserving",
+        "rule": "Plain exported data. Convert to a `glob` with a typed literal, or inline at each use-site. This is the recoverable/sound-reuse bucket."
+      },
+      "call:z | call:cva": {
+        "action": "rewrite", "fidelity": "preserving",
+        "rule": "zod schema / class-variance-authority. If the value is only used for a type, drop it and inline the object type. If used as data (cva variants), lift to a plain object literal."
+      },
+      "call:createTRPCReact | call:createContext | call:dynamic | call:handleAuth | new:PrismaClient | call:unstable*": {
+        "action": "strip", "fidelity": "lossy",
+        "rule": "Framework/runtime singleton wiring. Strip the const and any call sites; it is not component logic."
+      },
+      "ExpressionStatement | ExportAllDeclaration | Re-export": {
+        "action": "strip", "fidelity": "na",
+        "rule": "Side-effect line or barrel re-export. Delete it."
+      },
+      "Components must be exported": {
+        "action": "rewrite", "fidelity": "na",
+        "rule": "Add `export` to the component declaration."
+      }
+    }
+  },
+
+  "E7202": { "msg": "Only intrinsic JSX tags supported in V1", "volume": 13,
+    "action": "reject", "fidelity": "lossy",
+    "rule": "Custom/imported component used as a JSX tag. Semantic gap in V1; reject the file rather than strip the render." },
+
+  "E7208": { "msg": "Unsupported React hook (only useState/useRef/useEffect/useMemo/useCallback)", "volume": 23,
+    "action": "strip", "fidelity": "lossy",
+    "rule": "Non-core hook (useScroll etc). Strip the hook call and any state it feeds. Lossy -> reject in faithful mode." },
+
+  "E7221": { "msg": "Generic props type Readonly<...> not supported", "volume": 21,
+    "action": "rewrite", "fidelity": "preserving",
+    "rule": "Unwrap Readonly<T>; inline the object type as the props annotation." },
+
+  "E7201": { "msg": "Unsupported TypeScript type reference (Date, ...)", "volume": 28,
+    "action": "rewrite", "fidelity": "preserving",
+    "rule": "Map unsupported type ref to `any`/`str`, or drop the annotation if unused for inference." },
+
+  "E7405": { "msg": "Unresolved local import (./data/*.json etc)", "volume": 21,
+    "action": "strip", "fidelity": "lossy",
+    "rule": "Remove the import. If the imported data is rendered, inline a small literal; else drop the dependent branch." },
+
+  "E7406": { "msg": "Duplicate export name", "volume": 10,
+    "action": "rewrite", "fidelity": "na",
+    "rule": "Dedupe or rename the second export." },
+
+  "E7215": { "msg": "`new` expressions not supported", "volume": 9,
+    "action": "rewrite", "fidelity": "preserving",
+    "rule": "Preserve as a plain call / interop per converter guidance." },
+
+  "E7214": { "msg": "Unsupported statement in useEffect body (only calls allowed)", "volume": 5,
+    "action": "rewrite", "fidelity": "preserving",
+    "rule": "Extract non-call statements into a helper called from the effect, or lift them out of the effect." },
+
+  "E7207": { "msg": "Emitted Jac failed validation", "volume": 5,
+    "action": "reject", "fidelity": "na",
+    "rule": "Converter self-check failed; output is untrustworthy. Reject." },
+
+  "E7218": { "msg": "React.ElementRef ref type does not accept type args", "volume": 4,
+    "action": "rewrite", "fidelity": "preserving",
+    "rule": "Drop the type arguments on ElementRef." },
+
+  "E7217": { "msg": ".map() requires single-param arrow (no index)", "volume": 2,
+    "action": "rewrite", "fidelity": "preserving",
+    "rule": "Remove the index/second parameter; if index is used for keys, drop the key attr." },
+
+  "E7232": { "msg": "Unsupported helper parameter form: ObjectPattern", "volume": 2,
+    "action": "rewrite", "fidelity": "preserving",
+    "rule": "Replace destructured param with a single param + destructure inside the body." },
+
+  "E7210": { "msg": "useState non-empty composite initializer not supported", "volume": 2,
+    "action": "rewrite", "fidelity": "preserving",
+    "rule": "Split composite initial state into separate useState fields, or move init into an effect." },
+
+  "E7233": { "msg": "Helper needs a return type annotation", "volume": 2,
+    "action": "rewrite", "fidelity": "preserving",
+    "rule": "Add the inferred return type annotation to the helper." },
+
+  "E7410": { "msg": "Cross-file props type alias not supported", "volume": 1,
+    "action": "rewrite", "fidelity": "preserving",
+    "rule": "Inline the imported props alias as an inline object type in the component module." },
+
+  "E7409": { "msg": "CommonJS require not supported in project mode", "volume": 1,
+    "action": "strip", "fidelity": "lossy",
+    "rule": "Remove the require; if it feeds render, inline a literal, else drop the dependent code." },
+
+  "E7401": { "msg": "Unable to read source for graph scan", "volume": 1,
+    "action": "reject", "fidelity": "na",
+    "rule": "Unreadable file. Drop it." },
+
+  "_pre_conversion_reject": {
+    "note": "Repo-level filters that fire before any file is converted; not part of the LLM pass. Counted for reference over 100 candidates.",
+    "missing:react|react-dom": 10,
+    "no:package.json": 6,
+    "missing:@radix-ui/*": 5,
+    "missing:class-variance-authority|tailwind-merge": 4,
+    "deny:@emotion/react": 1
+  }
+}

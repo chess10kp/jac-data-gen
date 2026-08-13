@@ -1,0 +1,4397 @@
+{
+  "failed_count": 0,
+  "generator": "pilot-v1",
+  "license": "CC0-1.0",
+  "pilot": "A",
+  "pilot_seed": 20260810,
+  "records": [
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "basic_props",
+      "jac_sha256": "dd346c80e48071deb2d356bab922b3998275a3c81910ed84a5fe96ac1540137d",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260811
+      },
+      "record_id": "0acb19a4af75d47a08e76f9a0bbc9f7390f1541088adf5ecc88a5446834614d8",
+      "rule_tags": [
+        "props-bag",
+        "jsx-intrinsic",
+        "ts-inline-props"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 85,
+        "path": "pilot_001_basic_props_string.tsx"
+      },
+      "source_sha256": "0acb19a4af75d47a08e76f9a0bbc9f7390f1541088adf5ecc88a5446834614d8",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "basic_props",
+      "jac_sha256": "9de89326ac1c559f97c953d87b807dc406faf5cb0bb22389bd6501cce6cbafc2",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260812
+      },
+      "record_id": "c0c448ac8da5d43e0366ce369cafaa0a211714b65266d3092df1288d6796e6b2",
+      "rule_tags": [
+        "props-bag",
+        "numeric-prop"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 87,
+        "path": "pilot_002_basic_props_number.tsx"
+      },
+      "source_sha256": "c0c448ac8da5d43e0366ce369cafaa0a211714b65266d3092df1288d6796e6b2",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "basic_props",
+      "jac_sha256": "3647db846afaa7e946bb91d6c098d0b3743cc333e76f3d0b73f536a6696f82d7",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260813
+      },
+      "record_id": "4bc1e490f4da01390d9d5adb17c6aea8be21e22e04e04bf766d9e78cd02db51a",
+      "rule_tags": [
+        "props-bag",
+        "jsx-conditional"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 99,
+        "path": "pilot_003_basic_props_boolean.tsx"
+      },
+      "source_sha256": "4bc1e490f4da01390d9d5adb17c6aea8be21e22e04e04bf766d9e78cd02db51a",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "basic_props",
+      "jac_sha256": "dd346c80e48071deb2d356bab922b3998275a3c81910ed84a5fe96ac1540137d",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260814
+      },
+      "record_id": "0acb19a4af75d47a08e76f9a0bbc9f7390f1541088adf5ecc88a5446834614d8",
+      "rule_tags": [
+        "props-bag",
+        "jsx-intrinsic",
+        "ts-inline-props"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 85,
+        "path": "pilot_004_basic_props_string.tsx"
+      },
+      "source_sha256": "0acb19a4af75d47a08e76f9a0bbc9f7390f1541088adf5ecc88a5446834614d8",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "basic_props",
+      "jac_sha256": "9de89326ac1c559f97c953d87b807dc406faf5cb0bb22389bd6501cce6cbafc2",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260815
+      },
+      "record_id": "c0c448ac8da5d43e0366ce369cafaa0a211714b65266d3092df1288d6796e6b2",
+      "rule_tags": [
+        "props-bag",
+        "numeric-prop"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 87,
+        "path": "pilot_005_basic_props_number.tsx"
+      },
+      "source_sha256": "c0c448ac8da5d43e0366ce369cafaa0a211714b65266d3092df1288d6796e6b2",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "basic_props",
+      "jac_sha256": "3647db846afaa7e946bb91d6c098d0b3743cc333e76f3d0b73f536a6696f82d7",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260816
+      },
+      "record_id": "4bc1e490f4da01390d9d5adb17c6aea8be21e22e04e04bf766d9e78cd02db51a",
+      "rule_tags": [
+        "props-bag",
+        "jsx-conditional"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 99,
+        "path": "pilot_006_basic_props_boolean.tsx"
+      },
+      "source_sha256": "4bc1e490f4da01390d9d5adb17c6aea8be21e22e04e04bf766d9e78cd02db51a",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "basic_props",
+      "jac_sha256": "dd346c80e48071deb2d356bab922b3998275a3c81910ed84a5fe96ac1540137d",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260817
+      },
+      "record_id": "0acb19a4af75d47a08e76f9a0bbc9f7390f1541088adf5ecc88a5446834614d8",
+      "rule_tags": [
+        "props-bag",
+        "jsx-intrinsic",
+        "ts-inline-props"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 85,
+        "path": "pilot_007_basic_props_string.tsx"
+      },
+      "source_sha256": "0acb19a4af75d47a08e76f9a0bbc9f7390f1541088adf5ecc88a5446834614d8",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "basic_props",
+      "jac_sha256": "9de89326ac1c559f97c953d87b807dc406faf5cb0bb22389bd6501cce6cbafc2",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260818
+      },
+      "record_id": "c0c448ac8da5d43e0366ce369cafaa0a211714b65266d3092df1288d6796e6b2",
+      "rule_tags": [
+        "props-bag",
+        "numeric-prop"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 87,
+        "path": "pilot_008_basic_props_number.tsx"
+      },
+      "source_sha256": "c0c448ac8da5d43e0366ce369cafaa0a211714b65266d3092df1288d6796e6b2",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "destructure",
+      "jac_sha256": "f794383c5090b372c1ac2de381549f3958a100ce92d02fa60d47cc7cf3896e86",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260819
+      },
+      "record_id": "e6242e35a9b0d5545c7ca269f90aefb09d5dd49f80bfe7f807fd17b981818d1b",
+      "rule_tags": [
+        "destructure-props",
+        "optional-prop"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 104,
+        "path": "pilot_009_destructure.tsx"
+      },
+      "source_sha256": "e6242e35a9b0d5545c7ca269f90aefb09d5dd49f80bfe7f807fd17b981818d1b",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "destructure",
+      "jac_sha256": "5ba0d1baeacc2048e57f4648f4d016ca477ddc0b9e1adacc2b1a8bc52df85d07",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260820
+      },
+      "record_id": "e7cd3d6434e7317d4dd31a715ee2336499663e1891cd65c37b4e74ca17843cd4",
+      "rule_tags": [
+        "destructure-props"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 113,
+        "path": "pilot_010_destructure.tsx"
+      },
+      "source_sha256": "e7cd3d6434e7317d4dd31a715ee2336499663e1891cd65c37b4e74ca17843cd4",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "destructure",
+      "jac_sha256": "d46cd1307fb702f07a9bddebc1ad95e6f7a6b807932b6c3aa5e09d9649470f70",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260821
+      },
+      "record_id": "ef1ede7667aaf1cf1803c611354b99aeb5dd79ed916ca0dd668566f0b9fbb206",
+      "rule_tags": [
+        "destructure-props",
+        "external-props-alias"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 133,
+        "path": "pilot_011_destructure.tsx"
+      },
+      "source_sha256": "ef1ede7667aaf1cf1803c611354b99aeb5dd79ed916ca0dd668566f0b9fbb206",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "destructure",
+      "jac_sha256": "f794383c5090b372c1ac2de381549f3958a100ce92d02fa60d47cc7cf3896e86",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260822
+      },
+      "record_id": "e6242e35a9b0d5545c7ca269f90aefb09d5dd49f80bfe7f807fd17b981818d1b",
+      "rule_tags": [
+        "destructure-props",
+        "optional-prop"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 104,
+        "path": "pilot_012_destructure.tsx"
+      },
+      "source_sha256": "e6242e35a9b0d5545c7ca269f90aefb09d5dd49f80bfe7f807fd17b981818d1b",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "destructure",
+      "jac_sha256": "5ba0d1baeacc2048e57f4648f4d016ca477ddc0b9e1adacc2b1a8bc52df85d07",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260823
+      },
+      "record_id": "e7cd3d6434e7317d4dd31a715ee2336499663e1891cd65c37b4e74ca17843cd4",
+      "rule_tags": [
+        "destructure-props"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 113,
+        "path": "pilot_013_destructure.tsx"
+      },
+      "source_sha256": "e7cd3d6434e7317d4dd31a715ee2336499663e1891cd65c37b4e74ca17843cd4",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "destructure",
+      "jac_sha256": "d46cd1307fb702f07a9bddebc1ad95e6f7a6b807932b6c3aa5e09d9649470f70",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260824
+      },
+      "record_id": "ef1ede7667aaf1cf1803c611354b99aeb5dd79ed916ca0dd668566f0b9fbb206",
+      "rule_tags": [
+        "destructure-props",
+        "external-props-alias"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 133,
+        "path": "pilot_014_destructure.tsx"
+      },
+      "source_sha256": "ef1ede7667aaf1cf1803c611354b99aeb5dd79ed916ca0dd668566f0b9fbb206",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "destructure",
+      "jac_sha256": "f794383c5090b372c1ac2de381549f3958a100ce92d02fa60d47cc7cf3896e86",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260825
+      },
+      "record_id": "e6242e35a9b0d5545c7ca269f90aefb09d5dd49f80bfe7f807fd17b981818d1b",
+      "rule_tags": [
+        "destructure-props",
+        "optional-prop"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 104,
+        "path": "pilot_015_destructure.tsx"
+      },
+      "source_sha256": "e6242e35a9b0d5545c7ca269f90aefb09d5dd49f80bfe7f807fd17b981818d1b",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "destructure",
+      "jac_sha256": "5ba0d1baeacc2048e57f4648f4d016ca477ddc0b9e1adacc2b1a8bc52df85d07",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260826
+      },
+      "record_id": "e7cd3d6434e7317d4dd31a715ee2336499663e1891cd65c37b4e74ca17843cd4",
+      "rule_tags": [
+        "destructure-props"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 113,
+        "path": "pilot_016_destructure.tsx"
+      },
+      "source_sha256": "e7cd3d6434e7317d4dd31a715ee2336499663e1891cd65c37b4e74ca17843cd4",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "jsx_attrs",
+      "jac_sha256": "7a266901052344711fc883129d25e1b291423a5d09ce472a7984e9c762db2265",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260827
+      },
+      "record_id": "77cf62d970f405686ef45726906c3667debc8b2dc130c0802faba4c258110c17",
+      "rule_tags": [
+        "jsx-attributes",
+        "template-literal"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 220,
+        "path": "pilot_017_jsx_attrs.tsx"
+      },
+      "source_sha256": "77cf62d970f405686ef45726906c3667debc8b2dc130c0802faba4c258110c17",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "jsx_attrs",
+      "jac_sha256": "7a266901052344711fc883129d25e1b291423a5d09ce472a7984e9c762db2265",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260828
+      },
+      "record_id": "77cf62d970f405686ef45726906c3667debc8b2dc130c0802faba4c258110c17",
+      "rule_tags": [
+        "jsx-attributes",
+        "template-literal"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 220,
+        "path": "pilot_018_jsx_attrs.tsx"
+      },
+      "source_sha256": "77cf62d970f405686ef45726906c3667debc8b2dc130c0802faba4c258110c17",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "jsx_attrs",
+      "jac_sha256": "7a266901052344711fc883129d25e1b291423a5d09ce472a7984e9c762db2265",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260829
+      },
+      "record_id": "77cf62d970f405686ef45726906c3667debc8b2dc130c0802faba4c258110c17",
+      "rule_tags": [
+        "jsx-attributes",
+        "template-literal"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 220,
+        "path": "pilot_019_jsx_attrs.tsx"
+      },
+      "source_sha256": "77cf62d970f405686ef45726906c3667debc8b2dc130c0802faba4c258110c17",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "jsx_attrs",
+      "jac_sha256": "7a266901052344711fc883129d25e1b291423a5d09ce472a7984e9c762db2265",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260830
+      },
+      "record_id": "77cf62d970f405686ef45726906c3667debc8b2dc130c0802faba4c258110c17",
+      "rule_tags": [
+        "jsx-attributes",
+        "template-literal"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 220,
+        "path": "pilot_020_jsx_attrs.tsx"
+      },
+      "source_sha256": "77cf62d970f405686ef45726906c3667debc8b2dc130c0802faba4c258110c17",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "jsx_attrs",
+      "jac_sha256": "7a266901052344711fc883129d25e1b291423a5d09ce472a7984e9c762db2265",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260831
+      },
+      "record_id": "77cf62d970f405686ef45726906c3667debc8b2dc130c0802faba4c258110c17",
+      "rule_tags": [
+        "jsx-attributes",
+        "template-literal"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 220,
+        "path": "pilot_021_jsx_attrs.tsx"
+      },
+      "source_sha256": "77cf62d970f405686ef45726906c3667debc8b2dc130c0802faba4c258110c17",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "jsx_attrs",
+      "jac_sha256": "7a266901052344711fc883129d25e1b291423a5d09ce472a7984e9c762db2265",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260832
+      },
+      "record_id": "77cf62d970f405686ef45726906c3667debc8b2dc130c0802faba4c258110c17",
+      "rule_tags": [
+        "jsx-attributes",
+        "template-literal"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 220,
+        "path": "pilot_022_jsx_attrs.tsx"
+      },
+      "source_sha256": "77cf62d970f405686ef45726906c3667debc8b2dc130c0802faba4c258110c17",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "jsx_attrs",
+      "jac_sha256": "7a266901052344711fc883129d25e1b291423a5d09ce472a7984e9c762db2265",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260833
+      },
+      "record_id": "77cf62d970f405686ef45726906c3667debc8b2dc130c0802faba4c258110c17",
+      "rule_tags": [
+        "jsx-attributes",
+        "template-literal"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 220,
+        "path": "pilot_023_jsx_attrs.tsx"
+      },
+      "source_sha256": "77cf62d970f405686ef45726906c3667debc8b2dc130c0802faba4c258110c17",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "jsx_conditionals",
+      "jac_sha256": "b66cdce2142007be906a69f78fbce7e65f9e6b6432f9bff0b407c89c80cf9944",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260834
+      },
+      "record_id": "df37eb5b0fccbcdeb0d1bb79b05d02b9af8c861a27d3678495ebf1940f2dbde9",
+      "rule_tags": [
+        "jsx-ternary"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 121,
+        "path": "pilot_024_jsx_cond.tsx"
+      },
+      "source_sha256": "df37eb5b0fccbcdeb0d1bb79b05d02b9af8c861a27d3678495ebf1940f2dbde9",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 3,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "jsx_conditionals",
+      "jac_sha256": "23f998b5512d0adb8763b78440273d93ce8bd8fc66b2176a2667ae0957ae251d",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260835
+      },
+      "record_id": "e01873e4567a3a543a4d5d4e4198cf017e94e11568951eb2d978889ab474109b",
+      "rule_tags": [
+        "jsx-and",
+        "jsx-list"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 158,
+        "path": "pilot_025_jsx_cond.tsx"
+      },
+      "source_sha256": "e01873e4567a3a543a4d5d4e4198cf017e94e11568951eb2d978889ab474109b",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "jsx_conditionals",
+      "jac_sha256": "fd7543bae97250e2ed813e947bc37c86ec878037bfec2f6cdc87c76657c7b4f2",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260836
+      },
+      "record_id": "37f0fd9afe3f52cf47df8b75ad6f63f95c781f9c67710253fad418061dd6daf7",
+      "rule_tags": [
+        "jsx-or"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 107,
+        "path": "pilot_026_jsx_cond.tsx"
+      },
+      "source_sha256": "37f0fd9afe3f52cf47df8b75ad6f63f95c781f9c67710253fad418061dd6daf7",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "jsx_conditionals",
+      "jac_sha256": "b66cdce2142007be906a69f78fbce7e65f9e6b6432f9bff0b407c89c80cf9944",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260837
+      },
+      "record_id": "df37eb5b0fccbcdeb0d1bb79b05d02b9af8c861a27d3678495ebf1940f2dbde9",
+      "rule_tags": [
+        "jsx-ternary"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 121,
+        "path": "pilot_027_jsx_cond.tsx"
+      },
+      "source_sha256": "df37eb5b0fccbcdeb0d1bb79b05d02b9af8c861a27d3678495ebf1940f2dbde9",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 3,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "jsx_conditionals",
+      "jac_sha256": "23f998b5512d0adb8763b78440273d93ce8bd8fc66b2176a2667ae0957ae251d",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260838
+      },
+      "record_id": "e01873e4567a3a543a4d5d4e4198cf017e94e11568951eb2d978889ab474109b",
+      "rule_tags": [
+        "jsx-and",
+        "jsx-list"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 158,
+        "path": "pilot_028_jsx_cond.tsx"
+      },
+      "source_sha256": "e01873e4567a3a543a4d5d4e4198cf017e94e11568951eb2d978889ab474109b",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "jsx_conditionals",
+      "jac_sha256": "fd7543bae97250e2ed813e947bc37c86ec878037bfec2f6cdc87c76657c7b4f2",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260839
+      },
+      "record_id": "37f0fd9afe3f52cf47df8b75ad6f63f95c781f9c67710253fad418061dd6daf7",
+      "rule_tags": [
+        "jsx-or"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 107,
+        "path": "pilot_029_jsx_cond.tsx"
+      },
+      "source_sha256": "37f0fd9afe3f52cf47df8b75ad6f63f95c781f9c67710253fad418061dd6daf7",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "jsx_conditionals",
+      "jac_sha256": "b66cdce2142007be906a69f78fbce7e65f9e6b6432f9bff0b407c89c80cf9944",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260840
+      },
+      "record_id": "df37eb5b0fccbcdeb0d1bb79b05d02b9af8c861a27d3678495ebf1940f2dbde9",
+      "rule_tags": [
+        "jsx-ternary"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 121,
+        "path": "pilot_030_jsx_cond.tsx"
+      },
+      "source_sha256": "df37eb5b0fccbcdeb0d1bb79b05d02b9af8c861a27d3678495ebf1940f2dbde9",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "jsx_lists",
+      "jac_sha256": "210a25720a0e69d18bbef46ae422bcc228747a5362b760e1abc0596069b0e781",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260841
+      },
+      "record_id": "1d8bc5f4f29baa6c04c7a59f8ab408a754262e18ae9f5796331c2aa2887b9a69",
+      "rule_tags": [
+        "jsx-list",
+        "comprehension"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 145,
+        "path": "pilot_031_jsx_list.tsx"
+      },
+      "source_sha256": "1d8bc5f4f29baa6c04c7a59f8ab408a754262e18ae9f5796331c2aa2887b9a69",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "jsx_lists",
+      "jac_sha256": "801c0178423576c25bb171d7a09fa5ee7d269187a173fde44fc7bd5f776e2931",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260842
+      },
+      "record_id": "1970821c8d4d484607d77ce0ee9ce818ad6efaff9fd9cf08895b39d60c2f359a",
+      "rule_tags": [
+        "jsx-list",
+        "comprehension"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 142,
+        "path": "pilot_032_jsx_list.tsx"
+      },
+      "source_sha256": "1970821c8d4d484607d77ce0ee9ce818ad6efaff9fd9cf08895b39d60c2f359a",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "jsx_lists",
+      "jac_sha256": "8fd716b0d108ef6ffbc8dacbd8b59b5ffa04238dd58e62ce1a2cb6d02140c934",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260843
+      },
+      "record_id": "ad76c4ab95d42d35b05de0f2e0533a9e31d4f654ffee44c2db83771c79fee5e3",
+      "rule_tags": [
+        "jsx-list",
+        "comprehension"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 148,
+        "path": "pilot_033_jsx_list.tsx"
+      },
+      "source_sha256": "ad76c4ab95d42d35b05de0f2e0533a9e31d4f654ffee44c2db83771c79fee5e3",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "jsx_lists",
+      "jac_sha256": "210a25720a0e69d18bbef46ae422bcc228747a5362b760e1abc0596069b0e781",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260844
+      },
+      "record_id": "1d8bc5f4f29baa6c04c7a59f8ab408a754262e18ae9f5796331c2aa2887b9a69",
+      "rule_tags": [
+        "jsx-list",
+        "comprehension"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 145,
+        "path": "pilot_034_jsx_list.tsx"
+      },
+      "source_sha256": "1d8bc5f4f29baa6c04c7a59f8ab408a754262e18ae9f5796331c2aa2887b9a69",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "jsx_lists",
+      "jac_sha256": "801c0178423576c25bb171d7a09fa5ee7d269187a173fde44fc7bd5f776e2931",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260845
+      },
+      "record_id": "1970821c8d4d484607d77ce0ee9ce818ad6efaff9fd9cf08895b39d60c2f359a",
+      "rule_tags": [
+        "jsx-list",
+        "comprehension"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 142,
+        "path": "pilot_035_jsx_list.tsx"
+      },
+      "source_sha256": "1970821c8d4d484607d77ce0ee9ce818ad6efaff9fd9cf08895b39d60c2f359a",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "jsx_lists",
+      "jac_sha256": "8fd716b0d108ef6ffbc8dacbd8b59b5ffa04238dd58e62ce1a2cb6d02140c934",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260846
+      },
+      "record_id": "ad76c4ab95d42d35b05de0f2e0533a9e31d4f654ffee44c2db83771c79fee5e3",
+      "rule_tags": [
+        "jsx-list",
+        "comprehension"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 148,
+        "path": "pilot_036_jsx_list.tsx"
+      },
+      "source_sha256": "ad76c4ab95d42d35b05de0f2e0533a9e31d4f654ffee44c2db83771c79fee5e3",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "jsx_lists",
+      "jac_sha256": "210a25720a0e69d18bbef46ae422bcc228747a5362b760e1abc0596069b0e781",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260847
+      },
+      "record_id": "1d8bc5f4f29baa6c04c7a59f8ab408a754262e18ae9f5796331c2aa2887b9a69",
+      "rule_tags": [
+        "jsx-list",
+        "comprehension"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 145,
+        "path": "pilot_037_jsx_list.tsx"
+      },
+      "source_sha256": "1d8bc5f4f29baa6c04c7a59f8ab408a754262e18ae9f5796331c2aa2887b9a69",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "hooks_state",
+      "jac_sha256": "b374fc13f9c0d09a801f7400d6926ce99c04838cb8ea98bcfa6c68754ca13a5b",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260848
+      },
+      "record_id": "86cf234f286951cb445783964630d3e9b694673bbd1002ec4a9d532d9334d24a",
+      "rule_tags": [
+        "useState",
+        "react-import"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 168,
+        "path": "pilot_038_hooks_state.tsx"
+      },
+      "source_sha256": "86cf234f286951cb445783964630d3e9b694673bbd1002ec4a9d532d9334d24a",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "hooks_state",
+      "jac_sha256": "325f11b267fd50bae00f510f49b5ea7f0ab6f787ebda3b6a06f40a827f289151",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260849
+      },
+      "record_id": "9c2612f750093ff9890efbc24cca953685debf3902a53ea10ea2685cb27299b7",
+      "rule_tags": [
+        "useState",
+        "react-import"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 176,
+        "path": "pilot_039_hooks_state.tsx"
+      },
+      "source_sha256": "9c2612f750093ff9890efbc24cca953685debf3902a53ea10ea2685cb27299b7",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "hooks_state",
+      "jac_sha256": "b374fc13f9c0d09a801f7400d6926ce99c04838cb8ea98bcfa6c68754ca13a5b",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260850
+      },
+      "record_id": "86cf234f286951cb445783964630d3e9b694673bbd1002ec4a9d532d9334d24a",
+      "rule_tags": [
+        "useState",
+        "react-import"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 168,
+        "path": "pilot_040_hooks_state.tsx"
+      },
+      "source_sha256": "86cf234f286951cb445783964630d3e9b694673bbd1002ec4a9d532d9334d24a",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "hooks_state",
+      "jac_sha256": "325f11b267fd50bae00f510f49b5ea7f0ab6f787ebda3b6a06f40a827f289151",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260851
+      },
+      "record_id": "9c2612f750093ff9890efbc24cca953685debf3902a53ea10ea2685cb27299b7",
+      "rule_tags": [
+        "useState",
+        "react-import"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 176,
+        "path": "pilot_041_hooks_state.tsx"
+      },
+      "source_sha256": "9c2612f750093ff9890efbc24cca953685debf3902a53ea10ea2685cb27299b7",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "hooks_state",
+      "jac_sha256": "b374fc13f9c0d09a801f7400d6926ce99c04838cb8ea98bcfa6c68754ca13a5b",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260852
+      },
+      "record_id": "86cf234f286951cb445783964630d3e9b694673bbd1002ec4a9d532d9334d24a",
+      "rule_tags": [
+        "useState",
+        "react-import"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 168,
+        "path": "pilot_042_hooks_state.tsx"
+      },
+      "source_sha256": "86cf234f286951cb445783964630d3e9b694673bbd1002ec4a9d532d9334d24a",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "hooks_state",
+      "jac_sha256": "325f11b267fd50bae00f510f49b5ea7f0ab6f787ebda3b6a06f40a827f289151",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260853
+      },
+      "record_id": "9c2612f750093ff9890efbc24cca953685debf3902a53ea10ea2685cb27299b7",
+      "rule_tags": [
+        "useState",
+        "react-import"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 176,
+        "path": "pilot_043_hooks_state.tsx"
+      },
+      "source_sha256": "9c2612f750093ff9890efbc24cca953685debf3902a53ea10ea2685cb27299b7",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "hooks_state",
+      "jac_sha256": "b374fc13f9c0d09a801f7400d6926ce99c04838cb8ea98bcfa6c68754ca13a5b",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260854
+      },
+      "record_id": "86cf234f286951cb445783964630d3e9b694673bbd1002ec4a9d532d9334d24a",
+      "rule_tags": [
+        "useState",
+        "react-import"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 168,
+        "path": "pilot_044_hooks_state.tsx"
+      },
+      "source_sha256": "86cf234f286951cb445783964630d3e9b694673bbd1002ec4a9d532d9334d24a",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 4,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "hooks_effect",
+      "jac_sha256": "045bc743aa1db717379f623d1b8927bde89e3cbeb4d929b4eaa1ca6619ffcbc1",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260855
+      },
+      "record_id": "923ee217e8ab9413dec797d25922752343603381aa249b0872ee5d7ff155b9c7",
+      "rule_tags": [
+        "useEffect",
+        "useState"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 295,
+        "path": "pilot_045_hooks_effect.tsx"
+      },
+      "source_sha256": "923ee217e8ab9413dec797d25922752343603381aa249b0872ee5d7ff155b9c7",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 4,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "hooks_effect",
+      "jac_sha256": "dbdf5d57073eee2fb42b024fbfa76841861fc1e0e769409b870ed35657d9b7bd",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260856
+      },
+      "record_id": "e90d19b5830ac8c3a5ea1ee75620406e930c73f65ee17f92406194f81bc2f855",
+      "rule_tags": [
+        "useEffect",
+        "useState"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 297,
+        "path": "pilot_046_hooks_effect.tsx"
+      },
+      "source_sha256": "e90d19b5830ac8c3a5ea1ee75620406e930c73f65ee17f92406194f81bc2f855",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 4,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "hooks_effect",
+      "jac_sha256": "cc4126c116db0ed79dcaeebbf5bd3e402186e75cf84fca65d066e58b51aeb0af",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260857
+      },
+      "record_id": "f509bc242d4dff3724352f9654d56571ea5f2e2833551a80bd6130723b0eb0cb",
+      "rule_tags": [
+        "useEffect",
+        "useState",
+        "effect-prop-deps"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 303,
+        "path": "pilot_047_hooks_effect.tsx"
+      },
+      "source_sha256": "f509bc242d4dff3724352f9654d56571ea5f2e2833551a80bd6130723b0eb0cb",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 4,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "hooks_effect",
+      "jac_sha256": "045bc743aa1db717379f623d1b8927bde89e3cbeb4d929b4eaa1ca6619ffcbc1",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260858
+      },
+      "record_id": "923ee217e8ab9413dec797d25922752343603381aa249b0872ee5d7ff155b9c7",
+      "rule_tags": [
+        "useEffect",
+        "useState"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 295,
+        "path": "pilot_048_hooks_effect.tsx"
+      },
+      "source_sha256": "923ee217e8ab9413dec797d25922752343603381aa249b0872ee5d7ff155b9c7",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 4,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "hooks_effect",
+      "jac_sha256": "dbdf5d57073eee2fb42b024fbfa76841861fc1e0e769409b870ed35657d9b7bd",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260859
+      },
+      "record_id": "e90d19b5830ac8c3a5ea1ee75620406e930c73f65ee17f92406194f81bc2f855",
+      "rule_tags": [
+        "useEffect",
+        "useState"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 297,
+        "path": "pilot_049_hooks_effect.tsx"
+      },
+      "source_sha256": "e90d19b5830ac8c3a5ea1ee75620406e930c73f65ee17f92406194f81bc2f855",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 4,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "hooks_effect",
+      "jac_sha256": "cc4126c116db0ed79dcaeebbf5bd3e402186e75cf84fca65d066e58b51aeb0af",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260860
+      },
+      "record_id": "f509bc242d4dff3724352f9654d56571ea5f2e2833551a80bd6130723b0eb0cb",
+      "rule_tags": [
+        "useEffect",
+        "useState",
+        "effect-prop-deps"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 303,
+        "path": "pilot_050_hooks_effect.tsx"
+      },
+      "source_sha256": "f509bc242d4dff3724352f9654d56571ea5f2e2833551a80bd6130723b0eb0cb",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "hooks_ref",
+      "jac_sha256": "97b3abe3ccce090509a532c7dc789dc4df3df86d32a4e62f9657037ab58cadf3",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260861
+      },
+      "record_id": "1d23380c5e8f2778867e32bd1551e210c105990c7c1cf1b09b19cc81f01f5230",
+      "rule_tags": [
+        "useRef",
+        "jsx-ref-attr"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 158,
+        "path": "pilot_051_hooks_ref.tsx"
+      },
+      "source_sha256": "1d23380c5e8f2778867e32bd1551e210c105990c7c1cf1b09b19cc81f01f5230",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "hooks_ref",
+      "jac_sha256": "97b3abe3ccce090509a532c7dc789dc4df3df86d32a4e62f9657037ab58cadf3",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260862
+      },
+      "record_id": "1d23380c5e8f2778867e32bd1551e210c105990c7c1cf1b09b19cc81f01f5230",
+      "rule_tags": [
+        "useRef",
+        "jsx-ref-attr"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 158,
+        "path": "pilot_052_hooks_ref.tsx"
+      },
+      "source_sha256": "1d23380c5e8f2778867e32bd1551e210c105990c7c1cf1b09b19cc81f01f5230",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "hooks_ref",
+      "jac_sha256": "97b3abe3ccce090509a532c7dc789dc4df3df86d32a4e62f9657037ab58cadf3",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260863
+      },
+      "record_id": "1d23380c5e8f2778867e32bd1551e210c105990c7c1cf1b09b19cc81f01f5230",
+      "rule_tags": [
+        "useRef",
+        "jsx-ref-attr"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 158,
+        "path": "pilot_053_hooks_ref.tsx"
+      },
+      "source_sha256": "1d23380c5e8f2778867e32bd1551e210c105990c7c1cf1b09b19cc81f01f5230",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "hooks_ref",
+      "jac_sha256": "97b3abe3ccce090509a532c7dc789dc4df3df86d32a4e62f9657037ab58cadf3",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260864
+      },
+      "record_id": "1d23380c5e8f2778867e32bd1551e210c105990c7c1cf1b09b19cc81f01f5230",
+      "rule_tags": [
+        "useRef",
+        "jsx-ref-attr"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 158,
+        "path": "pilot_054_hooks_ref.tsx"
+      },
+      "source_sha256": "1d23380c5e8f2778867e32bd1551e210c105990c7c1cf1b09b19cc81f01f5230",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "hooks_ref",
+      "jac_sha256": "97b3abe3ccce090509a532c7dc789dc4df3df86d32a4e62f9657037ab58cadf3",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260865
+      },
+      "record_id": "1d23380c5e8f2778867e32bd1551e210c105990c7c1cf1b09b19cc81f01f5230",
+      "rule_tags": [
+        "useRef",
+        "jsx-ref-attr"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 158,
+        "path": "pilot_055_hooks_ref.tsx"
+      },
+      "source_sha256": "1d23380c5e8f2778867e32bd1551e210c105990c7c1cf1b09b19cc81f01f5230",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "helpers",
+      "jac_sha256": "e9578e62a8b1b5068b80281999aa67c6d65824ec6e41b09cbc41335333535415",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260866
+      },
+      "record_id": "afc3a8023910270ccf4dd46013b6adbb9014cc11ae9c17bfe272fc9916b42b55",
+      "rule_tags": [
+        "local-helper",
+        "def"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 161,
+        "path": "pilot_056_helpers.tsx"
+      },
+      "source_sha256": "afc3a8023910270ccf4dd46013b6adbb9014cc11ae9c17bfe272fc9916b42b55",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "helpers",
+      "jac_sha256": "1172eb4e9029ddbf505dee2ece17fb6125a07551a3c0fae629e66b3a6f7ada42",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260867
+      },
+      "record_id": "6c1ba6f4ad453e54babbe82f0c940e9370a7eabe80d278ad6517a7f64069b1c9",
+      "rule_tags": [
+        "local-helper",
+        "arrow"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 130,
+        "path": "pilot_057_helpers.tsx"
+      },
+      "source_sha256": "6c1ba6f4ad453e54babbe82f0c940e9370a7eabe80d278ad6517a7f64069b1c9",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "helpers",
+      "jac_sha256": "a6b6c195be3a7b8f545ac07c65895b1975f7d308576cf1069fd21d9ea831595d",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260868
+      },
+      "record_id": "93339da464fdfb9c235349716e6d56c35636cc80d84fda43c013b11f1374f102",
+      "rule_tags": [
+        "local-helper",
+        "template-literal"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 153,
+        "path": "pilot_058_helpers.tsx"
+      },
+      "source_sha256": "93339da464fdfb9c235349716e6d56c35636cc80d84fda43c013b11f1374f102",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "helpers",
+      "jac_sha256": "e9578e62a8b1b5068b80281999aa67c6d65824ec6e41b09cbc41335333535415",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260869
+      },
+      "record_id": "afc3a8023910270ccf4dd46013b6adbb9014cc11ae9c17bfe272fc9916b42b55",
+      "rule_tags": [
+        "local-helper",
+        "def"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 161,
+        "path": "pilot_059_helpers.tsx"
+      },
+      "source_sha256": "afc3a8023910270ccf4dd46013b6adbb9014cc11ae9c17bfe272fc9916b42b55",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "helpers",
+      "jac_sha256": "1172eb4e9029ddbf505dee2ece17fb6125a07551a3c0fae629e66b3a6f7ada42",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260870
+      },
+      "record_id": "6c1ba6f4ad453e54babbe82f0c940e9370a7eabe80d278ad6517a7f64069b1c9",
+      "rule_tags": [
+        "local-helper",
+        "arrow"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 130,
+        "path": "pilot_060_helpers.tsx"
+      },
+      "source_sha256": "6c1ba6f4ad453e54babbe82f0c940e9370a7eabe80d278ad6517a7f64069b1c9",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "helpers",
+      "jac_sha256": "a6b6c195be3a7b8f545ac07c65895b1975f7d308576cf1069fd21d9ea831595d",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260871
+      },
+      "record_id": "93339da464fdfb9c235349716e6d56c35636cc80d84fda43c013b11f1374f102",
+      "rule_tags": [
+        "local-helper",
+        "template-literal"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 153,
+        "path": "pilot_061_helpers.tsx"
+      },
+      "source_sha256": "93339da464fdfb9c235349716e6d56c35636cc80d84fda43c013b11f1374f102",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "helpers",
+      "jac_sha256": "e9578e62a8b1b5068b80281999aa67c6d65824ec6e41b09cbc41335333535415",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260872
+      },
+      "record_id": "afc3a8023910270ccf4dd46013b6adbb9014cc11ae9c17bfe272fc9916b42b55",
+      "rule_tags": [
+        "local-helper",
+        "def"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 161,
+        "path": "pilot_062_helpers.tsx"
+      },
+      "source_sha256": "afc3a8023910270ccf4dd46013b6adbb9014cc11ae9c17bfe272fc9916b42b55",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "control_flow",
+      "jac_sha256": "ba3956b029e54df6754492db187455b92ff945ab71b17ac8ecf3acb87ae00c9c",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260873
+      },
+      "record_id": "a95918977a8850234a7afa96a7754ac59b0697405890b15715a8f8067403af3a",
+      "rule_tags": [
+        "if-stmt"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 119,
+        "path": "pilot_063_control_flow.tsx"
+      },
+      "source_sha256": "a95918977a8850234a7afa96a7754ac59b0697405890b15715a8f8067403af3a",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "control_flow",
+      "jac_sha256": "45112ea7e9b0dc8e058fc04fc9cde79c43fb85f042ef52260855c98f388219ca",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260874
+      },
+      "record_id": "c23e35213a6cf7f602e318772353427f25e88661d23ae6ab9a7f591933558cc1",
+      "rule_tags": [
+        "for-of"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 145,
+        "path": "pilot_064_control_flow.tsx"
+      },
+      "source_sha256": "c23e35213a6cf7f602e318772353427f25e88661d23ae6ab9a7f591933558cc1",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "control_flow",
+      "jac_sha256": "78207078c24804594ddf319149b1c01da4eb8a7725486d6de86a0e0b82eae22e",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260875
+      },
+      "record_id": "6c200041ab8ed4f6129c280536020695352c348abf23ea785730541e53d8688a",
+      "rule_tags": [
+        "while"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 129,
+        "path": "pilot_065_control_flow.tsx"
+      },
+      "source_sha256": "6c200041ab8ed4f6129c280536020695352c348abf23ea785730541e53d8688a",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "control_flow",
+      "jac_sha256": "ba3956b029e54df6754492db187455b92ff945ab71b17ac8ecf3acb87ae00c9c",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260876
+      },
+      "record_id": "a95918977a8850234a7afa96a7754ac59b0697405890b15715a8f8067403af3a",
+      "rule_tags": [
+        "if-stmt"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 119,
+        "path": "pilot_066_control_flow.tsx"
+      },
+      "source_sha256": "a95918977a8850234a7afa96a7754ac59b0697405890b15715a8f8067403af3a",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "control_flow",
+      "jac_sha256": "45112ea7e9b0dc8e058fc04fc9cde79c43fb85f042ef52260855c98f388219ca",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260877
+      },
+      "record_id": "c23e35213a6cf7f602e318772353427f25e88661d23ae6ab9a7f591933558cc1",
+      "rule_tags": [
+        "for-of"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 145,
+        "path": "pilot_067_control_flow.tsx"
+      },
+      "source_sha256": "c23e35213a6cf7f602e318772353427f25e88661d23ae6ab9a7f591933558cc1",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "control_flow",
+      "jac_sha256": "78207078c24804594ddf319149b1c01da4eb8a7725486d6de86a0e0b82eae22e",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260878
+      },
+      "record_id": "6c200041ab8ed4f6129c280536020695352c348abf23ea785730541e53d8688a",
+      "rule_tags": [
+        "while"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 129,
+        "path": "pilot_068_control_flow.tsx"
+      },
+      "source_sha256": "6c200041ab8ed4f6129c280536020695352c348abf23ea785730541e53d8688a",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "control_flow",
+      "jac_sha256": "ba3956b029e54df6754492db187455b92ff945ab71b17ac8ecf3acb87ae00c9c",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260879
+      },
+      "record_id": "a95918977a8850234a7afa96a7754ac59b0697405890b15715a8f8067403af3a",
+      "rule_tags": [
+        "if-stmt"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 119,
+        "path": "pilot_069_control_flow.tsx"
+      },
+      "source_sha256": "a95918977a8850234a7afa96a7754ac59b0697405890b15715a8f8067403af3a",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "ts_types",
+      "jac_sha256": "f4c4443c2b886320b4c93d3bda939ba0b0ee5b6f5ef035ca162ff7d0cd95f083",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260880
+      },
+      "record_id": "867c4cbfaba01deb07156ab84aaa01a15731eff3e0cf1a27e1a69362cf93181f",
+      "rule_tags": [
+        "union-type"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 94,
+        "path": "pilot_070_ts_types.tsx"
+      },
+      "source_sha256": "867c4cbfaba01deb07156ab84aaa01a15731eff3e0cf1a27e1a69362cf93181f",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "ts_types",
+      "jac_sha256": "9e6463ab5738b57ba86e2da7a46c268f3eb4ce98a2a14cea5aead7efb4f33c15",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260881
+      },
+      "record_id": "a6a2d60affb8ee736aeead6481e35443f5dc4d4f27056f3de1e7abb8687ad012",
+      "rule_tags": [
+        "generic-array"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 100,
+        "path": "pilot_071_ts_types.tsx"
+      },
+      "source_sha256": "a6a2d60affb8ee736aeead6481e35443f5dc4d4f27056f3de1e7abb8687ad012",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "ts_types",
+      "jac_sha256": "7c5dc2c6af64babf5d3e1b21d421c6a851894e436b7b78cd6f3fe14d6f7c52a5",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260882
+      },
+      "record_id": "387e701f51e0f9eaf1ab92716f203b1f67bde51b95903b072df28bc9103c2f81",
+      "rule_tags": [
+        "interface-props",
+        "external-props-alias"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 139,
+        "path": "pilot_072_ts_types.tsx"
+      },
+      "source_sha256": "387e701f51e0f9eaf1ab92716f203b1f67bde51b95903b072df28bc9103c2f81",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "ts_types",
+      "jac_sha256": "2934372ae17341cd12d58cde8c222d858ff2c2aba4ee7db906f127f0275c9b1b",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260883
+      },
+      "record_id": "565c9801b4e03fb8d38c099dcef861d3f98e65bef1c46b0c53198d1cb3964488",
+      "rule_tags": [
+        "tuple-type"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 111,
+        "path": "pilot_073_ts_types.tsx"
+      },
+      "source_sha256": "565c9801b4e03fb8d38c099dcef861d3f98e65bef1c46b0c53198d1cb3964488",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "ts_types",
+      "jac_sha256": "f4c4443c2b886320b4c93d3bda939ba0b0ee5b6f5ef035ca162ff7d0cd95f083",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260884
+      },
+      "record_id": "867c4cbfaba01deb07156ab84aaa01a15731eff3e0cf1a27e1a69362cf93181f",
+      "rule_tags": [
+        "union-type"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 94,
+        "path": "pilot_074_ts_types.tsx"
+      },
+      "source_sha256": "867c4cbfaba01deb07156ab84aaa01a15731eff3e0cf1a27e1a69362cf93181f",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "ts_types",
+      "jac_sha256": "9e6463ab5738b57ba86e2da7a46c268f3eb4ce98a2a14cea5aead7efb4f33c15",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260885
+      },
+      "record_id": "a6a2d60affb8ee736aeead6481e35443f5dc4d4f27056f3de1e7abb8687ad012",
+      "rule_tags": [
+        "generic-array"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 100,
+        "path": "pilot_075_ts_types.tsx"
+      },
+      "source_sha256": "a6a2d60affb8ee736aeead6481e35443f5dc4d4f27056f3de1e7abb8687ad012",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "ts_types",
+      "jac_sha256": "7c5dc2c6af64babf5d3e1b21d421c6a851894e436b7b78cd6f3fe14d6f7c52a5",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260886
+      },
+      "record_id": "387e701f51e0f9eaf1ab92716f203b1f67bde51b95903b072df28bc9103c2f81",
+      "rule_tags": [
+        "interface-props",
+        "external-props-alias"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 139,
+        "path": "pilot_076_ts_types.tsx"
+      },
+      "source_sha256": "387e701f51e0f9eaf1ab92716f203b1f67bde51b95903b072df28bc9103c2f81",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 1,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "interop",
+      "jac_sha256": "678c05d92343f9047a8751d7d057dd296ea7d35ed103ccf4d297e35be6106464",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260887
+      },
+      "record_id": "b2063075ed21c3f83f9498f2358b3516620c0ba6419c80e67ea0d5563d2fd404",
+      "rule_tags": [
+        "useMemo-interop"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 190,
+        "path": "pilot_077_interop.tsx"
+      },
+      "source_sha256": "b2063075ed21c3f83f9498f2358b3516620c0ba6419c80e67ea0d5563d2fd404",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 1,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "interop",
+      "jac_sha256": "a8a78dfc3d96fcedae047348d050d428352f5e8487e5a57de1151c42fe3e5ca6",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260888
+      },
+      "record_id": "2b900364f1206d42411e26e6e3e0055ad7bee31f7ceaf50ac7d3c11da80f22d1",
+      "rule_tags": [
+        "useCallback-interop"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 171,
+        "path": "pilot_078_interop.tsx"
+      },
+      "source_sha256": "2b900364f1206d42411e26e6e3e0055ad7bee31f7ceaf50ac7d3c11da80f22d1",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 1,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "interop",
+      "jac_sha256": "97d3848f837f57dfcfc55f20051d616af6ae5c4193051f0acc486313a82817b0",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260889
+      },
+      "record_id": "43c71aa0c1c96560bee0606ef262744b439d42ac266670e4d986a60125f3d353",
+      "rule_tags": [
+        "npm-import"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 161,
+        "path": "pilot_079_interop.tsx"
+      },
+      "source_sha256": "43c71aa0c1c96560bee0606ef262744b439d42ac266670e4d986a60125f3d353",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 1,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "interop",
+      "jac_sha256": "678c05d92343f9047a8751d7d057dd296ea7d35ed103ccf4d297e35be6106464",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260890
+      },
+      "record_id": "b2063075ed21c3f83f9498f2358b3516620c0ba6419c80e67ea0d5563d2fd404",
+      "rule_tags": [
+        "useMemo-interop"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 190,
+        "path": "pilot_080_interop.tsx"
+      },
+      "source_sha256": "b2063075ed21c3f83f9498f2358b3516620c0ba6419c80e67ea0d5563d2fd404",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 1,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "interop",
+      "jac_sha256": "a8a78dfc3d96fcedae047348d050d428352f5e8487e5a57de1151c42fe3e5ca6",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260891
+      },
+      "record_id": "2b900364f1206d42411e26e6e3e0055ad7bee31f7ceaf50ac7d3c11da80f22d1",
+      "rule_tags": [
+        "useCallback-interop"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 171,
+        "path": "pilot_081_interop.tsx"
+      },
+      "source_sha256": "2b900364f1206d42411e26e6e3e0055ad7bee31f7ceaf50ac7d3c11da80f22d1",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 1,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "interop",
+      "jac_sha256": "97d3848f837f57dfcfc55f20051d616af6ae5c4193051f0acc486313a82817b0",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260892
+      },
+      "record_id": "43c71aa0c1c96560bee0606ef262744b439d42ac266670e4d986a60125f3d353",
+      "rule_tags": [
+        "npm-import"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 161,
+        "path": "pilot_082_interop.tsx"
+      },
+      "source_sha256": "43c71aa0c1c96560bee0606ef262744b439d42ac266670e4d986a60125f3d353",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "wrappers",
+      "jac_sha256": "c322e63e87a75ce94363dfbba0a9813814109ee4e57a6f32c0b2602becb94cdf",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260893
+      },
+      "record_id": "11b5a7c15117023be0ac62eca3685bb88c296308d4a578e4c515f6b70f49bd84",
+      "rule_tags": [
+        "react-fc"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 115,
+        "path": "pilot_083_wrappers.tsx"
+      },
+      "source_sha256": "11b5a7c15117023be0ac62eca3685bb88c296308d4a578e4c515f6b70f49bd84",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "wrappers",
+      "jac_sha256": "86bed1fe6fed9e4150d836f1b38ac745ce00ce3dc633ed2e0d614641f0d8f42d",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260894
+      },
+      "record_id": "6d6635842bc72128aee9a4fb7718216e1f90c3868efa21342fcada7111306036",
+      "rule_tags": [
+        "memo"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 141,
+        "path": "pilot_084_wrappers.tsx"
+      },
+      "source_sha256": "6d6635842bc72128aee9a4fb7718216e1f90c3868efa21342fcada7111306036",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "wrappers",
+      "jac_sha256": "614970daee03a88a23bdd08aa74d9c449da44f507d500680a225c4d4005efd76",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260895
+      },
+      "record_id": "c70254cb2888593e662e28e23102c4d768c457294ee25437e1e9941e447cd635",
+      "rule_tags": [
+        "forwardRef"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 197,
+        "path": "pilot_085_wrappers.tsx"
+      },
+      "source_sha256": "c70254cb2888593e662e28e23102c4d768c457294ee25437e1e9941e447cd635",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "wrappers",
+      "jac_sha256": "c322e63e87a75ce94363dfbba0a9813814109ee4e57a6f32c0b2602becb94cdf",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260896
+      },
+      "record_id": "11b5a7c15117023be0ac62eca3685bb88c296308d4a578e4c515f6b70f49bd84",
+      "rule_tags": [
+        "react-fc"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 115,
+        "path": "pilot_086_wrappers.tsx"
+      },
+      "source_sha256": "11b5a7c15117023be0ac62eca3685bb88c296308d4a578e4c515f6b70f49bd84",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "wrappers",
+      "jac_sha256": "86bed1fe6fed9e4150d836f1b38ac745ce00ce3dc633ed2e0d614641f0d8f42d",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260897
+      },
+      "record_id": "6d6635842bc72128aee9a4fb7718216e1f90c3868efa21342fcada7111306036",
+      "rule_tags": [
+        "memo"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 141,
+        "path": "pilot_087_wrappers.tsx"
+      },
+      "source_sha256": "6d6635842bc72128aee9a4fb7718216e1f90c3868efa21342fcada7111306036",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "native_idioms",
+      "jac_sha256": "7fd4f99fc18165666b30e85d521965660d0e6f2dc470992ecd7dd4f72d99f510",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260898
+      },
+      "record_id": "a49149abde80200bdf6abf0302695a87fd58171ef8e301a85e707eaf16007eec",
+      "rule_tags": [
+        "list-append",
+        "comprehension",
+        "dict-access",
+        "join"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 319,
+        "path": "pilot_088_native_idioms.tsx"
+      },
+      "source_sha256": "a49149abde80200bdf6abf0302695a87fd58171ef8e301a85e707eaf16007eec",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "native_idioms",
+      "jac_sha256": "7fd4f99fc18165666b30e85d521965660d0e6f2dc470992ecd7dd4f72d99f510",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260899
+      },
+      "record_id": "a49149abde80200bdf6abf0302695a87fd58171ef8e301a85e707eaf16007eec",
+      "rule_tags": [
+        "list-append",
+        "comprehension",
+        "dict-access",
+        "join"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 319,
+        "path": "pilot_089_native_idioms.tsx"
+      },
+      "source_sha256": "a49149abde80200bdf6abf0302695a87fd58171ef8e301a85e707eaf16007eec",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "native_idioms",
+      "jac_sha256": "7fd4f99fc18165666b30e85d521965660d0e6f2dc470992ecd7dd4f72d99f510",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260900
+      },
+      "record_id": "a49149abde80200bdf6abf0302695a87fd58171ef8e301a85e707eaf16007eec",
+      "rule_tags": [
+        "list-append",
+        "comprehension",
+        "dict-access",
+        "join"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 319,
+        "path": "pilot_090_native_idioms.tsx"
+      },
+      "source_sha256": "a49149abde80200bdf6abf0302695a87fd58171ef8e301a85e707eaf16007eec",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "native_idioms",
+      "jac_sha256": "7fd4f99fc18165666b30e85d521965660d0e6f2dc470992ecd7dd4f72d99f510",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260901
+      },
+      "record_id": "a49149abde80200bdf6abf0302695a87fd58171ef8e301a85e707eaf16007eec",
+      "rule_tags": [
+        "list-append",
+        "comprehension",
+        "dict-access",
+        "join"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 319,
+        "path": "pilot_091_native_idioms.tsx"
+      },
+      "source_sha256": "a49149abde80200bdf6abf0302695a87fd58171ef8e301a85e707eaf16007eec",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "native_idioms",
+      "jac_sha256": "7fd4f99fc18165666b30e85d521965660d0e6f2dc470992ecd7dd4f72d99f510",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260902
+      },
+      "record_id": "a49149abde80200bdf6abf0302695a87fd58171ef8e301a85e707eaf16007eec",
+      "rule_tags": [
+        "list-append",
+        "comprehension",
+        "dict-access",
+        "join"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 319,
+        "path": "pilot_092_native_idioms.tsx"
+      },
+      "source_sha256": "a49149abde80200bdf6abf0302695a87fd58171ef8e301a85e707eaf16007eec",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "minimal_tsx",
+      "jac_sha256": "00fb257f4f682d35198281dc42f3afa986e4630f9b16c7b4cdf354ee09b5c23a",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260903
+      },
+      "record_id": "c410f047b83161dfe6cfad168e3ea3ede2b1ba4b4a837c7c96f5cec7f59eef2f",
+      "rule_tags": [
+        "arrow-export",
+        "props-bag"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 131,
+        "path": "pilot_093_minimal_tsx.tsx"
+      },
+      "source_sha256": "c410f047b83161dfe6cfad168e3ea3ede2b1ba4b4a837c7c96f5cec7f59eef2f",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "minimal_tsx",
+      "jac_sha256": "b6998124706dabe43daf4ac04df65f5452bfb79582ec5259fdb249467cf779a7",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260904
+      },
+      "record_id": "04da047fce397b85789c28f0eabf3f175e9ba123c61739b1197df7d63b37cecd",
+      "rule_tags": [
+        "const-helper",
+        "props-bag"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 147,
+        "path": "pilot_094_minimal_tsx.tsx"
+      },
+      "source_sha256": "04da047fce397b85789c28f0eabf3f175e9ba123c61739b1197df7d63b37cecd",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "minimal_tsx",
+      "jac_sha256": "ada0613d7319b8fe072be332db435764230bf5a6180d5cc08a7e02ab839105a0",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260905
+      },
+      "record_id": "d17f665727e71d1fdccdb8c9faef51a05723c393229590feb7b323adf0164155",
+      "rule_tags": [
+        "inline-map",
+        "props-bag"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 122,
+        "path": "pilot_095_minimal_tsx.tsx"
+      },
+      "source_sha256": "d17f665727e71d1fdccdb8c9faef51a05723c393229590feb7b323adf0164155",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "minimal_tsx",
+      "jac_sha256": "0cb625584f0159b10569266eaf49b3f0b7d08ca071deed3cf0c9a1d7232aeb74",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260906
+      },
+      "record_id": "51c82783916a8be7ee438f5db4b23e6eb03c06607db22eb7b76adb410523b5c6",
+      "rule_tags": [
+        "arrow-export",
+        "jsx-ternary"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 99,
+        "path": "pilot_096_minimal_tsx.tsx"
+      },
+      "source_sha256": "51c82783916a8be7ee438f5db4b23e6eb03c06607db22eb7b76adb410523b5c6",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 2,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "minimal_tsx",
+      "jac_sha256": "083173ddc07bb0c4f13d13327952fb0b42b493f701e459ffcdaf03d18cd36ef5",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260907
+      },
+      "record_id": "1212236722355d5fade04adc327027e68083356124257b1b26aef30c3288652f",
+      "rule_tags": [
+        "arrow-export",
+        "local-helper"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 138,
+        "path": "pilot_097_minimal_tsx.tsx"
+      },
+      "source_sha256": "1212236722355d5fade04adc327027e68083356124257b1b26aef30c3288652f",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "ts_only",
+      "jac_sha256": "de4a98d7478ce5e3fbc67b0223b4278053f19679c55d733c89e727d785929e4d",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260908
+      },
+      "record_id": "5e002d554bf221db52e9b653edec1611afe859600e3a535880c7a32e29527429",
+      "rule_tags": [
+        "ts",
+        "type-alias"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 99,
+        "path": "pilot_098_ts_only.tsx"
+      },
+      "source_sha256": "5e002d554bf221db52e9b653edec1611afe859600e3a535880c7a32e29527429",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "ts_only",
+      "jac_sha256": "de4a98d7478ce5e3fbc67b0223b4278053f19679c55d733c89e727d785929e4d",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260909
+      },
+      "record_id": "5e002d554bf221db52e9b653edec1611afe859600e3a535880c7a32e29527429",
+      "rule_tags": [
+        "ts",
+        "type-alias"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 99,
+        "path": "pilot_099_ts_only.tsx"
+      },
+      "source_sha256": "5e002d554bf221db52e9b653edec1611afe859600e3a535880c7a32e29527429",
+      "split": "unassigned"
+    },
+    {
+      "conversion": {
+        "ok": true,
+        "parser_protocol_version": 1,
+        "rule_set_version": "js2jac-client-v1",
+        "summary": {
+          "exact": 2,
+          "guarded": 1,
+          "interop": 0,
+          "proposed": 0,
+          "rejected": 0
+        },
+        "validation_stages": [
+          {
+            "stage": "convert",
+            "status": "passed"
+          },
+          {
+            "stage": "check",
+            "status": "passed"
+          }
+        ]
+      },
+      "family": "ts_only",
+      "jac_sha256": "de4a98d7478ce5e3fbc67b0223b4278053f19679c55d733c89e727d785929e4d",
+      "language": "tsx",
+      "license": "CC0-1.0",
+      "lineage": {
+        "generator": "pilot-v1",
+        "template_seed": 20260910
+      },
+      "record_id": "5e002d554bf221db52e9b653edec1611afe859600e3a535880c7a32e29527429",
+      "rule_tags": [
+        "ts",
+        "type-alias"
+      ],
+      "schema_version": 1,
+      "source": {
+        "bytes": 99,
+        "path": "pilot_100_ts_only.tsx"
+      },
+      "source_sha256": "5e002d554bf221db52e9b653edec1611afe859600e3a535880c7a32e29527429",
+      "split": "unassigned"
+    }
+  ],
+  "rule_set_version": "js2jac-client-v1",
+  "schema_version": 1,
+  "target_count": 100,
+  "validated_count": 100
+}

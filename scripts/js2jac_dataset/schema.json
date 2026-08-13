@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jac.dev/schemas/js2jac-dataset-record-v1.json",
+  "title": "js2jac dataset record (schema version 1)",
+  "type": "object",
+  "required": [
+    "record_id",
+    "schema_version",
+    "source",
+    "language",
+    "family",
+    "rule_tags",
+    "source_sha256",
+    "jac_sha256",
+    "conversion"
+  ],
+  "properties": {
+    "record_id": {
+      "type": "string",
+      "description": "Content-addressed id: sha256 of canonical source bytes"
+    },
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "source": {
+      "type": "object",
+      "required": ["path", "bytes"],
+      "properties": {
+        "path": { "type": "string" },
+        "bytes": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "language": {
+      "type": "string",
+      "enum": ["js", "ts", "jsx", "tsx"]
+    },
+    "family": {
+      "type": "string",
+      "description": "Pilot corpus family / template cluster"
+    },
+    "rule_tags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "js2jac rule ids or feature tags exercised by this record"
+    },
+    "source_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "jac_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "conversion": {
+      "type": "object",
+      "required": ["rule_set_version", "parser_protocol_version", "ok"],
+      "properties": {
+        "rule_set_version": { "type": "string" },
+        "parser_protocol_version": { "type": "integer" },
+        "ok": { "type": "boolean" },
+        "summary": {
+          "type": "object",
+          "properties": {
+            "exact": { "type": "integer" },
+            "guarded": { "type": "integer" },
+            "interop": { "type": "integer" },
+            "rejected": { "type": "integer" },
+            "proposed": { "type": "integer" }
+          }
+        },
+        "validation_stages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["stage", "status"],
+            "properties": {
+              "stage": { "type": "string" },
+              "status": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "lineage": {
+      "type": "object",
+      "properties": {
+        "template_seed": { "type": "integer" },
+        "generator": { "type": "string" }
+      }
+    },
+    "license": {
+      "type": "string",
+      "description": "SPDX id for hand-authored pilot templates"
+    },
+    "split": {
+      "type": "string",
+      "enum": ["train", "dev", "test", "unassigned"]
+    }
+  },
+  "additionalProperties": false
+}
