@@ -71,15 +71,29 @@ def prep_repo(c: dict, profile: dict, workdir: Path, keep_out: Path) -> list[dic
                 continue
             source_js = src_file.read_text(errors="replace")
             floor_jac = None
+            floor_mode = "none"
             if status == "convertible" and f.get("jacPath"):
                 jf = out / f["jacPath"]
                 if jf.exists():
                     floor_jac = jf.read_text(errors="replace")
+                    floor_mode = "full"
+            elif status == "reject":
+                # Project mode discarded any partial floor (cross-file/type-check
+                # reject). Recover it standalone with holes: if >=1 declaration
+                # converts, hand the composer a scaffold+holes instead of nothing,
+                # so it patches rather than freestyles. Pure-fail files (kept 0)
+                # stay floor=None — there is genuinely nothing to anchor.
+                hc = harvest.hole_convert(source_js, spath)
+                if hc.get("ok") and hc.get("keptCount", 0) >= 1:
+                    floor_jac = hc.get("jac") or None
+                    if floor_jac:
+                        floor_mode = "holes"
             recs.append({
                 "id": rec_id(name, spath),
                 "repo": name, "commit": commit, "spdx": c.get("spdx"),
                 "path": spath, "status": status,
                 "source_js": source_js, "floor_jac": floor_jac,
+                "floor_mode": floor_mode,
             })
         return recs
     finally:

@@ -33,3 +33,11 @@ scripts/js2jac_dataset/source/shadcn_cands.jsonl
 # --- large local-only artifacts (not part of this commit) ---
 golden_client*.jsonl
 low_resource_paper.pdf
+
+# --- js2jac per-run pilot artifacts (data, not code) ---
+scripts/js2jac_dataset/runs/**/pilot_batches/
+scripts/js2jac_dataset/runs/**/pilot_candidates.jsonl
+scripts/js2jac_dataset/runs/**/candidates.jsonl
+scripts/js2jac_dataset/runs/**/pilot_guard.json
+scripts/js2jac_dataset/runs/**/*.log
+scripts/js2jac_dataset/runs/**/*.pid

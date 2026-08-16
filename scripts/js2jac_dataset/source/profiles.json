@@ -1,0 +1,67 @@
+{
+  "react": {
+    "description": "Historical gate: any React-family repo, no stack filtering (back-compat default).",
+    "require_groups": [["react", "preact", "react-dom"]],
+    "deny_any": [],
+    "prefer_any": [],
+    "path_exclude": [],
+    "github_qualifiers": []
+  },
+
+  "convertible": {
+    "description": "Tier A: React + utility-class UI. Excludes CSS-in-JS (the ~40% E7205 ceiling) and Redux Toolkit slices.",
+    "require_groups": [["react", "preact", "react-dom"]],
+    "deny_any": [
+      "styled-components",
+      "@emotion/react",
+      "@emotion/styled",
+      "@emotion/css",
+      "@mui/material",
+      "@mui/styles",
+      "@material-ui/core",
+      "@chakra-ui/react",
+      "@stitches/react",
+      "goober",
+      "@reduxjs/toolkit"
+    ],
+    "prefer_any": [
+      "tailwindcss",
+      "class-variance-authority",
+      "clsx",
+      "tailwind-merge"
+    ],
+    "path_exclude": ["components/ui/"],
+    "github_qualifiers": ["topic:tailwindcss"]
+  },
+
+  "shadcn": {
+    "description": "shadcn/ui stack (Radix + Tailwind + cva): closest to jac's emit envelope. Requires the cva/clsx signature AND Radix/Tailwind, minus all CSS-in-JS + RTK.",
+    "require_groups": [
+      ["react", "react-dom"],
+      ["class-variance-authority", "tailwind-merge"],
+      ["@radix-ui/*"]
+    ],
+    "deny_any": [
+      "styled-components",
+      "@emotion/react",
+      "@emotion/styled",
+      "@emotion/css",
+      "@mui/material",
+      "@mui/styles",
+      "@material-ui/core",
+      "@chakra-ui/react",
+      "@stitches/react",
+      "goober",
+      "@reduxjs/toolkit"
+    ],
+    "prefer_any": [
+      "class-variance-authority",
+      "tailwind-merge",
+      "clsx",
+      "lucide-react",
+      "@radix-ui/*"
+    ],
+    "path_exclude": ["components/ui/"],
+    "github_qualifiers": ["topic:shadcn-ui"]
+  }
+}

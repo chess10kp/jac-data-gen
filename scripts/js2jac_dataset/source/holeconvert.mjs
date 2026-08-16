@@ -1,0 +1,23 @@
+#!/usr/bin/env bun
+// stdin: {js, path}  ->  stdout: {ok, jac, holeCount, declHoleCount, keptCount}
+// Converts one JS/TS source to Jac with hole-emission on (LLM-cleanup pipeline).
+import { createRequire } from "module";
+import { fileURLToPath } from "url";
+import path from "path";
+import fs from "fs";
+import { convertEnvelope, PROTOCOL_VERSION } from
+  "/home/jac/repos/jac_llm_data/jaseci/jac/jaclang/compiler/js2jac/convert_bridge.mjs";
+const JS2JAC = "/home/jac/repos/jac_llm_data/jaseci/jac/jaclang/compiler/js2jac";
+const req = createRequire(path.join(JS2JAC, "vendor", "babel_parser", "package.json"));
+const parser = req("@babel/parser");
+function langOf(p){if(p.endsWith(".tsx"))return"tsx";if(p.endsWith(".ts"))return"ts";if(p.endsWith(".jsx"))return"jsx";return"js";}
+function plug(l){const p=["estree"];if(l==="jsx"||l==="tsx")p.push("jsx");if(l==="ts"||l==="tsx")p.push("typescript");return p;}
+const input = JSON.parse(fs.readFileSync(0, "utf8"));
+let ast;
+try { ast = parser.parse(input.js, { sourceType: "unambiguous", plugins: plug(langOf(input.path)), ranges: true, errorRecovery: false }); }
+catch (e) { process.stdout.write(JSON.stringify({ ok:false, error:"parse:"+e.message })); process.exit(0); }
+const res = convertEnvelope({ protocolVersion: PROTOCOL_VERSION, path: input.path, ast, failOpen: true, stmtFailOpen: true, emitHoles: true, source: input.js });
+const jac = res.jac || "";
+const holeCount = (jac.match(/JS2JAC-HOLE/g) || []).length;
+const declHoleCount = (jac.match(/UNCONVERTED/g) || []).length ? (jac.split("# JS2JAC-HOLE").length - 1) : 0;
+process.stdout.write(JSON.stringify({ ok: res.ok === true, jac, holeCount, keptCount: res.keptCount||0 }));
