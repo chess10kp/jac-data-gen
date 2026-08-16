@@ -93,6 +93,9 @@ def jac_default(f, base_jac):
         return f" = {d}"
     if base_jac == "str":
         return f" = {d}" if d.startswith('"') else f' = "{d}"'
+    # enum-valued field: base_jac is the enum name, d a bare member (e.g. EYE)
+    if d.isidentifier():
+        return f" = {base_jac}.{d}"
     return ""
 
 

@@ -61,8 +61,13 @@ def score_record(js: str, jac: str, path: str, sig: dict | None = None) -> dict:
     jac_tokens = _tokens(jac)
     jac_text = jac
 
-    # 1. export parity: every named export must reappear as a Jac identifier
-    exports = [e for e in sig["exports"] if e != "default"]
+    # 1. export parity: every named export must reappear as a Jac identifier.
+    # EXCEPT Next.js route handlers, whose exports are HTTP verbs (GET/POST/...):
+    # the idiomatic persistence rewrite renames them to named walkers/defs, so a
+    # verbatim GET token is not expected (see PERSISTENCE_MAPPING.md). The hollow
+    # `return []` stub still fails on mass/strings, so this doesn't reopen the hole.
+    HTTP_VERBS = {"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"}
+    exports = [e for e in sig["exports"] if e != "default" and e not in HTTP_VERBS]
     missing_exports = [e for e in exports if e not in jac_tokens]
     export_parity = 1.0 if not exports else 1 - len(missing_exports) / len(exports)
 

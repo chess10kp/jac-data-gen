@@ -30,12 +30,39 @@ import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "source"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 import harvest  # noqa: E402  (clone/convert/profile_gate/pick_project_root/sh)
 import profiles  # noqa: E402
+import prisma_to_jac  # noqa: E402  (deterministic schema.prisma -> node/edge archetypes)
 
 # Cap embedded source so a giant file can't blow the composer context. The
 # cleanup pass targets component-sized files; anything larger is out of scope.
 MAX_SRC_BYTES = 8000
+
+# A file is ORM-backed (its DB calls should be rewritten against the lifted graph
+# schema, not stripped to a hollow stub) if it touches the Prisma client.
+_ORM_MARKERS = ("@prisma/client", "PrismaClient", "prisma.", "prismadb")
+
+
+def lift_repo_schema(clone: Path) -> tuple[str | None, str | None]:
+    """Find a schema.prisma anywhere in the clone and lift it once, deterministically.
+
+    Returns (archetypes_jac, traversal_digest) or (None, None) if there is no schema
+    or it fails to lift. One lift amortizes across every ORM file in the repo.
+    """
+    schemas = list(clone.rglob("schema.prisma"))
+    if not schemas:
+        return None, None
+    try:
+        text = schemas[0].read_text(errors="replace")
+        archetypes, digest = prisma_to_jac.convert(text, keep_external_id=False)
+        return (archetypes or None), (digest or None)
+    except Exception:
+        return None, None
+
+
+def _is_orm_file(source_js: str) -> bool:
+    return any(m in source_js for m in _ORM_MARKERS)
 
 
 def rec_id(repo: str, path: str) -> str:
@@ -53,6 +80,8 @@ def prep_repo(c: dict, profile: dict, workdir: Path, keep_out: Path) -> list[dic
         if not ok:
             return []
         commit = harvest.head_sha(cdir)
+        # One deterministic schema-lift per repo (amortizes over every ORM file).
+        schema_jac, schema_digest = lift_repo_schema(cdir)
         root = harvest.pick_project_root(cdir)
         out = keep_out / cdir.name
         rep_path = keep_out / (cdir.name + "__report.json")
@@ -88,12 +117,25 @@ def prep_repo(c: dict, profile: dict, workdir: Path, keep_out: Path) -> list[dic
                     floor_jac = hc.get("jac") or None
                     if floor_jac:
                         floor_mode = "holes"
+            # ORM-backed files get the repo's lifted graph schema so the composer
+            # rewrites `prisma.x.find/create/update` into walkers/traversals over
+            # real nodes+edges instead of stripping to a hollow `return []`.
+            orm = schema_jac is not None and _is_orm_file(source_js)
+            # Transliteration trap: a floor that still CARRIES `prisma.` calls makes
+            # the model idiomize that (keeping the dead prisma call) instead of
+            # rewriting against the graph schema (observed on move.it). For ORM
+            # files, drop such a floor so the schema is the sole anchor.
+            if orm and floor_jac and "prisma" in floor_jac.lower():
+                floor_jac, floor_mode = None, "none"
             recs.append({
                 "id": rec_id(name, spath),
                 "repo": name, "commit": commit, "spdx": c.get("spdx"),
                 "path": spath, "status": status,
                 "source_js": source_js, "floor_jac": floor_jac,
                 "floor_mode": floor_mode,
+                "orm": "prisma" if orm else None,
+                "schema_jac": schema_jac if orm else None,
+                "schema_digest": schema_digest if orm else None,
             })
         return recs
     finally:

@@ -283,6 +283,25 @@ def build_prompt(recs: list[dict]) -> str:
         skill_ptr = (f"  [relevant Jac skills: {', '.join(skills)}]" if skills else "")
         parts.append(f"\n===ID {r['id']}===  (status: {r['status']}){skill_ptr}\n"
                      f"SOURCE:\n{r['source_js'][:3500]}\n")
+        # ORM file: hand the model the repo's lifted graph schema + traversal digest
+        # so it rewrites prisma.x.find/create/update into walkers/traversals over
+        # these real nodes+edges — NOT a hollow `return []` stub (which the
+        # behavioral gate rejects anyway).
+        if r.get("schema_jac"):
+            digest = r.get("schema_digest") or ""
+            parts.append(
+                "\nGRAPH SCHEMA (this app's Prisma models lifted to Jac node/edge "
+                "archetypes — DO NOT redeclare; write against them). MANDATORY: rewrite "
+                "EVERY `prisma.*` call as a graph op — findMany->`[root -->[?:Model]]`, "
+                "findUnique/findFirst(where)->filtered traversal `[root -->[?:Model, f==v]]`, "
+                "create->`root ++> Model(...)` (or `owner +>:Edge:+> Model(...)`), "
+                "update->resolve node then mutate in place (auto-persists), "
+                "delete->`del <node>`, relation->typed edge traversal `[u ->:Edge:->]`. "
+                "PREFER a `walker:pub` with `can ... with Root/<Node> entry` invoked by "
+                "`root spawn W()` (the idiomatic endpoint shape) over a plain def. "
+                "If ANY `prisma.` token remains in your output the record is worthless — "
+                "rewrite it fully or REJECT:\n"
+                f"{r['schema_jac']}\n{digest}\n")
         if floor and "JS2JAC-HOLE" in floor:
             parts.append("\nFLOOR (SCAFFOLD+HOLES — keep scaffold, convert the "
                          "# JS2JAC-HOLE holes in place, or REJECT):\n"

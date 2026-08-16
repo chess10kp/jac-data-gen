@@ -125,8 +125,10 @@ flock -u 9
 
 echo "[$TAG] 5/5 guard (jac check, floor-fallback) + merge floor-kept + append to $MASTER"
 $PY - "$WORK" "$CAND" "$DS" "$JAC_REPO" "$FLOORKEPT" <<'PYEOF'
-import json, subprocess, sys, tempfile, os
+import json, re, subprocess, sys, tempfile, os
 from pathlib import Path
+sys.path.insert(0, os.getcwd())  # chunk.sh cd's to scripts/js2jac_dataset
+from orm_behavioral_gate import gate_orm
 work, cand, ds, jac_repo, floorkept = sys.argv[1:6]
 meta = {}
 for f in Path(work).glob("*.json"):
@@ -143,7 +145,40 @@ def jac_ok(code):
     finally:
         os.unlink(tp)
 
-kept = drop = rej = fallback = 0
+_GRAPH_OP = re.compile(r"-->|\+\+>|\bspawn\b|\+>:|->:|<-:|:->|:<-|\[\?:|\bdel here\b|\bhere\.|\bjobj\(")
+
+def hollow(m, code):
+    # An ORM record's job is to rewrite the DB calls against the lifted graph
+    # schema. `jac check` passes a hollow `return []`/`{}` stub all the same.
+    # The generic fidelity gate is the WRONG tool here (its body-mass signal
+    # false-rejects faithful route->walker rewrites, which are idiomatically
+    # DENSER/shorter than the JS). The persistence-specific hollowness signal:
+    # a real rewrite REFERENCES a lifted node AND uses a graph operator; a stub
+    # has neither. Non-ORM records skip this.
+    schema = m.get("schema_jac")
+    if not schema or not code:
+        return False
+    nodes = re.findall(r"\bnode\s+(\w+)", schema)
+    uses_node = any(re.search(rf"\b{n}\b", code) for n in nodes)
+    uses_graph = bool(_GRAPH_OP.search(code))
+    return not (uses_node and uses_graph)
+
+def orm_reject(m, code):
+    # For ORM records: prefer the BEHAVIORAL gate (seed->invoke->assert read-back)
+    # over the structural one — it catches wrong-filter/wrong-edge rewrites that
+    # DO touch the graph (so pass `hollow`) but read back nothing real. Only when
+    # the gate can't build a probe (no scalar entrypoint) fall back to structural.
+    schema = m.get("schema_jac")
+    if not schema:
+        return False, "not-orm"
+    verdict, why = gate_orm(schema, code, jac_repo)
+    if verdict == "KEEP":
+        return False, f"behavioral:{why}"
+    if verdict == "REJECT":
+        return True, f"behavioral:{why}"
+    return hollow(m, code), f"structural-fallback:{why}"   # INCONCLUSIVE
+
+kept = drop = rej = fallback = hollowed = behav = 0
 with open(ds, "w") as out:
     for line in open(cand):
         line = line.strip()
@@ -151,6 +186,13 @@ with open(ds, "w") as out:
         c = json.loads(line)
         m = meta.get(c["id"], {})
         code, src = c.get("candidate"), "js2jac_cleaned"
+        if jac_ok(code):
+            rej_orm, why = orm_reject(m, code)
+            if rej_orm:
+                # compiles but hollow/wrong ORM rewrite — reject (the point of the lift)
+                hollowed += 1; drop += 1
+                if why.startswith("behavioral"): behav += 1
+                continue
         if not jac_ok(code):
             # composer rejected or broke it — fall back to the floor if it compiles
             # (guards FULL floors against destructive idiomization; the pilot lesson).
@@ -174,8 +216,9 @@ if os.path.exists(floorkept):
         for line in open(floorkept):
             if line.strip(): out.write(line); floor_kept += 1
 print(f"  guard: composed-kept {kept} (incl {fallback} floor-fallback), "
-      f"check-fail {drop}, rejected {rej} | + {floor_kept} floor-kept "
-      f"(no LLM) = {kept + floor_kept} total")
+      f"check-fail {drop} (of which {hollowed} hollow-ORM: {behav} by behavioral gate, "
+      f"{hollowed-behav} structural), rejected {rej} | "
+      f"+ {floor_kept} floor-kept (no LLM) = {kept + floor_kept} total")
 PYEOF
 
 $PY - "$DS" "$MASTER" "$TAG" <<'PYEOF'
