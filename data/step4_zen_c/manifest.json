@@ -1,0 +1,32 @@
+{
+  "min_coverage": 90,
+  "processed": 12,
+  "elapsed_s": 912.5,
+  "throughput_rec_per_s": 0.01,
+  "idiomize_mode": "zen",
+  "idiomize_model": "deepseek-v4-flash-free",
+  "idiomize_k": 5,
+  "mean_candidates": 0,
+  "mean_passers": 0,
+  "mean_idiom_score": null,
+  "dedup_threshold": 0.9,
+  "yield_ladder": {
+    "py2jac_fail": 0,
+    "test_fail": 0,
+    "floor_pass": 11,
+    "kept_after_idiomize_guard": 11,
+    "final_after_dedup": 11
+  },
+  "source_split": {
+    "idiomatic": 0,
+    "floor": 11
+  },
+  "mutation_gate": {
+    "threshold": 0.8,
+    "mean_score": 0.97,
+    "oracle_weak": 0,
+    "oracle_unscorable": 3
+  },
+  "idiomize_ms_mean": 81421.2,
+  "dedup_dropped": 0
+}

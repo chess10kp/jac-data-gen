@@ -1,0 +1,37 @@
+cl {
+    import from react { useEffect }
+
+    # Custom hook
+    def use_local_storage(key: str, initial_value: any) -> tuple {
+        has value: any = initial_value;
+
+        # Load from localStorage on mount
+        useEffect(lambda -> None {
+            stored = localStorage.getItem(key);
+            if stored {
+                value = JSON.parse(stored);
+            }
+        }, []);
+
+        # Save to localStorage when value changes
+        useEffect(lambda -> None {
+            localStorage.setItem(key, JSON.stringify(value));
+        }, [value]);
+
+        return (value, lambda v: any -> None { value = v; });
+    }
+
+    def:pub Settings() -> JsxElement {
+        (theme, set_theme) = use_local_storage("theme", "light");
+
+        return <div>
+            <p>Current theme: {theme}</p>
+            <button onClick={lambda -> None { set_theme("dark"); }}>
+                Dark
+            </button>
+            <button onClick={lambda -> None { set_theme("light"); }}>
+                Light
+            </button>
+        </div>;
+    }
+}

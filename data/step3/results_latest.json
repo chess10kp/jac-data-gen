@@ -1,0 +1,47 @@
+[
+  {
+    "id": 295211,
+    "entrypoint": "pysiphash",
+    "kept_idiomatic": true,
+    "reason": null,
+    "jac_test_ok": true,
+    "idiomatic_jac": "glob INT64_MAX = (1 << 63) - 1;\nglob UINT32_MASK = 0xFFFFFFFF;\nglob INT32_MAX = (1 << 31) - 1;\n\n\"\"\"Convert SipHash24 output to Py_hash_t.\"\"\"\ndef pysiphash(uint64: int) -> tuple[int, int] {\n    assert 0 <= uint64 < (1 << 64);\n    if uint64 > INT64_MAX {\n        int64 = uint64 - (1 << 64);\n    } else {\n        int64 = uint64;\n    }\n    uint32 = (uint64 ^ (uint64 >> 32)) & UINT32_MASK;\n    if uint32 > INT32_MAX {\n        int32 = uint32 - (1 << 32);\n    } else {\n        int32 = uint32;\n    }\n    return (int32, int64);\n}\n",
+    "floor_jac": "\"\"\"Convert SipHash24 output to Py_hash_t\n    \"\"\"\ndef pysiphash(uint64: Any) -> object {\n    assert (0 <= uint64 < (1 << 64));\n    if (uint64 > ((1 << 63) - 1)) {\n        int64 = uint64 - (1 << 64);\n    } else {\n        int64 = uint64;\n    }\n    uint32 = (uint64 ^ (uint64 >> 32)) & 4294967295;\n    if (uint32 > ((1 << 31) - 1)) {\n        int32 = uint32 - (1 << 32);\n    } else {\n        int32 = uint32;\n    }\n    return (int32, int64);\n}"
+  },
+  {
+    "id": 207145,
+    "entrypoint": "isFrozen",
+    "kept_idiomatic": true,
+    "reason": null,
+    "jac_test_ok": true,
+    "idiomatic_jac": "\"\"\"Return whether the given status name is frozen.\"\"\"\ndef isFrozen(status: str) -> bool {\n    return status.startswith('.');\n}\n",
+    "floor_jac": "\"\"\"\n    Return a boolean indicating whether the given status name is frozen or not.\n\n    @type status: C{unicode}\n    @rtype: C{bool}\n    \"\"\"\ndef isFrozen(status: Any) -> object {\n    return status.startswith('.');\n}"
+  },
+  {
+    "id": 377941,
+    "entrypoint": "csim_to_scamp5",
+    "kept_idiomatic": true,
+    "reason": null,
+    "jac_test_ok": true,
+    "idiomatic_jac": "\"\"\"Map a CSIM program (AUKE output) to a SCAMP5 program.\n\nWhen double_shifts is True, shifting instructions are rewritten to their\ndouble_ variants.\n\"\"\"\ndef csim_to_scamp5(program: list[str], double_shifts: bool = False) -> list[str] {\n    output_program: list[str] = [];\n    shift_prefix = 'double_' if double_shifts else '';\n    for instr in program {\n        if instr.startswith('_transform') {\n            instr = '// ' + instr;\n        } elif instr.startswith(('// north', '// east', '// south', '// west')) {\n            instr = shift_prefix + instr[3:];\n        } elif instr.startswith('// div2') {\n            instr = instr[3:];\n            if instr[5] == instr[8] {\n                instr = 'div2_inplace' + instr[4:];\n            }\n        } elif instr.startswith('neg') {\n            if instr[4] == instr[7] {\n                instr = 'neg_inplace' + instr[3:];\n            }\n        } elif instr.startswith('add') {\n            if instr[7] == instr[10] {\n                instr = 'add_twice' + instr[3:];\n            } elif instr[4] == instr[10] {\n                instr = instr[:7] + instr[10] + instr[8:10] + instr[7] + instr[11:];\n            }\n        } elif instr.startswith('sub') {\n            if instr[4] == instr[10] {\n                instr = 'sub_inplace' + instr[3:];\n            }\n        }\n        output_program.append(instr);\n    }\n    return output_program;\n}\n",
+    "floor_jac": "\"\"\"\n  Takes a CSIM program as a list of instructions (strings),\n  and maps it to a SCAMP5 program.\n  program: list of instructions, ['instr1', 'instr2', '// comment', ...]. Should\n    be the exact output of AUKE (we here rely on its specific syntax, such as\n    whitespace location etc.)\n  doubleShifts: boolean, if True shifting instructions are replaced\n    by double_shifting instructions (see macros in .hpp file)\n  \"\"\"\ndef csim_to_scamp5(program: Any, doubleShifts: Any = False) -> object {\n    outputProgram = [];\n    if doubleShifts {\n        shiftPrefix = 'double_';\n    } else {\n        shiftPrefix = '';\n    }\n    for instr in program {\n        if instr.startswith('_transform') {\n            instr = '// ' + instr;\n        } elif (\n            instr.startswith('// north')\n            or instr.startswith('// east')\n            or instr.startswith('// south')\n            or instr.startswith('// west')\n        ) {\n            instr = shiftPrefix + instr[3:];\n        } elif instr.startswith('// div2') {\n            instr = instr[3:];\n            if (instr[5] == instr[8]) {\n                instr = 'div2_inplace' + instr[4:];\n            }\n        } elif instr.startswith('neg') {\n            if (instr[4] == instr[7]) {\n                instr = 'neg_inplace' + instr[3:];\n            }\n        } elif instr.startswith('add') {\n            if (instr[7] == instr[10]) {\n                instr = 'add_twice' + instr[3:];\n            } elif (instr[4] == instr[10]) {\n                instr = instr[:7] + instr[10] + instr[8:10] + instr[7] + instr[11:];\n            }\n        } elif instr.startswith('sub') {\n            if (instr[4] == instr[10]) {\n                instr = 'sub_inplace' + instr[3:];\n            }\n        }\n        outputProgram.append(instr);\n    }\n    return outputProgram;\n}"
+  },
+  {
+    "id": 313569,
+    "entrypoint": "_extract_url_and_sha_from_deps_entry",
+    "kept_idiomatic": true,
+    "reason": null,
+    "jac_test_ok": true,
+    "idiomatic_jac": "\"\"\"Split a DEPS file entry into a URL and git sha.\"\"\"\ndef _extract_url_and_sha_from_deps_entry(deps_entry: dict[str, str]) -> tuple[str, str] {\n    assert 'url' in deps_entry and 'rev' in deps_entry, f\"Unexpected format: {deps_entry}\";\n    url = deps_entry['url'];\n    sha = deps_entry['rev'];\n    if url.endswith('.git') {\n        url = url[:-len('.git')];\n    }\n    return (url, sha);\n}\n",
+    "floor_jac": "\"\"\"Split a DEPS file entry into a URL and git sha.\"\"\"\ndef _extract_url_and_sha_from_deps_entry(`entry: Any) -> object {\n    assert (('url' in `entry) and ('rev' in `entry)) , (\n        'Unexpected format: %s' % `entry\n    );\n    url = `entry['url'];\n    sha = `entry['rev'];\n    if url.endswith('.git') {\n        url = url[:-len('.git')];\n    }\n    return (url, sha);\n}"
+  },
+  {
+    "id": 147075,
+    "entrypoint": "_isIPv4Addr",
+    "kept_idiomatic": true,
+    "reason": null,
+    "jac_test_ok": true,
+    "idiomatic_jac": "\"\"\"Confirm whether the specified address is an IPv4 address.\"\"\"\ndef _isIPv4Addr(address: str) -> bool {\n    parts = address.split('.');\n    if len(parts) != 4 {\n        return False;\n    }\n    for octet in parts {\n        s = (\"00\" + octet)[-3:];\n        c1 = s[0:1];\n        c2 = s[1:2];\n        c3 = s[2:3];\n        if (c1 < '0' or c1 > '9') or (c2 < '0' or c2 > '9') or (c3 < '0' or c3 > '9') {\n            return False;\n        }\n        if int(s, 10) >= 256 {\n            return False;\n        }\n    }\n    return True;\n}\n",
+    "floor_jac": "\"\"\"Confirm whether the specified address is an IPv4 address.\n\n    :param str strIPv4Addr: IPv4 address string.\n    :return: True when the specified address is an IPv4 address.\n    :rtype: bool\n\n    Example::\n\n        strIPv4Addr        Return\n        -------------------------\n        '192.0.2.1'   -> True\n        '192.0.2'     -> False\n        '192.0.2.256' -> False\n        '192.0.2.-1'  -> False\n        '192.0..1'    -> False\n        '192.0.a.1'   -> False\n\n    Test:\n        >>> _isIPv4Addr('192.0.2.1')\n        True\n        >>> _isIPv4Addr('192.0.2')\n        False\n        >>> _isIPv4Addr('192.0.2.256')\n        False\n        >>> _isIPv4Addr('192.0.2.-1')\n        False\n        >>> _isIPv4Addr('192.0..1')\n        False\n        >>> _isIPv4Addr('192.0.a.1')\n        False\n    \"\"\"\ndef _isIPv4Addr(strIPv4Addr: Any) -> object {\n    listStrIPv4Octet = strIPv4Addr.split('.');\n    if (len(listStrIPv4Octet) != 4) {\n        return False;\n    }\n    for i in range(4) {\n        strOctet = (\"00\" + listStrIPv4Octet[i])[-3:];\n        c1 = strOctet[0:1];\n        c2 = strOctet[1:2];\n        c3 = strOctet[2:3];\n        if (\n            ((c1 < '0') or (c1 > '9'))\n            or ((c2 < '0') or (c2 > '9'))\n            or ((c3 < '0') or (c3 > '9'))\n        ) {\n            return False;\n        }\n        if (int(strOctet, 10) >= 256) {\n            return False;\n        }\n    }\n    return True;\n}"
+  }
+]

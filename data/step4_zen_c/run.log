@@ -1,0 +1,13 @@
+[run_step4_zen_batch] OUT_DIR -> data/step4_zen_c
+Using the latest cached version of the dataset since nuprl/stack-dedup-python-testgen-starcoder-filter-v2 couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'default' at /home/jac/.cache/huggingface/datasets/nuprl___stack-dedup-python-testgen-starcoder-filter-v2/default/0.0.0/e7d5fe3668d05af474eee556e092191614105e18 (last modified on Wed Aug  5 23:12:10 2026).
+Full loop on 12 records, 2 workers, idiomize=zen, k=5, dedup@0.9
+  [6/12] 382s, kept 6/6
+  [12/12] 912s, kept 11/12
+
+=== Yield ladder (12 processed, idiomize=zen) ===
+  floor_pass 11 -> kept 11 -> final(dedup) 11  (dropped 0 dups)
+  source: idiomatic=0 floor=11
+  over-generate: k=5, mean candidates=0, mean passers=0, mean idiom_score=None
+  idiomize latency (mean/p50 ms): 81421.2
+  throughput 0.01 rec/s

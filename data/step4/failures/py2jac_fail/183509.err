@@ -1,0 +1,14 @@
+✖ Error: Error executing 'tool': Internal Compiler Error: Pass PyastBuildPass - Invalid type for constant
+Traceback (most recent call last):
+  File "/home/runner/work/jac/jac/.zig-cache/o/ff37c0ba3600e001ff0c15db10d0a7ec/payload.tar.zst.work/site/jaclang/cli/impl/executor.impl.jac", line 14, in execute
+  File "/home/runner/work/jac/jac/.zig-cache/o/ff37c0ba3600e001ff0c15db10d0a7ec/payload.tar.zst.work/site/jaclang/cli/impl/executor.impl.jac", line 49, in run_handler
+  File "/home/runner/work/jac/jac/.zig-cache/o/ff37c0ba3600e001ff0c15db10d0a7ec/payload.tar.zst.work/site/jaclang/cli/commands/impl/tools.impl.jac", line 20, in tool
+  File "/home/runner/work/jac/jac/.zig-cache/o/ff37c0ba3600e001ff0c15db10d0a7ec/payload.tar.zst.work/site/jaclang/cli/commands/impl/transform.impl.jac", line 12, in py2jac
+  File "<string>", line 15, in __init__
+  File "/home/runner/work/jac/jac/.zig-cache/o/ff37c0ba3600e001ff0c15db10d0a7ec/payload.tar.zst.work/site/jaclang/compiler/passes/main/impl/pyast_load_pass.impl.jac", line 2160, in __post_init__
+  File "/home/jac/.cache/jac/rt/27ff19d833f3bd16-c152554fd6e7fdad/site/jaclang/jac0core/passes/transform.jac", line 125, in __post_init__
+  File "/home/jac/.cache/jac/rt/27ff19d833f3bd16-c152554fd6e7fdad/site/jaclang/jac0core/passes/transform.jac", line 85, in __post_init__
+  File "/home/jac/.cache/jac/rt/27ff19d833f3bd16-c152554fd6e7fdad/site/jaclang/jac0core/passes/transform.jac", line 90, in timed_transform
+  File "/home/runner/work/jac/jac/.zig-cache/o/ff37c0ba3600e001ff0c15db10d0a7ec/payload.tar.zst.work/site/jaclang/compiler/passes/main/impl/pyast_load_pass.impl.jac", line 2107, in transform
+  File "/home/runner/work/jac/jac/.zig-cache/o/ff37c0ba3600e001ff0c15db10d0a7ec/payload.tar.zst.work/site/jaclang/compiler/passes/main/impl/pyast_load_pass.impl.jac", line 2046, in proc_module
+  File "/home/runner/work/jac/jac/.zig-cache/o/ff37c0ba3600e001ff0c15db10d0a7ec/payload.tar.zst.work/site/jaclang/compiler/passes/main/impl/pyast_load_pass.im

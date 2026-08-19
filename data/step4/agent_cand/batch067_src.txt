@@ -1,0 +1,373 @@
+=== 395233 ===
+--FLOOR_FN--
+"""(float, int, int_or_float) => float
+    Return the future value obtained from an amount of cash
+    growing with a fix interest over a period of time.
+    >>> future_value(0.5,1,1)
+    1.5
+    >>> future_value(0.1,10,100)
+    259.37424601
+    """
+def future_value(interest: Any, period: Any, cash: Any) -> object {
+    if not (0 <= interest <= 1) {
+        raise ValueError('"interest" must be a float between 0 and 1');
+    }
+    for d in range(period) {
+        cash += cash * interest;
+    }
+    return cash;
+}
+--PYTHON--
+def future_value(interest, period, cash):
+    """(float, int, int_or_float) => float
+    Return the future value obtained from an amount of cash
+    growing with a fix interest over a period of time.
+    >>> future_value(0.5,1,1)
+    1.5
+    >>> future_value(0.1,10,100)
+    259.37424601
+    """
+    if not 0 <= interest <= 1:
+        raise ValueError('"interest" must be a float between 0 and 1')
+
+    for d in range(period):
+        cash += cash * interest
+    return cash
+--ENTRY-- future_value
+=== 397436 ===
+--FLOOR_FN--
+"""Get indentation for given level."""
+def get_indent(op: Any) -> object {
+    ret = "";
+    for ii in range(op) {
+        ret += "  ";
+    }
+    return ret;
+}
+--PYTHON--
+def get_indent(op):
+    """Get indentation for given level."""
+    ret = ""
+    for ii in range(op):
+        # Would tab be better?
+        ret += "  "
+    return ret
+--ENTRY-- get_indent
+=== 398181 ===
+--FLOOR_FN--
+"""
+    https://stackoverflow.com/questions/2460177/edit-distance-in-python
+    """
+def levenshteinDistance(s1: str, s2: str) -> int {
+    if (len(s1) > len(s2)) {
+        (s1, s2) = (s2, s1);
+    }
+    distances = range((len(s1) + 1));
+    for (i2, c2) in enumerate(s2) {
+        distances_ = [(i2 + 1)];
+        for (i1, c1) in enumerate(s1) {
+            if (c1 == c2) {
+                distances_.append(distances[i1]);
+            } else {
+                distances_.append(
+                    (1 + min((distances[i1], distances[(i1 + 1)], distances_[-1])))
+                );
+            }
+        }
+        distances = distances_;
+    }
+    return distances[-1];
+}
+--PYTHON--
+def levenshteinDistance(s1: str, s2: str) -> int:
+    """
+    https://stackoverflow.com/questions/2460177/edit-distance-in-python
+    """
+    if len(s1) > len(s2):
+        s1, s2 = s2, s1
+
+    distances = range(len(s1) + 1)
+    for i2, c2 in enumerate(s2):
+        distances_ = [i2+1]
+        for i1, c1 in enumerate(s1):
+            if c1 == c2:
+                distances_.append(distances[i1])
+            else:
+                distances_.append(1 + min((distances[i1], distances[i1 + 1], distances_[-1])))
+        distances = distances_
+    return distances[-1]
+--ENTRY-- levenshteinDistance
+=== 400366 ===
+--FLOOR_FN--
+"""
+    Purpose: a function used for the pandas library's ".apply()" method
+             to convert all the specific labels in the dataframe into general labels
+    Params:  label(string) -> the label from every single row of the dataframe column
+    Returns: a general label (string)
+    """
+def map_labels(label: Any) -> object {
+    others = ['ads', 'unique_questions', 'starting_clubs', 'contact_management'];
+    program_info = ['course_schedule', 'content', 'reschedule'];
+    registration = [
+        'course_availability',
+        'application_deadlines',
+        'payment_confirmation',
+        'website_navigation',
+        'account_edits',
+        'progress_or_spots'
+    ];
+    program_logistics = ['zoom_links', 'zoom_recordings', 'cancel', 'other_urls'];
+    monetary_issues = ['taxes', 'payment', 'refund'];
+    scholarship = ['apply_scholarship', 'info_about_scholarship'];
+    if (label in others) {
+        label = "others";
+    } elif (label in program_info) {
+        label = "program_info";
+    } elif (label in registration) {
+        label = "registration";
+    } elif (label in program_logistics) {
+        label = "program_logistics";
+    } elif (label in monetary_issues) {
+        label = "monetary_issues";
+    } elif (label in scholarship) {
+        label = "scholarship";
+    } elif (label == 'unactionable') {
+        label = 'unactionable';
+    }
+    return label;
+}
+--PYTHON--
+def map_labels(label):
+    """
+    Purpose: a function used for the pandas library's ".apply()" method
+             to convert all the specific labels in the dataframe into general labels
+    Params:  label(string) -> the label from every single row of the dataframe column
+    Returns: a general label (string)
+    """
+    others = ['ads', 'unique_questions', 'starting_clubs', 'contact_management']
+    program_info = ['course_schedule', 'content', 'reschedule']
+    registration = ['course_availability', 'application_deadlines', 'payment_confirmation', 'website_navigation', 'account_edits', 'progress_or_spots']
+    program_logistics = ['zoom_links', 'zoom_recordings', 'cancel', 'other_urls']
+    monetary_issues = ['taxes', 'payment', 'refund']
+    scholarship = ['apply_scholarship', 'info_about_scholarship']
+    if label in others:
+        label = "others"
+    elif label in program_info:
+        label = "program_info"
+    elif label in registration:
+        label = "registration"
+    elif label in program_logistics:
+        label = "program_logistics"
+    elif label in monetary_issues:
+        label = "monetary_issues"
+    elif label in scholarship:
+        label = "scholarship"
+    elif label == 'unactionable':
+        label = 'unactionable'
+    return label
+--ENTRY-- map_labels
+=== 400367 ===
+--FLOOR_FN--
+"""
+    one-dimensional arrays having shape [N],
+    row and column matrices having shape [1 N] and
+    [N 1] correspondingly, and their generalizations
+    having shape [1 1 ... N ... 1 1 1]
+    """
+def isvector(a: Any) -> object {
+    try {
+        return ((a.ndim - a.shape.count(1)) == 1);
+    } except Exception as e {
+        return False;
+    }
+}
+--PYTHON--
+def isvector(a):
+    """
+    one-dimensional arrays having shape [N],
+    row and column matrices having shape [1 N] and
+    [N 1] correspondingly, and their generalizations
+    having shape [1 1 ... N ... 1 1 1]
+    """
+    try:
+        return a.ndim-a.shape.count(1) == 1
+    except:
+        return False
+--ENTRY-- isvector
+=== 400454 ===
+--FLOOR_FN--
+"""Converts RGB into hext string.
+
+    Examples:
+        >>> assert rgb_to_hex(1, 2, 3) == "010203"
+    """
+def rgb_to_hex(red: int, green: int, blue: int) -> str {
+    def to_hex(number: int) -> str {
+        if (number > 255) {
+            return "FF";
+        }
+        if (number < 0) {
+            return "00";
+        }
+        return f"{number:X}".zfill(2);
+    }
+    return f"{to_hex(red)}{to_hex(green)}{to_hex(blue)}";
+}
+--PYTHON--
+def rgb_to_hex(red: int, green: int, blue: int) -> str:
+    """Converts RGB into hext string.
+
+    Examples:
+        >>> assert rgb_to_hex(1, 2, 3) == "010203"
+    """
+
+    def to_hex(number: int) -> str:
+        if number > 255:
+            return "FF"
+        if number < 0:
+            return "00"
+        return f"{number:X}".zfill(2)
+
+    return f"{to_hex(red)}{to_hex(green)}{to_hex(blue)}"
+--ENTRY-- rgb_to_hex
+=== 401026 ===
+--FLOOR_FN--
+"""
+    Return a truncated copy of the string. The length is specified
+    with the first parameter which defaults to ``255``. If the second
+    parameter is ``true`` the filter will cut the text at length. Otherwise
+    it will try to save the last word. If the text was in fact
+    truncated it will append an ellipsis sign (``"..."``). If you want a
+    different ellipsis sign than ``"..."`` you can specify it using the
+    third parameter.
+
+    .. sourcecode jinja::
+
+        {{ mytext|truncate(300, false, '&raquo;') }}
+            truncate mytext to 300 chars, don't split up words, use a
+            right pointing double arrow as ellipsis sign.
+    """
+def do_truncate(
+    s: Any, length: Any = 255, killwords: Any = False, end: Any = '...'
+) -> object {
+    if (len(s) <= length) {
+        return s;
+    } elif killwords {
+        return (s[:length] + end);
+    }
+    words = s.split(' ');
+    result = [];
+    m = 0;
+    for word in words {
+        m += len(word) + 1;
+        if (m > length) {
+            break;
+        }
+        result.append(word);
+    }
+    result.append(end);
+    return ' '.join(result);
+}
+--PYTHON--
+def do_truncate(s, length=255, killwords=False, end='...'):
+    """
+    Return a truncated copy of the string. The length is specified
+    with the first parameter which defaults to ``255``. If the second
+    parameter is ``true`` the filter will cut the text at length. Otherwise
+    it will try to save the last word. If the text was in fact
+    truncated it will append an ellipsis sign (``"..."``). If you want a
+    different ellipsis sign than ``"..."`` you can specify it using the
+    third parameter.
+
+    .. sourcecode jinja::
+
+        {{ mytext|truncate(300, false, '&raquo;') }}
+            truncate mytext to 300 chars, don't split up words, use a
+            right pointing double arrow as ellipsis sign.
+    """
+    if len(s) <= length:
+        return s
+    elif killwords:
+        return s[:length] + end
+    words = s.split(' ')
+    result = []
+    m = 0
+    for word in words:
+        m += len(word) + 1
+        if m > length:
+            break
+        result.append(word)
+    result.append(end)
+    return u' '.join(result)
+--ENTRY-- do_truncate
+=== 40107 ===
+--FLOOR_FN--
+"""Returns the next player in an ordered list.
+    Cycles around to the beginning of the list if reaching the end.
+
+    Args:
+        players -- List
+        currentplayer -- Element in the list
+    """
+def get_next_player(players: Any, currentplayer: Any) -> object {
+    i = players.index(currentplayer) + 1;
+    return players[(i % len(players))];
+}
+--PYTHON--
+def get_next_player(players, currentplayer):
+    """Returns the next player in an ordered list.
+    Cycles around to the beginning of the list if reaching the end.
+
+    Args:
+        players -- List
+        currentplayer -- Element in the list
+    """
+    i = players.index(currentplayer) + 1
+    return players[i % len(players)]
+--ENTRY-- get_next_player
+=== 401208 ===
+--FLOOR_FN--
+"""
+    Makes sure the URL starts with 'http://'
+    """
+def parse_url(url: str) -> str {
+    url = url.replace("https://", "http://");
+    if url.startswith("http://") {
+        return url;
+    }
+    return f"http://{url}";
+}
+--PYTHON--
+def parse_url(url: str) -> str:
+    """
+    Makes sure the URL starts with 'http://'
+    """
+    # Replace HTTPS with HTTP (if exists)
+    url = url.replace("https://", "http://")
+
+    if url.startswith("http://"):
+        return url
+
+    return f"http://{url}"
+--ENTRY-- parse_url
+=== 401219 ===
+--FLOOR_FN--
+"""
+    Get the ID of an object by extracting it from the resource_uri field.
+    """
+def _get_id(`obj: Any, key: Any) -> object {
+    resource_uri = `obj.pop(key, '');
+    if resource_uri {
+        return resource_uri.rstrip('/').rpartition('/')[-1];
+    }
+}
+--PYTHON--
+def _get_id(obj, key):
+    """
+    Get the ID of an object by extracting it from the resource_uri field.
+    """
+    resource_uri = obj.pop(key, '')
+    if resource_uri:
+        # i.e. /foo/1/ -> /foo/1 -> ('/foo', '/', '1') -> '1'
+        return resource_uri.rstrip('/').rpartition('/')[-1]
+--ENTRY-- _get_id

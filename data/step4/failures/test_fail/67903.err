@@ -1,0 +1,33 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.6, pytest-9.1.1, pluggy-1.6.0
+rootdir: /tmp/j4_67903_1i6n_70b
+plugins: jaclang-0.35.1, xdist-3.8.0
+collected 63 items
+
+67903.jac .............F
+
+=================================== FAILURES ===================================
+_____________________________________ t13 ______________________________________
+  /home/jac/.cache/jac/rt/27ff19d833f3bd16-c152554fd6e7fdad/site/_pytest/runner.py:368 in from_call
+    return cls(
+  /home/jac/.cache/jac/rt/27ff19d833f3bd16-c152554fd6e7fdad/site/_pytest/runner.py:250 in <lambda>
+    lambda: runtest_hook(item=item, **kwds),
+  /home/jac/.cache/jac/rt/27ff19d833f3bd16-c152554fd6e7fdad/site/pluggy/_hooks.py:512 in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  /home/jac/.cache/jac/rt/27ff19d833f3bd16-c152554fd6e7fdad/site/pluggy/_manager.py:120 in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  /home/jac/.cache/jac/rt/27ff19d833f3bd16-c152554fd6e7fdad/site/pluggy/_callers.py:167 in _multicall
+    raise exception
+  /home/jac/.cache/jac/rt/27ff19d833f3bd16-c152554fd6e7fdad/site/pluggy/_callers.py:167 in _multicall
+    raise exception
+  /home/jac/.cache/jac/rt/27ff19d833f3bd16-c152554fd6e7fdad/site/_pytest/logging.py:865 in pytest_runtest_call
+    yield
+  /home/jac/.cache/jac/rt/27ff19d833f3bd16-c152554fd6e7fdad/site/pluggy/_callers.py:167 in _multicall
+    raise exception
+  /home/jac/.cache/jac/rt/27ff19d833f3bd16-c152554fd6e7fdad/site/_pytest/capture.py:900 in pytest_runtest_call
+    return (yield)
+  /home/jac/.cache/jac/rt/27ff19d833f3bd16-c152554fd6e7fdad/site/pluggy/_callers.py:167 in _multicall
+    raise exception
+  /home/jac/.cache/jac/rt/27ff19d833f3bd16-c152554fd6e7fdad/site/_pytest/skipping.py:273 in pytest_runtest_call
+    item.stash[xfailed_key] = xfailed = evaluate_xfail_marks(item)
+  /home/jac/.cache/jac/rt/27ff19d833f3bd16-c152554

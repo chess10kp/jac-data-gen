@@ -1,0 +1,74 @@
+def sign(number: int) -> int:
+    """ Maps the sign of the number to -1 or 1"""
+    if number < 0:
+        return -1
+    else:
+        return 1
+
+assert sign(5) == 1
+assert sign(-1000000) == -1
+assert sign(-456) == -1
+assert sign(0) == 1
+assert sign(-1000) == -1
+assert sign(1000) == 1
+assert sign(100000000) == 1
+assert sign(-2147483647) == -1
+assert sign(-12) == -1
+assert sign(-1000000000000.5) == -1
+assert sign(-1.2) == -1
+assert sign(1000000) == 1
+assert sign(1.0) == 1
+assert sign(-0.001) == -1
+assert sign(-1000000000000) == -1
+assert sign(4) == 1
+assert sign(3000) == 1
+assert sign(1000000000000) == 1
+assert sign(5.0) == 1
+assert sign(1.2) == 1
+assert sign(-3) == -1
+assert sign(-1e1000000000) == -1
+assert sign(-100000000) == -1
+assert sign(1e-1000000000) == 1
+assert sign(-21) == -1
+assert sign(-1e100) == -1
+assert sign(3) == 1
+assert sign(0.5) == 1
+assert sign(1.1) == 1
+assert sign(int(-1)) == -1
+assert sign(-2) == -1
+assert sign(-1.5) == -1
+assert sign(1000000000000.5) == 1
+assert sign(1e10) == 1
+assert sign(1e-100) == 1
+assert sign(-1.0) == -1
+assert sign(100) == 1
+assert sign(-2000) == -1
+assert sign(-43) == -1
+assert sign(-1e-100) == -1
+assert sign(-5) == -1
+assert sign(2) == 1
+assert sign(-1) == -1
+assert sign(0.0) == 1
+assert sign(-5.0) == -1
+assert sign(2147483647) == 1
+assert sign(32) == 1
+assert sign(10.5) == 1
+assert sign(1) == 1
+assert sign(1e1000000000) == 1
+assert sign(-10.5) == -1
+assert sign(10) == 1
+assert sign(0.001) == 1
+assert sign(12) == 1
+assert sign(-34) == -1
+assert sign(2.0) == 1
+assert sign(1e100) == 1
+assert sign(-1.1) == -1
+assert sign(-2.0) == -1
+assert sign(1e-10) == 1
+assert sign(-10) == -1
+assert sign(21) == 1
+assert sign(123) == 1
+assert sign(2.75) == 1
+assert sign(42) == 1
+assert sign(42.0) == 1
+assert sign(-100) == -1

@@ -1,0 +1,3 @@
+has meal_description: str, max_budget: float;
+// ...
+if running + ing.cost > self.max_budget { continue; }

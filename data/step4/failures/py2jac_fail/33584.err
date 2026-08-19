@@ -1,0 +1,5 @@
+✖ Error: /tmp/j4_33584_b5p1p253/33584.py, line 1, col 74: Unterminated f-string
+✖ Error: /tmp/j4_33584_b5p1p253/33584.py, line 1, col 97: Unterminated f-string
+✖ Error: /tmp/j4_33584_b5p1p253/33584.py, line 1, col 97: Lexer stuck at EOF in mode LexerMode.FSTRING_SQ (pos=96)
+✖ Error: /tmp/j4_33584_b5p1p253/33584.py, line 1, col 97: Missing ';'
+✖ Error: /tmp/j4_33584_b5p1p253/33584.py, line 1, col 97: Missing '}'

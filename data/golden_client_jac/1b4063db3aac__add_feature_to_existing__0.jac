@@ -1,0 +1,3 @@
+edge Family {
+    has relation;
+}

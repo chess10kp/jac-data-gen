@@ -1,0 +1,43 @@
+"""Social graph: a Tweet node projecting itself as a TweetView with an is_mine flag."""
+
+obj UserView { has id: str, username: str, bio: str = ""; }
+obj TweetView {
+    has id: str, content: str, author_username: str, created_at: str,
+        likes: list[str], comments: list[dict[str, str]], is_mine: bool = False;
+}
+
+edge Post {}
+
+node Profile { has username: str = ""; }
+
+node Tweet {
+    has content: str = "", author_username: str = "", created_at: str = "",
+        likes: list[str] = [], comments: list[dict[str, str]] = [];
+
+    def to_view -> TweetView {
+        mine = [root-->[?:Profile]];
+        is_mine: bool = len(mine) > 0 and self.author_username == mine[0].username;
+        return TweetView(
+            id="", content=self.content, author_username=self.author_username,
+            created_at=self.created_at, likes=self.likes, comments=self.comments, is_mine=is_mine
+        );
+    }
+}
+
+walker view_tweet {
+    has reports: list[TweetView] = [];
+    can run with Root entry { visit [-->[?:Profile]-->[?:Tweet]]; }
+    can show with Tweet entry { report here.to_view(); disengage; }
+}
+
+with entry {
+    p = (root ++> Profile(username="alice"))[0];
+    p ++> Tweet(content="hello", author_username="alice", created_at="2020-01-01T00:00:00Z", likes=["bob", "carol"]);
+    res = root spawn view_tweet();
+    tv = res.reports[0];
+    print("content:", tv.content);
+    print("author:", tv.author_username);
+    print("created_at:", tv.created_at);
+    print("likes:", tv.likes);
+    print("is_mine:", tv.is_mine);
+}

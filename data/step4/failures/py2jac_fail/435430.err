@@ -1,0 +1,4 @@
+✖ Error: /tmp/j4_435430_lvurtjod/435430.py, line 10, col 555: Missing ','
+✖ Error: /tmp/j4_435430_lvurtjod/435430.py, line 10, col 555: Unexpected token
+✖ Error: /tmp/j4_435430_lvurtjod/435430.py, line 10, col 566: Missing ';'
+✖ Error: /tmp/j4_435430_lvurtjod/435430.py, line 10, col 566: Unexpected token in expression: ')'

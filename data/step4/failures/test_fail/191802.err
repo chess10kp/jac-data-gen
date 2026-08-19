@@ -1,0 +1,20 @@
+Fatal Python error: Segmentation fault
+
+Current thread 0x00007f4ea55d8780 [jac] (most recent call first):
+  File "/home/runner/work/jac/jac/.zig-cache/o/ff37c0ba3600e001ff0c15db10d0a7ec/payload.tar.zst.work/site/jaclang/runtimelib/impl/test.impl.jac", line 176 in invoke_native_test
+  File "/tmp/j4_191802__83liptm/191802.jac", line 2 in test_t6
+  File "/home/jac/.cache/jac/rt/27ff19d833f3bd16-c152554fd6e7fdad/site/jaclang/jac0core/runtime.jac", line 1315 in test_deco
+  File "/home/jac/.cache/jac/rt/27ff19d833f3bd16-c152554fd6e7fdad/python/lib/python3.14/unittest/case.py", line 1562 in runTest
+  File "/home/jac/.cache/jac/rt/27ff19d833f3bd16-c152554fd6e7fdad/site/jaclang/pytest_plugin.py", line 472 in runtest
+  File "/home/jac/.cache/jac/rt/27ff19d833f3bd16-c152554fd6e7fdad/site/_pytest/runner.py", line 184 in pytest_runtest_call
+  File "/home/jac/.cache/jac/rt/27ff19d833f3bd16-c152554fd6e7fdad/site/pluggy/_callers.py", line 121 in _multicall
+  File "/home/jac/.cache/jac/rt/27ff19d833f3bd16-c152554fd6e7fdad/site/pluggy/_manager.py", line 120 in _hookexec
+  File "/home/jac/.cache/jac/rt/27ff19d833f3bd16-c152554fd6e7fdad/site/pluggy/_hooks.py", line 512 in __call__
+  File "/home/jac/.cache/jac/rt/27ff19d833f3bd16-c152554fd6e7fdad/site/_pytest/runner.py", line 250 in <lambda>
+  File "/home/jac/.cache/jac/rt/27ff19d833f3bd16-c152554fd6e7fdad/site/_pytest/runner.py", line 361 in from_call
+  File "/home/jac/.cache/jac/rt/27ff19d833f3bd16-c152554fd6e7fdad/site/_pytest/runner.py", line 249 in call_and_report
+  File "/home/jac/.cache/jac/rt/27ff19d833f3bd16-c152554fd6e7fdad/site/_pytest/runner.py", line 139 in runtestprotocol
+  File "/home/jac/.cache/jac/rt/27ff19d833f3bd16-c152554fd6e7fdad/site/_pytest/runner.py", line 118 in pytest_runtest_protocol
+  File "/home/jac/.cache/jac/rt/27ff19d833f3bd16-c152554fd6e7fdad/site/pluggy/_callers.py", line 121 in _multicall
+  File "/home/jac/.cache/jac/rt/27ff19d833f3bd16-c152554fd6e7fdad/site/pluggy/_manager.py", line 120 in _hookexec
+ 

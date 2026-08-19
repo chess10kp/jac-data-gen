@@ -1,0 +1,15 @@
+{
+  "processed": 30,
+  "final": 29,
+  "dedup_dropped": 0,
+  "idiomatic": 27,
+  "floor_fallback": 2,
+  "keep_rate": 0.931,
+  "winner_counts": {
+    "mimo-v2.5-free": 11,
+    "deepseek-v4-flash-free": 15,
+    "nemotron-3-ultra-free": 1
+  },
+  "elapsed_s": 1914.7,
+  "throughput_rec_per_s": 0.016
+}

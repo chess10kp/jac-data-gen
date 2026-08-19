@@ -1,0 +1,52 @@
+[
+  {
+    "id": 295211,
+    "entrypoint": "pysiphash",
+    "n_tests": 23,
+    "coverage": 94,
+    "py2jac_ok": true,
+    "py2jac_error": null,
+    "jac_test_ok": false,
+    "jac_test_tail": "============================= test session starts ==============================\nplatform linux -- Python 3.14.6, pytest-9.1.1, pluggy-1.6.0\nrootdir: /home/jac/repos/jac_llm_data\nplugins: jaclang-0.34.0, xdist-3.8.0\ncollected 0 items\n\n============================ no tests ran in 1.06s =============================\n"
+  },
+  {
+    "id": 207145,
+    "entrypoint": "isFrozen",
+    "n_tests": 53,
+    "coverage": 100,
+    "py2jac_ok": false,
+    "py2jac_error": "2/work/207145.py, line 6, col 2026: Unexpected token\n[ERROR] Error: data/step2/work/207145.py, line 6, col 2060: Missing ','\n[ERROR] Error: data/step2/work/207145.py, line 6, col 2060: Unexpected token\n[ERROR] Error: data/step2/work/207145.py, line 6, col 2098: Missing ','\n[ERROR] Error: data/step2/work/207145.py, line 6, col 2098: Unexpected token\n[ERROR] Error: data/step2/work/207145.py, line 6, col 2140: Missing ','\n[ERROR] Error: data/step2/work/207145.py, line 6, col 2140: Unexpected token\n",
+    "jac_test_ok": null,
+    "jac_test_tail": null
+  },
+  {
+    "id": 377941,
+    "entrypoint": "csim_to_scamp5",
+    "n_tests": 20,
+    "coverage": 91,
+    "py2jac_ok": true,
+    "py2jac_error": null,
+    "jac_test_ok": false,
+    "jac_test_tail": "============================= test session starts ==============================\nplatform linux -- Python 3.14.6, pytest-9.1.1, pluggy-1.6.0\nrootdir: /home/jac/repos/jac_llm_data\nplugins: jaclang-0.34.0, xdist-3.8.0\ncollected 0 items\n\n============================ no tests ran in 1.10s =============================\n"
+  },
+  {
+    "id": 313569,
+    "entrypoint": "_extract_url_and_sha_from_deps_entry",
+    "n_tests": 37,
+    "coverage": 100,
+    "py2jac_ok": true,
+    "py2jac_error": null,
+    "jac_test_ok": false,
+    "jac_test_tail": "============================= test session starts ==============================\nplatform linux -- Python 3.14.6, pytest-9.1.1, pluggy-1.6.0\nrootdir: /home/jac/repos/jac_llm_data\nplugins: jaclang-0.34.0, xdist-3.8.0\ncollected 0 items\n\n============================ no tests ran in 1.13s =============================\n"
+  },
+  {
+    "id": 147075,
+    "entrypoint": "_isIPv4Addr",
+    "n_tests": 6,
+    "coverage": 100,
+    "py2jac_ok": true,
+    "py2jac_error": null,
+    "jac_test_ok": false,
+    "jac_test_tail": "============================= test session starts ==============================\nplatform linux -- Python 3.14.6, pytest-9.1.1, pluggy-1.6.0\nrootdir: /home/jac/repos/jac_llm_data\nplugins: jaclang-0.34.0, xdist-3.8.0\ncollected 0 items\n\n============================ no tests ran in 1.07s =============================\n"
+  }
+]

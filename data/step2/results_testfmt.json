@@ -1,0 +1,34 @@
+[
+  {
+    "id": "147075",
+    "n_test_blocks": 6,
+    "jac_run_ok": true,
+    "jac_test_ok": true,
+    "jac_run_tail": "",
+    "jac_test_tail": "============================= test session starts ==============================\nplatform linux -- Python 3.14.6, pytest-9.1.1, pluggy-1.6.0\nrootdir: /home/jac/repos/jac_llm_data\nplugins: jaclang-0.34.0, xdist-3.8.0\ncollected 6 items\n\ndata/step2/jac_testfmt/147075.jac ......                                 [100%]\n\n============================== 6 passed in 0.14s ===============================\n"
+  },
+  {
+    "id": "295211",
+    "n_test_blocks": 23,
+    "jac_run_ok": true,
+    "jac_test_ok": true,
+    "jac_run_tail": "",
+    "jac_test_tail": "============================= test session starts ==============================\nplatform linux -- Python 3.14.6, pytest-9.1.1, pluggy-1.6.0\nrootdir: /home/jac/repos/jac_llm_data\nplugins: jaclang-0.34.0, xdist-3.8.0\ncollected 23 items\n\ndata/step2/jac_testfmt/295211.jac .......................                [100%]\n\n============================== 23 passed in 0.20s ==============================\n"
+  },
+  {
+    "id": "313569",
+    "n_test_blocks": 37,
+    "jac_run_ok": true,
+    "jac_test_ok": true,
+    "jac_run_tail": "",
+    "jac_test_tail": "============================= test session starts ==============================\nplatform linux -- Python 3.14.6, pytest-9.1.1, pluggy-1.6.0\nrootdir: /home/jac/repos/jac_llm_data\nplugins: jaclang-0.34.0, xdist-3.8.0\ncollected 37 items\n\ndata/step2/jac_testfmt/313569.jac .....................................  [100%]\n\n============================== 37 passed in 0.28s ==============================\n"
+  },
+  {
+    "id": "377941",
+    "n_test_blocks": 20,
+    "jac_run_ok": true,
+    "jac_test_ok": true,
+    "jac_run_tail": "",
+    "jac_test_tail": "============================= test session starts ==============================\nplatform linux -- Python 3.14.6, pytest-9.1.1, pluggy-1.6.0\nrootdir: /home/jac/repos/jac_llm_data\nplugins: jaclang-0.34.0, xdist-3.8.0\ncollected 20 items\n\ndata/step2/jac_testfmt/377941.jac ....................                   [100%]\n\n============================== 20 passed in 0.21s ==============================\n"
+  }
+]

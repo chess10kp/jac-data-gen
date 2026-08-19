@@ -1,0 +1,111 @@
+def CSVformat(str_in):
+	"""
+	removes certain characters from fields returned by Jira requests, in order to facilitate insertion into SQL tables
+	would need to be written differently for a production application, to handle escape characters etc. more intelligently
+
+	parameters:
+	str_in (string): the string from Jira that needs characters removed
+
+	returns:
+	string: the string with characters removed
+	"""
+	str_out = str(str_in).strip().replace(",", "\\,")
+
+	return str_out
+
+assert CSVformat(2345) == "2345"
+assert CSVformat("abc") == "abc"
+assert CSVformat("abc,def") == "abc\\,def"
+assert CSVformat("") == ""
+assert CSVformat("string") == "string"
+assert CSVformat("123") == "123"
+assert CSVformat("") == ""
+assert CSVformat("String 1, String 2") == "String 1\\, String 2"
+assert CSVformat("12345678901234567890") == "12345678901234567890"
+assert CSVformat("goodbye, world") == "goodbye\\, world"
+assert CSVformat(1) == "1"
+assert CSVformat("abc, def") == "abc\\, def"
+assert CSVformat(",hello") == "\\,hello"
+assert CSVformat(False) == "False"
+assert CSVformat("hello") == "hello"
+assert CSVformat("A test of CSVformat, with commas.") == 'A test of CSVformat\\, with commas.'
+assert CSVformat(f"{True} {str(True)}") == "True True"
+assert CSVformat(1.0) == "1.0"
+assert CSVformat(" 1 ") == "1"
+assert CSVformat(",") == "\\,"
+assert CSVformat("test, test") == "test\\, test"
+assert CSVformat(-1) == "-1"
+assert CSVformat("a ") == "a"
+assert CSVformat("b") == "b"
+assert CSVformat("foo") == "foo"
+assert CSVformat("a1b2c3") == "a1b2c3"
+assert CSVformat(1) == '1'
+assert CSVformat("A test of CSVformat.") == "A test of CSVformat."
+assert CSVformat("abc,def,ghi") == "abc\\,def\\,ghi"
+assert CSVformat('a,b') == 'a\\,b'
+assert CSVformat("test") == "test"
+assert CSVformat(1234567890) == "1234567890"
+assert CSVformat(123) == "123"
+assert CSVformat(str(1.0)) == "1.0"
+assert CSVformat("3,4") == "3\\,4"
+assert CSVformat("String 1") == "String 1"
+assert CSVformat(",def,ghi") == "\\,def\\,ghi"
+assert CSVformat('1') == '1'
+assert CSVformat("a,,") == "a\\,\\,"
+assert CSVformat("two, words") == "two\\, words"
+assert CSVformat("123, ABC") == "123\\, ABC"
+assert CSVformat("a,b") == "a\\,b"
+assert CSVformat(str(True)) == "True"
+assert CSVformat("Hello, World!") == "Hello\\, World!"
+assert CSVformat("0") == "0"
+assert CSVformat("a b c") == "a b c"
+assert CSVformat("hello world") == "hello world"
+assert CSVformat(f"{2 * 2} {str(2 * 2)}") == "4 4"
+assert CSVformat("String 1, String 2, String 3") == "String 1\\, String 2\\, String 3"
+assert CSVformat(" a") == "a"
+assert CSVformat(" a ") == "a"
+assert CSVformat("comma,separated,strings") == "comma\\,separated\\,strings"
+assert CSVformat('1,2') == '1\\,2'
+assert CSVformat("abc\"") == "abc\""
+assert CSVformat('a') == 'a'
+assert CSVformat("abc, def, ghi,, jkl") == "abc\\, def\\, ghi\\,\\, jkl"
+assert CSVformat(f"{1.0} {str(1.0)}") == "1.0 1.0"
+assert CSVformat(",,c") == "\\,\\,c"
+assert CSVformat(f"{1 + 1} {str(1 + 1)}") == "2 2"
+assert CSVformat(True) == "True"
+assert CSVformat(0) == "0"
+assert CSVformat("foo,bar,baz") == "foo\\,bar\\,baz"
+assert CSVformat("2") == "2"
+assert CSVformat("abc,123") == "abc\\,123"
+assert CSVformat(' ') ==''
+assert CSVformat(12345.6789) == "12345.6789"
+assert CSVformat("foo,bar") == "foo\\,bar"
+assert CSVformat(str(1)) == "1"
+assert CSVformat(" ") == ""
+assert CSVformat("Unicode comma,separated,strings") == "Unicode comma\\,separated\\,strings"
+assert CSVformat(f"{True}") == "True"
+assert CSVformat(1.2) == "1.2"
+assert CSVformat("A test of CSVformat, with commas, and commas in the content.") == 'A test of CSVformat\\, with commas\\, and commas in the content.'
+assert CSVformat(12345) == "12345"
+assert CSVformat("123,ABC") == "123\\,ABC"
+assert CSVformat("123 ABC") == "123 ABC"
+assert CSVformat(f"{1.0}") == "1.0"
+assert CSVformat("one") == "one"
+assert CSVformat(1 + 1j) == "(1+1j)"
+assert CSVformat(f"{1 == 2} {str(1 == 2)}") == "False False"
+assert CSVformat("ABC") == "ABC"
+assert CSVformat("a") == "a"
+assert CSVformat("a,,,") == "a\\,\\,\\,"
+assert CSVformat("1") == "1"
+assert CSVformat("Unicode string") == "Unicode string"
+assert CSVformat("abc, def, ghi") == "abc\\, def\\, ghi"
+assert CSVformat("a, b, c") == "a\\, b\\, c"
+assert CSVformat("a,b,c,d") == "a\\,b\\,c\\,d"
+assert CSVformat("a") == "a"
+assert CSVformat(None) == "None"
+assert CSVformat("a,b,c") == "a\\,b\\,c"
+assert CSVformat(f"{1}") == "1"
+assert CSVformat("123, ABC, ABC") == "123\\, ABC\\, ABC"
+assert CSVformat("1234567890") == "1234567890"
+assert CSVformat(f"{1} {str(1)}") == "1 1"
+assert CSVformat(2) == "2"

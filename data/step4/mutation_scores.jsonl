@@ -1,0 +1,20 @@
+{"id": 13208, "score": 1.0, "killed": 3, "survived": 0, "eligible": 3, "stillborn": 0, "total_run": 3, "survivors": []}
+{"id": 45307, "score": 1.0, "killed": 8, "survived": 0, "eligible": 8, "stillborn": 0, "total_run": 8, "survivors": []}
+{"id": 47482, "score": 1.0, "killed": 5, "survived": 0, "eligible": 5, "stillborn": 4, "total_run": 9, "survivors": []}
+{"id": 85088, "score": 1.0, "killed": 3, "survived": 0, "eligible": 3, "stillborn": 0, "total_run": 3, "survivors": []}
+{"id": 95974, "score": 0.5, "killed": 1, "survived": 1, "eligible": 2, "stillborn": 1, "total_run": 3, "survivors": ["drop-elem @650"]}
+{"id": 109199, "score": 1.0, "killed": 4, "survived": 0, "eligible": 4, "stillborn": 2, "total_run": 6, "survivors": []}
+{"id": 209449, "score": 1.0, "killed": 7, "survived": 0, "eligible": 7, "stillborn": 2, "total_run": 9, "survivors": []}
+{"id": 245737, "score": 0.8, "killed": 4, "survived": 1, "eligible": 5, "stillborn": 0, "total_run": 5, "survivors": ["int 1->2 @141"]}
+{"id": 275076, "score": 1.0, "killed": 3, "survived": 0, "eligible": 3, "stillborn": 0, "total_run": 3, "survivors": []}
+{"id": 295211, "score": 0.346, "killed": 9, "survived": 17, "eligible": 26, "stillborn": 12, "total_run": 38, "survivors": ["op -->+ @154", "op -->+ @185", "op -->+ @322", "op -->+ @353", "int 1->2 @115", "int 64->65 @120", "int 1->2 @145", "int 63->64 @150", "int 1->2 @156", "int 1->2 @188", "int 64->65 @193", "int 32->33 @275", "int 1->2 @313", "int 31->32 @318", "int 1->2 @324", "int 1->2 @356", "int 32->33 @361"]}
+{"id": 299284, "score": 1.0, "killed": 4, "survived": 0, "eligible": 4, "stillborn": 0, "total_run": 4, "survivors": []}
+{"id": 360605, "score": 1.0, "killed": 4, "survived": 0, "eligible": 4, "stillborn": 0, "total_run": 4, "survivors": []}
+{"id": 363056, "score": 1.0, "killed": 1, "survived": 0, "eligible": 1, "stillborn": 0, "total_run": 1, "survivors": []}
+{"id": 375451, "score": 1.0, "killed": 11, "survived": 0, "eligible": 11, "stillborn": 0, "total_run": 11, "survivors": []}
+{"id": 389047, "score": 0.0, "killed": 0, "survived": 0, "eligible": 0, "stillborn": 0, "total_run": 0, "survivors": []}
+{"id": 393579, "score": 0.833, "killed": 5, "survived": 1, "eligible": 6, "stillborn": 0, "total_run": 6, "survivors": ["int 0->1 @464"]}
+{"id": 415993, "score": 1.0, "killed": 31, "survived": 0, "eligible": 31, "stillborn": 2, "total_run": 33, "survivors": []}
+{"id": 432632, "score": 1.0, "killed": 15, "survived": 0, "eligible": 15, "stillborn": 0, "total_run": 15, "survivors": []}
+{"id": 433948, "score": 1.0, "killed": 12, "survived": 0, "eligible": 12, "stillborn": 0, "total_run": 12, "survivors": []}
+{"id": 438287, "score": 1.0, "killed": 40, "survived": 0, "eligible": 40, "stillborn": 0, "total_run": 40, "survivors": []}

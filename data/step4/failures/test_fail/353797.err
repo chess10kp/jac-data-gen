@@ -1,0 +1,44 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.6, pytest-9.1.1, pluggy-1.6.0
+rootdir: /tmp/j4_353797__7pl_abs
+plugins: jaclang-0.35.1, xdist-3.8.0
+collected 0 items / 1 error
+
+==================================== ERRORS ====================================
+_________________________ ERROR collecting 353797.jac __________________________
+failed to import Jac test module /tmp/j4_353797__7pl_abs/353797.jac: ImportError: /tmp/j4_353797__7pl_abs/353797.jac failed to compile:
+error[E0100]: Unterminated string literal
+  --> /tmp/j4_353797__7pl_abs/353797.jac:178:40
+  176 |     assert (strip_some_punct('hello, world') == 'hello, world');
+  177 |     assert (strip_some_punct('hello" world"') == 'hello" world');
+  178 |     assert (strip_some_punct('a;b') == 'a;;
+      |                                        ^^^^
+  179 | }
+  180 | 
+error[E0100]: Unterminated string literal
+  --> /tmp/j4_353797__7pl_abs/353797.jac:182:6
+  180 | 
+  181 | test "t28" {
+  182 |     b');
+      |      ^^^
+  183 |     assert (strip_some_punct('"""') == '');
+  184 |     assert (strip_some_punct('hello" world?"') == 'hello" world?');
+error[E0100]: Unterminated string literal
+  --> /tmp/j4_353797__7pl_abs/353797.jac:189:49
+  187 |     assert (strip_some_punct('abc"def') == 'abc"def');
+  188 |     assert (strip_some_punct("''") == '');
+  189 |     assert (strip_some_punct('hello; world') == 'hello;;
+      |                                                 ^^^^^^^^
+  190 | }
+  191 | 
+error[E0100]: Unterminated string literal
+  --> /tmp/j4_353797__7pl_abs/353797.jac:193:10
+  191 | 
+  192 | test "t29" {
+  193 |     world');
+      |          ^^^
+  194 |     assert (strip_some_punct('Hello, World!') == 'Hello, World!');
+  195 |     assert (strip_some_punct('abc>') == 'abc>');
+error[E0004]: Unexpected token in expression: 'ERROR'
+  --> /tmp/j4_353797__7pl_abs/353797.jac:178:40
+  176 |     assert (strip_some_punct('hello, world') == 'hello, world');

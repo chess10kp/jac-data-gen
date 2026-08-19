@@ -1,0 +1,32 @@
+{
+  "processed": 100,
+  "final": 100,
+  "dedup_dropped": 0,
+  "source_split": {
+    "floor": 20,
+    "idiomatic": 80
+  },
+  "idiomatic_rate": 0.8,
+  "rejects": [
+    "check:                  ^^^^^^^^^^^^\n    3 |     return not any(isinstance(x, (list, tuple)) for x in obj);\n    4 | }\n    5 | \n",
+    "test: 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n============================== 1 failed in 13.70s ==============================\n",
+    "test: 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n============================== 1 failed in 9.06s ===============================\n",
+    "guard_exc: TimeoutExpired: Command '['jac', 'test', '/tmp/g_18617_nx60gvb0/18617_c.jac']' timed out after 120 seconds",
+    "check: me\"] as str\n   11 |         + \"_\"\n      |         ^^^^^\n   12 |         + str(target[\"spectrum\"])\n   13 |         + \"_\"\n",
+    "guard_exc: TimeoutExpired: Command '['jac', 'test', '/tmp/g_188450_p_nt68km/188450_c.jac']' timed out after 120 seconds",
+    "guard_exc: TimeoutExpired: Command '['jac', 'test', '/tmp/g_189600_r7odg1ey/189600_c.jac']' timed out after 120 seconds",
+    "guard_exc: TimeoutExpired: Command '['jac', 'test', '/tmp/g_189604_y1upd6tv/189604_c.jac']' timed out after 120 seconds",
+    "guard_exc: TimeoutExpired: Command '['jac', 'test', '/tmp/g_189862_k1m7xsk9/189862_c.jac']' timed out after 120 seconds",
+    "guard_exc: TimeoutExpired: Command '['jac', 'test', '/tmp/g_190418_rhiuuce6/190418_c.jac']' timed out after 120 seconds",
+    "guard_exc: TimeoutExpired: Command '['jac', 'test', '/tmp/g_192531_nyqefw4v/192531_c.jac']' timed out after 120 seconds",
+    "guard_exc: TimeoutExpired: Command '['jac', 'test', '/tmp/g_192555_ltj1n_ex/192555_c.jac']' timed out after 120 seconds",
+    "guard_exc: TimeoutExpired: Command '['jac', 'test', '/tmp/g_19288_o8327lhc/19288_c.jac']' timed out after 120 seconds",
+    "check:                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    4 | }\n    5 | \n",
+    "test: 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n============================== 1 failed in 6.70s ===============================\n",
+    "check: Can also indicate an unresolved import, a forward reference the checker cannot bind, or fallout from an upstream error.\n",
+    "test: 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n============================== 1 failed in 3.77s ===============================\n",
+    "guard_exc: TimeoutExpired: Command '['jac', 'test', '/tmp/g_197495_060ftum0/197495_c.jac']' timed out after 120 seconds",
+    "check:     return None;\n   16 |     }\n   17 |     return (major, minor);\n      |     ^^^^^^^^^^^^^^^^^^^^^^\n   18 | }\n   19 | \n",
+    "guard_exc: TimeoutExpired: Command '['jac', 'test', '/tmp/g_200231_86nu8365/200231_c.jac']' timed out after 120 seconds"
+  ]
+}
