@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -69,6 +70,11 @@ def hole_convert(source_js: str, rel_path: str, timeout: int = 30) -> dict:
 
 
 def sh(cmd: list[str], cwd: Path | None = None, timeout: int = 300) -> tuple[int, str, str]:
+    # jac-family subprocesses get a 3GB address-space cap (Aug 20 OOM freezes;
+    # same fix as step4_full_loop._run). git/bun keep their natural limits.
+    if cmd and cmd[0] == "jac":
+        as_cap = int(os.environ.get("JAC_RLIMIT_AS_GB", "3")) << 30
+        cmd = ["prlimit", f"--as={as_cap}", "--", *cmd]
     try:
         r = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, timeout=timeout)
         return r.returncode, r.stdout, r.stderr

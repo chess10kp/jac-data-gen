@@ -134,7 +134,7 @@ def gh_search(query: str, per_page: int = 100, max_pages: int = 10) -> list[dict
     return out
 
 
-def sweep(max_total: int, extra_qualifiers: str = "") -> dict[str, dict]:
+def sweep(max_total: int, extra_qualifiers: str = "", bands: list[str] | None = None) -> dict[str, dict]:
     """Sweep star-band tiles; dedupe by full_name.
 
     No license filter — the repo's license is recorded (spdx field) but not
@@ -144,10 +144,12 @@ def sweep(max_total: int, extra_qualifiers: str = "") -> dict[str, dict]:
     `topic:shadcn-ui`) that bias discovery toward the target stack. discover
     can't read package.json (no clone), so topic qualifiers are the only
     stack lever here; harvest/wall_probe apply the real dep gate at clone time.
+
+    `bands` overrides STAR_BANDS (e.g. a raised high-star re-sweep).
     """
     extra = f" {extra_qualifiers}" if extra_qualifiers else ""
     seen: dict[str, dict] = {}
-    for band in STAR_BANDS:
+    for band in (bands or STAR_BANDS):
         if len(seen) >= max_total:
             return seen
         q = f"{BASE_QUALIFIERS}{extra} {SIZE_QUALIFIER} stars:{band}"
@@ -167,10 +169,15 @@ def sweep(max_total: int, extra_qualifiers: str = "") -> dict[str, dict]:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default=str(Path(__file__).with_name("candidates.jsonl")))
+    ap.add_argument("--fresh", action="store_true",
+                    help="overwrite instead of merging with existing candidates")
     ap.add_argument("--max", type=int, default=100_000)
     ap.add_argument("--profile", default="react",
                     help=f"stack profile (from profiles.json): "
                          f"{', '.join(sorted(load_profiles()))}")
+    ap.add_argument("--bands", default=None,
+                    help="comma-separated star bands to sweep instead of the "
+                         "default tiling (e.g. '100..300,301..800,>800')")
     args = ap.parse_args()
 
     prof = get_profile(args.profile)
@@ -178,13 +185,35 @@ def main() -> int:
     if extra:
         print(f"profile {args.profile!r}: +qualifiers [{extra}]", file=sys.stderr)
 
-    cands = sweep(args.max, extra)
+    bands = [b.strip() for b in args.bands.split(",")] if args.bands else None
+    cands = sweep(args.max, extra, bands=bands)
     outp = Path(args.out)
-    with outp.open("w") as f:
-        for r in cands.values():
+    # merge with existing candidates: dedupe by full_name, keep old order first,
+    # append fresh discoveries at the end (grind consumes by offset; this keeps
+    # already-processed offsets stable while feeding new repos after them).
+    seen_order: list[dict] = []
+    seen: set[str] = set()
+    if outp.exists() and not args.fresh:
+        for ln in outp.read_text().splitlines():
+            if not ln.strip():
+                continue
+            try:
+                r = json.loads(ln)
+            except json.JSONDecodeError:
+                continue
+            if r.get("full_name") not in seen:
+                seen.add(r["full_name"])
+                seen_order.append(r)
+    for r in cands.values():
+        if r["full_name"] not in seen:
+            seen.add(r["full_name"])
             r["profile"] = args.profile
+            seen_order.append(r)
+    with outp.open("w") as f:
+        for r in seen_order:
             f.write(json.dumps(r, sort_keys=True) + "\n")
-    print(f"\nWrote {len(cands)} candidates -> {outp}", file=sys.stderr)
+    print(f"\nWrote {len(seen_order)} candidates -> {outp} "
+          f"({len(seen_order) - len(cands) + len([r for r in cands.values()]) - len(seen_order) + len(seen) if False else len(seen)} unique)", file=sys.stderr)
     return 0
 
 

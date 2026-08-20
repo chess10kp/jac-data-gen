@@ -14,7 +14,7 @@ BATCH="runs/${TAG}/batches"
 CAND="runs/${TAG}/candidates.jsonl"
 DS="runs/${TAG}/dataset.jsonl"
 MASTER="js2jac_dataset.jsonl"
-CANDS="source/candidates.jsonl"
+CANDS="${CANDS:-source/candidates.jsonl}"
 JAC_REPO="/home/jac/repos/jac_llm_data/jaseci/jac"
 PY="/home/jac/repos/jac_llm_data/.venv/bin/python"
 
@@ -27,7 +27,10 @@ $PY js2jac_prep.py --candidates "$CANDS" --offset "$OFFSET" --limit "$LIMIT" \
 rc=$?
 set -e
 [ "$rc" -eq 3 ] && { echo "[$TAG] no records (end of slice) — stopping"; exit 3; }
-N=$(ls "$WORK"/*.json 2>/dev/null | grep -v '/_emitted' | wc -l)
+N=$(ls "$WORK"/*.json 2>/dev/null | grep -v '/_emitted' | wc -l || true)
+# (|| true: with 0 records grep selects nothing -> rc=1 under pipefail, which
+#  set -e turned into a silent chunk death the moment prep stopped rc=3-ing
+#  on empty in-range slices. An empty slice is normal — keep going.)
 echo "[$TAG] prepped $N per-file records"
 
 echo "[$TAG] 2/5 floor-gate (jac check floors; keep compiling holes-floors, skip the composer)"
@@ -50,13 +53,17 @@ os.makedirs(compose_dir, exist_ok=True)
 files = [f for f in sorted(glob.glob(os.path.join(work, "*.json")))
          if os.path.basename(f) != "report.json" and "/_" not in f]
 recs = [json.load(open(f)) for f in files]
+# 3GB address-space cap per jac check — same fix as step4_full_loop._run
+# (Aug 20 OOM freezes). A runaway check dies as a compile-fail instead.
+AS_CAP = int(os.environ.get("JAC_RLIMIT_AS_GB", "3")) << 30
 
 def floor_compiles(code):
     if not code: return False
     with tempfile.NamedTemporaryFile("w", suffix=".jac", delete=False) as tf:
         tf.write(code); tp = tf.name
     try:
-        return subprocess.run(["jac", "check", tp], cwd=jac_repo,
+        return subprocess.run(["prlimit", f"--as={AS_CAP}", "--", "jac", "check", tp],
+                              cwd=jac_repo,
                               capture_output=True, timeout=90).returncode == 0
     except Exception:
         return False
@@ -89,31 +96,58 @@ print(f"  floor-gate: {len(recs)} recs -> {len(kept_ids)} floor-kept (sound, no 
       f"{n_comp} to compose ({len(holes)-len(kept_ids)} floor_BAD holes + full + none)")
 PYEOF
 
-echo "[$TAG] 3/5 pack batches"
-$PY - "$COMPOSE" "$BATCH" <<'PYEOF'
+echo "[$TAG] 3/5 pack batches (+ deterministic pre-REJECT of hopeless none-mode records)"
+rm -f "$BATCH"/batch*.json      # stale batch files from an earlier pack re-compose done ids
+$PY - "$COMPOSE" "$BATCH" "$CAND" "$FAITHFUL" <<'PYEOF'
 import glob, json, os, sys
 sys.path.insert(0, os.getcwd())  # chunk.sh cd's to scripts/js2jac_dataset
-from js2jac_composer_batch import skills_for_record
-work, out = sys.argv[1], sys.argv[2]
+from js2jac_composer_batch import skills_for_record, pre_reject
+work, out, cand, faithful_arg = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4:]
+faithful = "--faithful" in faithful_arg
+pol = json.loads(open("strip_policy.json").read())
+# css_always: additionally pre-reject CSS-in-JS in SYNTAX mode. Off by default —
+# those are policy strip-and-keep and the LLM salvages ~15%; flip PREREJECT_CSS=1
+# to trade that yield for the token cut.
+css_always = os.environ.get("PREREJECT_CSS") == "1"
 files = [f for f in sorted(glob.glob(os.path.join(work, "*.json")))
          if os.path.basename(f) != "report.json"]
-B = 6  # smaller than py2jac (10): source+floor payloads are larger
 recs = [json.load(open(f)) for f in files]
+
+# Deterministic pre-REJECT: none-mode records the policy already condemns never
+# reach the composer (cost lesson js2jac_20: 71% of LLM candidates came back
+# REJECT; most were none-mode files whose converter codes say reject outright).
+done = set()
+if os.path.exists(cand):
+    for l in open(cand):
+        if l.strip(): done.add(json.loads(l)["id"])
+pre = [r for r in recs if r["id"] not in done
+       and pre_reject(r, pol, faithful, css_always)]
+with open(cand, "a") as fh:
+    for r in pre:
+        done.add(r["id"])
+        fh.write(json.dumps({"id": r["id"], "candidate": "REJECT"}) + "\n")
+live = [r for r in recs if r["id"] not in done]
+print(f"  pre-reject: {len(pre)} none-mode records condemned by policy (no LLM); "
+      f"{len(live)} remain for the composer")
+
+B = 10  # was 6: bigger batches amortize the per-call static context (agent
+        # scaffolding + grounding + policy) that dominates fresh-input tokens.
+        # Capped at 10 (py2jac precedent) to keep one response from truncating.
 # Segment by floor_mode so batches are homogeneous: FULL-floor records (the
 # model just idiomizes an existing exemplar) batch together and run LEAN, while
 # none/holes records (the model generates Jac) batch together and get grounded.
 # Mixing would force the whole batch grounded on one holes record. Within the
 # gen group, sort by primary routed skill so adjacent records share topic guides
 # -> the per-batch skill union stays small (each guide body is sent once/batch).
-full = [r for r in recs if r.get("floor_mode") == "full"]
-gen  = [r for r in recs if r.get("floor_mode") != "full"]
+full = [r for r in live if r.get("floor_mode") == "full"]
+gen  = [r for r in live if r.get("floor_mode") != "full"]
 gen.sort(key=lambda r: (skills_for_record(r) or ["~"])[0])
 n = 0
 for group in (full, gen):
     for i in range(0, len(group), B):
         open(os.path.join(out, f"batch{n:03d}.json"), "w").write(json.dumps(group[i:i+B]))
         n += 1
-print(f"  {len(recs)} -> {n} batches ({len(full)} full / {len(gen)} gen)")
+print(f"  {len(live)} -> {n} batches ({len(full)} full / {len(gen)} gen)")
 PYEOF
 
 echo "[$TAG] 4/5 composer cleanup (MCP off, batched)"
@@ -135,15 +169,25 @@ for f in Path(work).glob("*.json"):
     if f.name == "report.json": continue
     r = json.load(open(f)); meta[r["id"]] = r
 
+# 3GB address-space cap per jac check — same fix as step4_full_loop._run
+# (Aug 20 OOM freezes). A runaway check dies as a compile-fail instead.
+AS_CAP = int(os.environ.get("JAC_RLIMIT_AS_GB", "3")) << 30
+
+_ok_cache = {}
 def jac_ok(code):
     if not code or code == "REJECT": return False
-    with tempfile.NamedTemporaryFile("w", suffix=".jac", delete=False) as tf:
-        tf.write(code); tp = tf.name
-    try:
-        return subprocess.run(["jac", "check", tp], cwd=jac_repo,
-                              capture_output=True, timeout=90).returncode == 0
-    finally:
-        os.unlink(tp)
+    if code not in _ok_cache:          # was called twice per candidate uncached
+        with tempfile.NamedTemporaryFile("w", suffix=".jac", delete=False) as tf:
+            tf.write(code); tp = tf.name
+        try:
+            _ok_cache[code] = subprocess.run(
+                ["prlimit", f"--as={AS_CAP}", "--", "jac", "check", tp],
+                cwd=jac_repo, capture_output=True, timeout=90).returncode == 0
+        except Exception:
+            _ok_cache[code] = False
+        finally:
+            os.unlink(tp)
+    return _ok_cache[code]
 
 _GRAPH_OP = re.compile(r"-->|\+\+>|\bspawn\b|\+>:|->:|<-:|:->|:<-|\[\?:|\bdel here\b|\bhere\.|\bjobj\(")
 
