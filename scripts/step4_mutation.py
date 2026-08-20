@@ -30,6 +30,7 @@ from __future__ import annotations
 import argparse
 import concurrent.futures as cf
 import json
+import os
 import re
 import subprocess
 import tempfile
@@ -199,11 +200,15 @@ def _classify(rc: int, out: str) -> str:
 
 
 def _run_test(src: str) -> tuple[int, str]:
+    # 3GB address-space cap per mutant run: see step4_full_loop._run — a runaway
+    # `jac test` must die with MemoryError, not OOM-freeze the box (Aug 20).
+    cap = int(os.environ.get("JAC_RLIMIT_AS_GB", "3")) << 30
     with tempfile.TemporaryDirectory(prefix="mut_") as tmp:
         f = Path(tmp) / "m.jac"
         f.write_text(src)
         try:
-            p = subprocess.run(["jac", "test", str(f)], capture_output=True,
+            p = subprocess.run(["prlimit", f"--as={cap}", "--",
+                                "jac", "test", str(f)], capture_output=True,
                                text=True, cwd=tmp, timeout=120)
         except subprocess.TimeoutExpired:
             return 1, "timeout"          # a hang counts as caught (killed)

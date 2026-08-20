@@ -93,6 +93,13 @@ def _run(cmd, cwd, env=None):
     # wedged jac (e.g. corrupted embedded-Postgres codespace) silently turned
     # into candidate rejections -> floor fallback. 300s + a healed toolchain.
     to = int(os.environ.get("JAC_PROC_TIMEOUT", "300"))
+    # JAC_RLIMIT_AS_GB: hard address-space cap per jac subprocess. Without it a
+    # pathological `jac test` input balloons to 6-11GB RSS / 17.7GB total-vm and
+    # the kernel OOM-killer freezes the box (2026-08-20 12:37/13:21/14:04 during
+    # the mut_17000 grind -> 3 hard crashes). prlimit turns those into fast
+    # MemoryError exits recorded as test_fail/prep_error; the grind continues.
+    cap = int(os.environ.get("JAC_RLIMIT_AS_GB", "3")) << 30
+    cmd = ["prlimit", f"--as={cap}", "--", *cmd]
     p = subprocess.run(cmd, capture_output=True, text=True, cwd=cwd, timeout=to,
                        env=env)
     return p.returncode, p.stdout, p.stderr
