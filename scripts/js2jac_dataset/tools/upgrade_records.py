@@ -8,7 +8,7 @@ saved). Idempotent: rewrites each work/*.json in place with floor_mode set.
 """
 import json, sys
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parent / "source"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "source"))
 import harvest
 
 work = Path(sys.argv[1])

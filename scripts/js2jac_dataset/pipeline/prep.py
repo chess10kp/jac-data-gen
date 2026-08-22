@@ -17,7 +17,7 @@ does NOT delete the clone until its records are written, and it retains the
 emitted .jac in the work dir.
 
 Usage:
-  python3 js2jac_prep.py --candidates source/candidates.jsonl \
+  python3 pipeline/prep.py --candidates source/candidates.jsonl \
       --offset 0 --limit 40 --work-dir work --profile react
 """
 from __future__ import annotations
@@ -29,8 +29,8 @@ import sys
 import tempfile
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent / "source"))
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "source"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "converters"))
 import harvest  # noqa: E402  (clone/convert/profile_gate/pick_project_root/sh)
 import profiles  # noqa: E402
 import prisma_to_jac  # noqa: E402  (deterministic schema.prisma -> node/edge archetypes)

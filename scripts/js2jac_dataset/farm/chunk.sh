@@ -6,7 +6,7 @@
 # Env:   MODEL (composer-2.5) WORKERS (6) TIMEOUT (360) PY (python3)
 set -uo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
-ROOT="$(cd "$HERE/../.." && pwd)"
+ROOT="$(cd "$HERE/../../.." && pwd)"
 cd "$ROOT"
 
 OFFSET="${1:?offset required}"; SIZE="${2:-500}"
@@ -26,7 +26,7 @@ if [ "$n" -eq 0 ]; then
     "$PY" scripts/js2jac_dataset/farm_handler_prep.py \
       --bundles "$MODELS" --offset "$OFFSET" --limit "$SIZE" --work-dir "$WORK"
   else
-    "$PY" scripts/js2jac_dataset/farm_prep.py \
+    "$PY" scripts/js2jac_dataset/farm/prep.py \
       --models "$MODELS" --offset "$OFFSET" --limit "$SIZE" --work-dir "$WORK"
   fi
   [ "$?" -eq 3 ] && { echo "[farm] $TAG: prep empty — end of input"; exit 3; }
@@ -59,7 +59,7 @@ if [ "$ncand" -lt "$n" ]; then
   echo "[farm] $TAG composer ($ncand/$n) — acquiring composer lock"
   (
     flock -w 21600 9 || { echo "[farm] $TAG composer lock failed"; exit 4; }
-    "$PY" scripts/js2jac_dataset/farm_composer_batch.py \
+    "$PY" scripts/js2jac_dataset/farm/composer.py \
       --batch-dir "$BATCH" --out "$CAND" \
       --model "${MODEL:-composer-2.5}" --workers "${WORKERS:-6}" --timeout "${TIMEOUT:-360}"
   ) 9>/tmp/composer.lock
@@ -68,6 +68,6 @@ else
 fi
 
 # 4. guard -> master (behavioral gate is the arbiter)
-"$PY" scripts/js2jac_dataset/farm_guard.py \
+"$PY" scripts/js2jac_dataset/farm/guard.py \
   --work-dir "$WORK" --candidates "$CAND" --out "$MASTER"
 echo "[farm] $TAG done; master: $(wc -l < "$MASTER" 2>/dev/null || echo 0)"

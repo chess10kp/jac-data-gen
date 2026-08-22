@@ -21,7 +21,7 @@ Output: one work record per gate-able node into --work-dir/<rid>.json:
 A node is gate-able (kept) only if it has a `tag_field` (a way to identify a probe
 node). Nodes with no scalar fields are skipped.
 
-Usage: ./farm_prep.py --models models.jsonl --work-dir WORK [--offset N --limit M]
+Usage: farm/prep.py --models models.jsonl --work-dir WORK [--offset N --limit M]
 """
 from __future__ import annotations
 
@@ -32,7 +32,7 @@ import re
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "converters"))
 import mongo_odm_to_jac as odm
 
 

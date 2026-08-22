@@ -1,32 +1,78 @@
 # js2jac dataset tooling
 
-Deterministic pipeline for the **Pilot A** (100-component) corpus and future
-50k dataset generation. Large artifacts stay in this data repo; the converter
-lives in `jaseci/jac/jaclang/compiler/js2jac/`.
+Deterministic + LLM-assisted pipelines turning JS/TSX and Mongo-app sources
+into idiomatic Jac training data. Large artifacts live in this data repo; the
+converter itself lives in `jaseci/jac/jaclang/compiler/js2jac/`.
+
+## Entrypoints (only three — everything else is stage code)
+
+| Entry | Purpose |
+|---|---|
+| `./js2jac.sh [grind\|chunk] …` | **Corpus grind**: real React/TSX repos → cleaned idiomatic Jac (`js2jac_dataset.jsonl`). Resume-safe; re-run freely. |
+| `./farm.sh [full\|grind\|to\|handler] …` | **FARM burndown**: Mongo/Beanie app models → CRUD graph walkers, behaviorally gated (`data/farm_dataset.jsonl`, handler variant separate). |
+| `./pilot.py [generate\|validate]` | **Pilot A benchmark corpus**: 100 deterministic fixtures; byte-stable regenerate + `jac check` validation. |
+
+Each script's header comment documents its subcommands. Internal stages are
+not meant to be invoked by hand, but can be found under `pipeline/`, `farm/`,
+`gates/`, `converters/`, `tools/`, `pilot/`.
+
+## Layout
+
+```
+js2jac.sh farm.sh pilot.py     entrypoints
+pipeline/                      js2jac stages: prep.py composer.py repair.py chunk.sh grind.sh
+farm/                          FARM stages: discover/prep/composer/guard/chunk/grind/full_run…
+gates/                         behavioral_gate, orm_behavioral_gate, fidelity_gate
+converters/                    prisma_to_jac, mongo_odm_to_jac (deterministic schema lifters)
+tools/                         gen_grounding.sh (refresh jac_grounding.md + jac_skills/),
+                               upgrade_records.py (backfill floor_mode)
+pilot/                         generate_pilot.py, validate.py (+ schema.json, manifest at root)
+config/                        strip_policy.json (composer cleanup policy)
+docs/                          converter hardening plan, persistence mappings
+source/                        harvested candidate sources (input data)
+runs/                          per-chunk artifacts: work/, batches/, candidates, dpo_pairs
+oracle/                        differential oracle harness (execution-locked cross-language tests)
+```
+
+Data masters at the root: `js2jac_dataset.jsonl` (+ `_idiom` variant),
+`farm_models.jsonl`, `farm_apps.jsonl`, `pilot_manifest.json`, `schema.json`.
+
+## Resilience standard (shared with the py2jac pipeline)
+
+The composer drivers run on `scripts/lib/composer_harness.py`:
+
+- every model call ledgered durably to `data/run_ledger.sqlite3`
+  (inspect: `python3 scripts/lib/generation_ledger.py summary <run_id>`)
+- fsync'd lock-protected JSONL appends; corrupt tails quarantine to `<file>.bad`
+- transient failures retried with backoff (`--max-attempts`); >50% empty
+  batches exit rc=4 so grinders stop early
+- resume by record id; partially-done batch files shrink atomically
+
+## Quality gates
+
+- guard stage: `jac check` per candidate (3GB prlimit cap), floor-fallback so a
+  bad idiomization never destroys a valid record; ORM records additionally pass
+  the behavioral gate / hollowness check.
+- repair pass (step 6): check-failed candidates get a model-assisted fix using
+  the compiler error; survivors append as `source=js2jac_repair`.
+  Disable with `JS2JAC_REPAIR=0`.
+- DPO preference pairs land in `runs/<TAG>/dpo_pairs.jsonl` from two places:
+  guard floor-fallbacks (chosen=floor) and repair rescues (chosen=repaired).
 
 ## Pilot A corpus
 
-| Artifact | Location |
-|---|---|
-| Source files (100) | `jaseci/jac/tests/compiler/js2jac/pilot/pilot_*.tsx` |
-| Generator | `scripts/js2jac_dataset/generate_pilot.py` |
-| Validator | `scripts/js2jac_dataset/validate.py` |
-| Manifest | `scripts/js2jac_dataset/pilot_manifest.json` |
-| Record schema | `scripts/js2jac_dataset/schema.json` |
-| Jac test | `jaseci/jac/tests/compiler/js2jac/test_pilot_corpus.jac` |
-
-### Regenerate
+Sources: `jaseci/jac/tests/compiler/js2jac/pilot/pilot_*.tsx`; Jac test:
+`jaseci/jac/tests/compiler/js2jac/test_pilot_corpus.jac`. Regenerate:
 
 ```bash
-python3 scripts/js2jac_dataset/generate_pilot.py
-python3 scripts/js2jac_dataset/validate.py
+./pilot.py generate
+./pilot.py validate
 ```
 
-`generate_pilot.py` is deterministic (`PILOT_SEED=20260810`). Re-running yields
-byte-identical sources. `validate.py` runs parse → convert → `jac check` for
-every record and updates the manifest with `jac_sha256` and conversion evidence.
+`generate_pilot.py` is deterministic (`PILOT_SEED=20260810`). Known limitations
+are listed in `docs/CONVERTER_HARDENING_PLAN.md`.
 
-### Families (100 total)
+## Families (100 total)
 
 | Family | Count | Exercises |
 |---|---:|---|
@@ -46,47 +92,3 @@ every record and updates the manifest with `jac_sha256` and conversion evidence.
 | native_idioms | 5 | V2.8 list/dict lowering |
 | minimal_tsx | 5 | arrow-export JS-style patterns |
 | ts_only | 3 | type-alias props |
-
-### Known limitations (Pilot A)
-
-- `.jsx` / `.js` without TypeScript annotations do not pass reviewed conversion
-  (parser has no `typescript` plugin for those suffixes). Pilot uses `.tsx` with
-  inline types instead.
-- Patterns requiring `.length`, `.slice()`, or untyped props bags are excluded.
-
-## Record schema
-
-See `schema.json`. Each validated record includes content-addressed
-`record_id` / `source_sha256` / `jac_sha256`, family, rule tags, and conversion
-summary from the bridge.
-
-## Chunk pipeline (grind)
-
-`js2jac_chunk.sh` runs prep → floor-gate → composer → guard → master-append →
-repair. The composer drivers (`js2jac_composer_batch.py`,
-`farm_composer_batch.py`) share `scripts/lib/composer_harness.py`, which
-provides the py2jac-grade resilience standard:
-
-- every model call ledgered durably (`data/run_ledger.sqlite3`) — token spend
-  survives kills; inspect with `python3 scripts/lib/generation_ledger.py summary <run_id>`
-- fsync'd, lock-protected JSONL appends; corrupt tails auto-quarantine to `<file>.bad`
-- transient failures (timeout / cut stream / empty parse) retried with backoff
-  (`--max-attempts`); deterministic `is_error` replies fail fast
-- resume by id; partially-done batch files shrink atomically
-- >50% empty batches alerts loudly and exits rc=4 so grinders stop early
-- workspace override: `--workspace` flag or `CURSOR_WS` / `CURSOR_TMPDIR` env
-
-### Repair pass (step 6)
-
-Candidates that fail `jac check` are not dropped silently:
-`repair_pass.py` sends broken Jac + compiler error + source/floor context back
-through the harness; survivors append as `source=js2jac_repair`. Every drop —
-rescued or not — yields a DPO preference pair in `runs/<TAG>/dpo_pairs.jsonl`
-(floor-fallback pairs are emitted by the guard the same way). Disable with
-`JS2JAC_REPAIR=0`.
-
-## Next steps (per `JS2JAC_PLAN.md`)
-
-- Pilot B: 1,000 examples with browser traces (V3 native idioms)
-- Project mode: multi-file graph conversion
-- `collect` / `dedup` / `split` modules for the 50k release funnel

@@ -3,10 +3,10 @@
 # models file. Each chunk is prep->composer->guard->append (farm_chunk.sh).
 # Resume-safe: a chunk with a .done marker is skipped. rc=3 from a chunk means
 # the models file is exhausted -> stop.
-# Usage: farm_grind.sh <start_offset> [size] [models.jsonl]
+# Usage: farm/grind.sh <start_offset> [size] [models.jsonl]
 set -uo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
-ROOT="$(cd "$HERE/../.." && pwd)"
+ROOT="$(cd "$HERE/../../.." && pwd)"
 cd "$ROOT"
 
 # singleton: refuse to run two farm grinders over the same models file
@@ -29,14 +29,14 @@ while true; do
     off=$((off + SIZE)); continue
   fi
   echo "[grind] === $tag (offset $off) $(date '+%T') ===" | tee -a "$LOG"
-  bash "$HERE/farm_chunk.sh" "$off" "$SIZE" "$MODELS" >> "$LOG" 2>&1
+  bash "$HERE/chunk.sh" "$off" "$SIZE" "$MODELS" >> "$LOG" 2>&1
   rc=$?
   if [ "$rc" -eq 3 ]; then
     echo "[grind] end of models at offset $off — DONE" | tee -a "$LOG"
     break
   elif [ "$rc" -ne 0 ]; then
     echo "[grind] $tag failed (rc=$rc) — retrying once" | tee -a "$LOG"
-    bash "$HERE/farm_chunk.sh" "$off" "$SIZE" "$MODELS" >> "$LOG" 2>&1 || \
+    bash "$HERE/chunk.sh" "$off" "$SIZE" "$MODELS" >> "$LOG" 2>&1 || \
       echo "[grind] $tag failed twice — skipping" | tee -a "$LOG"
   fi
   touch "data/farm_chunks/${tag}/.done"
@@ -46,4 +46,4 @@ while true; do
   off=$((off + SIZE))
 done
 echo "=== farm grind end $(date '+%F %T') ===" >> "$LOG"
-bash "$HERE/../../scripts/notify.sh" "✅ farm grind done" "farm master: $(wc -l < data/farm_dataset.jsonl 2>/dev/null || echo 0) records"
+bash "$ROOT/scripts/ops/notify.sh" "✅ farm grind done" "farm master: $(wc -l < data/farm_dataset.jsonl 2>/dev/null || echo 0) records"

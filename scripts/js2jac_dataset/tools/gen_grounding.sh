@@ -4,14 +4,14 @@
 #
 #   jac_grounding.md   BASE syntax reference (cheatsheet + types) — every hole needs it.
 #   jac_skills/<t>.md  ROUTABLE topic guides — attached per-entry by the skill router
-#                      (js2jac_composer_batch.py::skills_for_record) only when a
+#                      (pipeline/composer.py::skills_for_record) only when a
 #                      record's holes actually involve that construct.
 #
 # Bump the topic list here if the composer keeps failing on a construct no guide
 # covers, and add a matching signal in the router.
 set -euo pipefail
 JAC_REPO=/home/jac/repos/jac_llm_data/jaseci/jac
-DIR="$(cd "$(dirname "$0")" && pwd)"
+DIR="$(cd "$(dirname "$0")/.." && pwd)"
 SKILLS="$DIR/jac_skills"
 cd "$JAC_REPO"
 mkdir -p "$SKILLS"

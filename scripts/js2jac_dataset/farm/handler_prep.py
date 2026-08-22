@@ -2,7 +2,7 @@
 """Handler-translation prep: whole-app bundles -> per-node work records that carry
 the REAL FastAPI+Beanie handler code as translation context.
 
-The richer sibling of farm_prep.py. Where farm_prep gives composer only the lifted
+The richer sibling of farm/prep.py. Where farm_prep gives composer only the lifted
 schema (so it authors generic CRUD), this gives composer the actual route + db-layer
 code for the node, so the produced walkers preserve real behavior (partial updates,
 response shaping, ownership) -- while still being gated by the same CRUD round-trip
@@ -11,7 +11,7 @@ response shaping, ownership) -- while still being gated by the same CRUD round-t
 Input:  farm_apps.jsonl bundles (from farm_app_bundle.py):
         {repo, files:{model|route|db|auth|schema:[{path,source}]}, nodes:[...]}
 Output: work records (same shape as farm_prep + a `handler_context` string) into
-        --work-dir/<rid>.json -> pack -> farm_composer_batch (handler-aware prompt)
+        --work-dir/<rid>.json -> pack -> farm/composer.py (handler-aware prompt)
         -> farm_guard (behavioral gate).
 
 Node<->handler matching is by name mention (conventional layered FARM layout); the
@@ -27,9 +27,10 @@ import re
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # sibling farm modules
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "converters"))
 import mongo_odm_to_jac as odm
-import farm_prep
+import prep as farm_prep  # renamed in the reorg
 
 PER_FILE_CAP = 1600
 TOTAL_CAP = 3200

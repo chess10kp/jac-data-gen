@@ -18,14 +18,14 @@ Stages (all resumable; artifacts under --run-dir):
                dataset.jsonl + master (deduped) + extend dpo_pairs.
 
 Usage (usually driven by js2jac_chunk.sh step 6; disable with JS2JAC_REPAIR=0):
-  python3 repair_pass.py all  --run-dir runs/js2jac_400 --master js2jac_dataset.jsonl
-  python3 repair_pass.py compose --run-dir runs/js2jac_400 ...
+  python3 pipeline/repair.py all  --run-dir runs/js2jac_400 --master js2jac_dataset.jsonl
+  python3 pipeline/repair.py compose --run-dir runs/js2jac_400 ...
 """
 from __future__ import annotations
 import argparse, json, os, re, subprocess, sys, tempfile
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "lib"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "lib"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from composer_harness import run_composer, add_common_args  # noqa: E402
 

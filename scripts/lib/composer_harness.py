@@ -2,7 +2,7 @@
 """Shared cursor-agent composer driver for the js2jac / FARM dataset pipelines.
 
 Extracts the boilerplate that used to be copy-pasted between
-scripts/js2jac_dataset/js2jac_composer_batch.py and farm_composer_batch.py,
+scripts/js2jac_dataset/pipeline/composer.py and farm/composer.py,
 and upgrades it to the resilience standard of the py2jac pipeline
 (scripts/gen): every model call is durably ledgered, output appends are
 fsync'd, batch-file shrinks are atomic, and transient failures (timeout /

@@ -10,14 +10,14 @@ Output row (matches the js2jac corpus shape):
   {"id","repo","path","commit","spdx","source","nodes"}
 
 `id` = "<owner>__<repo>__<path-slug>" (stable, dedup key). `source` is the raw
-models.py text -> farm_prep.py consumes it directly.
+models JSONL -> farm/prep.py consumes it directly.
 
 Auth: uses `gh` (GitHub CLI). Code search ~10 req/min; contents ~5000/hr. We pace
 search pages and cache per-repo license lookups.
 
 Usage:
-  ./farm_discover.py --out farm_models.jsonl --limit 200
-  ./farm_discover.py --out farm_models.jsonl --limit 500 --queries beanie,odmantic
+  ./farm/discover.py --out farm_models.jsonl --limit 200
+  ./farm/discover.py --out farm_models.jsonl --limit 500 --queries beanie,odmantic
 """
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ import sys
 import time
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "converters"))
 import mongo_odm_to_jac as odm
 
 # distinctive user-facing imports of each typed ODM (the deterministic core)

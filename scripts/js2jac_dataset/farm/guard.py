@@ -12,10 +12,10 @@ verdict, so the corpus is behavior-verified by construction.
 
 Input:
   --work-dir   dir of prep records (<rid>.json)   -> archetype + manifest per id
-  --candidates candidates.jsonl {"id","candidate"} from farm_composer_batch
+  --candidates candidates.jsonl {"id","candidate"} from farm/composer.py
   --out        master dataset.jsonl (append, dedup by id)
 
-Usage: ./farm_guard.py --work-dir WORK --candidates CAND.jsonl --out data/farm_dataset.jsonl
+Usage: ./farm.sh (guard runs inside chunk) — direct: farm/guard.py --work-dir WORK --candidates CAND.jsonl --out data/farm_dataset.jsonl
 """
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ import json
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "gates"))
 import behavioral_gate as gate
 
 

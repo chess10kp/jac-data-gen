@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Batched composer walker-gen via cursor-agent -- FARM burndown driver.
 
-Driven by scripts/lib/composer_harness.py (shared with js2jac_composer_batch):
+Driven by scripts/lib/composer_harness.py (shared with pipeline/composer.py):
 MCP-strip, ask-mode, process-group teardown, durable per-call ledger, fsync'd
 resumable-by-id output, transient-retry with backoff. The task here: given a
 Mongo-derived Jac node archetype, AUTHOR the idiomatic CRUD walker-set for it.
@@ -10,14 +10,13 @@ Walker NAMES + entry contract are prescribed so the behavioral gate's manifest
 (farm_prep.derive_manifest) matches deterministically; composer writes the actual
 Jac bodies (real generation, gated by execution -- not templating).
 
-Output contract: {"id","candidate"} JSONL -> farm_guard.py.
+Output contract: {"id","candidate"} JSONL -> farm/guard.py.
 """
 from __future__ import annotations
 import argparse, json, re, sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "lib"))
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "lib"))
 from composer_harness import run_composer, add_common_args
 
 _BLOCK = re.compile(r"===ID\s+(\S+?)===\s*(.*?)(?=(?:===ID\s+\S+?===)|\Z)", re.S)

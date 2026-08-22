@@ -21,11 +21,11 @@ from __future__ import annotations
 import argparse, json, re, sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "lib"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "lib"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from composer_harness import run_composer, add_common_args
 
-POLICY_PATH = Path(__file__).resolve().parent / "strip_policy.json"
+POLICY_PATH = Path(__file__).resolve().parents[1] / "config" / "strip_policy.json"
 
 # Deterministic pre-REJECT signals for floor_mode=none records (the LLM's most
 # expensive, lowest-yield input: ~79% of a chunk, ~71% of which it rejects).
@@ -66,7 +66,7 @@ def pre_reject(rec: dict, pol: dict, faithful: bool = False,
         if e.get("action") == "reject" or (faithful and e.get("fidelity") == "lossy"):
             return True
     return False
-GROUNDING_PATH = Path(__file__).resolve().parent / "jac_grounding.md"
+GROUNDING_PATH = Path(__file__).resolve().parents[1] / "jac_grounding.md"
 
 # string ids: everything up to the next ===ID or EOF
 _BLOCK = re.compile(r"===ID\s+(.+?)===\s*(.*?)(?=(?:===ID\s+)|\Z)", re.S)
@@ -80,7 +80,7 @@ _REJECT = re.compile(r"^\s*REJECT\b", re.I)
 # (regex over the hole codes + original JS the converter embedded, falling back
 # to source), attach ONLY those guides, and tell each entry which apply. Guides
 # are cached in jac_skills/ by gen_grounding.sh; a missing file is skipped.
-SKILLS_DIR = Path(__file__).resolve().parent / "jac_skills"
+SKILLS_DIR = Path(__file__).resolve().parents[1] / "jac_skills"
 # topic -> compiled signal regex. Order = priority when capping.
 _SKILL_SIGNALS = [
     ("jac-cl-components", re.compile(

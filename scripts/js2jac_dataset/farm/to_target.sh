@@ -8,7 +8,7 @@
 # Usage: farm_to_2k.sh [target]     (env WORKERS passed to farm composer)
 set -uo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
-ROOT="$(cd "$HERE/../.." && pwd)"
+ROOT="$(cd "$HERE/../../.." && pwd)"
 cd "$ROOT"
 
 TARGET="${1:-2000}"
@@ -35,4 +35,4 @@ while :; do
 done
 final=$(wc -l < data/farm_dataset.jsonl 2>/dev/null || echo 0)
 echo "=== farm_to_2k end $(date '+%F %T') master=$final ===" >> "$LOG"
-bash "$ROOT/scripts/notify.sh" "✅ farm to-2k loop done" "farm master: $final records (target $TARGET)"
+bash "$ROOT/scripts/ops/notify.sh" "✅ farm to-2k loop done" "farm master: $final records (target $TARGET)"

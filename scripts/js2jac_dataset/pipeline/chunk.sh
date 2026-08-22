@@ -6,7 +6,7 @@
 #
 # Usage: js2jac_chunk.sh <offset> <limit> [--faithful]
 set -euo pipefail
-cd "$(dirname "$0")"                      # scripts/js2jac_dataset
+cd "$(dirname "$0")/.."                      # scripts/js2jac_dataset (pkg root)
 OFFSET="${1:?offset}"; LIMIT="${2:-40}"; FAITHFUL="${3:-}"
 TAG="js2jac_${OFFSET}"
 WORK="runs/${TAG}/work"
@@ -22,7 +22,7 @@ mkdir -p "$WORK" "$BATCH"
 
 echo "[$TAG] 1/4 prep (offset=$OFFSET limit=$LIMIT)"
 set +e
-$PY js2jac_prep.py --candidates "$CANDS" --offset "$OFFSET" --limit "$LIMIT" \
+$PY pipeline/prep.py --candidates "$CANDS" --offset "$OFFSET" --limit "$LIMIT" \
   --work-dir "$WORK" --profile react
 rc=$?
 set -e
@@ -100,11 +100,12 @@ echo "[$TAG] 3/5 pack batches (+ deterministic pre-REJECT of hopeless none-mode 
 rm -f "$BATCH"/batch*.json      # stale batch files from an earlier pack re-compose done ids
 $PY - "$COMPOSE" "$BATCH" "$CAND" "$FAITHFUL" <<'PYEOF'
 import glob, json, os, sys
-sys.path.insert(0, os.getcwd())  # chunk.sh cd's to scripts/js2jac_dataset
-from js2jac_composer_batch import skills_for_record, pre_reject
+sys.path.insert(0, os.getcwd() + "/gates")  # chunk.sh cd.s to the pkg root
+sys.path.insert(0, os.getcwd() + "/pipeline")
+from composer import skills_for_record, pre_reject
 work, out, cand, faithful_arg = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4:]
 faithful = "--faithful" in faithful_arg
-pol = json.loads(open("strip_policy.json").read())
+pol = json.loads(open("config/strip_policy.json").read())
 # css_always: additionally pre-reject CSS-in-JS in SYNTAX mode. Off by default —
 # those are policy strip-and-keep and the LLM salvages ~15%; flip PREREJECT_CSS=1
 # to trade that yield for the token cut.
@@ -153,7 +154,7 @@ PYEOF
 echo "[$TAG] 4/5 composer cleanup (MCP off, batched)"
 exec 9>/tmp/composer.lock          # same lock as py2jac: one composer driver at a time
 flock -w 21600 9 || { echo "[$TAG] could not acquire composer lock"; exit 4; }
-$PY js2jac_composer_batch.py --batch-dir "$BATCH" --out "$CAND" \
+$PY pipeline/composer.py --batch-dir "$BATCH" --out "$CAND" \
   --model composer-2.5 --workers 6 --timeout 360 $FAITHFUL
 flock -u 9
 
@@ -161,7 +162,7 @@ echo "[$TAG] 5/5 guard (jac check, floor-fallback) + merge floor-kept + append t
 $PY - "$WORK" "$CAND" "$DS" "$JAC_REPO" "$FLOORKEPT" <<'PYEOF'
 import json, re, subprocess, sys, tempfile, os
 from pathlib import Path
-sys.path.insert(0, os.getcwd())  # chunk.sh cd's to scripts/js2jac_dataset
+sys.path.insert(0, os.getcwd() + "/gates")  # chunk.sh cd.s to the pkg root
 from orm_behavioral_gate import gate_orm
 work, cand, ds, jac_repo, floorkept = sys.argv[1:6]
 meta = {}
@@ -291,7 +292,7 @@ PYEOF
 # Disable with JS2JAC_REPAIR=0.
 if [ "${JS2JAC_REPAIR:-1}" = "1" ]; then
   echo "[$TAG] 6/6 repair pass"
-  $PY repair_pass.py all --run-dir "runs/$TAG" --master "$MASTER" --tag "$TAG" \
+  $PY pipeline/repair.py all --run-dir "runs/$TAG" --master "$MASTER" --tag "$TAG" \
     --model composer-2.5 --workers 4 --timeout 360 \
     || echo "[$TAG] repair pass failed (non-fatal)"
 else

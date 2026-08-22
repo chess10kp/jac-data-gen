@@ -6,7 +6,7 @@
 # Usage: farm_handler_run.sh [chunk_size]      (env: WORKERS=3 passes to composer)
 set -uo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
-ROOT="$(cd "$HERE/../.." && pwd)"
+ROOT="$(cd "$HERE/../../.." && pwd)"
 cd "$ROOT"
 PY="${PY:-python3}"
 MODELS="scripts/js2jac_dataset/farm_models.jsonl"
@@ -42,7 +42,7 @@ while :; do
   fi
   mkdir -p "$W"
   echo "[handler] === $tag (offset $off) $(date '+%T') ===" | tee -a "$LOG"
-  PREP=handler WORKERS="${WORKERS:-3}" bash scripts/js2jac_dataset/farm_chunk.sh \
+  PREP=handler WORKERS="${WORKERS:-3}" bash scripts/js2jac_dataset/farm/chunk.sh \
     "$off" "$SIZE" "$APPS" data/farm_handler_dataset.jsonl >> "$LOG" 2>&1
   rc=$?
   if [ "$rc" -eq 3 ]; then
@@ -50,7 +50,7 @@ while :; do
     break
   elif [ "$rc" -ne 0 ]; then
     echo "[handler] $tag failed rc=$rc — retry once" | tee -a "$LOG"
-    bash scripts/js2jac_dataset/farm_chunk.sh "$off" "$SIZE" scripts/js2jac_dataset/farm_apps.jsonl data/farm_handler_dataset.jsonl >> "$LOG" 2>&1 || \
+    bash scripts/js2jac_dataset/farm/chunk.sh "$off" "$SIZE" scripts/js2jac_dataset/farm_apps.jsonl data/farm_handler_dataset.jsonl >> "$LOG" 2>&1 || \
       echo "[handler] $tag failed twice — skipping" | tee -a "$LOG"
   fi
   touch "$W/.done"
@@ -58,4 +58,4 @@ while :; do
   off=$((off+SIZE))
 done
 echo "=== farm handler run end $(date '+%F %T') master=$(wc -l < data/farm_handler_dataset.jsonl 2>/dev/null || echo 0) ===" | tee -a "$LOG"
-bash scripts/notify.sh "✅ farm handler run done" "handler master: $(wc -l < data/farm_handler_dataset.jsonl 2>/dev/null || echo 0) records"
+bash "$ROOT/scripts/ops/notify.sh" "✅ farm handler run done" "handler master: $(wc -l < data/farm_handler_dataset.jsonl 2>/dev/null || echo 0) records"
