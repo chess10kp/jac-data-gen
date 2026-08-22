@@ -2,7 +2,9 @@
 # Validate: does `jac check` codespace predict fast-test-pass vs slow-test-fail?
 # Writes results to data/native_probe.txt so output survives any pipe/kill.
 import sys, tempfile, pathlib, subprocess, time, os
-sys.path.insert(0,'scripts')
+_SP = Path(__file__).resolve().parents[2] / "scripts"
+sys.path.insert(0, str(_SP / "lib"))
+sys.path.insert(0, str(_SP / "gen"))
 import step4_full_loop as S
 from datasets import load_dataset
 OUT=open("data/native_probe.txt","w")

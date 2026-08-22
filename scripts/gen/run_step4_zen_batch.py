@@ -18,6 +18,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts" / "lib"))
 import step4_full_loop as S  # noqa: E402
 
 # --out and --offset-in-dir are consumed here; the rest forwards to main().

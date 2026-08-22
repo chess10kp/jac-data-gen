@@ -9,7 +9,7 @@ from __future__ import annotations
 import json, re, subprocess, sys, time
 from pathlib import Path
 
-REPO = Path(__file__).resolve().parent.parent
+REPO = Path(__file__).resolve().parents[2]
 SAMPLES = REPO / "data" / "samples" / "python_source_examples.json"
 FENCE = re.compile(r"```jac\s*\n(.*?)```", re.S)
 

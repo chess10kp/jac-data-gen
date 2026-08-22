@@ -17,6 +17,7 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts" / "lib"))
 from idiomize_seam import system_prompt
 from generation_ledger import new_run, record_call
 from generation_ledger import summary as ledger_summary

@@ -45,8 +45,10 @@ import subprocess
 
 os.environ.setdefault("HF_HUB_OFFLINE", "1")
 
-REPO = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(REPO / "scripts"))
+REPO = Path(__file__).resolve().parents[2]
+_SP = Path(__file__).resolve().parents[2] / "scripts"
+sys.path.insert(0, str(_SP / "lib"))
+sys.path.insert(0, str(_SP / "gen"))
 from step2_translate_tests import normalize_python, with_entry_to_tests  # noqa: E402
 
 OUT_DIR = REPO / "data" / "step4"

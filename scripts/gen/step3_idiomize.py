@@ -33,7 +33,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-REPO = Path(__file__).resolve().parent.parent
+REPO = Path(__file__).resolve().parents[2]
 SAMPLES = REPO / "data" / "samples" / "python_source_examples.json"
 STEP2_DIR = REPO / "data" / "step2"
 OUT_DIR = REPO / "data" / "step3"

@@ -2,7 +2,9 @@
 # One-pass density/codespace probe: collect records at target coverage>=90
 # offsets, then time py2jac + jac test for each. Fast(<10s,rc0)=native region.
 import sys, time, tempfile, pathlib, subprocess, json
-sys.path.insert(0,'scripts')
+_SP = Path(__file__).resolve().parents[2] / "scripts"
+sys.path.insert(0, str(_SP / "lib"))
+sys.path.insert(0, str(_SP / "gen"))
 import step4_full_loop as S
 from datasets import load_dataset
 

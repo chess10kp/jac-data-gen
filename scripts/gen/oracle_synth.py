@@ -24,8 +24,10 @@ import sys
 import tempfile
 from pathlib import Path
 
-REPO = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(REPO / "scripts"))
+REPO = Path(__file__).resolve().parents[2]
+_SP = Path(__file__).resolve().parents[2] / "scripts"
+sys.path.insert(0, str(_SP / "lib"))
+sys.path.insert(0, str(_SP / "gen"))
 from idiomize_seam import _opencode_key, ZEN_BASE, FENCE  # noqa: E402
 from step4_mutation import mutation_score, _run_test  # noqa: E402
 

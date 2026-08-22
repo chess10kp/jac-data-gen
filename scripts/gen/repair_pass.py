@@ -26,6 +26,7 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts" / "lib"))
 import step4_full_loop as S  # noqa: E402
 
 JAC = os.environ.get("JAC_BIN", "jac")   # allow testing against a custom binary

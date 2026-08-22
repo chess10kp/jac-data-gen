@@ -41,7 +41,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from agent_idiomize_guard import guard_one  # noqa: E402
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[2]
 MASTER = ROOT / "data/composer_dataset.jsonl"
 CKPT_DIR = ROOT / "data/reguard_checkpoints"
 

@@ -34,7 +34,7 @@ ZEN_BASE = "https://opencode.ai/zen/v1"
 # idiom guidance; this seam just anchors the reasoning model on the
 # non-negotiable output contract and injects the function-level tiers.
 # --------------------------------------------------------------------------- #
-SKILL_DIR = Path(__file__).resolve().parent.parent / ".cursor/skills/jac-idiomatic"
+SKILL_DIR = Path(__file__).resolve().parents[2] / ".cursor/skills/jac-idiomatic"
 
 # HARD RULES stay inline so the pipeline still produces valid, guardable output
 # even if the skill files are missing. Everything else comes from the skill.

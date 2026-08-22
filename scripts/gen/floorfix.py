@@ -32,8 +32,10 @@ import argparse, json, os, sys, tempfile, time
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-REPO = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(REPO / "scripts"))
+REPO = Path(__file__).resolve().parents[2]
+_SP = Path(__file__).resolve().parents[2] / "scripts"
+sys.path.insert(0, str(_SP / "lib"))
+sys.path.insert(0, str(_SP / "gen"))
 
 import jsonl_io  # noqa: E402
 os.environ.setdefault("HF_HUB_OFFLINE", "1")

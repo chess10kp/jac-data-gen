@@ -15,7 +15,9 @@ Filter: NOT already banked in composer master (dedup vs master ids).
 Out: data/graph_shaped_scan.jsonl + summary counts.
 """
 import json, re, sys, time
-sys.path.insert(0, 'scripts')
+_SP = Path(__file__).resolve().parents[2] / "scripts"
+sys.path.insert(0, str(_SP / "lib"))
+sys.path.insert(0, str(_SP / "gen"))
 import step4_full_loop as S
 from datasets import load_dataset
 

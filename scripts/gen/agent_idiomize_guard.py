@@ -16,6 +16,7 @@ from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts" / "lib"))
 import jsonl_io
 import step4_full_loop as S
 

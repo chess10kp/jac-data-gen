@@ -15,7 +15,7 @@ from __future__ import annotations
 import json, sqlite3, threading, time, uuid
 from pathlib import Path
 
-DB = Path(__file__).resolve().parent.parent / "data" / "run_ledger.sqlite3"
+DB = Path(__file__).resolve().parents[2] / "data" / "run_ledger.sqlite3"
 _TLS = threading.local()
 _LOCK = threading.Lock()
 

@@ -16,7 +16,7 @@ from __future__ import annotations
 import argparse, json, re, subprocess, sys, tempfile, time
 from pathlib import Path
 
-REPO = Path(__file__).resolve().parent.parent
+REPO = Path(__file__).resolve().parents[2]
 BRIDGE_DRIVER = REPO / "scripts" / "js2jac_dataset" / "source" / "holeconvert.mjs"
 DATASET = REPO / "scripts" / "js2jac_dataset" / "js2jac_dataset.jsonl"
 FENCE = re.compile(r"```(?:jac)?\s*\n(.*?)```", re.S)
