@@ -1,0 +1,20 @@
+[
+  {
+    "model": "x-preview-f-free",
+    "n": 10,
+    "response_rate": 1.0,
+    "guard_pass_of_total": 0.5,
+    "guard_pass_of_responses": 0.5,
+    "mean_latency_s": 31.0,
+    "wall_s": 375.4
+  },
+  {
+    "model": "deepseek-v4-flash-free",
+    "n": 10,
+    "response_rate": 0.0,
+    "guard_pass_of_total": 0.0,
+    "guard_pass_of_responses": 0,
+    "mean_latency_s": 0.3,
+    "wall_s": 0.8
+  }
+]

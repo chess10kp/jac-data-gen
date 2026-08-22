@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "id": "jnv0-core-complete-001",
+  "split": "dev",
+  "track": "complete",
+  "domain": "core",
+  "category": "objects_validation",
+  "difficulty": "medium",
+  "prompt_path": "prompt.md",
+  "target_path": "solution.jac",
+  "context_paths": [],
+  "public_example_paths": [],
+  "contracts": [
+    {
+      "kind": "public_symbol",
+      "name": "allocate_requests",
+      "expect_kind": "ability",
+      "signature_contains": ["Request", "capacity", "AllocationResult"],
+      "reason": "Required caller-facing allocation API named in the prompt"
+    },
+    {
+      "kind": "public_symbol",
+      "name": "Request",
+      "expect_kind": "obj",
+      "reason": "Prompt requires a typed request object as public input type"
+    },
+    {
+      "kind": "public_symbol",
+      "name": "AllocationResult",
+      "expect_kind": "obj",
+      "reason": "Prompt requires a typed result object as public return type"
+    },
+    {
+      "kind": "forbidden_test_blocks",
+      "reason": "Candidate must not smuggle its own test blocks into the graded source"
+    },
+    {
+      "kind": "forbidden_python",
+      "reason": "Task must be solved in native Jac, not import:py escape hatches"
+    }
+  ],
+  "timeout_s": 120
+}

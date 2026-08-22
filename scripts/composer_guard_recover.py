@@ -111,11 +111,19 @@ def main() -> int:
             final, _ = S.dedup(kept, args.dedup_threshold)
             # append only records not already in master (dedup may overlap)
             nadd = 0
+            floor_map = {w["id"]: w["floor_fn"] for w in sub}
             for r in final:
                 if r["id"] in done:
                     continue
                 rec = {"id": r["id"], "entrypoint": r["entrypoint"],
                        "source": r["source"], "jac": r["jac"], "chunk": args.tag}
+                # Preserve the DPO rejected side (see agent_idiomize_guard._row):
+                # floor -> the failed rewrite; idiomatic -> the floor it beat.
+                if r["source"] == "floor" and r.get("rejected_candidate"):
+                    rec["rejected"] = r["rejected_candidate"]
+                    rec["reject_reason"] = r.get("reject")
+                elif r["source"] == "idiomatic":
+                    rec["rejected"] = floor_map.get(r["id"])
                 os.write(fd, (json.dumps(rec) + "\n").encode())
                 done.add(r["id"]); nadd += 1
             added_total += nadd

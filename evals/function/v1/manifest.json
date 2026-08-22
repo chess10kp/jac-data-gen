@@ -1,0 +1,97 @@
+{
+  "composer_snapshot": {
+    "path": "data/composer_dataset.jsonl",
+    "rows": 14524,
+    "sha256": "81cd248ea180a22312611b87d6232135181425532df2dbb824587f08c8ff94b0"
+  },
+  "counts": {
+    "ambiguous_source_ids": 7,
+    "artifact_conflicts": 3,
+    "cluster_size_max": 33,
+    "cluster_size_mean": 2.006,
+    "cluster_size_min": 1,
+    "denied_current_composer_ids": 765,
+    "denied_full_source_ids": 1404,
+    "duplicate_source_rows": 7,
+    "private_dev_tasks": 400,
+    "private_test_tasks": 1000,
+    "public_dev_tasks": 400,
+    "public_test_tasks": 1000,
+    "reserved_clusters": 700,
+    "source_parse_fallbacks": 0
+  },
+  "created_at": "2026-08-17T16:25:14.382331+00:00",
+  "dataset": {
+    "ambiguous_source_ids": [
+      78098,
+      215106,
+      217954,
+      250608,
+      261594,
+      418755,
+      425798
+    ],
+    "duplicate_source_rows": 7,
+    "fingerprint": "cf64d1b34b963e50",
+    "name": "nuprl/stack-dedup-python-testgen-starcoder-filter-v2",
+    "rows": 157767,
+    "split": "train",
+    "unique_ids": 157760
+  },
+  "files": {
+    "README.md": {
+      "bytes": 620,
+      "sha256": "170f26965d1c7c54b4d68a935bba4a1f0630b59d6638b172e4af1e71c893154b"
+    },
+    "clusters.jsonl": {
+      "bytes": 175271,
+      "sha256": "82448642c4e57dd3fdb99874b0ef1d749185d8f766607433b800ac5132e58760"
+    },
+    "denylist_clusters.txt": {
+      "bytes": 45500,
+      "sha256": "944e62c712dde4e3429a18eef1404bd38020845238f3b697f411a75bf5220609"
+    },
+    "denylist_ids.txt": {
+      "bytes": 9496,
+      "sha256": "047ebc719270fdece73e77d7f545433d36099ee9c457597e57bc80f70fbc2e23"
+    },
+    "private/dev.jsonl": {
+      "bytes": 1636942,
+      "sha256": "3ae11bde55cb20bf75664a7070f60cd6ff8f2bec5767a7cdee5841ebe0d87aa3"
+    },
+    "private/test.jsonl": {
+      "bytes": 4451920,
+      "sha256": "5170c9c08e0b973baf07f1400928eea322d377fad6786c09ce882cda5c3c5576"
+    },
+    "public/dev.jsonl": {
+      "bytes": 460937,
+      "sha256": "7ec9a28bc7e42d987c8c5bd25a1c6971f8dced2b646870d874f00d45730088ca"
+    },
+    "public/test.jsonl": {
+      "bytes": 1102119,
+      "sha256": "d1438eb0da79d8e5c6575732d6053938253d6386d839de9e094a2b0dcd31771c"
+    }
+  },
+  "schema_version": 1,
+  "selection": {
+    "cluster_algorithm": "python-ast-shape-v1",
+    "completion_fraction": 0.3,
+    "dev_sources": 200,
+    "eligible_clusters": 6198,
+    "exclusion_counts": {
+      "ambiguous_source_id": 6,
+      "cluster_too_large": 373,
+      "low_coverage": 1104,
+      "not_idiomatic": 5156,
+      "too_few_tests": 1281,
+      "unsplittable_jac": 134
+    },
+    "max_cluster_size": 50,
+    "min_coverage": 100,
+    "min_tests": 5,
+    "seed": "jac-function-eval-v1",
+    "task_variants_per_source": 2,
+    "test_sources": 500
+  },
+  "status": "candidate_unvalidated"
+}

@@ -166,6 +166,9 @@ def merge_checkpoints(ckpt_paths: list[Path], rows: list[dict]) -> int:
             res = results[r["id"]]
             nr = dict(r)
             nr["source"] = "idiomatic"
+            # The mechanical floor this rewrite just beat is the DPO rejected side.
+            nr["rejected"] = r["jac"]
+            nr.pop("reject_reason", None)
             nr["jac"] = res["jac"]
             out_lines.append(json.dumps(nr))
             changelog.append({"id": r["id"], "entrypoint": r["entrypoint"],
@@ -174,7 +177,16 @@ def merge_checkpoints(ckpt_paths: list[Path], rows: list[dict]) -> int:
                               "new_len": len(res["jac"] or ""),
                               "reject": rejects.get(r["id"])})
         else:
-            out_lines.append(json.dumps(r))
+            # Still floor: backfill the failed rewrite (DPO rejected side) if the
+            # fresh guard captured one and the committed row is missing it.
+            res = results.get(r["id"])
+            if res and res.get("rejected_candidate") and not r.get("rejected"):
+                nr = dict(r)
+                nr["rejected"] = res["rejected_candidate"]
+                nr["reject_reason"] = res.get("reject")
+                out_lines.append(json.dumps(nr))
+            else:
+                out_lines.append(json.dumps(r))
 
     ts = int(time.time())
     bak = MASTER.with_name(MASTER.name + f".bak.{ts}")

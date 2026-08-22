@@ -22,8 +22,52 @@ import argparse, atexit, json, os, re, signal, subprocess, sys, threading, time
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from generation_ledger import new_run, record_call
+from generation_ledger import summary as ledger_summary
+
 WS = "/tmp/cursor_ws"
 POLICY_PATH = Path(__file__).resolve().parent / "strip_policy.json"
+
+# Deterministic pre-REJECT signals for floor_mode=none records (the LLM's most
+# expensive, lowest-yield input: ~79% of a chunk, ~71% of which it rejects).
+# High-precision only: a false pre-reject loses a real record forever.
+_CSS_IN_JS = re.compile(
+    r"\bstyled[\w.$]*(?:\s*\(|`)"  # styled.div`..`, styled(X), styled.div.attrs(..)`..`
+    r"|\bcss`"                       # emotion/styled-components css template
+    r"|makeStyles|createUseStyles|@emotion/|styled-components", re.I)
+
+# Test/spec files: converter emits no convertible declarations (E7200) for
+# them and the composer keeps almost none — validated on js2jac_20: only 2 of
+# 315 kept records have a test-ish path (0.6% loss for a large token cut).
+_TEST_PATH = re.compile(r"__tests?__/|\.spec\.|\.test\.|(^|/)tests?/", re.I)
+
+
+def pre_reject(rec: dict, pol: dict, faithful: bool = False,
+               css_always: bool = False) -> bool:
+    """True => this record never needs the composer. Grounds:
+    - CSS-in-JS source (E7205 dispatch 'reject' shapes): policy rejects the
+      file only in FAITHFUL mode — in syntax mode the rule is strip-and-keep
+      and the LLM really does salvage ~15% of them (measured js2jac_20:
+      17/196 composer-kept records were CSS-in-JS), so extending this to
+      syntax mode must be opted into via css_always (PREREJECT_CSS=1);
+    - any converter error code whose policy action is reject (E7202/E7207/
+      E7401 — per-FILE semantics, mode-independent), or faithful mode
+      promoting any lossy code to reject.
+    Codes with no policy entry keep the record in the LLM lane (conservative)."""
+    if rec.get("floor_mode") not in (None, "none"):
+        return False
+    if _TEST_PATH.search(rec.get("path") or ""):
+        return True
+    if (faithful or css_always) and _CSS_IN_JS.search(rec.get("source_js") or ""):
+        return True
+    for code in rec.get("error_codes") or []:
+        e = pol.get(code)
+        if not e or code == "E7205":
+            continue  # E7205 needs shape dispatch; regex covers its reject branch
+        if e.get("action") == "reject" or (faithful and e.get("fidelity") == "lossy"):
+            return True
+    return False
 GROUNDING_PATH = Path(__file__).resolve().parent / "jac_grounding.md"
 
 # string ids: everything up to the next ===ID or EOF
@@ -281,8 +325,13 @@ def build_prompt(recs: list[dict]) -> str:
         floor = r.get("floor_jac")
         skills = skills_for_record(r)
         skill_ptr = (f"  [relevant Jac skills: {', '.join(skills)}]" if skills else "")
+        # FULL floor is its own complete exemplar; the source is only context for
+        # intent, so cap it tighter (the 3500-char source was ~half the payload).
+        full = bool(floor) and "JS2JAC-HOLE" not in floor
+        src = (r.get("source_js") or "")[: (1500 if full else 3500)]
+        note = " (truncated — FLOOR is the authoritative full conversion)" if full and len(r.get("source_js") or "") > 1500 else ""
         parts.append(f"\n===ID {r['id']}===  (status: {r['status']}){skill_ptr}\n"
-                     f"SOURCE:\n{r['source_js'][:3500]}\n")
+                     f"SOURCE{note}:\n{src}\n")
         # ORM file: hand the model the repo's lifted graph schema + traversal digest
         # so it rewrites prisma.x.find/create/update into walkers/traversals over
         # these real nodes+edges — NOT a hollow `return []` stub (which the
@@ -320,8 +369,11 @@ def _needs_grounding(recs: list[dict]) -> bool:
     return any(r.get("floor_mode", "none") != "full" for r in recs)
 
 
-def call_agent(batch_file: str, model: str, sysprompts: dict, timeout: int) -> dict[str, str]:
+def call_agent(batch_file: str, model: str, sysprompts: dict, timeout: int,
+               run_id: str = "-") -> dict[str, str]:
     recs = json.loads(Path(batch_file).read_text())
+    t0 = time.perf_counter()
+    rids, batch_name = [r["id"] for r in recs], Path(batch_file).name
     if _needs_grounding(recs):
         # base cheatsheet+types + only the topic guides this batch's holes need
         sysprompt = sysprompts["grounded"] + batch_skill_section(recs)
@@ -342,21 +394,33 @@ def call_agent(batch_file: str, model: str, sysprompts: dict, timeout: int) -> d
         _kill_pg(pgid)
         try: p.communicate(timeout=10)
         except Exception: pass  # noqa: BLE001,E701
+        record_call(run_id, pipeline="js2jac-composer", batch=batch_name, model=model,
+                    status="timeout", record_ids=rids, error=f"timeout after {timeout}s",
+                    dur_s=time.perf_counter() - t0)
         return {}
     finally:
         with _LOCK:
             _LIVE_PGIDS.discard(pgid)
     try:
         d = json.loads(out)
-    except Exception:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001
+        record_call(run_id, pipeline="js2jac-composer", batch=batch_name, model=model,
+                    status="parse_error", record_ids=rids,
+                    error=f"{e}: {(out or '')[:300]}", dur_s=time.perf_counter() - t0)
         return {}
     u = d.get("usage") or {}
     with _LOCK:
         _USAGE["in"] += u.get("inputTokens", 0); _USAGE["out"] += u.get("outputTokens", 0)
         _USAGE["cache"] += u.get("cacheReadTokens", 0)
-    if d.get("is_error"):
-        return {}
-    return parse_result(d.get("result", ""))
+    res = parse_result(d.get("result", ""))
+    record_call(run_id, pipeline="js2jac-composer", batch=batch_name, model=model,
+                status="is_error" if d.get("is_error") else "ok", usage=u,
+                record_ids=rids, n_parsed=len(res),
+                error=str(d.get("error") or "")[:400] if d.get("is_error") else None,
+                dur_s=time.perf_counter() - t0,
+                request_id=d.get("requestId") or d.get("request_id"),
+                session_id=d.get("sessionId") or d.get("session_id"))
+    return res
 
 
 def _kill_pg(pgid: int) -> None:
@@ -416,6 +480,7 @@ def main() -> int:
     atexit.register(_mcp_reenable); atexit.register(_sweep)
     for s in (signal.SIGINT, signal.SIGTERM):
         signal.signal(s, lambda *_: (_sweep(), _mcp_reenable(), sys.exit(1)))
+    run_id = new_run("js2jac-composer", model=args.model)
     _mcp_disable_all()
 
     # Build both once; call_agent picks per batch so full-floor idiomize batches
@@ -430,8 +495,19 @@ def main() -> int:
         for line in out_path.read_text().splitlines():
             if line.strip(): done.add(json.loads(line)["id"])
     batches = sorted(Path(args.batch_dir).glob("*.json"))
-    todo = [bf for bf in batches
-            if {r["id"] for r in json.loads(bf.read_text())} - done]
+    todo = []
+    for bf in batches:
+        recs = json.loads(bf.read_text())
+        if not recs:
+            continue
+        remaining = [r for r in recs if r["id"] not in done]
+        if not remaining:
+            continue
+        if len(remaining) != len(recs):
+            # per-record resume: shrink the batch file in place so a restart
+            # re-buys only the undone records, not the whole batch
+            bf.write_text(json.dumps(remaining))
+        todo.append(bf)
     print(f"js2jac cleanup: {len(todo)} batches (of {len(batches)}), model={args.model}, "
           f"{args.workers} workers, faithful={args.faithful}, MCP off, ask-mode", flush=True)
 
@@ -439,7 +515,7 @@ def main() -> int:
     t0, wrote, empty = time.perf_counter(), 0, 0
     try:
         with ThreadPoolExecutor(max_workers=args.workers) as ex:
-            futs = [ex.submit(call_agent, str(bf), args.model, sysprompts, args.timeout)
+            futs = [ex.submit(call_agent, str(bf), args.model, sysprompts, args.timeout, run_id)
                     for bf in todo]
             for i, fut in enumerate(as_completed(futs), 1):
                 cand = fut.result()
@@ -460,6 +536,8 @@ def main() -> int:
     tok = _USAGE
     print(f"done: wrote {wrote}, empty {empty}, {time.perf_counter()-t0:.0f}s | "
           f"tokens in={tok['in']} out={tok['out']} cache={tok['cache']}", flush=True)
+    print(f"ledger run_id={run_id}:", flush=True)
+    print(ledger_summary(run_id), flush=True)
     return 0
 
 

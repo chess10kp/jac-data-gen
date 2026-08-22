@@ -1,0 +1,92 @@
+{
+  "summary": {
+    "model": "composer-2.5",
+    "n": 10,
+    "response_rate": 0.0,
+    "guard_pass_of_total": 0.0,
+    "guard_pass_of_responses": 0.0,
+    "mean_latency_s": 4.8
+  },
+  "results": [
+    {
+      "rid": 433948,
+      "model": "composer-2.5",
+      "latency": 6.9,
+      "fenced": false,
+      "guard_pass": false,
+      "jac": null
+    },
+    {
+      "rid": 245737,
+      "model": "composer-2.5",
+      "latency": 6.9,
+      "fenced": false,
+      "guard_pass": false,
+      "jac": null
+    },
+    {
+      "rid": 299284,
+      "model": "composer-2.5",
+      "latency": 6.8,
+      "fenced": false,
+      "guard_pass": false,
+      "jac": null
+    },
+    {
+      "rid": 45307,
+      "model": "composer-2.5",
+      "latency": 3.9,
+      "fenced": false,
+      "guard_pass": false,
+      "jac": null
+    },
+    {
+      "rid": 453896,
+      "model": "composer-2.5",
+      "latency": 3.8,
+      "fenced": false,
+      "guard_pass": false,
+      "jac": null
+    },
+    {
+      "rid": 40107,
+      "model": "composer-2.5",
+      "latency": 3.6,
+      "fenced": false,
+      "guard_pass": false,
+      "jac": null
+    },
+    {
+      "rid": 286780,
+      "model": "composer-2.5",
+      "latency": 4.3,
+      "fenced": false,
+      "guard_pass": false,
+      "jac": null
+    },
+    {
+      "rid": 294480,
+      "model": "composer-2.5",
+      "latency": 4.1,
+      "fenced": false,
+      "guard_pass": false,
+      "jac": null
+    },
+    {
+      "rid": 254706,
+      "model": "composer-2.5",
+      "latency": 4.1,
+      "fenced": false,
+      "guard_pass": false,
+      "jac": null
+    },
+    {
+      "rid": 348716,
+      "model": "composer-2.5",
+      "latency": 3.7,
+      "fenced": false,
+      "guard_pass": false,
+      "jac": null
+    }
+  ]
+}

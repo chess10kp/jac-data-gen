@@ -49,7 +49,7 @@ flock -u 9
 echo "[$TAG] 4/4 guard + append to $MASTER"
 mkdir -p "$TMP"
 TMPDIR="$TMP" $PY scripts/agent_idiomize_guard.py \
-  --work-dir "$WORK" --candidates "$CAND" --out "$DS" --workers 12 2>&1 | tail -2
+  --work-dir "$WORK" --candidates "$CAND" --out "$DS" --workers 12 2>&1 | tee -a "$(dirname "$DS")/guard_progress.log"
 rm -rf "$TMP"
 
 # append with chunk tag; guard-writes dataset each run, so append fresh

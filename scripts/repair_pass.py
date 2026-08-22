@@ -30,6 +30,16 @@ import step4_full_loop as S  # noqa: E402
 
 JAC = os.environ.get("JAC_BIN", "jac")   # allow testing against a custom binary
 
+# ids already banked in the master dataset — collect must skip these to avoid
+# wasted compose/guard on records that can never add a new master row.
+MASTER_IDS: set[str] = set()
+_MP = Path("data/composer_dataset.jsonl")
+if _MP.exists():
+    for _ln in _MP.read_text().splitlines():
+        if _ln.strip():
+            try: MASTER_IDS.add(json.loads(_ln)["id"])
+            except Exception: pass
+
 
 def _run(cmd: list[str], cwd: str | None = None, to: int = 90) -> tuple[int, str, str]:
     try:
@@ -55,6 +65,7 @@ def stage_collect(a) -> int:
         if len(todo) >= a.limit: break
         # only records NOT already prepped anywhere (check master + this workdir)
         if (out / "work" / f"{rec['id']}.json").exists(): continue
+        if rec["id"] in MASTER_IDS: continue
         todo.append(rec)
     print(f"[collect] {len(todo)} virgin records from offset {a.offset}", flush=True)
 
@@ -172,18 +183,32 @@ def stage_compose(a) -> int:
 def stage_guard(a) -> int:
     out = Path(a.out_dir)
     cands = {}
+    skipped = 0
     for ln in (out / "candidates.jsonl").read_text().splitlines():
         if ln.strip():
-            d = json.loads(ln); cands[d["id"]] = d["candidate"]
-    works = {json.loads(f.read_text())["id"]: json.loads(f.read_text())
-             for f in (out / "work").glob("*.json")}
+            try:
+                d = json.loads(ln); cands[d["id"]] = d["candidate"]
+            except (json.JSONDecodeError, KeyError):
+                skipped += 1   # tolerate power-loss-corrupt lines (NUL-filled tail)
+    works = {}
+    for f in (out / "work").glob("*.json"):
+        try:
+            d = json.loads(f.read_text()); works[d["id"]] = d
+        except (json.JSONDecodeError, KeyError):
+            skipped += 1
+    if skipped:
+        print(f"[guard] WARNING: skipped {skipped} corrupt line/file(s)", flush=True)
     print(f"[guard] {len(cands)} candidates / {len(works)} works", flush=True)
 
     res_path = out / "repaired.jsonl"
     done = set()
     if res_path.exists():
         for ln in res_path.read_text().splitlines():
-            if ln.strip(): done.add(json.loads(ln)["id"])
+            if ln.strip():
+                try:
+                    done.add(json.loads(ln)["id"])
+                except (json.JSONDecodeError, KeyError):
+                    pass   # tolerate power-loss-corrupt lines
 
     def one(w: dict, shared: str) -> dict | None:
         rid = w["id"]; cand = cands.get(rid)

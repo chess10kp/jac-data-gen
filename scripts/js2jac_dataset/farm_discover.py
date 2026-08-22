@@ -33,10 +33,21 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import mongo_odm_to_jac as odm
 
 # distinctive user-facing imports of each typed ODM (the deterministic core)
+# + query VARIANTS per ODM: GitHub code search ranks per query string, so a
+# different marker surface (canonical import, ObjectId type, decorator, base
+# class) returns a DIFFERENT file subset — that's how the 603-model pool got
+# re-expanded after the 08-19 exhaustion (kept 0/897 scanned on base queries).
 QUERIES = {
-    "beanie":   '"from beanie import" "Document" language:python',
-    "odmantic": '"from odmantic import" "Model" language:python',
-    "mongoengine": '"from mongoengine" "Document" language:python',
+    "beanie":        '"from beanie import" "Document" language:python',
+    "beanie_doc":    '"from beanie import Document" language:python',
+    "beanie_pid":    'beanie PydanticObjectId language:python',
+    "beanie_idx":    'beanie Indexed language:python',
+    "odmantic":      '"from odmantic import" "Model" language:python',
+    "odmantic_emb":  'odmantic EmbeddedModel language:python',
+    "odmantic_aio":  'odmantic AIOEngine language:python',
+    "mongoengine":   '"from mongoengine" "Document" language:python',
+    "mongoengine_emb": 'mongoengine EmbeddedDocument language:python',
+    "mongoengine_imp": '"import mongoengine" language:python',
 }
 
 
@@ -78,11 +89,22 @@ def repo_license(full_name: str) -> str:
     return lic
 
 
+# Files that are never real ODM schema material — pure repo boilerplate.
+# NOTE: disabled for now (user: drop the filtering); kept for quick re-enable.
+BOGUS_PATH_SUBSTR: tuple[str, ...] = ()  # e.g. ("license", "readme", "changelog")
+
+
 def fetch_content(item: dict) -> str | None:
     """Fetch and decode the file body via the contents URL on the search item."""
     url = item.get("url")
     if not url:
         return None
+    fpath = item.get("path") or ""
+    if any(b in fpath.lower() for b in BOGUS_PATH_SUBSTR):
+        return None                    # boilerplate -> skip
+    fpath = item.get("path") or ""
+    if any(b in fpath.lower() for b in BOGUS_PATH_SUBSTR):
+        return None                    # LICENSE/README/… boilerplate -> skip
     # item.url is a full api URL; `gh api <path>` accepts the path after the host
     path = url.split("github.com/", 1)[-1]
     d = gh_json([path])
@@ -158,8 +180,8 @@ def discover(out_path: str, which: list[str], limit: int,
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default=str(Path(__file__).resolve().parent / "farm_models.jsonl"))
-    ap.add_argument("--queries", default="beanie,odmantic,mongoengine",
-                    help="comma list of: beanie,odmantic,mongoengine")
+    ap.add_argument("--queries", default="",
+                    help="comma list of QUERIES keys; empty = all of them")
     ap.add_argument("--limit", type=int, default=200)
     ap.add_argument("--pages", type=int, default=10)
     ap.add_argument("--per-page", type=int, default=50)
@@ -167,7 +189,8 @@ def main() -> int:
     ap.add_argument("--no-license", action="store_true",
                     help="skip per-repo SPDX lookup (faster; spdx='SKIPPED')")
     args = ap.parse_args()
-    which = [q.strip() for q in args.queries.split(",") if q.strip() in QUERIES]
+    which = ([q.strip() for q in args.queries.split(",")
+             if q.strip() in QUERIES] or list(QUERIES))
     discover(args.out, which, args.limit, args.pages, args.per_page,
              args.pause, not args.no_license)
     return 0

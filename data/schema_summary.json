@@ -1,0 +1,37 @@
+{
+  "dataset": "nuprl/stack-dedup-python-testgen-starcoder-filter-v2",
+  "note": "This is the Python source dataset used by MultiPL-T. nuprl/MultiPL-T itself is gated and contains target-language translations only.",
+  "total_rows": 157767,
+  "rows_coverage_ge_90": 133668,
+  "columns": {
+    "content": "Python function source (str)",
+    "content_with_types": "Typed variant or null",
+    "sha1": "Content hash",
+    "id": "Unique int id",
+    "entrypoint": "Function name (str)",
+    "tests": "List[str] of assert statements calling entrypoint",
+    "coverage": "Line coverage percent (int 0-100)",
+    "tests_failed": "Failed test strings or null"
+  },
+  "multipl_t_hf": {
+    "repo": "nuprl/MultiPL-T",
+    "gated": true,
+    "splits": [
+      "julia",
+      "lua",
+      "ocaml",
+      "r",
+      "racket"
+    ],
+    "inferred_columns_from_repo": [
+      "content",
+      "failing_content",
+      "pass_rate",
+      "id",
+      "original_id",
+      "tests",
+      "edu_score"
+    ],
+    "note": "content is TARGET language code, not Python. tests field carries MultiPL-E test strings."
+  }
+}

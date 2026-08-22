@@ -135,8 +135,11 @@ def generate_mutants(floor_fn: str, cap: int = 40) -> list[Mutant]:
             continue
         if tok == "%":
             # Skip the string-format `%`: after masking, a modulo has an
-            # operand (alnum/`)`/`]`) to its left; a format string has none.
-            pre = line_prefix(m.start())
+            # operand (alnum/`)`/`]`/`}`) to its left; a format string has
+            # none. Look back over whitespace/newlines so multi-line format
+            # expressions (`...\n% setting`) still mutate (2026-08-21: the
+            # same-line-only check zeroed out entire records).
+            pre = masked[:m.start()].rstrip()
             if not pre or not (pre[-1].isalnum() or pre[-1] in ")]}_"):
                 continue
         add(m.start(), m.end(), repl, f"op {tok}->{repl} @{m.start()}")
@@ -206,6 +209,11 @@ def _run_test(src: str) -> tuple[int, str]:
     with tempfile.TemporaryDirectory(prefix="mut_") as tmp:
         f = Path(tmp) / "m.jac"
         f.write_text(src)
+        # Skip the doomed native-lowering attempt: mutant floors are
+        # py2jac-derived and demote anyway; the attempt burned ~24s CPU each
+        # (measured 2026-08-21, see oxalpha_free_generate.jac_test).
+        (Path(tmp) / "jac.toml").write_text(
+            '[placement]\ndefault_codespace = "server"\n')
         try:
             p = subprocess.run(["prlimit", f"--as={cap}", "--",
                                 "jac", "test", str(f)], capture_output=True,

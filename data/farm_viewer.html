@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FARM Dataset Viewer</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #242836;
+      --border: #2e3345;
+      --text: #e4e6ef;
+      --muted: #8b90a5;
+      --accent: #6c9eff;
+      --green: #4ade80;
+      --orange: #fb923c;
+      --mono: "JetBrains Mono", "Fira Code", "Cascadia Code", ui-monospace, monospace;
+      --sans: system-ui, -apple-system, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    header {
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-shrink: 0;
+    }
+    header h1 { font-size: 1.1rem; font-weight: 600; }
+    header .subtitle { color: var(--muted); font-size: 0.85rem; }
+    .toolbar { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+    .toolbar label, .toolbar button {
+      font-size: 0.8rem;
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+    }
+    .toolbar label:hover, .toolbar button:hover { border-color: var(--accent); }
+    .toolbar input[type="file"] { display: none; }
+    .toolbar .count { color: var(--muted); font-size: 0.8rem; }
+    main { display: flex; flex: 1; overflow: hidden; }
+    #sidebar {
+      width: 320px;
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+    #search {
+      padding: 10px 12px;
+      border: none;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 0.85rem;
+      outline: none;
+    }
+    #entry-list {
+      flex: 1;
+      overflow-y: auto;
+      list-style: none;
+    }
+    #entry-list li {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      font-size: 0.82rem;
+    }
+    #entry-list li:hover { background: var(--surface); }
+    #entry-list li.active { background: var(--surface2); border-left: 3px solid var(--accent); }
+    #entry-list .eid { font-family: var(--mono); font-size: 0.78rem; word-break: break-all; }
+    #entry-list .emeta { color: var(--muted); font-size: 0.75rem; margin-top: 3px; }
+    #detail {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 24px;
+    }
+    .empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--muted);
+      flex-direction: column;
+      gap: 12px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    .badge.pass { background: #14532d; color: var(--green); }
+    .badge.fail { background: #431407; color: var(--orange); }
+    .meta-grid {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 6px 16px;
+      font-size: 0.85rem;
+      margin-bottom: 20px;
+      padding: 14px;
+      background: var(--surface);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .meta-grid dt { color: var(--muted); }
+    .meta-grid dd { font-family: var(--mono); font-size: 0.8rem; word-break: break-all; }
+    section { margin-bottom: 24px; }
+    section h2 {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    section h2 .tag {
+      font-size: 0.7rem;
+      padding: 1px 6px;
+      border-radius: 3px;
+      background: var(--surface2);
+      color: var(--muted);
+      font-weight: 400;
+    }
+    pre {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      line-height: 1.55;
+      padding: 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .kw { color: #c792ea; }
+    .type { color: #82aaff; }
+    .str { color: #c3e88d; }
+    .num { color: #f78c6c; }
+    .manifest-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+    .manifest-table th, .manifest-table td {
+      text-align: left;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+    }
+    .manifest-table th { background: var(--surface2); color: var(--muted); font-weight: 500; }
+    .manifest-table td { font-family: var(--mono); font-size: 0.78rem; }
+    .tabs { display: flex; gap: 4px; margin-bottom: 12px; }
+    .tab {
+      padding: 6px 14px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+    .tab.active { background: var(--surface2); color: var(--text); border-color: var(--accent); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>FARM Dataset Viewer</h1>
+      <div class="subtitle">Behavior-verified Jac CRUD walker entries</div>
+    </div>
+    <div class="toolbar">
+      <span class="count" id="count">0 entries</span>
+      <label>
+        Load JSONL
+        <input type="file" id="file-input" accept=".jsonl,.json">
+      </label>
+      <button id="load-default" type="button">Load farm_dataset.jsonl</button>
+    </div>
+  </header>
+  <main>
+    <aside id="sidebar">
+      <input type="search" id="search" placeholder="Filter by id, node, repo…">
+      <ul id="entry-list"></ul>
+    </aside>
+    <div id="detail">
+      <div class="empty" id="placeholder">
+        <p>Load a JSONL file or click "Load farm_dataset.jsonl"</p>
+        <p style="font-size:0.8rem">Each entry: archetype nodes + CRUD walkers + behavioral gate manifest</p>
+      </div>
+    </div>
+  </main>
+  <script>
+    let entries = [];
+    let filtered = [];
+    let selected = -1;
+
+    function highlightJac(src) {
+      return src
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+        .replace(/\b(node|edge|walker|has|can|go|with|entry|report|del|new|here|self)\b/g, '<span class="kw">$1</span>')
+        .replace(/\b(str|int|bool|list|None)\b/g, '<span class="type">$1</span>')
+        .replace(/"[^"]*"/g, m => `<span class="str">${m}</span>`);
+    }
+
+    function fullJac(e) {
+      return e.archetype.trimEnd() + "\n\n" + e.walkers.trim() + "\n";
+    }
+
+    function renderList() {
+      const ul = document.getElementById("entry-list");
+      ul.innerHTML = "";
+      filtered.forEach((e, i) => {
+        const li = document.createElement("li");
+        if (i === selected) li.classList.add("active");
+        const gate = e.gate || {};
+        const pass = gate.reason && gate.reason.includes("passed");
+        li.innerHTML = `
+          <div class="eid">${e.id}</div>
+          <div class="emeta">node: ${e.node} · ${e.source_ref?.repo || "?"} ·
+            <span class="badge ${pass ? "pass" : "fail"}">${gate.stage || "?"}: ${gate.reason || "?"}</span>
+          </div>`;
+        li.onclick = () => { selected = i; renderList(); renderDetail(filtered[i]); };
+        ul.appendChild(li);
+      });
+      document.getElementById("count").textContent = `${filtered.length} / ${entries.length} entries`;
+    }
+
+    function renderManifest(m) {
+      if (!m) return "<p>No manifest</p>";
+      const ops = ["create", "list", "update", "delete"].filter(k => m[k]);
+      let rows = ops.map(op => {
+        const spec = m[op];
+        const detail = typeof spec === "object"
+          ? JSON.stringify(spec, null, 0).replace(/</g, "&lt;")
+          : spec;
+        return `<tr><td>${op}</td><td>${spec.walker || "—"}</td><td>${detail}</td></tr>`;
+      }).join("");
+      return `<table class="manifest-table">
+        <tr><th>op</th><th>walker</th><th>spec</th></tr>
+        <tr><td colspan="3" style="color:var(--muted)">tag_field: <b>${m.tag_field || "—"}</b> · node: <b>${m.node || "—"}</b></td></tr>
+        ${rows}
+      </table>`;
+    }
+
+    function renderDetail(e) {
+      if (!e) return;
+      document.getElementById("placeholder")?.remove();
+      const gate = e.gate || {};
+      const pass = gate.reason && gate.reason.includes("passed");
+      const detail = document.getElementById("detail");
+      detail.innerHTML = `
+        <div class="meta-grid">
+          <dt>id</dt><dd>${e.id}</dd>
+          <dt>node</dt><dd>${e.node}</dd>
+          <dt>source</dt><dd>${e.source_ref?.repo || "?"} / ${e.source_ref?.path || "?"}</dd>
+          <dt>gate</dt><dd><span class="badge ${pass ? "pass" : "fail"}">${gate.stage}: ${gate.reason}</span></dd>
+        </div>
+        <div class="tabs">
+          <button class="tab active" data-tab="jac">Full .jac</button>
+          <button class="tab" data-tab="archetype">Archetype</button>
+          <button class="tab" data-tab="walkers">Walkers</button>
+          <button class="tab" data-tab="manifest">Manifest</button>
+        </div>
+        <div class="tab-panel active" id="tab-jac"><pre>${highlightJac(fullJac(e))}</pre></div>
+        <div class="tab-panel" id="tab-archetype"><pre>${highlightJac(e.archetype || "")}</pre></div>
+        <div class="tab-panel" id="tab-walkers"><pre>${highlightJac(e.walkers || "")}</pre></div>
+        <div class="tab-panel" id="tab-manifest">${renderManifest(e.manifest)}</div>
+      `;
+      detail.querySelectorAll(".tab").forEach(btn => {
+        btn.onclick = () => {
+          detail.querySelectorAll(".tab, .tab-panel").forEach(el => el.classList.remove("active"));
+          btn.classList.add("active");
+          document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+        };
+      });
+    }
+
+    function loadEntries(text) {
+      entries = text.trim().split("\n").filter(Boolean).map(ln => JSON.parse(ln));
+      filtered = entries;
+      selected = entries.length ? 0 : -1;
+      document.getElementById("search").value = "";
+      renderList();
+      if (selected >= 0) renderDetail(filtered[0]);
+    }
+
+    document.getElementById("file-input").onchange = ev => {
+      const f = ev.target.files[0];
+      if (!f) return;
+      const r = new FileReader();
+      r.onload = () => loadEntries(r.result);
+      r.readAsText(f);
+    };
+
+    document.getElementById("load-default").onclick = async () => {
+      try {
+        const res = await fetch("farm_dataset.jsonl");
+        if (!res.ok) throw new Error(res.statusText);
+        loadEntries(await res.text());
+      } catch (err) {
+        alert("Could not fetch farm_dataset.jsonl — use file picker or serve via HTTP.\n" + err.message);
+      }
+    };
+
+    document.getElementById("search").oninput = ev => {
+      const q = ev.target.value.toLowerCase();
+      filtered = entries.filter(e =>
+        e.id.toLowerCase().includes(q) ||
+        e.node.toLowerCase().includes(q) ||
+        (e.source_ref?.repo || "").toLowerCase().includes(q)
+      );
+      selected = filtered.length ? 0 : -1;
+      renderList();
+      if (selected >= 0) renderDetail(filtered[0]);
+    };
+  </script>
+</body>
+</html>

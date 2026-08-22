@@ -6,7 +6,7 @@ sys.path.insert(0,'scripts')
 import step4_full_loop as S
 from datasets import load_dataset
 
-TARGETS=[3000,5000,7000,25000,30000,35000,45000]
+TARGETS=[15000,19000,21000,23000,25000,27000,30000,35000,40000,50000,60000]
 OUT=Path = pathlib.Path("data/chunk_probe.jsonl")
 def emit(d):
     with open("data/chunk_probe.jsonl","a") as f: f.write(json.dumps(d)+"\n")

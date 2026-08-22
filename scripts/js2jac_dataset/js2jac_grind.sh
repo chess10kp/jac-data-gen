@@ -7,6 +7,13 @@ set -uo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 cd "$HERE"
 
+# singleton: refuse to run two grinders over the same source (double-spend guard)
+exec 8>/tmp/js2jac_grind.lock
+if ! flock -n 8; then
+  echo "[grind] another js2jac grind holds /tmp/js2jac_grind.lock — refusing to start" >&2
+  exit 5
+fi
+
 START="${1:-0}"; SIZE="${2:-20}"; FAITHFUL="${3:-}"
 LOG="runs/js2jac_grind.log"
 mkdir -p runs
@@ -36,3 +43,4 @@ while true; do
   off=$((off + SIZE))
 done
 echo "=== js2jac grind end $(date '+%F %T') ===" >> "$LOG"
+bash "$(dirname "$0")/notify.sh" "✅ js2jac grind done" "master total: $(wc -l < "$(dirname "$0")/js2jac_dataset.jsonl" 2>/dev/null || echo '?') records — runs/js2jac_grind.log"

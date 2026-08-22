@@ -16,6 +16,10 @@ import argparse, atexit, json, os, re, signal, subprocess, sys, threading, time
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from generation_ledger import new_run, record_call
+from generation_ledger import summary as ledger_summary
+
 WS = "/tmp/cursor_ws"
 _BLOCK = re.compile(r"===ID\s+(\S+?)===\s*(.*?)(?=(?:===ID\s+\S+?===)|\Z)", re.S)
 _FENCE = re.compile(r"```(?:jac)?\s*\n(.*?)```", re.S)
@@ -82,8 +86,11 @@ def parse_result(text: str) -> dict[str, str]:
     return out
 
 
-def call_agent(batch_file: str, model: str, timeout: int) -> dict[str, str]:
+def call_agent(batch_file: str, model: str, timeout: int,
+               run_id: str = "-") -> dict[str, str]:
     recs = json.loads(Path(batch_file).read_text())
+    t0 = time.perf_counter()
+    rids, batch_name = [r["id"] for r in recs], Path(batch_file).name
     prompt = build_prompt(recs)
     argv = ["cursor-agent", "--print", "--output-format", "json", "--mode", "ask",
             "--trust", "--model", model, "--workspace", WS, prompt]
@@ -99,21 +106,33 @@ def call_agent(batch_file: str, model: str, timeout: int) -> dict[str, str]:
         _kill_pg(pgid)
         try: p.communicate(timeout=10)
         except Exception: pass  # noqa: BLE001,E701
+        record_call(run_id, pipeline="farm-composer", batch=batch_name, model=model,
+                    status="timeout", record_ids=rids, error=f"timeout after {timeout}s",
+                    dur_s=time.perf_counter() - t0)
         return {}
     finally:
         with _LOCK:
             _LIVE_PGIDS.discard(pgid)
     try:
         d = json.loads(out)
-    except Exception:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001
+        record_call(run_id, pipeline="farm-composer", batch=batch_name, model=model,
+                    status="parse_error", record_ids=rids,
+                    error=f"{e}: {(out or '')[:300]}", dur_s=time.perf_counter() - t0)
         return {}
     u = d.get("usage") or {}
     with _LOCK:
         _USAGE["in"] += u.get("inputTokens", 0); _USAGE["out"] += u.get("outputTokens", 0)
         _USAGE["cache"] += u.get("cacheReadTokens", 0)
-    if d.get("is_error"):
-        return {}
-    return parse_result(d.get("result", ""))
+    res = parse_result(d.get("result", ""))
+    record_call(run_id, pipeline="farm-composer", batch=batch_name, model=model,
+                status="is_error" if d.get("is_error") else "ok", usage=u,
+                record_ids=rids, n_parsed=len(res),
+                error=str(d.get("error") or "")[:400] if d.get("is_error") else None,
+                dur_s=time.perf_counter() - t0,
+                request_id=d.get("requestId") or d.get("request_id"),
+                session_id=d.get("sessionId") or d.get("session_id"))
+    return res
 
 
 def _kill_pg(pgid: int) -> None:
@@ -171,6 +190,7 @@ def main() -> int:
     atexit.register(_mcp_reenable); atexit.register(_sweep)
     for s in (signal.SIGINT, signal.SIGTERM):
         signal.signal(s, lambda *_: (_sweep(), _mcp_reenable(), sys.exit(1)))
+    run_id = new_run("farm-composer", model=args.model)
     _mcp_disable_all()
 
     out_path = Path(args.out)
@@ -188,7 +208,7 @@ def main() -> int:
     t0, wrote, empty = time.perf_counter(), 0, 0
     try:
         with ThreadPoolExecutor(max_workers=args.workers) as ex:
-            futs = [ex.submit(call_agent, str(bf), args.model, args.timeout)
+            futs = [ex.submit(call_agent, str(bf), args.model, args.timeout, run_id)
                     for bf in todo]
             for i, fut in enumerate(as_completed(futs), 1):
                 cand = fut.result()
@@ -210,6 +230,8 @@ def main() -> int:
     print(f"done: wrote {wrote}, empty {empty}, {time.perf_counter()-t0:.0f}s | "
           f"tokens in={tok['in']} out={tok['out']} cache={tok['cache']} "
           f"(~{(tok['in']+tok['out'])/max(1,wrote):.0f}/record)", flush=True)
+    print(f"ledger run_id={run_id}:", flush=True)
+    print(ledger_summary(run_id), flush=True)
     return 0
 
 

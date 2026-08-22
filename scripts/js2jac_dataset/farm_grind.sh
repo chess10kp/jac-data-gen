@@ -9,6 +9,13 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 cd "$ROOT"
 
+# singleton: refuse to run two farm grinders over the same models file
+exec 8>/tmp/farm_grind.lock
+if ! flock -n 8; then
+  echo "[farm] another farm grind holds /tmp/farm_grind.lock — refusing to start" >&2
+  exit 5
+fi
+
 START="${1:-0}"; SIZE="${2:-500}"
 MODELS="${3:-scripts/js2jac_dataset/farm_models.jsonl}"
 LOG="data/farm_grind.log"
@@ -39,3 +46,4 @@ while true; do
   off=$((off + SIZE))
 done
 echo "=== farm grind end $(date '+%F %T') ===" >> "$LOG"
+bash "$HERE/../../scripts/notify.sh" "✅ farm grind done" "farm master: $(wc -l < data/farm_dataset.jsonl 2>/dev/null || echo 0) records"

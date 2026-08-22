@@ -1,0 +1,14 @@
+{
+  "author": "jac-native-eval-v0",
+  "created_at": "2026-08-17",
+  "source_kind": "original",
+  "inspiration": [],
+  "transformation_summary": "Original task authored for the Jac-native eval v0 vertical slice. Capacity-allocator: typed objects + validation + order-preserving accumulation, no OSP.",
+  "training_corpus_similarity_checked": false,
+  "reviewers": [],
+  "notes": [
+    "Ambiguity resolved in prompt: duplicate rule keys off ACCEPTED ids only; a rejected first occurrence does not poison a later valid same id (pinned by tests.jac 'rejected first occurrence...' and negatives/neg8).",
+    "Gate status: `python scripts/validate_task.py evals/jac_native/v0 jnv0-core-complete-001` => 12/12 green (ref + 2 alts pass, 8 mutants killed, deterministic x3).",
+    "Authoring gotchas: assert (not check); test \"name\" as string literal; assert len(x)==0 not x==[] (empty-list equality is False in Jac 0.36)."
+  ]
+}

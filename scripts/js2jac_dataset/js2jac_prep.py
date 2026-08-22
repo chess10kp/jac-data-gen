@@ -86,6 +86,15 @@ def prep_repo(c: dict, profile: dict, workdir: Path, keep_out: Path) -> list[dic
         out = keep_out / cdir.name
         rep_path = keep_out / (cdir.name + "__report.json")
         rep = harvest.convert(root, out, rep_path, fail_open=True)
+        # Per-file converter error codes (diagnostics carry code + source.path).
+        # Consumed by the pack stage's deterministic pre-REJECT: a none-mode
+        # record whose codes are all policy-reject never reaches the composer.
+        diag_codes: dict[str, set] = {}
+        for d in rep.get("diagnostics", []):
+            dp = (d.get("source") or {}).get("path")
+            dc = d.get("code")
+            if dp and dc:
+                diag_codes.setdefault(dp, set()).add(dc)
         for f in rep.get("files", []):
             if f.get("kind") != "source":
                 continue
@@ -117,6 +126,12 @@ def prep_repo(c: dict, profile: dict, workdir: Path, keep_out: Path) -> list[dic
                     floor_jac = hc.get("jac") or None
                     if floor_jac:
                         floor_mode = "holes"
+                # Standalone codes are the authoritative per-file reason (the
+                # project report rarely diagnostics reject files); they drive
+                # the pack stage's deterministic pre-REJECT.
+                hc_codes = hc.get("codes") or []
+                if hc_codes:
+                    diag_codes.setdefault(spath, set()).update(hc_codes)
             # ORM-backed files get the repo's lifted graph schema so the composer
             # rewrites `prisma.x.find/create/update` into walkers/traversals over
             # real nodes+edges instead of stripping to a hollow `return []`.
@@ -133,6 +148,7 @@ def prep_repo(c: dict, profile: dict, workdir: Path, keep_out: Path) -> list[dic
                 "path": spath, "status": status,
                 "source_js": source_js, "floor_jac": floor_jac,
                 "floor_mode": floor_mode,
+                "error_codes": sorted(diag_codes.get(spath, [])),
                 "orm": "prisma" if orm else None,
                 "schema_jac": schema_jac if orm else None,
                 "schema_digest": schema_digest if orm else None,
@@ -154,6 +170,7 @@ def main() -> int:
 
     profile = profiles.get_profile(args.profile)
     cands = [json.loads(l) for l in Path(args.candidates).read_text().splitlines() if l.strip()]
+    exhausted = args.offset >= len(cands)  # offset is past the true end of the work list
     cands = cands[args.offset: args.offset + args.limit]
 
     # Absolute: harvest.convert shells out to `jac` with cwd=JAC_REPO, so any
@@ -177,7 +194,14 @@ def main() -> int:
     finally:
         shutil.rmtree(clones, ignore_errors=True)
     print(f"prepped {total} per-file records -> {work}", file=sys.stderr)
-    return 0 if total else 3  # rc=3 => end of slice (mirror composer_chunk contract)
+    if exhausted:
+        return 3  # no candidates at/after offset -> grinder stops (true end)
+    # An in-range slice yielding 0 records (every repo profile-gated or
+    # clone-failed) is NOT exhaustion. Returning 3 here made js2jac_grind.sh
+    # stop the whole sweep early (js2jac_480: 20 gated-out repos -> false
+    # DONE, candidates 500-1196 never processed). rc=0 lets the chunk write an
+    # empty dataset.jsonl marker so the grinder advances to the next slice.
+    return 0
 
 
 if __name__ == "__main__":

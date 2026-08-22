@@ -57,7 +57,10 @@ HARD RULES (any violation discards your output):
    `list`, `dict`, `set`, `switch`, `obj` used as ordinary names/builtins are
    plain identifiers — write `list(...)`, not `` `list(...) ``. Backticks are
    ONLY for genuine keywords used as names (rare); when unsure, omit the backtick.
-7. Output ONLY one ```jac fenced block containing the function. No prose.
+7. ALWAYS end every execution path with an EXPLICIT `return <expr>;` statement.
+   Jac's implicit last-expression return is valid but FORBIDDEN here — the
+   corpus must be stylistically uniform with an explicit `return`.
+8. Output ONLY one ```jac fenced block containing the function. No prose.
 
 The idiom guidance below is your rewrite playbook. Follow it, stopping any
 transform that would break behavior.

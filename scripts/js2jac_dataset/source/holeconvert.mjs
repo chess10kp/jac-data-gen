@@ -20,4 +20,7 @@ const res = convertEnvelope({ protocolVersion: PROTOCOL_VERSION, path: input.pat
 const jac = res.jac || "";
 const holeCount = (jac.match(/JS2JAC-HOLE/g) || []).length;
 const declHoleCount = (jac.match(/UNCONVERTED/g) || []).length ? (jac.split("# JS2JAC-HOLE").length - 1) : 0;
-process.stdout.write(JSON.stringify({ ok: res.ok === true, jac, holeCount, keptCount: res.keptCount||0 }));
+// codes feed the deterministic pre-REJECT (policy reject-codes drop the file
+// without an LLM call); keep payload small — codes only, no messages.
+const codes = [...new Set((res.diagnostics || []).map(d => d && d.code).filter(Boolean))];
+process.stdout.write(JSON.stringify({ ok: res.ok === true, jac, holeCount, keptCount: res.keptCount||0, codes }));

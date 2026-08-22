@@ -1,0 +1,42 @@
+{
+  "id": "Axiaaa_Iris__utils_db_py::DB_Roles",
+  "node": "DB_Roles",
+  "archetype": "node Sanctions {\n    has user_id: str;\n    has user_name: str;\n    has reason: str;\n    has mod_id: str;\n    has mod_name: str;\n    has s_type: str;\n    has date: str;\n}\n\nnode DB_User {\n    has user_id: str;\n    has user_name: str;\n    has user_perms: list[str] = [];\n    has user_roles: list[str] = [];\n}\n\nnode DB_Roles {\n    has role_id: str;\n    has role_name: str;\n    has role_perms: list[str] = [];\n}\n\nnode Ticket {\n    has ticket_id: str;\n    has ticket_user: str;\n    has ticket_status: str;\n    has allowed_users: list[str] = [];\n}\n\nnode Server {\n    has srv_id: str;\n    has name: str;\n    has owner_id: int;\n    has member_count: int;\n    has sanctions: list[str] = [];\n    has role: list[str] = [];\n    has user: list[str] = [];\n    has tickets: list[str] = [];\n}\n",
+  "walkers": "walker:pub create_DB_Roles {\n    has role_id: str; has role_name: str; has role_perms: list[str] = [];\n    can go with Root entry { new = here ++> DB_Roles(role_id=self.role_id, role_name=self.role_name, role_perms=self.role_perms); report new; }\n}\nwalker:pub list_DB_Roles {\n    can go with Root entry { report [-->[?:DB_Roles]]; }\n}\nwalker:pub update_DB_Roles {\n    has val: str;\n    can go with DB_Roles entry { here.role_name = self.val; report here; }\n}\nwalker:pub delete_DB_Roles {\n    can go with DB_Roles entry { del here; report \"deleted\"; }\n}",
+  "manifest": {
+    "node": "DB_Roles",
+    "tag_field": "role_id",
+    "create": {
+      "walker": "create_DB_Roles",
+      "args": {
+        "role_id": "<TAG>",
+        "role_name": "probe",
+        "role_perms": []
+      }
+    },
+    "list": {
+      "walker": "list_DB_Roles"
+    },
+    "delete": {
+      "walker": "delete_DB_Roles"
+    },
+    "update": {
+      "walker": "update_DB_Roles",
+      "update_field": "role_name",
+      "args": {
+        "val": "__updated__"
+      },
+      "asserts": {
+        "role_name": "__updated__"
+      }
+    }
+  },
+  "gate": {
+    "stage": "run",
+    "reason": "round-trip passed"
+  },
+  "source_ref": {
+    "repo": "Axiaaa/Iris",
+    "path": "utils/db.py"
+  }
+}
