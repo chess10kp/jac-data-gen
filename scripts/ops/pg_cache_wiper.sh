@@ -19,7 +19,7 @@ set -u
 CACHE="$HOME/.cache/jac/pg"
 LOG="$HOME/.cache/jac/pg_wiper.log"
 THRESH_MB=2048     # offline rm -rf threshold
-AGE_MIN=2          # online: never drop DBs younger than this
+AGE_MIN=0     # safe: busy-skip via active-connection check is the real guard
 PY="$HOME/repos/jac_llm_data/.venv/bin/python"
 [ -x "$PY" ] || PY=$(command -v python3)
 
@@ -30,7 +30,7 @@ SOCK=$(ls -d /tmp/jacpg-* 2>/dev/null | head -1)
 
 if [ -n "$SOCK" ] && pgrep -u "$USER" -x postgres >/dev/null 2>&1; then
   # ---- ONLINE: drop idle scratch DBs on the live cluster ----
-  OUT=$("$PY" "$HOME/repos/jac_llm_data/scripts/pg_drop_idle.py" "$AGE_MIN" 2>&1)
+  OUT=$("$PY" "$HOME/repos/jac_llm_data/scripts/ops/pg_drop_idle.py" "$AGE_MIN" 2>&1)
   case "$OUT" in
     OK*) log "online: $OUT" ;;
     "")  log "online: no writable cluster found" ;;
@@ -40,7 +40,7 @@ if [ -n "$SOCK" ] && pgrep -u "$USER" -x postgres >/dev/null 2>&1; then
 fi
 
 # ---- OFFLINE: no live PG — wipe the whole cache dir if oversized ----
-if pgrep -u "$USER" -f 'reguard_paid|agent_idiomize_guard|js2jac_grind|js2jac_chunk|py2jac_dogfood|finish_to_15k|dataset-farm|rescue_watch|rerun_mut' >/dev/null 2>&1; then
+if pgrep -u "$USER" -f 'oxalpha_free_generate|reguard_paid|agent_idiomize_guard|js2jac_grind|js2jac_chunk|py2jac_dogfood|finish_to_15k|dataset-farm|rescue_watch|rerun_mut' >/dev/null 2>&1; then
   log "skip offline wipe: pipeline driver alive"
   exit 0
 fi
