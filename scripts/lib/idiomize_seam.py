@@ -208,7 +208,19 @@ def zen_idiomize(floor_fn: str, py: str, entrypoint: str,
                 # Fail fast instead of burning 4x backoff x k on every record.
                 return None, time.perf_counter() - t0
             r.raise_for_status()
-            content = r.json()["choices"][0]["message"].get("content") or ""
+            payload = r.json()
+            choice = (payload.get("choices") or [{}])[0]
+            content = choice.get("message", {}).get("content") or ""
+            finish = choice.get("finish_reason")
+            # Transient stream failures: gateway hiccup can return 200 with an
+            # empty/cut response ("Stream ended without finish_reason") or
+            # content missing. Retry with backoff like a 5xx instead of
+            # burning one of the caller's k attempts on a dead stream.
+            if not content.strip() or finish in (None, "error"):
+                if attempt == 3:
+                    return None, time.perf_counter() - t0
+                time.sleep(1.5 * (attempt + 1))
+                continue
             return extract_jac(content), time.perf_counter() - t0
         except Exception:  # noqa: BLE001
             if attempt == 3:

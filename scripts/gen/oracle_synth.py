@@ -32,6 +32,7 @@ from idiomize_seam import _opencode_key, ZEN_BASE, FENCE  # noqa: E402
 from step4_mutation import mutation_score, _run_test  # noqa: E402
 
 import httpx  # noqa: E402
+import time  # noqa: E402
 
 _MODEL = os.environ.get("OXALPHA_SYNTH_MODEL", "x-preview-f-free")
 
@@ -82,13 +83,26 @@ def synthesize_tests(floor_fn: str, entry: str, py: str,
         ],
     }
     headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
-    try:
-        r = httpx.post(f"{ZEN_BASE}/chat/completions", headers=headers,
-                       json=body, timeout=180)
-        r.raise_for_status()
-        content = r.json()["choices"][0]["message"].get("content") or ""
-    except Exception:  # noqa: BLE001
-        return []
+    content = ""
+    for attempt in range(3):
+        try:
+            r = httpx.post(f"{ZEN_BASE}/chat/completions", headers=headers,
+                           json=body, timeout=180)
+            if r.status_code in (429, 500, 502, 503, 504):
+                time.sleep(2 ** attempt)
+                continue
+            r.raise_for_status()
+            choice = (r.json().get("choices") or [{}])[0]
+            finish = choice.get("finish_reason")
+            content = choice.get("message", {}).get("content") or ""
+            # transient stream cut ("Stream ended without finish_reason"):
+            # retry like a 5xx instead of losing the round
+            if content.strip() and finish not in (None, "error"):
+                break
+            content = ""
+            time.sleep(1.5 * (attempt + 1))
+        except Exception:  # noqa: BLE001
+            time.sleep(1.5 * (attempt + 1))
     return _extract_test_blocks(content)
 
 
