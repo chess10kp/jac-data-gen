@@ -60,6 +60,31 @@ See `schema.json`. Each validated record includes content-addressed
 `record_id` / `source_sha256` / `jac_sha256`, family, rule tags, and conversion
 summary from the bridge.
 
+## Chunk pipeline (grind)
+
+`js2jac_chunk.sh` runs prep → floor-gate → composer → guard → master-append →
+repair. The composer drivers (`js2jac_composer_batch.py`,
+`farm_composer_batch.py`) share `scripts/lib/composer_harness.py`, which
+provides the py2jac-grade resilience standard:
+
+- every model call ledgered durably (`data/run_ledger.sqlite3`) — token spend
+  survives kills; inspect with `python3 scripts/lib/generation_ledger.py summary <run_id>`
+- fsync'd, lock-protected JSONL appends; corrupt tails auto-quarantine to `<file>.bad`
+- transient failures (timeout / cut stream / empty parse) retried with backoff
+  (`--max-attempts`); deterministic `is_error` replies fail fast
+- resume by id; partially-done batch files shrink atomically
+- >50% empty batches alerts loudly and exits rc=4 so grinders stop early
+- workspace override: `--workspace` flag or `CURSOR_WS` / `CURSOR_TMPDIR` env
+
+### Repair pass (step 6)
+
+Candidates that fail `jac check` are not dropped silently:
+`repair_pass.py` sends broken Jac + compiler error + source/floor context back
+through the harness; survivors append as `source=js2jac_repair`. Every drop —
+rescued or not — yields a DPO preference pair in `runs/<TAG>/dpo_pairs.jsonl`
+(floor-fallback pairs are emitted by the guard the same way). Disable with
+`JS2JAC_REPAIR=0`.
+
 ## Next steps (per `JS2JAC_PLAN.md`)
 
 - Pilot B: 1,000 examples with browser traces (V3 native idioms)

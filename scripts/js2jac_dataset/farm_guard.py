@@ -41,7 +41,7 @@ def guard(work_dir: str, cand_path: str, out_path: str) -> tuple[int, int]:
     out = Path(out_path)
     out.parent.mkdir(parents=True, exist_ok=True)
     done = load_done(out)
-    kept = rejected = 0
+    kept = rejected = skipped = 0
     reasons: dict[str, int] = {}
 
     fh = out.open("a")
@@ -51,10 +51,18 @@ def guard(work_dir: str, cand_path: str, out_path: str) -> tuple[int, int]:
                 continue
             c = json.loads(ln)
             rid, candidate = c["id"], c.get("candidate")
-            if rid in done or not candidate:
+            if rid in done:
+                continue
+            if not candidate or candidate == "REJECT":
+                # a composer REJECT/empty is a real outcome — count it loudly so
+                # an all-empty run is visible instead of looking like success
+                skipped += 1
                 continue
             wf = Path(work_dir, f"{rid}.json")
             if not wf.exists():
+                skipped += 1
+                print(f"guard: WARNING no work record for candidate {rid}",
+                      flush=True)
                 continue
             work = json.loads(wf.read_text())
             gated_src = work["archetype"].rstrip() + "\n\n" + candidate.strip() + "\n"
@@ -79,7 +87,12 @@ def guard(work_dir: str, cand_path: str, out_path: str) -> tuple[int, int]:
     finally:
         fh.close()
 
-    print(f"guard: kept {kept}, rejected {rejected}  (master now {len(done)})")
+    total = kept + rejected + skipped
+    print(f"guard: kept {kept}, rejected {rejected}, empty/rejected-by-composer "
+          f"{skipped}  (master now {len(done)})")
+    if total and kept == 0:
+        print("guard: ALERT — zero records kept this pass; inspect reject "
+              "reasons above before running more chunks", flush=True)
     if reasons:
         print("  reject reasons:")
         for k, n in sorted(reasons.items(), key=lambda kv: -kv[1]):

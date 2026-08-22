@@ -223,6 +223,7 @@ def orm_reject(m, code):
     return hollow(m, code), f"structural-fallback:{why}"   # INCONCLUSIVE
 
 kept = drop = rej = fallback = hollowed = behav = 0
+pairs_f = open("dpo_pairs.jsonl", "a")  # next to dataset.jsonl (cwd = runs/TAG)
 with open(ds, "w") as out:
     for line in open(cand):
         line = line.strip()
@@ -242,6 +243,10 @@ with open(ds, "w") as out:
             # (guards FULL floors against destructive idiomization; the pilot lesson).
             floor = m.get("floor_jac")
             if floor and jac_ok(floor):
+                # DPO pair: chosen = known-good floor, rejected = broken rewrite
+                pairs_f.write(json.dumps({"id": c["id"], "chosen": floor,
+                                          "rejected": code,
+                                          "why": "floor-fallback"}) + "\n")
                 code, src, fallback = floor, "js2jac_floor_fallback", fallback + 1
             elif not c.get("candidate") or c.get("candidate") == "REJECT":
                 rej += 1; continue
@@ -253,6 +258,7 @@ with open(ds, "w") as out:
             "status_in": m.get("status"), "source": src,
             "js": m.get("source_js"), "jac": code,
         }) + "\n"); kept += 1
+pairs_f.close()
 # Merge the floor-kept records (holes-floors that already compiled, no LLM).
 floor_kept = 0
 if os.path.exists(floorkept):
