@@ -86,3 +86,4 @@ data/chunks/
 scripts/js2jac_dataset/runs/*/
 data/composer_pending/
 scripts/js2jac_dataset/runs/*.out
+scripts/js2jac_dataset/farm_apps.jsonl
