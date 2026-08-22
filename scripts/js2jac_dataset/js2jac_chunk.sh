@@ -280,5 +280,17 @@ with open(master, "a") as fh:
 print(f"  appended {added} new records to {master} (total now {len(seen)+added})")
 PYEOF
 
+# 6/6 repair pass: rescue check-failed candidates via model-assisted fix
+# (py2jac lesson: a drop should get one repair shot + DPO pairing, not silence).
+# Disable with JS2JAC_REPAIR=0.
+if [ "${JS2JAC_REPAIR:-1}" = "1" ]; then
+  echo "[$TAG] 6/6 repair pass"
+  $PY repair_pass.py all --run-dir "runs/$TAG" --master "$MASTER" --tag "$TAG" \
+    --model composer-2.5 --workers 4 --timeout 360 \
+    || echo "[$TAG] repair pass failed (non-fatal)"
+else
+  echo "[$TAG] repair pass disabled (JS2JAC_REPAIR=0)"
+fi
+
 rm -rf "$WORK/_emitted" "$WORK/_compose" 2>/dev/null || true
 echo "[$TAG] DONE"

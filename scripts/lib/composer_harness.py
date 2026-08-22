@@ -165,6 +165,14 @@ def call_agent(batch_file: str, *, pipeline: str, model: str, run_id: str,
         for k in ("inputTokens", "outputTokens", "cacheReadTokens"):
             usage_total[k] = usage_total.get(k, 0) + int(u.get(k) or 0)
         res = {} if d.get("is_error") else parse_result(d.get("result", ""))
+        # drop IDs the model hallucinated / bled over from another batch —
+        # only records this batch asked about may enter the output stream
+        allowed = set(rids)
+        foreign = [r for r in res if r not in allowed]
+        if foreign:
+            res = {r: c for r, c in res.items() if r in allowed}
+            print(f"[composer] {batch_name}: dropped {len(foreign)} foreign "
+                  f"ids from reply ({', '.join(foreign[:3])}...)", flush=True)
         status = ("is_error" if d.get("is_error")
                   else "ok" if res else "empty")
         record_call(run_id, pipeline=pipeline, batch=batch_name, model=model,
@@ -208,6 +216,8 @@ def run_composer(pipeline: str, args: argparse.Namespace,
     """
     workspace = args.workspace
     tmpdir = os.environ.get("CURSOR_TMPDIR", "/tmp/cursor_tmp")
+    if not getattr(args, "batch_dir", None) or not getattr(args, "out", None):
+        raise SystemExit("composer needs --batch-dir and --out")
     os.makedirs(workspace, exist_ok=True)
     os.makedirs(tmpdir, exist_ok=True)
     install_signal_handlers()
@@ -229,7 +239,8 @@ def run_composer(pipeline: str, args: argparse.Namespace,
             continue
         if len(remaining) != len(recs):
             # atomic shrink so a crash mid-run never loses the batch manifest
-            jsonl_io.atomic_write(bf, [json.dumps(r) for r in remaining])
+            # (keep the JSON-array format call_agent expects)
+            jsonl_io.atomic_write(bf, [json.dumps(remaining)])
         if prefilter and not prefilter(bf, done):
             continue
         todo.append(bf)
@@ -283,8 +294,8 @@ def run_composer(pipeline: str, args: argparse.Namespace,
 
 
 def add_common_args(ap: argparse.ArgumentParser) -> None:
-    ap.add_argument("--batch-dir", required=True)
-    ap.add_argument("--out", required=True)
+    ap.add_argument("--batch-dir")
+    ap.add_argument("--out")
     ap.add_argument("--model", default="composer-2.5")
     ap.add_argument("--workers", type=int, default=6)
     ap.add_argument("--timeout", type=int, default=360)
