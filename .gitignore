@@ -87,3 +87,6 @@ scripts/js2jac_dataset/runs/*/
 data/composer_pending/
 scripts/js2jac_dataset/runs/*.out
 scripts/js2jac_dataset/farm_apps.jsonl
+
+# --- graph-target issue mining (regenerable discovery artifacts) ---
+data/graph_targets/
