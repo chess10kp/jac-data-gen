@@ -116,6 +116,23 @@ QUERIES: list[tuple[str, str]] = [
     ("domain", 'workflow "task dependencies"'),
     ("domain", '"role hierarchy" permissions'),
     ("domain", '"lineage" "downstream" datasets'),
+    # shape: schema-level tells — a graph encoded into relational tables
+    ("shape", '"closure table"'),
+    ("shape", '"nested set"'),
+    ("shape", '"materialized path"'),
+    ("shape", '"adjacency list" table'),
+    ("shape", '"self-referencing" foreign key'),
+    ("shape", '"parent_id" recursive'),
+    # shape: runtime tells — relationships traversed or propagated
+    ("shape", '"blast radius"'),
+    ("shape", '"downstream" "recompute"'),
+    ("shape", '"cache invalidation" dependencies'),
+    ("shape", '"safe delete" referenced'),
+    ("shape", '"orphaned" references'),
+    ("shape", '"connected components"'),
+    ("shape", '"all descendants"'),
+    ("shape", '"mutual recursion"'),
+    ("shape", '"dirty" "propagate" recompute'),
 ]
 
 BASE_QUALIFIERS = "is:issue is:open"
