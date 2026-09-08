@@ -89,4 +89,14 @@ scripts/js2jac_dataset/runs/*.out
 scripts/js2jac_dataset/farm_apps.jsonl
 
 # --- graph-target issue mining (regenerable discovery artifacts) ---
+JacCoder/
 data/graph_targets/
+data/jachacks_sf_repos/
+data/jachacks_spring_repos/
+data/jachacks_2026_repos/
+
+# --- raw unfiltered jac dumps (regenerable; all_ dump >100MB, includes jaseci forks) ---
+data/jachacks_all_jac_files.jsonl
+data/jachacks_2026_jac_files.jsonl
+data/jachacks_sf_jac_files.jsonl
+data/jachacks_spring_jac_files.jsonl
