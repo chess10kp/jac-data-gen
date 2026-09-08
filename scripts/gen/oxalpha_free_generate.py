@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Data generation with idiomatization using ox-alpha free (x-preview-f-free).
+"""Data generation with idiomatization using cursor-cli (composer-2.5).
 
 For each source record (coverage>=90, sequential from --offset):
-  py2jac floor -> floor passes hidden tests -> ox-alpha-free idiomatic rewrite
+  py2jac floor -> floor passes hidden tests -> cursor-cli idiomatic rewrite
   -> candidate passes same hidden tests -> keep.
 Appends kept rows to the output jsonl with full provenance. Resumable via
 --offset; skips rids already present in the output file.
@@ -18,11 +18,11 @@ _SP = Path(__file__).resolve().parents[2] / "scripts"
 sys.path.insert(0, str(_SP / "lib"))
 sys.path.insert(0, str(_SP / "gen"))
 from step2_translate_tests import normalize_python, with_entry_to_tests  # noqa: E402
-from idiomize_seam import zen_idiomize  # noqa: E402
+from idiomize_seam import cursor_idiomize  # noqa: E402
 from step4_mutation import mutation_score  # noqa: E402
 
 DATASET = "nuprl/stack-dedup-python-testgen-starcoder-filter-v2"
-MODEL = "x-preview-f-free"
+MODEL = "composer-2.5"
 # PY2JAC_QUALITY_GRADIENT.md: never trust a hidden suite that cannot kill
 # semantics-breaking mutants of the known-correct floor as an idiomize oracle.
 _MUTATION_GATE = 0.80
@@ -51,7 +51,10 @@ def _run(cmd, cwd, timeout=120):
         return 124, ""
 
 
-_SERVER_CS_TOML = '[placement]\ndefault_codespace = "server"\n'
+_SERVER_CS_TOML = '[build]\ndefault_codespace = "server"\n'
+# [placement] is the LEGACY section: dropped by the jac native rebuild
+# (2026-08-31) — every floor test then attempted doomed native lowering and
+# failed. [build] is the probe-verified key (docs/OSP_IDIOMIZE_TASK.md §2).
 
 
 def jac_test(gp, tmp, timeout=120):
@@ -177,8 +180,8 @@ def process(record, gate: float = _MUTATION_GATE, k: int = 1,
     last_status, lat = "no_response", 0.0
     for attempt in range(k):
         temp = None if attempt == 0 else 0.8
-        jac, dt = zen_idiomize(c["floor_fn"], c["python"], c["entry"],
-                               model=MODEL, max_tokens=16384, temperature=temp)
+        jac, dt = cursor_idiomize(c["floor_fn"], c["python"], c["entry"],
+                               model=MODEL)
         lat += dt
         if jac is None:
             last_status = "no_response"
@@ -216,7 +219,7 @@ def cleanup_between_chunks(min_free_gb: float, force: bool = False) -> str:
     """Postgres leak control (safeguard 4): wiper first; if still tight, take
     the cluster offline between chunks (no jac processes are live here) and
     wipe so the next chunk bootstraps a fresh one."""
-    subprocess.run([str(REPO / "scripts/pg_cache_wiper.sh")], check=False)
+    subprocess.run([str(REPO / "scripts/ops/pg_cache_wiper.sh")], check=False)
     if not force and disk_free_gb() >= min_free_gb:
         return "ok"
     subprocess.run(["pkill", "-u", os.environ.get("USER", "jac"), "-x", "postgres"],
@@ -230,6 +233,14 @@ def cleanup_between_chunks(min_free_gb: float, force: bool = False) -> str:
         shutil.rmtree(sock, ignore_errors=True)
     time.sleep(1)
     return f"wiped (free={disk_free_gb():.0f}GB)"
+
+
+def pg_cache_gb() -> float:
+    """Size of the leaked postgres-cluster dir (the 69G disk-full culprit)."""
+    pg = Path.home() / ".cache/jac/pg"
+    if not pg.exists():
+        return 0.0
+    return sum(f.stat().st_size for f in pg.rglob("*") if f.is_file()) / 1e9
 
 
 def main():
@@ -247,6 +258,8 @@ def main():
     ap.add_argument("--out", default="data/step4/oxalpha_free_gen.jsonl")
     ap.add_argument("--no-synth-oracle", action="store_true",
                     help="disable test-suite synthesis for weak/thin oracles")
+    ap.add_argument("--pg-cap-gb", type=float, default=8.0,
+                    help="run idle-cluster wiper when ~/.cache/jac/pg exceeds this")
     args = ap.parse_args()
 
     out_path = REPO / args.out
@@ -301,6 +314,12 @@ def main():
                       f"kept={stats['kept']}/{total}", flush=True)
                 if len(batch) >= 10:
                     flush()
+                # Mid-chunk PG guard: the wiper drops only IDLE clusters, so it
+                # is safe while workers run. Without this, one chunk at
+                # workers=6 can leak ~18GB before the between-chunk wipe.
+                if total % 5 == 0 and pg_cache_gb() > args.pg_cap_gb:
+                    subprocess.run([str(REPO / "scripts/ops/pg_cache_wiper.sh")],
+                                   check=False)
             flush()
         # Safeguard 4: bounded batches; ALWAYS take PG offline + wipe between
         # chunks — the mutation gate leaks up to ~40 x 9MB DBs per record, no
@@ -309,8 +328,9 @@ def main():
         print(f"--- chunk done ({scanned}/{len(records)} scanned, "
               f"{stats['kept']} kept); cleanup: {status}; "
               f"free={disk_free_gb():.0f}GB", flush=True)
-        if disk_free_gb() < 25:
-            print("ABORT: below 25GB free even after forced wipe.", flush=True)
+        if disk_free_gb() < args.min_free_gb:
+            print(f"ABORT: below {args.min_free_gb}GB free even after "
+                  "forced wipe.", flush=True)
             break
     flush()
     wall = time.perf_counter() - t_start

@@ -28,13 +28,16 @@ REPO = Path(__file__).resolve().parents[2]
 _SP = Path(__file__).resolve().parents[2] / "scripts"
 sys.path.insert(0, str(_SP / "lib"))
 sys.path.insert(0, str(_SP / "gen"))
-from idiomize_seam import _opencode_key, ZEN_BASE, FENCE  # noqa: E402
+from idiomize_seam import FENCE  # noqa: E402
 from step4_mutation import mutation_score, _run_test  # noqa: E402
 
-import httpx  # noqa: E402
+import json  # noqa: E402
+import subprocess  # noqa: E402
 import time  # noqa: E402
 
-_MODEL = os.environ.get("OXALPHA_SYNTH_MODEL", "x-preview-f-free")
+_MODEL = os.environ.get("CURSOR_SYNTH_MODEL", "composer-2.5")
+_CURSOR_WS = "/tmp/cursor_ws"
+_CURSOR_TMP = "/tmp/cursor_tmp"
 
 _SYNTH_SYSTEM = """You are an expert Jac engineer writing unit tests. HARD RULES:
 1. Output ONLY ```jac fenced blocks containing `test "..." { ... }` blocks.
@@ -71,35 +74,26 @@ def _extract_test_blocks(text: str) -> list[str]:
 def synthesize_tests(floor_fn: str, entry: str, py: str,
                      existing: str, n: int = 4,
                      temperature: float = 0.7) -> list[str]:
-    """Ask the model for n new test blocks (unvalidated)."""
-    key = _opencode_key()
-    body = {
-        "model": _MODEL, "max_tokens": 8192,
-        "temperature": temperature,
-        "messages": [
-            {"role": "system", "content": _SYNTH_SYSTEM},
-            {"role": "user", "content": _synth_user(floor_fn, entry, py,
-                                                    existing, n)},
-        ],
-    }
-    headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
+    """Ask the model for n new test blocks (unvalidated) via cursor-cli."""
+    from pathlib import Path as _Path
+    prompt = _SYNTH_SYSTEM + "\n\n" + _synth_user(floor_fn, entry, py, existing, n)
+    _Path(_CURSOR_WS).mkdir(parents=True, exist_ok=True)
+    _Path(_CURSOR_TMP).mkdir(parents=True, exist_ok=True)
+    argv = ["cursor-agent", "--print", "--output-format", "json", "--mode", "ask",
+            "--trust", "--model", _MODEL, "--workspace", _CURSOR_WS, prompt]
+    env = {**os.environ, "TMPDIR": _CURSOR_TMP}
     content = ""
     for attempt in range(3):
         try:
-            r = httpx.post(f"{ZEN_BASE}/chat/completions", headers=headers,
-                           json=body, timeout=180)
-            if r.status_code in (429, 500, 502, 503, 504):
-                time.sleep(2 ** attempt)
-                continue
-            r.raise_for_status()
-            choice = (r.json().get("choices") or [{}])[0]
-            finish = choice.get("finish_reason")
-            content = choice.get("message", {}).get("content") or ""
-            # transient stream cut ("Stream ended without finish_reason"):
-            # retry like a 5xx instead of losing the round
-            if content.strip() and finish not in (None, "error"):
-                break
-            content = ""
+            p = subprocess.run(argv, capture_output=True, text=True, timeout=180, env=env)
+            if p.stdout.strip():
+                try:
+                    d = json.loads(p.stdout)
+                    content = d.get("result") or p.stdout
+                except Exception:  # noqa: BLE001
+                    content = p.stdout
+                if content.strip():
+                    break
             time.sleep(1.5 * (attempt + 1))
         except Exception:  # noqa: BLE001
             time.sleep(1.5 * (attempt + 1))
