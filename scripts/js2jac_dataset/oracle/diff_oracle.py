@@ -162,7 +162,7 @@ def jac_test_passes(jac_src: str, test_blocks: str, rid: str) -> bool:
     safe = re.sub(r"[^\w-]", "_", str(rid))
     with tempfile.TemporaryDirectory(prefix=f"diff_{safe}_") as tmp:
         cfg = Path(tmp) / "jac.toml"
-        cfg.write_text('[placement]\ndefault_codespace = "server"\n')
+        cfg.write_text('[build]\ndefault_codespace = "server"\n')  # [placement] is legacy/dropped (2026-08-31 jac rebuild)
         gp = Path(tmp) / (re.sub(r"[^\w-]", "_", str(rid)) + ".jac")
         gp.write_text(jac_src.rstrip() + "\n\n" + test_blocks.strip() + "\n")
         rc = subprocess.run(["prlimit", "--as=${3<<30}".replace("${3<<30}", str(3 << 30)),

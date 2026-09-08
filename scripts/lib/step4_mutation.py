@@ -213,7 +213,7 @@ def _run_test(src: str) -> tuple[int, str]:
         # py2jac-derived and demote anyway; the attempt burned ~24s CPU each
         # (measured 2026-08-21, see oxalpha_free_generate.jac_test).
         (Path(tmp) / "jac.toml").write_text(
-            '[placement]\ndefault_codespace = "server"\n')
+            '[build]\ndefault_codespace = "server"\n')  # [placement] is legacy/dropped (2026-08-31 jac rebuild)
         try:
             p = subprocess.run(["prlimit", f"--as={cap}", "--",
                                 "jac", "test", str(f)], capture_output=True,
