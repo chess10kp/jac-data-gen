@@ -1,116 +1,131 @@
-node Pkg {
-    has name: str;
-    has version: str;
+node GraphRoot { has name: str; }
+node Package {
+    has app_name: str;
+    has pkg_version: str;
     has installed_version: str = "";
     has installed_status: str = "";
-    has constraint: str = "";
 }
 
 edge Depends {}
+edge Contains {}
 
 walker PlanWalker {
     has claimed: dict[str, bool] = {};
+    has db_available: bool = false;
+    has dry_run: bool = false;
     has execution_order: list[str] = [];
     has satisfied: list[str] = [];
-    has satisfied_pkgs: list[Pkg] = [];
-    has query_installed: bool = True;
 
-    can step with Pkg entry {
-        if here.name in self.claimed { skip; }
-        self.claimed[here.name] = True;
-        deps: list[Pkg] = [here ->:Depends:->][?:Pkg];
-        for dep in deps {
-            visit :0: [dep];
-        }
-        is_sat: bool = False;
-        if self.query_installed {
-            if here.installed_version != "" {
-                if here.installed_status == "C" {
-                    if here.constraint != "" {
-                        if here.constraint == here.installed_version {
-                            is_sat = True;
-                        } else {
-                            if here.constraint[0] == "^" {
-                                stripped: str = here.constraint[1:];
-                                if stripped == here.installed_version {
-                                    is_sat = True;
-                                } else {
-                                    exp_major: str = stripped.split(".")[0];
-                                    inst_major: str = here.installed_version.split(".")[0];
-                                    if exp_major == inst_major {
-                                        is_sat = True;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+    can traverse with Package entry {
+        if here.app_name in self.claimed { skip; }
+        self.claimed[here.app_name] = true;
+        print(here.app_name);
+        deps: list[Package] = [here ->:Depends:->][?:Package];
+        to_visit: list[Package] = [];
+        for d in deps {
+            if d.app_name not in self.claimed {
+                to_visit.append(d);
             }
         }
-        if is_sat {
-            self.satisfied.append(here.name);
-            self.satisfied_pkgs.append(here);
-        } else {
-            self.execution_order.append(here.name);
+        # decide satisfied vs install using installed state when db available
+        should_install: bool = true;
+        if self.db_available {
+            if here.installed_version != "" and here.installed_status == "C" and here.installed_version == here.pkg_version {
+                should_install = false;
+            }
         }
-        print(here.name);
+        if should_install {
+            self.execution_order.append(here.app_name);
+        } else {
+            self.satisfied.append(here.app_name);
+        }
+        if len(to_visit) > 0 {
+            visit :0: to_visit;
+        } else {
+            disengage;
+        }
     }
 }
 
-def make_pkg(name: str, version: str) -> Pkg {
-    p: Pkg = Pkg(name=name, version=version);
+walker ReachWalker {
+    has claimed: dict[str, bool] = {};
+    has reachable: list[str] = [];
+
+    can step with Package entry {
+        if here.app_name in self.claimed { skip; }
+        self.claimed[here.app_name] = true;
+        print(here.app_name);
+        self.reachable.append(here.app_name);
+        kids: list[Package] = [here ->:Depends:->][?:Package];
+        to_visit: list[Package] = [];
+        for k in kids {
+            if k.app_name not in self.claimed {
+                to_visit.append(k);
+            }
+        }
+        if len(to_visit) > 0 {
+            visit :0: to_visit;
+        } else {
+            disengage;
+        }
+    }
+}
+
+def make_graph -> GraphRoot {
+    g: GraphRoot = GraphRoot(name="root");
+    root ++> g;
+    return g;
+}
+
+def find_package(graph_root: GraphRoot, app_name: str) -> Package | None {
+    cands: list[Package] = [graph_root -->][?:Package];
+    for c in cands {
+        if c.app_name == app_name {
+            return c;
+        }
+    }
+    return None;
+}
+
+def add_package(graph_root: GraphRoot, app_name: str, pkg_version: str) -> Package {
+    p: Package = Package(app_name=app_name, pkg_version=pkg_version);
+    graph_root ++> p;
     return p;
 }
 
-def add_dep(parent: Pkg, child: Pkg, constraint: str) {
-    child.constraint = constraint;
-    parent +>:Depends:+> child;
-}
-
-def mark_installed(pkg: Pkg, version: str, status: str) {
+def set_installed_state(pkg: Package, version: str, deploy_status: str) {
     pkg.installed_version = version;
-    pkg.installed_status = status;
+    pkg.installed_status = deploy_status;
 }
 
-def get_installed_state(pkg: Pkg) -> dict[str, str] | None {
-    if pkg.installed_version == "" {
-        return None;
-    }
-    out: dict[str, str] = {};
-    out["version"] = pkg.installed_version;
-    out["deploy_status"] = pkg.installed_status;
-    return out;
+def add_dependency(from_pkg: Package, to_pkg: Package) {
+    from_pkg +>:Depends:+> to_pkg;
 }
 
-def plan_install(root_pkg: Pkg, query_installed: bool) -> dict[str, any] {
-    w: PlanWalker = root_pkg spawn PlanWalker(query_installed=query_installed);
-    exec_sorted: list[str] = sorted(w.execution_order);
-    satisfied_deps: list[dict[str, any]] = [];
-    for pkg in w.satisfied_pkgs {
-        entry: dict[str, any] = {};
-        entry["application_name"] = pkg.name;
-        st: dict[str, str] = {};
-        st["version"] = pkg.installed_version;
-        st["deploy_status"] = pkg.installed_status;
-        entry["installed_state"] = st;
-        satisfied_deps.append(entry);
+def plan_install(graph_root: GraphRoot, root_name: str, db_available: bool, dry_run: bool) -> dict[str, list[str]] {
+    pkg: Package | None = find_package(graph_root, root_name);
+    if pkg is None {
+        empty_exec: list[str] = [];
+        empty_sat: list[str] = [];
+        return {"execution_order": empty_exec, "satisfied_dependencies": empty_sat};
     }
-    res: dict[str, any] = {};
-    res["execution_order"] = exec_sorted;
-    res["satisfied_dependencies"] = satisfied_deps;
-    res["installed_state_evaluated"] = query_installed;
-    res["execution_order_is_provisional"] = query_installed is False;
-    return res;
+    w: PlanWalker = pkg spawn PlanWalker(db_available=db_available, dry_run=dry_run);
+    return {"execution_order": w.execution_order, "satisfied_dependencies": w.satisfied};
+}
+
+def get_reachable(graph_root: GraphRoot, start_name: str) -> list[str] {
+    pkg: Package | None = find_package(graph_root, start_name);
+    if pkg is None {
+        empty: list[str] = [];
+        return empty;
+    }
+    w: ReachWalker = pkg spawn ReachWalker();
+    return w.reachable;
 }
 
 with entry {
-    root spawn PlanWalker(query_installed=True);
-    demo_root: Pkg = Pkg(name="UNIVERSAL_FILE_LOADER", version="1.0.0");
-    dep: Pkg = Pkg(name="JOB_CONTROL", version="1.1.0");
-    dep.constraint = "^1.1.0";
-    demo_root +>:Depends:+> dep;
-    root ++> demo_root;
-    root ++> dep;
-    w: PlanWalker = demo_root spawn PlanWalker(query_installed=True);
-    print(w.execution_order);
+    g: GraphRoot = make_graph();
+    d: Package = add_package(g, "DEMO", "0.1.0");
+    root spawn ReachWalker();
+    print("demo entry");
 }

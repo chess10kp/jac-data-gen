@@ -1,190 +1,204 @@
-node Pkg {
-    has name: str;
-    has version: str;
+node GraphRoot { has name: str; }
+node Package {
+    has app_name: str;
+    has pkg_version: str;
     has installed_version: str = "";
     has installed_status: str = "";
-    has constraint: str = "";
 }
 
 edge Depends {}
+edge Contains {}
 
 walker PlanWalker {
     has claimed: dict[str, bool] = {};
+    has db_available: bool = false;
+    has dry_run: bool = false;
     has execution_order: list[str] = [];
     has satisfied: list[str] = [];
-    has satisfied_pkgs: list[Pkg] = [];
-    has query_installed: bool = True;
 
-    can step with Pkg entry {
-        if here.name in self.claimed { skip; }
-        self.claimed[here.name] = True;
-        deps: list[Pkg] = [here ->:Depends:->][?:Pkg];
-        for dep in deps {
-            visit :0: [dep];
-        }
-        is_sat: bool = False;
-        if self.query_installed {
-            if here.installed_version != "" {
-                if here.installed_status == "C" {
-                    if here.constraint != "" {
-                        if here.constraint == here.installed_version {
-                            is_sat = True;
-                        } else {
-                            if here.constraint[0] == "^" {
-                                stripped: str = here.constraint[1:];
-                                if stripped == here.installed_version {
-                                    is_sat = True;
-                                } else {
-                                    exp_major: str = stripped.split(".")[0];
-                                    inst_major: str = here.installed_version.split(".")[0];
-                                    if exp_major == inst_major {
-                                        is_sat = True;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+    can traverse with Package entry {
+        if here.app_name in self.claimed { skip; }
+        self.claimed[here.app_name] = true;
+        print(here.app_name);
+        deps: list[Package] = [here ->:Depends:->][?:Package];
+        to_visit: list[Package] = [];
+        for d in deps {
+            if d.app_name not in self.claimed {
+                to_visit.append(d);
             }
         }
-        if is_sat {
-            self.satisfied.append(here.name);
-            self.satisfied_pkgs.append(here);
-        } else {
-            self.execution_order.append(here.name);
+        # decide satisfied vs install using installed state when db available
+        should_install: bool = true;
+        if self.db_available {
+            if here.installed_version != "" and here.installed_status == "C" and here.installed_version == here.pkg_version {
+                should_install = false;
+            }
         }
-        print(here.name);
+        if should_install {
+            self.execution_order.append(here.app_name);
+        } else {
+            self.satisfied.append(here.app_name);
+        }
+        if len(to_visit) > 0 {
+            visit :0: to_visit;
+        } else {
+            disengage;
+        }
     }
 }
 
-def make_pkg(name: str, version: str) -> Pkg {
-    p: Pkg = Pkg(name=name, version=version);
+walker ReachWalker {
+    has claimed: dict[str, bool] = {};
+    has reachable: list[str] = [];
+
+    can step with Package entry {
+        if here.app_name in self.claimed { skip; }
+        self.claimed[here.app_name] = true;
+        print(here.app_name);
+        self.reachable.append(here.app_name);
+        kids: list[Package] = [here ->:Depends:->][?:Package];
+        to_visit: list[Package] = [];
+        for k in kids {
+            if k.app_name not in self.claimed {
+                to_visit.append(k);
+            }
+        }
+        if len(to_visit) > 0 {
+            visit :0: to_visit;
+        } else {
+            disengage;
+        }
+    }
+}
+
+def make_graph -> GraphRoot {
+    g: GraphRoot = GraphRoot(name="root");
+    root ++> g;
+    return g;
+}
+
+def find_package(graph_root: GraphRoot, app_name: str) -> Package | None {
+    cands: list[Package] = [graph_root -->][?:Package];
+    for c in cands {
+        if c.app_name == app_name {
+            return c;
+        }
+    }
+    return None;
+}
+
+def add_package(graph_root: GraphRoot, app_name: str, pkg_version: str) -> Package {
+    p: Package = Package(app_name=app_name, pkg_version=pkg_version);
+    graph_root ++> p;
     return p;
 }
 
-def add_dep(parent: Pkg, child: Pkg, constraint: str) {
-    child.constraint = constraint;
-    parent +>:Depends:+> child;
-}
-
-def mark_installed(pkg: Pkg, version: str, status: str) {
+def set_installed_state(pkg: Package, version: str, deploy_status: str) {
     pkg.installed_version = version;
-    pkg.installed_status = status;
+    pkg.installed_status = deploy_status;
 }
 
-def get_installed_state(pkg: Pkg) -> dict[str, str] | None {
-    if pkg.installed_version == "" {
-        return None;
-    }
-    out: dict[str, str] = {};
-    out["version"] = pkg.installed_version;
-    out["deploy_status"] = pkg.installed_status;
-    return out;
+def add_dependency(from_pkg: Package, to_pkg: Package) {
+    from_pkg +>:Depends:+> to_pkg;
 }
 
-def plan_install(root_pkg: Pkg, query_installed: bool) -> dict[str, any] {
-    w: PlanWalker = root_pkg spawn PlanWalker(query_installed=query_installed);
-    exec_sorted: list[str] = sorted(w.execution_order);
-    satisfied_deps: list[dict[str, any]] = [];
-    for pkg in w.satisfied_pkgs {
-        entry: dict[str, any] = {};
-        entry["application_name"] = pkg.name;
-        st: dict[str, str] = {};
-        st["version"] = pkg.installed_version;
-        st["deploy_status"] = pkg.installed_status;
-        entry["installed_state"] = st;
-        satisfied_deps.append(entry);
+def plan_install(graph_root: GraphRoot, root_name: str, db_available: bool, dry_run: bool) -> dict[str, list[str]] {
+    pkg: Package | None = find_package(graph_root, root_name);
+    if pkg is None {
+        empty_exec: list[str] = [];
+        empty_sat: list[str] = [];
+        return {"execution_order": empty_exec, "satisfied_dependencies": empty_sat};
     }
-    res: dict[str, any] = {};
-    res["execution_order"] = exec_sorted;
-    res["satisfied_dependencies"] = satisfied_deps;
-    res["installed_state_evaluated"] = query_installed;
-    res["execution_order_is_provisional"] = query_installed is False;
-    return res;
+    w: PlanWalker = pkg spawn PlanWalker(db_available=db_available, dry_run=dry_run);
+    return {"execution_order": w.execution_order, "satisfied_dependencies": w.satisfied};
+}
+
+def get_reachable(graph_root: GraphRoot, start_name: str) -> list[str] {
+    pkg: Package | None = find_package(graph_root, start_name);
+    if pkg is None {
+        empty: list[str] = [];
+        return empty;
+    }
+    w: ReachWalker = pkg spawn ReachWalker();
+    return w.reachable;
 }
 
 with entry {
-    root spawn PlanWalker(query_installed=True);
-    demo_root: Pkg = Pkg(name="UNIVERSAL_FILE_LOADER", version="1.0.0");
-    dep: Pkg = Pkg(name="JOB_CONTROL", version="1.1.0");
-    dep.constraint = "^1.1.0";
-    demo_root +>:Depends:+> dep;
-    root ++> demo_root;
-    root ++> dep;
-    w: PlanWalker = demo_root spawn PlanWalker(query_installed=True);
-    print(w.execution_order);
+    g: GraphRoot = make_graph();
+    d: Package = add_package(g, "DEMO", "0.1.0");
+    root spawn ReachWalker();
+    print("demo entry");
 }
 
-test "dry_run_with_state_query_excludes_satisfied" {
-    root_pkg: Pkg = make_pkg("UNIVERSAL_FILE_LOADER", "1.0.0");
-    dep: Pkg = make_pkg("JOB_CONTROL", "1.1.0");
-    add_dep(root_pkg, dep, "^1.1.0");
-    mark_installed(dep, "1.1.0", "C");
-    res: dict[str, any] = plan_install(root_pkg, True);
-    assert(res["execution_order"] == ["UNIVERSAL_FILE_LOADER"]);
-    assert(res["installed_state_evaluated"] is True);
-    assert(res["execution_order_is_provisional"] is False);
-    sdeps: list[dict[str, any]] = res["satisfied_dependencies"] as list[dict[str, any]];
-    assert(len(sdeps) == 1);
-    assert(sdeps[0]["application_name"] == "JOB_CONTROL");
+test "dry_run with db_available respects installed satisfied diamond adversarial" {
+    g: GraphRoot = make_graph();
+    root_pkg: Package = add_package(g, "UNIVERSAL_FILE_LOADER", "2.0.0");
+    dep: Package = add_package(g, "JOB_CONTROL", "1.1.0");
+    a: Package = add_package(g, "A", "1.0.0");
+    b: Package = add_package(g, "B", "1.0.0");
+    add_dependency(root_pkg, a);
+    add_dependency(root_pkg, b);
+    add_dependency(a, dep);
+    add_dependency(b, dep);
+    set_installed_state(dep, "1.1.0", "C");
+    plan: dict[str, list[str]] = plan_install(g, "UNIVERSAL_FILE_LOADER", true, true);
+    exec_order: list[str] = plan["execution_order"];
+    sat: list[str] = plan["satisfied_dependencies"];
+    assert("JOB_CONTROL" not in exec_order);
+    assert("JOB_CONTROL" in sat);
+    assert("UNIVERSAL_FILE_LOADER" in exec_order);
+    assert(len(exec_order) == 3);
 }
 
-test "dry_run_without_query_includes_all" {
-    root_pkg: Pkg = make_pkg("UNIVERSAL_FILE_LOADER", "1.0.0");
-    dep: Pkg = make_pkg("JOB_CONTROL", "1.1.0");
-    add_dep(root_pkg, dep, "^1.1.0");
-    mark_installed(dep, "1.1.0", "C");
-    res: dict[str, any] = plan_install(root_pkg, False);
-    exec_ord: list[str] = res["execution_order"] as list[str];
-    assert(len(exec_ord) == 2);
-    assert(sorted(exec_ord) == ["JOB_CONTROL", "UNIVERSAL_FILE_LOADER"]);
-    assert(res["installed_state_evaluated"] is False);
-    assert(res["execution_order_is_provisional"] is True);
+test "dry_run without db_available shows dependency as fresh install" {
+    g: GraphRoot = make_graph();
+    root_pkg: Package = add_package(g, "UNIVERSAL_FILE_LOADER", "2.0.0");
+    dep: Package = add_package(g, "JOB_CONTROL", "1.1.0");
+    add_dependency(root_pkg, dep);
+    set_installed_state(dep, "1.1.0", "C");
+    plan: dict[str, list[str]] = plan_install(g, "UNIVERSAL_FILE_LOADER", false, true);
+    exec_order: list[str] = plan["execution_order"];
+    sat: list[str] = plan["satisfied_dependencies"];
+    assert("JOB_CONTROL" in exec_order);
+    assert(len(sat) == 0);
 }
 
-test "diamond_revisit_visits_once" {
-    root_pkg: Pkg = make_pkg("UNIVERSAL_FILE_LOADER", "1.0.0");
-    a: Pkg = make_pkg("A", "1.0.0");
-    b: Pkg = make_pkg("B", "1.0.0");
-    c: Pkg = make_pkg("C", "1.0.0");
-    d: Pkg = make_pkg("D", "1.0.0");
-    add_dep(root_pkg, a, "^1.0.0");
-    add_dep(a, b, "^1.0.0");
-    add_dep(a, c, "^1.0.0");
-    add_dep(b, d, "^1.0.0");
-    add_dep(c, d, "^1.0.0");
-    mark_installed(d, "1.0.0", "C");
-    d.constraint = "^1.0.0";
-    res: dict[str, any] = plan_install(root_pkg, True);
-    exec_ord: list[str] = res["execution_order"] as list[str];
-    assert("D" not in exec_ord);
-    sdeps: list[dict[str, any]] = res["satisfied_dependencies"] as list[dict[str, any]];
-    assert(len(sdeps) == 1);
-    res2: dict[str, any] = plan_install(root_pkg, False);
-    exec2: list[str] = res2["execution_order"] as list[str];
-    assert(len(exec2) == 5);
-    assert(sorted(exec2) == ["A", "B", "C", "D", "UNIVERSAL_FILE_LOADER"]);
+test "unknown root tolerance returns empty plan" {
+    g: GraphRoot = make_graph();
+    p: Package = add_package(g, "JOB_CONTROL", "1.1.0");
+    plan: dict[str, list[str]] = plan_install(g, "MISSING_APP", true, true);
+    assert(len(plan["execution_order"]) == 0);
+    assert(len(plan["satisfied_dependencies"]) == 0);
+    reach: list[str] = get_reachable(g, "UNKNOWN");
+    assert(len(reach) == 0);
 }
 
-test "unknown_id_and_missing_state_tolerance" {
-    lonely: Pkg = make_pkg("LONELY", "9.9.9");
-    assert(get_installed_state(lonely) is None);
-    res: dict[str, any] = plan_install(lonely, True);
-    assert(res["execution_order"] == ["LONELY"]);
-    assert(len(res["satisfied_dependencies"] as list[dict[str, any]]) == 0);
-    fake: Pkg = make_pkg("FAKE_DEP", "0.0.1");
-    add_dep(lonely, fake, "^0.0.1");
-    res2: dict[str, any] = plan_install(lonely, True);
-    assert(sorted(res2["execution_order"] as list[str]) == ["FAKE_DEP", "LONELY"]);
+test "cycle diamond does not duplicate and path reach closed" {
+    g: GraphRoot = make_graph();
+    a: Package = add_package(g, "A", "1.0.0");
+    b: Package = add_package(g, "B", "1.0.0");
+    c: Package = add_package(g, "C", "1.0.0");
+    d: Package = add_package(g, "D", "1.0.0");
+    add_dependency(a, b);
+    add_dependency(a, c);
+    add_dependency(b, d);
+    add_dependency(c, d);
+    add_dependency(d, b);
+    reach: list[str] = get_reachable(g, "A");
+    assert(len(reach) == 4);
+    assert("A" in reach);
+    assert("D" in reach);
+    plan: dict[str, list[str]] = plan_install(g, "A", false, false);
+    assert(len(plan["execution_order"]) == 4);
 }
 
-test "cycle_does_not_deadlock_and_counts_once" {
-    x: Pkg = make_pkg("X", "1.0.0");
-    y: Pkg = make_pkg("Y", "1.0.0");
-    add_dep(x, y, "^1.0.0");
-    add_dep(y, x, "^1.0.0");
-    res: dict[str, any] = plan_install(x, True);
-    exec_ord: list[str] = res["execution_order"] as list[str];
-    assert(sorted(exec_ord) == ["X", "Y"]);
-    assert(len(exec_ord) == 2);
+test "installed state not C still installs" {
+    g: GraphRoot = make_graph();
+    root_pkg: Package = add_package(g, "UNIVERSAL_FILE_LOADER", "1.0.0");
+    dep: Package = add_package(g, "JOB_CONTROL", "1.1.0");
+    add_dependency(root_pkg, dep);
+    set_installed_state(dep, "1.1.0", "I");
+    plan: dict[str, list[str]] = plan_install(g, "UNIVERSAL_FILE_LOADER", true, true);
+    assert("JOB_CONTROL" in plan["execution_order"]);
+    assert("JOB_CONTROL" not in plan["satisfied_dependencies"]);
 }

@@ -1,186 +1,173 @@
-# iss_2600hz-oscillator__patchtogether.live__2054.jac
-# foxy volumetric bridge: 256x256 field ~24Hz on main thread (#2054) — dirty-track + quiesce lift
-node Foxy { has fid: str; has quiesced: bool = false; has sig: int = 0; has ticks: int = 0; }
-node Raster { has rid: str; has frozen: bool = false; }
-node Surface { has sid: str; }
-node Cell { has cid: str; }
-edge RootLink {}
-edge HasRaster {}
-edge Drives {}
-edge Contains {}
-
-walker RasterCollector {
-    has claimed: dict[str, bool] = {};
-    has out: list[Raster] = [];
-    can rc_foxy with Foxy entry {
-        if here.fid in self.claimed { skip; }
-        self.claimed[here.fid] = true;
-        print(here.fid);
-        for r in [here ->:HasRaster:->][?:Raster] { visit :0: [r]; }
-    }
-    can rc_raster with Raster entry {
-        if here.rid in self.claimed { skip; }
-        self.claimed[here.rid] = true;
-        self.out.append(here);
-        print(here.rid);
-        visit [] else { disengage; }
-    }
+node PatchRoot { has name: str; }
+node Mod {
+    has mid: str;
+    has frozen: bool = false;
+    has raster_ver: int = 0;
+    has field_ver: int = 0;
+    has updated_at: int = 0;
+    has last_sig: str = "";
 }
-walker CellCollector {
+edge Owns {}
+edge Cable {}
+
+walker ReachWalker {
+    has target: str = "";
     has claimed: dict[str, bool] = {};
-    has cells: list[str] = [];
-    can cc_foxy with Foxy entry {
-        if here.fid in self.claimed { skip; }
-        self.claimed[here.fid] = true;
-        print(here.fid);
-        for s in [here ->:Drives:->][?:Surface] { visit :0: [s]; }
+    has found: list[str] = [];
+    can start with PatchRoot entry {
+        for m in [here ->:Owns:->][?:Mod] {
+            if m.mid == self.target {
+                visit :0: [m];
+            }
+        }
+        print("reach start " + here.name);
     }
-    can cc_surface with Surface entry {
-        if here.sid in self.claimed { skip; }
-        self.claimed[here.sid] = true;
-        print(here.sid);
-        for c in [here ->:Contains:->][?:Cell] { visit :0: [c]; }
-        for n in [here ->:Drives:->][?:Surface] { visit :0: [n]; }
-    }
-    can cc_cell with Cell entry {
-        if here.cid in self.claimed { skip; }
-        self.claimed[here.cid] = true;
-        self.cells.append(here.cid);
-        print(here.cid);
-        visit [] else { disengage; }
+    can step with Mod entry {
+        if here.mid in self.claimed { skip; }
+        self.claimed[here.mid] = True;
+        self.found.append(here.mid);
+        kids: list[Mod] = [here ->:Cable:->][?:Mod];
+        if len(kids) == 0 {
+            print("reach leaf " + here.mid);
+            disengage;
+        }
+        for k in kids {
+            visit :0: [k];
+        }
+        print("reach visit " + here.mid);
     }
 }
 
-def find_foxy(fid: str) -> Foxy | None {
-    # scan root-anchored foxies
-    for cand in [root ->:RootLink:->][?:Foxy] {
-        if cand.fid == fid { return cand; }
+walker LineageWalker {
+    has target: str = "";
+    has claimed: dict[str, bool] = {};
+    has found: list[str] = [];
+    can begin with PatchRoot entry {
+        for m in [here ->:Owns:->][?:Mod] {
+            if m.mid == self.target {
+                visit :0: [m];
+            }
+        }
+        print("lineage start " + here.name);
     }
-    return None;
-}
-def find_surface(sid: str) -> Surface | None {
-    for cand in [root ->:RootLink:->][?:Surface] {
-        if cand.sid == sid { return cand; }
+    can walk_rev with Mod entry {
+        if here.mid in self.claimed { skip; }
+        self.claimed[here.mid] = True;
+        self.found.append(here.mid);
+        parents: list[Mod] = [here <-:Cable:->][?:Mod];
+        if len(parents) == 0 {
+            print("lineage root " + here.mid);
+            disengage;
+        }
+        for p in parents {
+            visit :0: [p];
+        }
+        print("lineage visit " + here.mid);
     }
-    return None;
 }
-def find_cell(cid: str) -> Cell | None {
-    for cand in [root ->:RootLink:->][?:Cell] {
-        if cand.cid == cid { return cand; }
+
+walker RecentWalker {
+    has since: int = 0;
+    has claimed: dict[str, bool] = {};
+    has found: list[str] = [];
+    can scan_root with PatchRoot entry {
+        for m in [here ->:Owns:->][?:Mod] {
+            visit :0: [m];
+        }
+        print("recent start " + here.name);
     }
-    return None;
-}
-def create_foxy(fid: str) -> str {
-    got: Foxy | None = find_foxy(fid);
-    if got is not None { return fid; }
-    nd: Foxy = Foxy(fid=fid);
-    root +>:RootLink:+> nd;
-    return fid;
-}
-def add_raster(fid: str, rid: str, frozen: bool) -> bool {
-    foxy: Foxy | None = find_foxy(fid);
-    if foxy is None { return false; }
-    # reuse if exists
-    for r in [foxy ->:HasRaster:->][?:Raster] {
-        if r.rid == rid { r.frozen = frozen; return true; }
+    can scan_mod with Mod entry {
+        if here.mid in self.claimed { skip; }
+        self.claimed[here.mid] = True;
+        if here.updated_at > self.since {
+            self.found.append(here.mid);
+        }
+        print("recent visit " + here.mid);
+        disengage;
     }
-    nd: Raster = Raster(rid=rid, frozen=frozen);
-    root +>:RootLink:+> nd;
-    foxy +>:HasRaster:+> nd;
-    return true;
 }
-def set_raster_frozen(fid: str, rid: str, frozen: bool) -> bool {
-    foxy: Foxy | None = find_foxy(fid);
-    if foxy is None { return false; }
-    for r in [foxy ->:HasRaster:->][?:Raster] {
-        if r.rid == rid { r.frozen = frozen; return true; }
+
+walker DirtyCollectWalker {
+    has claimed: dict[str, bool] = {};
+    has collected: list[str] = [];
+    can collect_root with PatchRoot entry {
+        for m in [here ->:Owns:->][?:Mod] {
+            visit :0: [m];
+        }
+        print("dirty start " + here.name);
     }
-    return false;
-}
-def add_surface(fid: str, sid: str) -> bool {
-    foxy: Foxy | None = find_foxy(fid);
-    if foxy is None { return false; }
-    if find_surface(sid) is not None {
-        sf: Surface | None = find_surface(sid);
-        if sf is not None { foxy +>:Drives:+> sf; }
-        return true;
+    can collect_mod with Mod entry {
+        if here.mid in self.claimed { skip; }
+        self.claimed[here.mid] = True;
+        if here.raster_ver > here.field_ver {
+            self.collected.append(here.mid);
+        }
+        print("dirty check " + here.mid);
+        disengage;
     }
-    nd: Surface = Surface(sid=sid);
-    root +>:RootLink:+> nd;
-    foxy +>:Drives:+> nd;
-    return true;
 }
-def connect_surfaces(a: str, b: str) -> bool {
-    sa: Surface | None = find_surface(a);
-    sb: Surface | None = find_surface(b);
-    if sa is None { return false; }
-    if sb is None { return false; }
-    sa +>:Drives:+> sb;
-    return true;
+
+def add_module(root_node: PatchRoot, mid: str, frozen: bool) -> Mod {
+    nd = Mod(mid=mid, frozen=frozen);
+    root_node +>:Owns:+> nd;
+    return nd;
 }
-def add_cell(sid: str, cid: str) -> bool {
-    surf: Surface | None = find_surface(sid);
-    if surf is None { return false; }
-    c: Cell | None = find_cell(cid);
-    nd: Cell = c;
-    if c is None {
-        nd = Cell(cid=cid);
-        root +>:RootLink:+> nd;
+
+def connect_modules(a: Mod, b: Mod) {
+    a +>:Cable:+> b;
+}
+
+def get_reachable(root_node: PatchRoot, start_id: str) -> list[str] {
+    w = root_node spawn ReachWalker(target=start_id);
+    return sorted(w.found);
+}
+
+def get_lineage(root_node: PatchRoot, target_id: str) -> list[str] {
+    w = root_node spawn LineageWalker(target=target_id);
+    return sorted(w.found);
+}
+
+def mark_raster(root_node: PatchRoot, mid: str, sig: str, ts: int) -> bool {
+    for m in [root_node ->:Owns:->][?:Mod] {
+        if m.mid == mid {
+            if m.last_sig == sig {
+                return False;
+            }
+            m.last_sig = sig;
+            m.raster_ver = m.raster_ver + 1;
+            m.updated_at = ts;
+            return True;
+        }
     }
-    surf +>:Contains:+> nd;
-    return true;
+    return False;
 }
-def quiesce_foxy(fid: str) -> bool {
-    foxy: Foxy | None = find_foxy(fid);
-    if foxy is None { return false; }
-    foxy.quiesced = true;
-    return true;
-}
-def get_signature(fid: str) -> int {
-    foxy: Foxy | None = find_foxy(fid);
-    if foxy is None { return 0; }
-    return foxy.sig;
-}
-def get_tick_count(fid: str) -> int {
-    foxy: Foxy | None = find_foxy(fid);
-    if foxy is None { return 0; }
-    return foxy.ticks;
-}
-def bridge_tick(fid: str) -> int {
-    foxy: Foxy | None = find_foxy(fid);
-    if foxy is None { return 0; }
-    if foxy.quiesced { return foxy.sig; }
-    # collect rasters via walker (once-only claim-map)
-    w = foxy spawn RasterCollector(claimed={});
-    # w.out holds rasters
-    all_frozen: bool = true;
-    has_any: bool = false;
-    for r in w.out {
-        has_any = true;
-        if r.frozen == false { all_frozen = false; }
+
+def rebuild_dirty_fields(root_node: PatchRoot) -> list[str] {
+    w = root_node spawn DirtyCollectWalker();
+    rebuilt: list[str] = [];
+    for m in [root_node ->:Owns:->][?:Mod] {
+        for cid in w.collected {
+            if m.mid == cid {
+                if m.raster_ver > m.field_ver {
+                    m.field_ver = m.raster_ver;
+                    rebuilt.append(m.mid);
+                }
+            }
+        }
     }
-    # dirty-track: if all three frozen and we have ticked before, skip field scan
-    if has_any and all_frozen and foxy.ticks > 0 {
-        print(foxy.sig);
-        return foxy.sig;
-    }
-    foxy.ticks += 1;
-    foxy.sig += 1;
-    # fingerprint update simulates boxHeightfield3d+fieldToWavetable
-    print(foxy.sig);
-    return foxy.sig;
+    return sorted(rebuilt);
 }
-def get_reachable_cells(fid: str) -> list[str] {
-    foxy: Foxy | None = find_foxy(fid);
-    if foxy is None { return []; }
-    w = foxy spawn CellCollector(claimed={});
-    out: list[str] = w.cells;
-    return out;
+
+def recent_updates(root_node: PatchRoot, since: int) -> list[str] {
+    w = root_node spawn RecentWalker(since=since);
+    return sorted(w.found);
 }
 
 with entry {
-    demo: Foxy = Foxy(fid="__demo__");
-    root +>:RootLink:+> demo;
-    w = demo spawn CellCollector(claimed={});
-    print(w.cells);
+    demo_root = PatchRoot(name="demo");
+    a = add_module(demo_root, "foxy", false);
+    b = add_module(demo_root, "face", false);
+    connect_modules(a, b);
+    w = demo_root spawn ReachWalker(target="foxy");
+    print("demo reachable " + str(w.found));
 }

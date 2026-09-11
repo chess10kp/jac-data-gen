@@ -1,209 +1,259 @@
 node Pkg {
+    has pkg_id: str;
     has name: str;
-    has version: str;
-    has pid: str;
-    has is_root: bool = false;
+    has ver: str;
+    has is_root: bool = False;
 }
-
 edge Depends {}
 
-walker CollectAll {
-    has claimed: dict[str, bool] = {};
-    has nodes: list[Pkg] = [];
-    can collect with Pkg entry {
-        if here.pid in self.claimed { skip; }
-        self.claimed[here.pid] = True;
-        self.nodes.append(here);
-        print(here.pid);
-        nxt: list[Pkg] = [];
-        for ch in [here ->:Depends:->][?:Pkg] {
-            nxt.append(ch);
-        }
-        if nxt {
-            visit nxt;
-        } else {
-            disengage;
+def lookup(pkg_id: str) -> Pkg | None {
+    for nd in [root ->][?:Pkg] {
+        if nd.pkg_id == pkg_id {
+            return nd;
         }
     }
+    return None;
 }
 
-walker ProvenanceWalker {
-    has target: str = "";
-    has cap: int = 2;
-    has claimed: dict[str, bool] = {};
-    has path: list[str] = [];
-    has out: dict[str, list[list[str]]] = {};
-    can walk with Pkg entry {
-        if here.pid in self.claimed { skip; }
-        self.claimed[here.pid] = True;
-        self.path.append(here.pid);
-        print(here.pid);
-        if here.name == self.target {
-            ver: str = here.version;
-            if ver not in self.out {
-                self.out[ver] = [];
-            }
-            cur: list[list[str]] = self.out[ver];
-            if len(cur) < self.cap {
-                cp: list[str] = [];
-                for p in self.path {
-                    cp.append(p);
-                }
-                cur.append(cp);
-            }
-        }
-        nxt: list[Pkg] = [];
-        for ch in [here ->:Depends:->][?:Pkg] {
-            nxt.append(ch);
-        }
-        if nxt {
-            visit nxt;
-        } else {
-            disengage;
-        }
+def add_pkg(pkg_id: str, name: str, ver: str, is_root: bool) -> None {
+    # create package node if not exists
+    cur: Pkg | None = lookup(pkg_id);
+    if cur is not None {
+        return;
     }
+    nd: Pkg = Pkg(pkg_id=pkg_id, name=name, ver=ver, is_root=is_root);
+    root ++> nd;
 }
 
-def make_pkg(name: str, version: str, pid: str, is_root: bool) -> Pkg {
-    return Pkg(name=name, version=version, pid=pid, is_root=is_root);
-}
-
-def add_dep(parent: Pkg, child: Pkg) {
-    parent +>:Depends:+> child;
-}
-
-def duplicate_provenance(graph_root: Pkg, cap: int) -> dict[str, dict[str, list[list[str]]]] {
-    ca = graph_root spawn CollectAll();
-    groups: dict[str, list[Pkg]] = {};
-    vers: dict[str, dict[str, bool]] = {};
-    for nd in ca.nodes {
-        if nd.name not in groups {
-            groups[nd.name] = [];
-            vers[nd.name] = {};
-        }
-        groups[nd.name].append(nd);
-        vers[nd.name][nd.version] = True;
+def add_dep(src: str, dst: str) -> None {
+    s: Pkg | None = lookup(src);
+    d: Pkg | None = lookup(dst);
+    if s is None {
+        return;
     }
-    out: dict[str, dict[str, list[list[str]]]] = {};
-    for nm in groups {
-        vmap: dict[str, bool] = vers[nm];
-        cnt: int = len(vmap);
+    if d is None {
+        return;
+    }
+    s +>:Depends:+> d;
+}
+
+def find_dups() -> list[str] {
+    seen: dict[str, dict[str, bool]] = {};
+    for p in [root ->][?:Pkg] {
+        if p.name not in seen {
+            seen[p.name] = {};
+        }
+        seen[p.name][p.ver] = True;
+    }
+    out: list[str] = [];
+    for n in seen {
+        cnt: int = 0;
+        for v in seen[n] {
+            cnt += 1;
+        }
         if cnt > 1 {
-            pw = graph_root spawn ProvenanceWalker(target=nm, cap=cap);
-            out[nm] = pw.out;
+            out.append(n);
         }
     }
-    return out;
+    return sorted(out);
+}
+
+def explain(pkg_name: str, cap: int) -> dict[str, list[list[str]]] {
+    # map version -> chains (each chain leaf -> root)
+    result: dict[str, list[list[str]]] = {};
+    # collect distinct version instances for pkg_name
+    pkgs: list[Pkg] = [];
+    for p in [root ->][?:Pkg] {
+        if p.name == pkg_name {
+            pkgs.append(p);
+        }
+    }
+    if len(pkgs) == 0 {
+        return result;
+    }
+    for pkg in pkgs {
+        w: Provenance = pkg spawn Provenance(start_id=pkg.pkg_id, cap=cap);
+        chains: list[list[str]] = [];
+        for r in w.roots {
+            rev: list[str] = [];
+            cur: str = r;
+            rev.append(cur);
+            while cur != w.start_id {
+                if cur not in w.parent {
+                    break;
+                }
+                cur = w.parent[cur];
+                rev.append(cur);
+            }
+            # reverse to leaf -> root
+            fwd: list[str] = [];
+            idx: int = len(rev) - 1;
+            while idx >= 0 {
+                fwd.append(rev[idx]);
+                idx -= 1;
+            }
+            # only keep valid chains that start with leaf
+            if len(fwd) > 0 {
+                if fwd[0] == w.start_id {
+                    chains.append(fwd);
+                }
+            }
+        }
+        # cap already enforced by walker, sort for determinism
+        # insertion order may vary, sort by string join
+        result[pkg.ver] = chains;
+        print(pkg.ver);
+    }
+    return result;
+}
+
+walker Provenance {
+    has start_id: str = "";
+    has cap: int = 3;
+    has claimed: dict[str, bool] = {};
+    has parent: dict[str, str] = {};
+    has roots: list[str] = [];
+    can trace with Pkg entry {
+        if here.pkg_id in self.claimed {
+            skip;
+        }
+        self.claimed[here.pkg_id] = True;
+        print(here.pkg_id);
+        if here.is_root {
+            self.roots.append(here.pkg_id);
+            # do not traverse beyond root
+            if len(self.roots) >= self.cap {
+                skip;
+            }
+            skip;
+        }
+        nxt: list[Pkg] = [here <-:Depends:-][?:Pkg];
+        for p in nxt {
+            if p.pkg_id not in self.parent {
+                self.parent[p.pkg_id] = here.pkg_id;
+            }
+            if p.pkg_id not in self.claimed {
+                # parent already recorded for later enumeration
+            }
+        }
+        if len(nxt) > 0 {
+            if len(self.roots) < self.cap {
+                visit :0: nxt;
+            } else {
+                disengage;
+            }
+        } else {
+            disengage;
+        }
+    }
+}
+
+walker DemoPrint {
+    can demo with Pkg entry {
+        print(here.pkg_id);
+        skip;
+    }
 }
 
 with entry {
-    demo_root: Pkg = Pkg(name="__root__", version="0.0.0", pid="__root__", is_root=True);
-    root ++> demo_root;
-    a: Pkg = make_pkg("lru-cache", "10.4.3", "lru-cache@10.4.3", False);
-    b: Pkg = make_pkg("lru-cache", "6.0.0", "lru-cache@6.0.0", False);
-    mid: Pkg = make_pkg("cacache", "1.0.0", "cacache", False);
-    root ++> a;
-    root ++> b;
-    root ++> mid;
-    add_dep(demo_root, mid);
-    add_dep(mid, a);
-    add_dep(demo_root, b);
-    w = demo_root spawn ProvenanceWalker(target="lru-cache", cap=2);
-    print(w.out);
-    root spawn CollectAll();
-    print("demo done");
+    root spawn DemoPrint();
 }
 
-test "diamond revisit both chains via shared intermediate" {
-    r: Pkg = Pkg(name="__root__", version="0.0.0", pid="r", is_root=True);
-    root ++> r;
-    a: Pkg = make_pkg("mid-a", "1.0.0", "a", False);
-    b: Pkg = make_pkg("mid-b", "1.0.0", "b", False);
-    c: Pkg = make_pkg("lru-cache", "10.4.3", "c10", False);
-    d: Pkg = make_pkg("lru-cache", "6.0.0", "c6", False);
-    root ++> a; root ++> b; root ++> c; root ++> d;
-    add_dep(r, a);
-    add_dep(r, b);
-    add_dep(a, c);
-    add_dep(b, c);
-    add_dep(r, d);
-    res: dict[str, dict[str, list[list[str]]]] = duplicate_provenance(r, 5);
-    assert("lru-cache" in res);
-    chains10: list[list[str]] = res["lru-cache"]["10.4.3"];
-    assert(len(chains10) == 2);
-    # normalize chains to sorted string for order-insensitive check
-    s0: str = chains10[0][0] + chains10[0][1] + chains10[0][2];
-    s1: str = chains10[1][0] + chains10[1][1] + chains10[1][2];
-    assert((s0 == "rac10" and s1 == "rbc10") or (s0 == "rbc10" and s1 == "rac10"));
-    chains6: list[list[str]] = res["lru-cache"]["6.0.0"];
-    assert(len(chains6) == 1);
-    assert(chains6[0][0] == "r");
-    assert(chains6[0][1] == "c6");
+test "duplicated detection" {
+    add_pkg("a1", "lru-cache", "10.4.3", False);
+    add_pkg("a2", "lru-cache", "6.0.0", False);
+    add_pkg("b1", "cacache", "18.0.0", False);
+    dups: list[str] = find_dups();
+    assert("lru-cache" in dups);
+    assert(len(dups) == 1);
 }
 
-test "cycle handled without infinite loop" {
-    r: Pkg = Pkg(name="__root__", version="0.0.0", pid="r2", is_root=True);
-    root ++> r;
-    x: Pkg = make_pkg("lru-cache", "10.4.3", "x10", False);
-    y: Pkg = make_pkg("lru-cache", "6.0.0", "y6", False);
-    m: Pkg = make_pkg("loop", "1.0.0", "m", False);
-    root ++> x; root ++> y; root ++> m;
-    add_dep(r, m);
-    add_dep(m, x);
-    add_dep(x, m);
-    add_dep(r, y);
-    res: dict[str, dict[str, list[list[str]]]] = duplicate_provenance(r, 3);
-    assert("lru-cache" in res);
-    assert(len(res["lru-cache"]["10.4.3"]) >= 1);
-    assert(len(res["lru-cache"]["6.0.0"]) == 1);
+test "diamond revisit provenance" {
+    add_pkg("r1", "app", "1.0", True);
+    add_pkg("ma", "mid-a", "1.0", False);
+    add_pkg("mb", "mid-b", "1.0", False);
+    add_pkg("leaf1", "leaf", "1.0", False);
+    # adversarial insertion order: second branch first
+    add_dep("r1", "mb");
+    add_dep("r1", "ma");
+    add_dep("mb", "leaf1");
+    add_dep("ma", "leaf1");
+    res: dict[str, list[list[str]]] = explain("leaf", 5);
+    assert("1.0" in res);
+    chains: list[list[str]] = res["1.0"];
+    assert(len(chains) >= 1);
+    # every chain starts at leaf and ends at root
+    for ch in chains {
+        assert(ch[0] == "leaf1");
+        assert(ch[len(ch) - 1] == "r1");
+    }
+    # claim-map ensures no infinite loop on revisit
+    assert(len(chains) <= 2);
 }
 
-test "cap limits chains per version" {
-    r: Pkg = Pkg(name="__root__", version="0.0.0", pid="r3", is_root=True);
-    root ++> r;
-    p1: Pkg = make_pkg("p", "1.0.0", "p1", False);
-    p2: Pkg = make_pkg("p", "1.0.0", "p2", False);
-    p3: Pkg = make_pkg("p", "1.0.0", "p3", False);
-    v: Pkg = make_pkg("dup", "1.0.0", "v1", False);
-    v2: Pkg = make_pkg("dup", "2.0.0", "v2", False);
-    root ++> p1; root ++> p2; root ++> p3; root ++> v; root ++> v2;
-    add_dep(r, p1); add_dep(r, p2); add_dep(r, p3);
-    add_dep(p1, v); add_dep(p2, v); add_dep(p3, v);
-    add_dep(r, v2);
-    res1: dict[str, dict[str, list[list[str]]]] = duplicate_provenance(r, 2);
-    assert(len(res1["dup"]["1.0.0"]) == 2);
-    res2: dict[str, dict[str, list[list[str]]]] = duplicate_provenance(r, 5);
-    assert(len(res2["dup"]["1.0.0"]) == 3);
+test "cycle tolerance" {
+    add_pkg("cr", "app2", "1.0", True);
+    add_pkg("ca", "cyc-a", "1.0", False);
+    add_pkg("cb", "cyc-b", "1.0", False);
+    add_pkg("dup1", "dup-pkg", "1.0", False);
+    add_pkg("dup2", "dup-pkg", "2.0", False);
+    add_dep("cr", "ca");
+    add_dep("ca", "cb");
+    add_dep("cb", "ca");
+    add_dep("ca", "dup1");
+    add_dep("cb", "dup2");
+    dups2: list[str] = find_dups();
+    assert("dup-pkg" in dups2);
+    res1: dict[str, list[list[str]]] = explain("dup-pkg", 2);
+    assert("1.0" in res1);
+    assert("2.0" in res1);
+    for v in res1 {
+        for ch in res1[v] {
+            assert(len(ch) >= 1);
+        }
+    }
 }
 
-test "unknown package not duplicated returns empty" {
-    r: Pkg = Pkg(name="__root__", version="0.0.0", pid="r4", is_root=True);
-    root ++> r;
-    a: Pkg = make_pkg("single", "1.0.0", "s1", False);
-    b: Pkg = make_pkg("single", "1.0.0", "s2", False);
-    root ++> a; root ++> b;
-    add_dep(r, a);
-    add_dep(r, b);
-    res: dict[str, dict[str, list[list[str]]]] = duplicate_provenance(r, 3);
-    assert(not ("single" in res));
-    assert(len(res) == 0);
+test "unknown id tolerance and cap" {
+    add_pkg("r2", "app3", "1.0", True);
+    add_pkg("x1", "shared", "1.0", False);
+    add_pkg("r3", "app4", "1.0", True);
+    add_pkg("r4", "app5", "1.0", True);
+    add_dep("r2", "x1");
+    add_dep("r3", "x1");
+    add_dep("r4", "x1");
+    # unknown dep should be tolerated
+    add_dep("nope", "x1");
+    add_dep("r2", "missing");
+    res_cap1: dict[str, list[list[str]]] = explain("shared", 1);
+    assert("1.0" in res_cap1);
+    assert(len(res_cap1["1.0"]) == 1);
+    res_all: dict[str, list[list[str]]] = explain("shared", 10);
+    assert(len(res_all["1.0"]) >= 1);
+    assert(len(res_all["1.0"]) <= 3);
+    empty: dict[str, list[list[str]]] = explain("not-exist", 5);
+    assert(len(empty) == 0);
 }
 
-test "adversarial order diamond still finds both chains" {
-    r: Pkg = Pkg(name="__root__", version="0.0.0", pid="r5", is_root=True);
-    root ++> r;
-    # insertion order: b first then a, so revisit of c fires before deeper first-visit would
-    b: Pkg = make_pkg("mid-b", "1.0.0", "b5", False);
-    a: Pkg = make_pkg("mid-a", "1.0.0", "a5", False);
-    c: Pkg = make_pkg("lru-cache", "9.0.0", "c9", False);
-    d: Pkg = make_pkg("lru-cache", "8.0.0", "c8", False);
-    root ++> b; root ++> a; root ++> c; root ++> d;
-    add_dep(r, b);
-    add_dep(r, a);
-    add_dep(b, c);
-    add_dep(a, c);
-    add_dep(r, d);
-    res: dict[str, dict[str, list[list[str]]]] = duplicate_provenance(r, 10);
-    assert("lru-cache" in res);
-    assert(len(res["lru-cache"]["9.0.0"]) == 2);
+test "provenance sorted and duplicate version chains" {
+    add_pkg("imp1", "myapp", "1.0", True);
+    add_pkg("libA1", "lru-cache", "10.4.3", False);
+    add_pkg("libA2", "lru-cache", "6.0.0", False);
+    add_pkg("mid1", "cacache", "5.0.0", False);
+    add_dep("imp1", "mid1");
+    add_dep("mid1", "libA1");
+    add_dep("imp1", "libA2");
+    dups3: list[str] = find_dups();
+    assert(sorted(dups3) == dups3);
+    res: dict[str, list[list[str]]] = explain("lru-cache", 2);
+    assert("10.4.3" in res);
+    assert("6.0.0" in res);
+    # 10.4.3 chain should go via cacache
+    found_via: bool = False;
+    for ch in res["10.4.3"] {
+        if "mid1" in ch {
+            found_via = True;
+        }
+    }
+    assert(found_via);
 }

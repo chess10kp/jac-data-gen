@@ -1,197 +1,196 @@
-# iss_tomcounsell__ai__2849.jac — SDLC issue stale via long-lived AgentSession
-# Python source: tomcounsell/ai#2849 synthetic hand-rolled machinery lifted to OSP
-
-node AgentSession { has sid: str; has issue_url: str; has issue_num: int = 0; }
-node Issue { has num: int; has url: str; }
-node Stage { has sid: str; }
-node Package { has pname: str; }
+node IssueNode { has issue_number: int; has title: str; }
+node TaskNode { has task_id: str; has issue_number: int; }
+node SessionNode { has session_id: str; has issue_url: str; }
+node StageNode { has name: str; has kind: str; }
 
 edge Depends {}
-edge References {}
-edge Lineage {}
-edge SessionLink {}
+edge Handles {}
+edge Refers {}
 
-walker StageReachWalker {
+walker ReachWalker {
     has claimed: dict[str, bool] = {};
     has found: list[str] = [];
-    can reach with Stage entry {
-        if here.sid in self.claimed { skip; }
-        self.claimed[here.sid] = True;
-        self.found.append(here.sid);
-        print(here.sid);
-        kids: list[Stage] = [];
-        for ch in [here ->:Depends:->][?:Stage] {
-            kids.append(ch);
-        }
-        if len(kids) > 0 {
-            visit :0: kids;
+    can step with StageNode entry {
+        if here.name in self.claimed { skip; }
+        self.claimed[here.name] = True;
+        self.found.append(here.name);
+        print(here.name);
+        successors: list[StageNode] = [here ->:Depends:->][?:StageNode];
+        if len(successors) > 0 {
+            visit :0: successors;
         } else {
             disengage;
         }
     }
 }
 
-walker PackageLineageWalker {
+walker LineageWalker {
     has claimed: dict[str, bool] = {};
-    has found: list[str] = [];
-    can step with Package entry {
-        if here.pname in self.claimed { skip; }
-        self.claimed[here.pname] = True;
-        self.found.append(here.pname);
-        print(here.pname);
-        kids: list[Package] = [];
-        for ch in [here ->:Lineage:->][?:Package] {
-            kids.append(ch);
-        }
+    has issues: list[int] = [];
+    can step_session with SessionNode entry {
+        if here.session_id in self.claimed { skip; }
+        self.claimed[here.session_id] = True;
+        print(here.session_id);
+        kids: list[TaskNode] = [here ->:Handles:->][?:TaskNode];
         if len(kids) > 0 {
-            visit :0: kids;
+            visit kids;
         } else {
             disengage;
         }
     }
+    can step_task with TaskNode entry {
+        if here.task_id in self.claimed { skip; }
+        self.claimed[here.task_id] = True;
+        print(here.task_id);
+        self.issues.append(here.issue_number);
+        disengage;
+    }
 }
 
-walker StageIssueWalker {
-    has claimed: dict[str, bool] = {};
-    has found: list[int] = [];
-    can step_issue with Stage entry {
-        if here.sid in self.claimed { skip; }
-        self.claimed[here.sid] = True;
-        print(here.sid);
-        for iss in [here ->:References:->][?:Issue] {
-            self.found.append(iss.num);
-        }
-        kids: list[Stage] = [];
-        for ch in [here ->:Depends:->][?:Stage] {
-            kids.append(ch);
-        }
-        if len(kids) > 0 {
-            visit :0: kids;
+def extract_issue_number(url: str) -> str {
+    cur: str = "";
+    best: str = "";
+    for ch in url {
+        if ch == "0" or ch == "1" or ch == "2" or ch == "3" or ch == "4" or ch == "5" or ch == "6" or ch == "7" or ch == "8" or ch == "9" {
+            cur = cur + ch;
         } else {
-            disengage;
+            if len(cur) > 0 {
+                best = cur;
+            }
+            cur = "";
         }
     }
-}
-
-def get_reachable_stages(start: Stage) -> list[str] {
-    # collect walk via claim-map then return outside walk
-    w = start spawn StageReachWalker(claimed={}, found=[]);
-    return w.found;
-}
-
-def get_lineage_chain(start: Package) -> list[str] {
-    w = start spawn PackageLineageWalker(claimed={}, found=[]);
-    return w.found;
-}
-
-def get_referenced_issue_numbers(start: Stage) -> list[int] {
-    w = start spawn StageIssueWalker(claimed={}, found=[]);
-    return w.found;
-}
-
-def is_session_stale(sess: AgentSession, routed_num: int) -> bool {
-    # stale if session still pins old issue_num vs current routed task
-    if sess.issue_num == 0 { return False; }
-    return sess.issue_num != routed_num;
-}
-
-def extract_issue_number(url: str) -> int {
-    # helper for completeness - parses trailing digits
-    n: int = 0;
-    found: bool = False;
-    # scan from end backwards to collect trailing digits then parse forward
-    digits: list[str] = [];
-    # collect trailing digits reversed
-    # we walk backwards via index
-    idx: int = len(url) - 1;
-    while idx >= 0 {
-        ch: str = url[idx];
-        if ch >= "0" and ch <= "9" {
-            digits.append(ch);
-            found = True;
-        } else {
-            if found { break; }
-        }
-        idx = idx - 1;
-        if idx < 0 { break; }
+    if len(cur) > 0 {
+        best = cur;
     }
-    if found == False { return -1; }
-    # digits is reversed trailing number; reverse and compute
-    val: int = 0;
-    mult: int = 1;
-    for d in digits {
-        # d is str digit char
-        code: int = 0;
-        if d == "0" { code = 0; } elif d == "1" { code = 1; } elif d == "2" { code = 2; } elif d == "3" { code = 3; } elif d == "4" { code = 4; } elif d == "5" { code = 5; } elif d == "6" { code = 6; } elif d == "7" { code = 7; } elif d == "8" { code = 8; } else { code = 9; }
-        val = val + code * mult;
-        mult = mult * 10;
+    return best;
+}
+
+def create_session(session_id: str, issue_url: str) -> SessionNode {
+    nd = SessionNode(session_id=session_id, issue_url=issue_url);
+    root ++> nd;
+    return nd;
+}
+def create_issue(issue_number: int, title: str) -> IssueNode {
+    nd = IssueNode(issue_number=issue_number, title=title);
+    root ++> nd;
+    return nd;
+}
+def create_task(task_id: str, issue_number: int) -> TaskNode {
+    nd = TaskNode(task_id=task_id, issue_number=issue_number);
+    root ++> nd;
+    return nd;
+}
+def create_stage(name: str, kind: str) -> StageNode {
+    nd = StageNode(name=name, kind=kind);
+    root ++> nd;
+    return nd;
+}
+def route_task(session: SessionNode, task: TaskNode) {
+    session +>:Handles:+> task;
+}
+def add_dependency(a: StageNode, b: StageNode) {
+    a +>:Depends:+> b;
+}
+def link_stage_issue(stage: StageNode, issue: IssueNode) {
+    stage +>:Refers:+> issue;
+}
+def get_stale_issue_number(session: SessionNode) -> str {
+    if len(session.issue_url) > 0 {
+        return extract_issue_number(session.issue_url);
     }
-    return val;
+    return "";
+}
+def get_effective_issue_number(session: SessionNode, task: TaskNode | None) -> str {
+    if task is not None {
+        return str(task.issue_number);
+    }
+    if len(session.issue_url) > 0 {
+        return extract_issue_number(session.issue_url);
+    }
+    return "";
+}
+def get_reachable_stages(start: StageNode) -> list[str] {
+    w = start spawn ReachWalker(claimed={}, found=[]);
+    return w.found;
+}
+def get_session_task_issues(session: SessionNode) -> list[int] {
+    w = session spawn LineageWalker(claimed={}, issues=[]);
+    return w.issues;
+}
+def has_path(a: StageNode, b: StageNode) -> bool {
+    reached: list[str] = get_reachable_stages(a);
+    for n in reached {
+        if n == b.name { return True; }
+    }
+    return False;
 }
 
 with entry {
-    demo = Stage(sid="demo_root");
-    root ++> demo;
-    w = demo spawn StageReachWalker(claimed={}, found=[]);
-    print("demo done");
+    s = SessionNode(session_id="demo", issue_url="https://github.com/org/repo/issues/2734");
+    root ++> s;
+    w = s spawn LineageWalker(claimed={}, issues=[]);
+    print("demo entry done");
 }
 
-test "diamond_reachable_stages_adversarial_order" {
-    a = Stage(sid="a"); b = Stage(sid="b"); c = Stage(sid="c"); d = Stage(sid="d");
-    root ++> a; root ++> b; root ++> c; root ++> d;
-    a +>:Depends:+> b;
-    a +>:Depends:+> c;
-    c +>:Depends:+> d;
-    b +>:Depends:+> d;
-    got = get_reachable_stages(a);
-    assert(sorted(got) == sorted(["a", "b", "c", "d"]));;
+test "effective_issue_uses_routed_task_not_stale_session" {
+    s = create_session(session_id="s_eff", issue_url="https://github.com/o/r/issues/2734");
+    t2636 = create_task(task_id="t2636", issue_number=2636);
+    t2741 = create_task(task_id="t2741", issue_number=2741);
+    assert(get_stale_issue_number(s) == "2734");
+    assert(get_effective_issue_number(s, t2636) == "2636");
+    assert(get_effective_issue_number(s, t2741) == "2741");
+    route_task(s, t2636);
+    assert(sorted(get_session_task_issues(s)) == [2636]);
 }
 
-test "cycle_does_not_loop" {
-    x = Stage(sid="x"); y = Stage(sid="y");
-    root ++> x; root ++> y;
-    x +>:Depends:+> y;
-    y +>:Depends:+> x;
-    got = get_reachable_stages(x);
-    assert(sorted(got) == sorted(["x", "y"]));;
+test "diamond_dag_revisit_once_adversarial_order" {
+    a = create_stage(name="da", kind="do-plan");
+    b = create_stage(name="db", kind="do-build");
+    c = create_stage(name="dc", kind="do-build");
+    d = create_stage(name="dd", kind="do-pr-review");
+    add_dependency(a, b);
+    add_dependency(a, c);
+    add_dependency(c, d);
+    add_dependency(b, d);
+    res = get_reachable_stages(a);
+    assert(len(res) == 4);
+    assert(sorted(res) == ["da", "db", "dc", "dd"]);
+    assert(has_path(a, d) == True);
+    assert(has_path(b, a) == False);
 }
 
-test "unknown_isolated_returns_self" {
-    iso = Stage(sid="iso");
-    root ++> iso;
-    got = get_reachable_stages(iso);
-    assert(got == ["iso"]);;
+test "cycle_does_not_hang_and_claim_map_skips" {
+    x = create_stage(name="cx", kind="do-build");
+    y = create_stage(name="cy", kind="do-pr-review");
+    z = create_stage(name="cz", kind="do-merge");
+    add_dependency(x, y);
+    add_dependency(y, z);
+    add_dependency(z, x);
+    add_dependency(z, y);
+    res = get_reachable_stages(x);
+    assert(sorted(res) == ["cx", "cy", "cz"]);
 }
 
-test "stale_session_detection" {
-    sess = AgentSession(sid="s1", issue_url="https://github.com/tomcounsell/ai/issues/2734", issue_num=2734);
-    root ++> sess;
-    assert(is_session_stale(sess, 2734) == False);;
-    assert(is_session_stale(sess, 2636) == True);;
-    sess2 = AgentSession(sid="s2", issue_url="", issue_num=0);
-    root ++> sess2;
-    assert(is_session_stale(sess2, 99) == False);;
+test "unknown_and_empty_tolerance_no_throw" {
+    s_empty = create_session(session_id="s_empty", issue_url="");
+    assert(get_effective_issue_number(s_empty, None) == "");
+    assert(get_stale_issue_number(s_empty) == "");
+    assert(len(get_session_task_issues(s_empty)) == 0);
+    lone = create_stage(name="lone", kind="do-plan");
+    res2 = get_reachable_stages(lone);
+    assert(res2 == ["lone"]);
 }
 
-test "referenced_issues_via_dag" {
-    s1 = Stage(sid="s1"); s2 = Stage(sid="s2");
-    iss1 = Issue(num=2734, url="https://github.com/tomcounsell/ai/issues/2734");
-    iss2 = Issue(num=2636, url="https://github.com/tomcounsell/ai/issues/2636");
-    root ++> s1; root ++> s2; root ++> iss1; root ++> iss2;
-    s1 +>:Depends:+> s2;
-    s1 +>:References:+> iss1;
-    s2 +>:References:+> iss2;
-    got = get_referenced_issue_numbers(s1);
-    assert(sorted(got) == sorted([2734, 2636]));;
-}
-
-test "lineage_chain_with_diamond" {
-    p_a = Package(pname="a"); p_b = Package(pname="b"); p_c = Package(pname="c"); p_d = Package(pname="d");
-    root ++> p_a; root ++> p_b; root ++> p_c; root ++> p_d;
-    p_a +>:Lineage:+> p_b;
-    p_a +>:Lineage:+> p_c;
-    p_b +>:Lineage:+> p_d;
-    p_c +>:Lineage:+> p_d;
-    got = get_lineage_chain(p_a);
-    assert(sorted(got) == sorted(["a", "b", "c", "d"]));;
+test "lineage_collects_all_routed_tasks_sorted" {
+    s2 = create_session(session_id="s_lin", issue_url="https://github.com/o/r/issues/1");
+    ta = create_task(task_id="ta", issue_number=2636);
+    tb = create_task(task_id="tb", issue_number=2734);
+    tc = create_task(task_id="tc", issue_number=2741);
+    route_task(s2, ta);
+    route_task(s2, tb);
+    route_task(s2, tc);
+    assert(sorted(get_session_task_issues(s2)) == [2636, 2734, 2741]);
+    assert(get_effective_issue_number(s2, tc) == "2741");
+    assert(get_effective_issue_number(s2, None) == "1");
 }

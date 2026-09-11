@@ -1,197 +1,181 @@
 node Cell {
     has cid: str;
-    has status: str;
     has cost: float;
-    has arch: str;
+    has score: float;
+    has status: str;
 }
-edge Registry {}
 edge Depends {}
 edge Lineage {}
+edge Contains {}
 
-walker LineageReach {
+walker DependsClosure {
     has claimed: dict[str, bool] = {};
-    has found: list[str] = [];
-    can collect with Cell entry {
+    has result: list[str] = [];
+    can step with Cell entry {
         if here.cid in self.claimed { skip; }
         self.claimed[here.cid] = True;
-        self.found.append(here.cid);
-        print(here.cid);
+        self.result.append(here.cid);
         kids: list[Cell] = [];
         for nxt in [here ->:Depends:->][?:Cell] { kids.append(nxt); }
-        for nxt in [here ->:Lineage:->][?:Cell] { kids.append(nxt); }
-        if kids { visit :0: kids; } else { disengage; }
+        if len(kids) > 0 { visit kids; } else { disengage; }
+        print(here.cid);
     }
 }
-
-walker FailReach {
+walker LineageClosure {
     has claimed: dict[str, bool] = {};
-    has fails: list[str] = [];
-    can gather with Cell entry {
+    has result: list[str] = [];
+    can step with Cell entry {
         if here.cid in self.claimed { skip; }
         self.claimed[here.cid] = True;
-        if here.status == "failed" or here.status == "unsupported" { self.fails.append(here.cid); }
-        print(here.cid);
+        self.result.append(here.cid);
         kids: list[Cell] = [];
-        for nxt in [here ->:Depends:->][?:Cell] { kids.append(nxt); }
         for nxt in [here ->:Lineage:->][?:Cell] { kids.append(nxt); }
-        if kids { visit :0: kids; } else { disengage; }
+        if len(kids) > 0 { visit kids; } else { disengage; }
+        print(here.cid);
     }
 }
-
-walker RootDemo {
-    has seen: dict[str, bool] = {};
-    can start with entry {
-        print("explorer_demo");
-        disengage;
-    }
-}
-
 def find_cell(cid: str) -> Cell | None {
-    res: Cell | None = None;
-    for nd in [root ->:Registry:->][?:Cell] {
-        if nd.cid == cid { res = nd; break; }
+    for nd in [root ->:Contains:->][?:Cell] {
+        if nd.cid == cid { return nd; }
     }
-    return res;
+    return None;
 }
-
-def create_cell(cid: str, status: str, cost: float, arch: str) -> Cell {
-    ex: Cell | None = find_cell(cid);
-    if ex is not None { return ex; }
-    nd = Cell(cid=cid, status=status, cost=cost, arch=arch);
-    root +>:Registry:+> nd;
-    return nd;
+def add_cell(cid: str, cost: float, score: float, status: str) -> bool {
+    for nd in [root ->:Contains:->][?:Cell] {
+        if nd.cid == cid { return False; }
+    }
+    nd: Cell = Cell(cid=cid, cost=cost, score=score, status=status);
+    root +>:Contains:+> nd;
+    return True;
 }
-
-def add_dependency(src: str, dst: str) -> bool {
+def add_depends(src: str, dst: str) -> bool {
     s: Cell | None = find_cell(src);
     d: Cell | None = find_cell(dst);
-    if s is None or d is None { return False; }
+    if s is None { return False; }
+    if d is None { return False; }
+    if src == dst { return False; }
+    for nxt in [s ->:Depends:->][?:Cell] {
+        if nxt.cid == dst { return False; }
+    }
     s +>:Depends:+> d;
     return True;
 }
-
-def add_lineage(src: str, dst: str) -> bool {
-    s: Cell | None = find_cell(src);
-    d: Cell | None = find_cell(dst);
-    if s is None or d is None { return False; }
-    s +>:Lineage:+> d;
+def add_lineage(child: str, parent: str) -> bool {
+    c: Cell | None = find_cell(child);
+    p: Cell | None = find_cell(parent);
+    if c is None { return False; }
+    if p is None { return False; }
+    if child == parent { return False; }
+    for nxt in [c ->:Lineage:->][?:Cell] {
+        if nxt.cid == parent { return False; }
+    }
+    c +>:Lineage:+> p;
     return True;
 }
-
-def get_lineage(start_id: str) -> list[str] {
-    start: Cell | None = find_cell(start_id);
-    if start is None { return []; }
-    w = start spawn LineageReach(claimed={}, found=[]);
-    return sorted(w.found);
+def get_dependencies(cid: str) -> list[str] {
+    nd: Cell | None = find_cell(cid);
+    if nd is None { return []; }
+    w: DependsClosure = nd spawn DependsClosure(claimed={}, result=[]);
+    out: list[str] = [];
+    for x in w.result { if x != cid { out.append(x); } }
+    return sorted(out);
 }
-
-def get_failures(start_id: str) -> list[str] {
-    start: Cell | None = find_cell(start_id);
-    if start is None { return []; }
-    w = start spawn FailReach(claimed={}, fails=[]);
-    return sorted(w.fails);
+def get_lineage(cid: str) -> list[str] {
+    nd: Cell | None = find_cell(cid);
+    if nd is None { return []; }
+    w: LineageClosure = nd spawn LineageClosure(claimed={}, result=[]);
+    out: list[str] = [];
+    for x in w.result { if x != cid { out.append(x); } }
+    return sorted(out);
 }
-
 def get_pareto_front() -> list[str] {
     all_cells: list[Cell] = [];
-    for nd in [root ->:Registry:->][?:Cell] { all_cells.append(nd); }
-    front: list[str] = [];
+    for nd in [root ->:Contains:->][?:Cell] { all_cells.append(nd); }
+    pareto: list[str] = [];
     for c in all_cells {
-        if c.status != "supported" { continue; }
         dominated: bool = False;
         for o in all_cells {
-            if o.status != "supported" { continue; }
-            if o.cost < c.cost { dominated = True; break; }
+            if o.cid == c.cid { continue; }
+            if o.cost <= c.cost and o.score >= c.score {
+                if o.cost < c.cost or o.score > c.score {
+                    dominated = True;
+                    break;
+                }
+            }
         }
-        if dominated == False { front.append(c.cid); }
+        if not dominated {
+            if c.status != "failed" and c.status != "unsupported" {
+                pareto.append(c.cid);
+            }
+        }
     }
-    return sorted(front);
+    return sorted(pareto);
 }
-
-def diff_architectures(a_id: str, b_id: str) -> dict[str, str] {
-    res: dict[str, str] = {};
-    ca: Cell | None = find_cell(a_id);
-    cb: Cell | None = find_cell(b_id);
-    if ca is None or cb is None { res["error"] = "unknown_id"; return res; }
-    if ca.arch == cb.arch { res["same"] = "true"; } else { res["arch_a"] = ca.arch; res["arch_b"] = cb.arch; }
-    return res;
+def get_failed_cells() -> list[str] {
+    res: list[str] = [];
+    for nd in [root ->:Contains:->][?:Cell] {
+        if nd.status == "failed" or nd.status == "unsupported" { res.append(nd.cid); }
+    }
+    return sorted(res);
 }
-
-def explain_mutation(cid: str) -> str {
-    c: Cell | None = find_cell(cid);
-    if c is None { return "unknown"; }
-    if c.status == "failed" { return "failed: " + c.arch; }
-    if c.status == "unsupported" { return "unsupported: " + c.arch; }
-    return "supported: " + c.arch;
-}
-
 with entry {
-    demo = create_cell("demo_explorer", "supported", 1.0, "base");
-    w = demo spawn LineageReach(claimed={}, found=[]);
-    print(w.found);
-    r = root spawn RootDemo(seen={});
-    print(r.seen);
+    root spawn DependsClosure(claimed={}, result=[]);
+    print("explorer ready");
 }
 
-test "diamond_lineage_revisit_adversarial" {
-    create_cell("dia_a", "supported", 1.0, "arch_a");
-    create_cell("dia_b", "supported", 2.0, "arch_b");
-    create_cell("dia_c", "supported", 2.5, "arch_c");
-    create_cell("dia_d", "supported", 3.0, "arch_d");
-    add_dependency("dia_a", "dia_c");
-    add_dependency("dia_a", "dia_b");
-    add_dependency("dia_b", "dia_d");
-    add_dependency("dia_c", "dia_d");
-    res = get_lineage("dia_a");
-    assert("dia_a" in res);
-    assert("dia_b" in res);
-    assert("dia_c" in res);
-    assert("dia_d" in res);
-    assert(len(res) == 4);
+test "diamond depends closure revisit adversarial order" {
+    add_cell("A_dia", 1.0, 1.0, "supported");
+    add_cell("B_dia", 1.0, 1.0, "supported");
+    add_cell("C_dia", 1.0, 1.0, "supported");
+    add_cell("D_dia", 1.0, 1.0, "supported");
+    assert(add_depends("A_dia", "B_dia"));
+    assert(add_depends("A_dia", "C_dia"));
+    assert(add_depends("B_dia", "D_dia"));
+    assert(add_depends("C_dia", "D_dia"));
+    deps: list[str] = get_dependencies("A_dia");
+    assert(sorted(deps) == ["B_dia", "C_dia", "D_dia"]);
+    assert(len(deps) == 3);
 }
-
-test "dependency_cycle_claim_map_skip_does_not_truncate" {
-    create_cell("ex", "supported", 1.0, "base");
-    create_cell("y", "failed", 2.0, "arch_y");
-    create_cell("z", "supported", 1.5, "arch_z");
-    create_cell("x", "supported", 1.2, "arch_x");
-    add_dependency("ex", "y");
-    add_dependency("y", "z");
-    add_dependency("z", "x");
-    add_dependency("x", "y");
-    fails = get_failures("ex");
-    assert("y" in fails);
-    assert("x" in fails == False);
-    lin = get_lineage("ex");
-    assert("ex" in lin);
-    assert("y" in lin);
-    assert("z" in lin);
-    assert("x" in lin);
-    assert(len(lin) == 4);
+test "unknown id tolerance empty" {
+    deps: list[str] = get_dependencies("unknown_xyz_999");
+    assert(deps == []);
+    lin: list[str] = get_lineage("unknown_xyz_999");
+    assert(lin == []);
+    assert(not add_depends("nope_a", "nope_b"));
+    assert(not add_lineage("nope_a", "nope_b"));
+    failed: list[str] = get_failed_cells();
+    assert(len(failed) >= 0);
 }
-
-test "unknown_id_tolerance" {
-    r1 = get_lineage("no_such_cell_xyz");
-    assert(len(r1) == 0);
-    r2 = get_failures("no_such_cell_xyz");
-    assert(len(r2) == 0);
-    d = diff_architectures("no_such_cell_xyz", "also_missing");
-    assert("error" in d);
-    e = explain_mutation("no_such_cell_xyz");
-    assert(e == "unknown");
+test "pareto front deterministic and failures distinguishable" {
+    add_cell("P1_pf", 10.0, 0.9, "supported");
+    add_cell("P2_pf", 5.0, 0.8, "supported");
+    add_cell("P3_pf", 8.0, 0.95, "supported");
+    add_cell("F1_pf", 1.0, 0.99, "failed");
+    add_cell("U1_pf", 2.0, 0.98, "unsupported");
+    pf: list[str] = get_pareto_front();
+    assert("P2_pf" in pf);
+    assert("P3_pf" in pf);
+    assert("P1_pf" not in pf);
+    assert("F1_pf" not in pf);
+    assert("U1_pf" not in pf);
+    fails: list[str] = get_failed_cells();
+    assert("F1_pf" in fails);
+    assert("U1_pf" in fails);
+    assert("P2_pf" not in fails);
 }
-
-test "pareto_front_and_diff_and_explain" {
-    create_cell("par_a", "supported", 1.0, "arch1");
-    create_cell("par_b", "supported", 5.0, "arch2");
-    create_cell("par_c", "unsupported", 0.5, "arch3");
-    front = get_pareto_front();
-    assert("par_a" in front);
-    assert("par_c" in front == False);
-    d1 = diff_architectures("par_a", "par_a");
-    assert(d1["same"] == "true");
-    d2 = diff_architectures("par_a", "par_b");
-    assert(d2["arch_a"] == "arch1");
-    ex1 = explain_mutation("par_c");
-    assert(ex1 == "unsupported: arch3");
+test "lineage chain and cycle does not loop" {
+    add_cell("X_lin", 2.0, 0.5, "supported");
+    add_cell("Y_lin", 2.0, 0.6, "supported");
+    add_cell("Z_lin", 3.0, 0.7, "supported");
+    assert(add_lineage("Y_lin", "X_lin"));
+    assert(add_lineage("Z_lin", "Y_lin"));
+    lin: list[str] = get_lineage("Z_lin");
+    assert(sorted(lin) == ["X_lin", "Y_lin"]);
+    assert(add_depends("Y_lin", "Z_lin"));
+    assert(add_depends("Z_lin", "Y_lin"));
+    deps: list[str] = get_dependencies("Y_lin");
+    assert("Z_lin" in deps);
+    assert(len(deps) == 1);
+    deps2: list[str] = get_dependencies("Z_lin");
+    assert("Y_lin" in deps2);
 }

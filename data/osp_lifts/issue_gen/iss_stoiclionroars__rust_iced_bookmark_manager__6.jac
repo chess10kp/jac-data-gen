@@ -1,187 +1,168 @@
-node GNode {
-    has nid: str;
-    has ws: str;
-    has kind: str;
-    has alive: bool = True;
-}
+node Store { has sid: str = "store"; }
+node Node { has nid: str; has workspace: str; has kind: str = "folder"; }
+edge Holds {}
 edge Contains {}
-
-walker Finder {
-    has target: str;
-    has found: GNode | None = None;
-    has claimed: dict[str, bool] = {};
-    can find with GNode entry {
-        if here.nid in self.claimed { skip; }
-        self.claimed[here.nid] = True;
-        print(here.nid);
-        if here.alive {
-            if here.nid == self.target {
-                self.found = here;
-            }
-        }
-        kids: list[GNode] = [here ->:Contains:->][?:GNode];
-        for k in kids { visit :0: [k]; }
-    }
-}
-
-walker ReachCheck {
-    has target: str;
-    has hit: bool = False;
-    has claimed: dict[str, bool] = {};
-    can check with GNode entry {
-        if here.nid in self.claimed { skip; }
-        self.claimed[here.nid] = True;
-        print(here.nid);
-        if here.nid == self.target { self.hit = True; }
-        kids: list[GNode] = [here ->:Contains:->][?:GNode];
-        for k in kids { visit :0: [k]; }
-    }
-}
-
-walker DescendantsCollector {
-    has claimed: dict[str, bool] = {};
-    has out: list[str] = [];
-    can collect with GNode entry {
-        if here.nid in self.claimed { skip; }
-        self.claimed[here.nid] = True;
-        print(here.nid);
-        if here.alive {
-            self.out.append(here.nid);
-        }
-        kids: list[GNode] = [here ->:Contains:->][?:GNode];
-        for k in kids { visit :0: [k]; }
-    }
-}
-
-walker AllCollector {
-    has claimed: dict[str, bool] = {};
-    has nodes: list[GNode] = [];
-    can collect with GNode entry {
-        if here.nid in self.claimed { skip; }
-        self.claimed[here.nid] = True;
-        print(here.nid);
-        if here.alive {
-            self.nodes.append(here);
-        }
-        kids: list[GNode] = [here ->:Contains:->][?:GNode];
-        for k in kids { visit :0: [k]; }
-    }
-}
 
 walker DemoWalker {
     has claimed: dict[str, bool] = {};
-    can demo with GNode entry {
+    can start with Store entry {
+        if here.sid in self.claimed { skip; }
+        self.claimed[here.sid] = True;
+        print(here.sid);
+        disengage;
+    }
+    can start_node with Node entry {
         if here.nid in self.claimed { skip; }
         self.claimed[here.nid] = True;
         print(here.nid);
-        kids: list[GNode] = [here ->:Contains:->][?:GNode];
-        for k in kids { visit :0: [k]; }
+        disengage;
     }
 }
 
-def find_node(nid: str) -> GNode | None {
-    # scan all alive nodes via root
-    w = root spawn Finder(target=nid);
-    return w.found;
+walker ReachWalker {
+    has claimed: dict[str, bool] = {};
+    has target: str = "";
+    has found: bool = False;
+    can reach with Node entry {
+        if here.nid in self.claimed { skip; }
+        self.claimed[here.nid] = True;
+        if here.nid == self.target {
+            self.found = True;
+            print("reach found");
+        }
+        kids: list[Node] = [];
+        for nxt in [here ->:Contains:->][?:Node] {
+            kids.append(nxt);
+        }
+        if len(kids) > 0 {
+            visit :0: kids;
+        } else {
+            disengage;
+        }
+    }
 }
 
-def create_workspace(wid: str) -> str {
-    e = find_node(wid);
-    if e is not None { return wid; }
-    nd = GNode(nid=wid, ws=wid, kind="workspace");
-    root ++> nd;
-    print("created workspace");
-    return wid;
+walker CollectWalker {
+    has claimed: dict[str, bool] = {};
+    has out: list[str] = [];
+    can collect with Node entry {
+        if here.nid in self.claimed { skip; }
+        self.claimed[here.nid] = True;
+        self.out.append(here.nid);
+        print(here.nid);
+        kids: list[Node] = [];
+        for nxt in [here ->:Contains:->][?:Node] {
+            kids.append(nxt);
+        }
+        if len(kids) > 0 {
+            visit :0: kids;
+        } else {
+            disengage;
+        }
+    }
 }
 
-def create_folder(fid: str, ws: str) -> str {
-    e = find_node(fid);
-    if e is not None { return fid; }
-    nd = GNode(nid=fid, ws=ws, kind="folder");
-    root ++> nd;
-    print("created folder");
-    return fid;
+walker CollectNodesWalker {
+    has claimed: dict[str, bool] = {};
+    has collected: list[Node] = [];
+    can grab with Node entry {
+        if here.nid in self.claimed { skip; }
+        self.claimed[here.nid] = True;
+        self.collected.append(here);
+        print(here.nid);
+        kids: list[Node] = [];
+        for nxt in [here ->:Contains:->][?:Node] {
+            kids.append(nxt);
+        }
+        if len(kids) > 0 {
+            visit :0: kids;
+        } else {
+            disengage;
+        }
+    }
 }
 
-def link_node(parent: str, child: str) -> bool {
-    p = find_node(parent);
-    c = find_node(child);
-    if p is None { return False; }
-    if c is None { return False; }
-    if parent == child { return False; }
-    if p.ws != c.ws { return False; }
-    # cycle check: is parent reachable from child ?
-    chk = c spawn ReachCheck(target=parent);
-    if chk.hit { return False; }
-    # already linked check - allow duplicate as success
-    # perform link
-    p +>:Contains:+> c;
-    print("linked");
+def find_node(store: Store, nid: str) -> Node | None {
+    for nd in [store ->:Holds:->][?:Node] {
+        if nd.nid == nid {
+            return nd;
+        }
+    }
+    return None;
+}
+
+def new_store() -> Store {
+    s = Store(sid="store");
+    root +>:Holds:+> s;
+    return s;
+}
+
+def create_node(store: Store, nid: str, workspace: str) -> bool {
+    existing = find_node(store, nid);
+    if existing is not None {
+        return False;
+    }
+    nd = Node(nid=nid, workspace=workspace);
+    store +>:Holds:+> nd;
     return True;
 }
 
-def get_descendants(nid: str) -> list[str] {
-    n = find_node(nid);
-    if n is None { return []; }
-    w = n spawn DescendantsCollector();
+def link_node(store: Store, parent_id: str, child_id: str) -> bool {
+    p = find_node(store, parent_id);
+    c = find_node(store, child_id);
+    if p is None { return False; }
+    if c is None { return False; }
+    if p.workspace != c.workspace { return False; }
+    if parent_id == child_id { return False; }
+    for nxt in [p ->:Contains:->][?:Node] {
+        if nxt.nid == child_id { return False; }
+    }
+    w = c spawn ReachWalker(target=parent_id, claimed={});
+    if w.found { return False; }
+    p +>:Contains:+> c;
+    return True;
+}
+
+def bfs_contains(store: Store, start_id: str) -> list[str] {
+    s = find_node(store, start_id);
+    if s is None { return []; }
+    w = s spawn CollectWalker(claimed={}, out=[]);
+    return w.out;
+}
+
+def get_workspace_of_node(store: Store, nid: str) -> str | None {
+    nd = find_node(store, nid);
+    if nd is None { return None; }
+    return nd.workspace;
+}
+
+def recursive_delete(store: Store, nid: str) -> list[str] {
+    nd = find_node(store, nid);
+    if nd is None { return []; }
+    w = nd spawn CollectNodesWalker(claimed={}, collected=[]);
     res: list[str] = [];
-    for x in w.out {
-        if x != nid { res.append(x); }
+    for cur in w.collected {
+        res.append(cur.nid);
     }
-    print("descendants done");
-    return sorted(res);
+    for cur in w.collected {
+        delete cur;
+    }
+    return res;
 }
 
-def get_workspace_of_node(nid: str) -> str {
-    n = find_node(nid);
-    if n is None { return ""; }
-    print(n.ws);
-    return n.ws;
-}
-
-def recursive_delete(nid: str) -> list[str] {
-    n = find_node(nid);
-    if n is None { return []; }
-    if !n.alive { return []; }
-    w = n spawn DescendantsCollector();
-    # two-phase: collect then mutate
-    victims: list[GNode] = [];
-    for vid in w.out {
-        nd = find_node(vid);
-        if nd is not None { victims.append(nd); }
-    }
-    deleted: list[str] = [];
-    for v in victims {
-        v.alive = False;
-        deleted.append(v.nid);
-    }
-    # disconnect contains edges outside walk
-    for v in victims {
-        kids: list[GNode] = [v ->:Contains:->][?:GNode];
-        for k in kids { v -:Contains:-> k; }
-    }
-    print("deleted");
-    return sorted(deleted);
-}
-
-def export_dot() -> str {
-    w = root spawn AllCollector();
-    nodes: list[str] = [];
-    for n in w.nodes { nodes.append(n.nid); }
-    nodes = sorted(nodes);
+def export_dot(store: Store) -> str {
     out: str = "digraph G {\n";
-    for nid in nodes { out += "  " + nid + ";\n"; }
-    for n in w.nodes {
-        kids: list[GNode] = [n ->:Contains:->][?:GNode];
-        for k in kids {
-            if k.alive { out += "  " + n.nid + " -> " + k.nid + ";\n"; }
+    for nd in [store ->:Holds:->][?:Node] {
+        for ch in [nd ->:Contains:->][?:Node] {
+            out += "  " + nd.nid + " -> " + ch.nid + ";\n";
         }
     }
-    out += "}";
-    print(out);
+    out += "}\n";
     return out;
 }
 
 with entry {
+    d = Store(sid="demo");
+    root +>:Holds:+> d;
     root spawn DemoWalker();
 }

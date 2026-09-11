@@ -1,297 +1,268 @@
-# iss_2600hz-oscillator__patchtogether.live__2054.jac
-# foxy volumetric bridge: 256x256 field ~24Hz on main thread (#2054) — dirty-track + quiesce lift
-node Foxy { has fid: str; has quiesced: bool = false; has sig: int = 0; has ticks: int = 0; }
-node Raster { has rid: str; has frozen: bool = false; }
-node Surface { has sid: str; }
-node Cell { has cid: str; }
-edge RootLink {}
-edge HasRaster {}
-edge Drives {}
-edge Contains {}
-
-walker RasterCollector {
-    has claimed: dict[str, bool] = {};
-    has out: list[Raster] = [];
-    can rc_foxy with Foxy entry {
-        if here.fid in self.claimed { skip; }
-        self.claimed[here.fid] = true;
-        print(here.fid);
-        for r in [here ->:HasRaster:->][?:Raster] { visit :0: [r]; }
-    }
-    can rc_raster with Raster entry {
-        if here.rid in self.claimed { skip; }
-        self.claimed[here.rid] = true;
-        self.out.append(here);
-        print(here.rid);
-        visit [] else { disengage; }
-    }
+node PatchRoot { has name: str; }
+node Mod {
+    has mid: str;
+    has frozen: bool = false;
+    has raster_ver: int = 0;
+    has field_ver: int = 0;
+    has updated_at: int = 0;
+    has last_sig: str = "";
 }
-walker CellCollector {
+edge Owns {}
+edge Cable {}
+
+walker ReachWalker {
+    has target: str = "";
     has claimed: dict[str, bool] = {};
-    has cells: list[str] = [];
-    can cc_foxy with Foxy entry {
-        if here.fid in self.claimed { skip; }
-        self.claimed[here.fid] = true;
-        print(here.fid);
-        for s in [here ->:Drives:->][?:Surface] { visit :0: [s]; }
+    has found: list[str] = [];
+    can start with PatchRoot entry {
+        for m in [here ->:Owns:->][?:Mod] {
+            if m.mid == self.target {
+                visit :0: [m];
+            }
+        }
+        print("reach start " + here.name);
     }
-    can cc_surface with Surface entry {
-        if here.sid in self.claimed { skip; }
-        self.claimed[here.sid] = true;
-        print(here.sid);
-        for c in [here ->:Contains:->][?:Cell] { visit :0: [c]; }
-        for n in [here ->:Drives:->][?:Surface] { visit :0: [n]; }
-    }
-    can cc_cell with Cell entry {
-        if here.cid in self.claimed { skip; }
-        self.claimed[here.cid] = true;
-        self.cells.append(here.cid);
-        print(here.cid);
-        visit [] else { disengage; }
+    can step with Mod entry {
+        if here.mid in self.claimed { skip; }
+        self.claimed[here.mid] = True;
+        self.found.append(here.mid);
+        kids: list[Mod] = [here ->:Cable:->][?:Mod];
+        if len(kids) == 0 {
+            print("reach leaf " + here.mid);
+            disengage;
+        }
+        for k in kids {
+            visit :0: [k];
+        }
+        print("reach visit " + here.mid);
     }
 }
 
-def find_foxy(fid: str) -> Foxy | None {
-    # scan root-anchored foxies
-    for cand in [root ->:RootLink:->][?:Foxy] {
-        if cand.fid == fid { return cand; }
+walker LineageWalker {
+    has target: str = "";
+    has claimed: dict[str, bool] = {};
+    has found: list[str] = [];
+    can begin with PatchRoot entry {
+        for m in [here ->:Owns:->][?:Mod] {
+            if m.mid == self.target {
+                visit :0: [m];
+            }
+        }
+        print("lineage start " + here.name);
     }
-    return None;
-}
-def find_surface(sid: str) -> Surface | None {
-    for cand in [root ->:RootLink:->][?:Surface] {
-        if cand.sid == sid { return cand; }
+    can walk_rev with Mod entry {
+        if here.mid in self.claimed { skip; }
+        self.claimed[here.mid] = True;
+        self.found.append(here.mid);
+        parents: list[Mod] = [here <-:Cable:->][?:Mod];
+        if len(parents) == 0 {
+            print("lineage root " + here.mid);
+            disengage;
+        }
+        for p in parents {
+            visit :0: [p];
+        }
+        print("lineage visit " + here.mid);
     }
-    return None;
 }
-def find_cell(cid: str) -> Cell | None {
-    for cand in [root ->:RootLink:->][?:Cell] {
-        if cand.cid == cid { return cand; }
+
+walker RecentWalker {
+    has since: int = 0;
+    has claimed: dict[str, bool] = {};
+    has found: list[str] = [];
+    can scan_root with PatchRoot entry {
+        for m in [here ->:Owns:->][?:Mod] {
+            visit :0: [m];
+        }
+        print("recent start " + here.name);
     }
-    return None;
-}
-def create_foxy(fid: str) -> str {
-    got: Foxy | None = find_foxy(fid);
-    if got is not None { return fid; }
-    nd: Foxy = Foxy(fid=fid);
-    root +>:RootLink:+> nd;
-    return fid;
-}
-def add_raster(fid: str, rid: str, frozen: bool) -> bool {
-    foxy: Foxy | None = find_foxy(fid);
-    if foxy is None { return false; }
-    # reuse if exists
-    for r in [foxy ->:HasRaster:->][?:Raster] {
-        if r.rid == rid { r.frozen = frozen; return true; }
+    can scan_mod with Mod entry {
+        if here.mid in self.claimed { skip; }
+        self.claimed[here.mid] = True;
+        if here.updated_at > self.since {
+            self.found.append(here.mid);
+        }
+        print("recent visit " + here.mid);
+        disengage;
     }
-    nd: Raster = Raster(rid=rid, frozen=frozen);
-    root +>:RootLink:+> nd;
-    foxy +>:HasRaster:+> nd;
-    return true;
 }
-def set_raster_frozen(fid: str, rid: str, frozen: bool) -> bool {
-    foxy: Foxy | None = find_foxy(fid);
-    if foxy is None { return false; }
-    for r in [foxy ->:HasRaster:->][?:Raster] {
-        if r.rid == rid { r.frozen = frozen; return true; }
+
+walker DirtyCollectWalker {
+    has claimed: dict[str, bool] = {};
+    has collected: list[str] = [];
+    can collect_root with PatchRoot entry {
+        for m in [here ->:Owns:->][?:Mod] {
+            visit :0: [m];
+        }
+        print("dirty start " + here.name);
     }
-    return false;
-}
-def add_surface(fid: str, sid: str) -> bool {
-    foxy: Foxy | None = find_foxy(fid);
-    if foxy is None { return false; }
-    if find_surface(sid) is not None {
-        sf: Surface | None = find_surface(sid);
-        if sf is not None { foxy +>:Drives:+> sf; }
-        return true;
+    can collect_mod with Mod entry {
+        if here.mid in self.claimed { skip; }
+        self.claimed[here.mid] = True;
+        if here.raster_ver > here.field_ver {
+            self.collected.append(here.mid);
+        }
+        print("dirty check " + here.mid);
+        disengage;
     }
-    nd: Surface = Surface(sid=sid);
-    root +>:RootLink:+> nd;
-    foxy +>:Drives:+> nd;
-    return true;
 }
-def connect_surfaces(a: str, b: str) -> bool {
-    sa: Surface | None = find_surface(a);
-    sb: Surface | None = find_surface(b);
-    if sa is None { return false; }
-    if sb is None { return false; }
-    sa +>:Drives:+> sb;
-    return true;
+
+def add_module(root_node: PatchRoot, mid: str, frozen: bool) -> Mod {
+    nd = Mod(mid=mid, frozen=frozen);
+    root_node +>:Owns:+> nd;
+    return nd;
 }
-def add_cell(sid: str, cid: str) -> bool {
-    surf: Surface | None = find_surface(sid);
-    if surf is None { return false; }
-    c: Cell | None = find_cell(cid);
-    nd: Cell = c;
-    if c is None {
-        nd = Cell(cid=cid);
-        root +>:RootLink:+> nd;
+
+def connect_modules(a: Mod, b: Mod) {
+    a +>:Cable:+> b;
+}
+
+def get_reachable(root_node: PatchRoot, start_id: str) -> list[str] {
+    w = root_node spawn ReachWalker(target=start_id);
+    return sorted(w.found);
+}
+
+def get_lineage(root_node: PatchRoot, target_id: str) -> list[str] {
+    w = root_node spawn LineageWalker(target=target_id);
+    return sorted(w.found);
+}
+
+def mark_raster(root_node: PatchRoot, mid: str, sig: str, ts: int) -> bool {
+    for m in [root_node ->:Owns:->][?:Mod] {
+        if m.mid == mid {
+            if m.last_sig == sig {
+                return False;
+            }
+            m.last_sig = sig;
+            m.raster_ver = m.raster_ver + 1;
+            m.updated_at = ts;
+            return True;
+        }
     }
-    surf +>:Contains:+> nd;
-    return true;
+    return False;
 }
-def quiesce_foxy(fid: str) -> bool {
-    foxy: Foxy | None = find_foxy(fid);
-    if foxy is None { return false; }
-    foxy.quiesced = true;
-    return true;
-}
-def get_signature(fid: str) -> int {
-    foxy: Foxy | None = find_foxy(fid);
-    if foxy is None { return 0; }
-    return foxy.sig;
-}
-def get_tick_count(fid: str) -> int {
-    foxy: Foxy | None = find_foxy(fid);
-    if foxy is None { return 0; }
-    return foxy.ticks;
-}
-def bridge_tick(fid: str) -> int {
-    foxy: Foxy | None = find_foxy(fid);
-    if foxy is None { return 0; }
-    if foxy.quiesced { return foxy.sig; }
-    # collect rasters via walker (once-only claim-map)
-    w = foxy spawn RasterCollector(claimed={});
-    # w.out holds rasters
-    all_frozen: bool = true;
-    has_any: bool = false;
-    for r in w.out {
-        has_any = true;
-        if r.frozen == false { all_frozen = false; }
+
+def rebuild_dirty_fields(root_node: PatchRoot) -> list[str] {
+    w = root_node spawn DirtyCollectWalker();
+    rebuilt: list[str] = [];
+    for m in [root_node ->:Owns:->][?:Mod] {
+        for cid in w.collected {
+            if m.mid == cid {
+                if m.raster_ver > m.field_ver {
+                    m.field_ver = m.raster_ver;
+                    rebuilt.append(m.mid);
+                }
+            }
+        }
     }
-    # dirty-track: if all three frozen and we have ticked before, skip field scan
-    if has_any and all_frozen and foxy.ticks > 0 {
-        print(foxy.sig);
-        return foxy.sig;
-    }
-    foxy.ticks += 1;
-    foxy.sig += 1;
-    # fingerprint update simulates boxHeightfield3d+fieldToWavetable
-    print(foxy.sig);
-    return foxy.sig;
+    return sorted(rebuilt);
 }
-def get_reachable_cells(fid: str) -> list[str] {
-    foxy: Foxy | None = find_foxy(fid);
-    if foxy is None { return []; }
-    w = foxy spawn CellCollector(claimed={});
-    out: list[str] = w.cells;
-    return out;
+
+def recent_updates(root_node: PatchRoot, since: int) -> list[str] {
+    w = root_node spawn RecentWalker(since=since);
+    return sorted(w.found);
 }
 
 with entry {
-    demo: Foxy = Foxy(fid="__demo__");
-    root +>:RootLink:+> demo;
-    w = demo spawn CellCollector(claimed={});
-    print(w.cells);
+    demo_root = PatchRoot(name="demo");
+    a = add_module(demo_root, "foxy", false);
+    b = add_module(demo_root, "face", false);
+    connect_modules(a, b);
+    w = demo_root spawn ReachWalker(target="foxy");
+    print("demo reachable " + str(w.found));
 }
 
-# tests for iss_2600hz-oscillator__patchtogether.live__2054.jac — adversarial, no imports needed (guard concatenates)
-test "bridge dirty tracking skips when all rasters frozen" {
-    fid: str = "foxy-dirty-1";
-    create_foxy(fid);
-    add_raster(fid, "rA", false);
-    add_raster(fid, "rB", false);
-    add_raster(fid, "rC", false);
-    s1: int = bridge_tick(fid);
-    s2: int = bridge_tick(fid);
-    assert(s2 == s1 + 1);
-    set_raster_frozen(fid, "rA", true);
-    set_raster_frozen(fid, "rB", true);
-    set_raster_frozen(fid, "rC", true);
-    s3: int = bridge_tick(fid);
-    assert(s3 == s2);
-    s4: int = bridge_tick(fid);
-    assert(s4 == s2);
-    set_raster_frozen(fid, "rB", false);
-    s5: int = bridge_tick(fid);
-    assert(s5 == s2 + 1);
+test "diamond revisit reachability adversarial order" {
+    r = PatchRoot(name="r");
+    a = add_module(r, "a", false);
+    b = add_module(r, "b", false);
+    c = add_module(r, "c", false);
+    d = add_module(r, "d", false);
+    connect_modules(a, b);
+    connect_modules(a, c);
+    connect_modules(b, d);
+    connect_modules(c, d);
+    got = get_reachable(r, "a");
+    assert(sorted(got) == ["a", "b", "c", "d"]);
+    # second order: insert c before b still same closure
+    r2 = PatchRoot(name="r2");
+    a2 = add_module(r2, "a", false);
+    c2 = add_module(r2, "c", false);
+    b2 = add_module(r2, "b", false);
+    d2 = add_module(r2, "d", false);
+    connect_modules(a2, c2);
+    connect_modules(a2, b2);
+    connect_modules(c2, d2);
+    connect_modules(b2, d2);
+    got2 = get_reachable(r2, "a");
+    assert(sorted(got2) == ["a", "b", "c", "d"]);
 }
 
-test "quiesce freezes tick and signature" {
-    fid: str = "foxy-quiesce-1";
-    create_foxy(fid);
-    add_raster(fid, "qrA", false);
-    s1: int = bridge_tick(fid);
-    assert(s1 == 1);
-    ok: bool = quiesce_foxy(fid);
-    assert(ok);
-    s2: int = bridge_tick(fid);
-    assert(s2 == s1);
-    assert(get_tick_count(fid) == 1);
-    assert(get_signature(fid) == s1);
+test "cycle and unknown id tolerance" {
+    r = PatchRoot(name="r");
+    x = add_module(r, "x", false);
+    y = add_module(r, "y", false);
+    z = add_module(r, "z", false);
+    connect_modules(x, y);
+    connect_modules(y, z);
+    connect_modules(z, x);
+    cyc = get_reachable(r, "x");
+    assert(sorted(cyc) == ["x", "y", "z"]);
+    empty = get_reachable(r, "nope");
+    assert(empty == []);
+    lin_empty = get_lineage(r, "nope");
+    assert(lin_empty == []);
+    mark = mark_raster(r, "nope", "sig", 10);
+    assert(mark == False);
 }
 
-test "diamond revisit deduplicates cells adversarial order" {
-    fid: str = "foxy-diamond-1";
-    create_foxy(fid);
-    add_surface(fid, "s1");
-    add_surface(fid, "s2");
-    # both surfaces drive a shared diamond surface
-    add_surface(fid, "sShared");
-    # insertion order adversarial: connect s2 first, then s1, both to shared
-    connect_surfaces("s2", "sShared");
-    connect_surfaces("s1", "sShared");
-    add_cell("sShared", "cX");
-    add_cell("s1", "cA");
-    add_cell("s2", "cB");
-    # duplicate cell via shared surface reachable through two paths
-    got: list[str] = get_reachable_cells(fid);
-    got_sorted: list[str] = sorted(got);
-    assert(got_sorted == ["cA", "cB", "cX"]);
-    # second call must be stable (claim-map + skip, not disengage truncation)
-    got2: list[str] = get_reachable_cells(fid);
-    assert(sorted(got2) == got_sorted);
+test "lineage reverse diamond" {
+    r = PatchRoot(name="r");
+    a = add_module(r, "a", false);
+    b = add_module(r, "b", false);
+    c = add_module(r, "c", false);
+    d = add_module(r, "d", false);
+    connect_modules(a, d);
+    connect_modules(b, d);
+    connect_modules(d, c);
+    lin = get_lineage(r, "c");
+    assert(sorted(lin) == ["a", "b", "c", "d"]);
+    lin2 = get_lineage(r, "d");
+    assert(sorted(lin2) == ["a", "b", "d"]);
 }
 
-test "unknown id tolerance and cell diamond via shared cell node" {
-    assert(get_signature("no-such-foxy") == 0);
-    assert(get_tick_count("no-such-foxy") == 0);
-    assert(bridge_tick("no-such-foxy") == 0);
-    assert(quiesce_foxy("no-such-foxy") == false);
-    assert(add_raster("no-such-foxy", "r1", false) == false);
-    assert(add_surface("no-such-foxy", "sx") == false);
-    assert(add_cell("no-surface", "cx") == false);
-    assert(get_reachable_cells("no-such-foxy") == []);
-    # shared cell node diamond: two surfaces contain same cid
-    fid2: str = "foxy-shared-cell-1";
-    create_foxy(fid2);
-    add_surface(fid2, "sa");
-    add_surface(fid2, "sb");
-    add_cell("sa", "shared");
-    add_cell("sb", "shared");
-    cells: list[str] = get_reachable_cells(fid2);
-    assert(sorted(cells) == ["shared"]);
+test "dirty tracking skips unchanged raster" {
+    r = PatchRoot(name="r");
+    f = add_module(r, "foxy", false);
+    g = add_module(r, "other", false);
+    ch1 = mark_raster(r, "foxy", "sigA", 1);
+    assert(ch1 == True);
+    ch_dup = mark_raster(r, "foxy", "sigA", 2);
+    assert(ch_dup == False);
+    first = rebuild_dirty_fields(r);
+    assert(first == ["foxy"]);
+    second = rebuild_dirty_fields(r);
+    assert(second == []);
+    ch2 = mark_raster(r, "foxy", "sigB", 3);
+    assert(ch2 == True);
+    third = rebuild_dirty_fields(r);
+    assert(third == ["foxy"]);
+    # other never dirtied so never rebuilt
+    assert("other" not in third);
 }
 
-test "faces-parity 33 cells path reach sorted" {
-    fid: str = "foxy-parity-33";
-    create_foxy(fid);
-    add_surface(fid, "face");
-    i: int = 0;
-    while i < 33 {
-        cid: str = "cell-" + str(i);
-        add_cell("face", cid);
-        i += 1;
-    }
-    got: list[str] = get_reachable_cells(fid);
-    assert(len(got) == 33);
-    srt: list[str] = sorted(got);
-    # sorted order deterministic
-    assert(srt[0] == "cell-0");
-    assert(srt[1] == "cell-1");
-}
-
-test "cycle surface graph does not loop" {
-    fid: str = "foxy-cycle-1";
-    create_foxy(fid);
-    add_surface(fid, "ca");
-    add_surface(fid, "cb");
-    add_surface(fid, "cc");
-    connect_surfaces("ca", "cb");
-    connect_surfaces("cb", "cc");
-    connect_surfaces("cc", "ca");
-    add_cell("ca", "c1");
-    add_cell("cb", "c2");
-    got: list[str] = get_reachable_cells(fid);
-    assert(sorted(got) == ["c1", "c2"]);
+test "recent updates filtering" {
+    r = PatchRoot(name="r");
+    a = add_module(r, "a", false);
+    b = add_module(r, "b", false);
+    c = add_module(r, "c", false);
+    mark_raster(r, "a", "s1", 5);
+    mark_raster(r, "b", "s2", 15);
+    # c stays at 0
+    rec10 = recent_updates(r, 10);
+    assert(rec10 == ["b"]);
+    rec0 = recent_updates(r, 0);
+    assert(sorted(rec0) == ["a", "b"]);
+    rec20: list[str] = recent_updates(r, 20);
+    assert(rec20 == []);
 }

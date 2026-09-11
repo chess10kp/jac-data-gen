@@ -1,228 +1,282 @@
-node Anchor { has name: str = "project"; }
+node Project {
+    has pid: str;
+}
 node Callable {
     has cid: str;
-    has ver: int = 1;
-    has result: str = "unknown";
-    has effects: str = "pure";
-    has boundary: str = "exact";
-    has place_fact: str = "none";
+    has is_dynamic: bool = False;
+    has effects: list[str] = [];
+    has values: list[str] = [];
+    has summary_ref: str = "";
 }
-edge Calls {}
-edge SummaryRef {}
+edge Contains {}
+edge CallEdge {}
 
-walker CollectReachable {
+walker CollectValues {
     has claimed: dict[str, bool] = {};
-    has found: list[str] = [];
-    has bound: int = 5;
-    has depth: dict[str, int] = {};
-    can step_a with Callable entry {
+    has out: list[str] = [];
+    can gather with Callable entry {
         if here.cid in self.claimed { skip; }
         self.claimed[here.cid] = True;
-        self.found.append(here.cid);
-        cur: int = 0;
-        if here.cid in self.depth { cur = self.depth[here.cid] as int; }
-        if cur >= self.bound { print(here.cid); return; }
-        kids: list[Callable] = [here ->:Calls:->][?:Callable];
-        if len(kids) == 0 { print(here.cid); return; }
-        for nxt in kids {
-            if nxt.cid not in self.depth { self.depth[nxt.cid] = cur + 1; }
-            visit :0: [nxt];
+        print(here.cid);
+        for v in here.values {
+            self.out.append(v);
         }
-        print(here.cid);
-    }
-    can step_b with Anchor entry {
-        if "anchor" in self.claimed { skip; }
-        self.claimed["anchor"] = True;
-        kids: list[Callable] = [here ->:Calls:->][?:Callable];
-        for k in kids { visit :0: [k]; }
-        print(here.name);
+        kids: list[Callable] = [here ->:CallEdge:->][?:Callable];
+        for k in kids {
+            visit :0: [k];
+        }
     }
 }
 
-walker CollectCallers {
+walker CollectEffects {
     has claimed: dict[str, bool] = {};
-    has target: str = "";
-    has found: list[str] = [];
-    can rev_a with Callable entry {
+    has out: list[str] = [];
+    can gather_eff with Callable entry {
         if here.cid in self.claimed { skip; }
         self.claimed[here.cid] = True;
-        if here.cid != self.target { self.found.append(here.cid); }
-        callers: list[Callable] = [here <-:Calls-<-][?:Callable];
-        for c in callers { visit :0: [c]; }
         print(here.cid);
+        for e in here.effects {
+            self.out.append(e);
+        }
+        kids: list[Callable] = [here ->:CallEdge:->][?:Callable];
+        for k in kids {
+            visit :0: [k];
+        }
     }
 }
 
-def new_project(name: str) -> Anchor {
-    a = Anchor(name=name);
-    return a;
+walker BoundedClosure {
+    has claimed: dict[str, bool] = {};
+    has bound: int = 0;
+    has depth: dict[str, int] = {};
+    has out: list[str] = [];
+    can expand with Callable entry {
+        if here.cid in self.claimed { skip; }
+        self.claimed[here.cid] = True;
+        print(here.cid);
+        cur: int = 0;
+        if here.cid in self.depth {
+            cur = self.depth[here.cid];
+        }
+        if cur > self.bound { skip; }
+        self.out.append(here.cid);
+        if cur < self.bound {
+            kids: list[Callable] = [here ->:CallEdge:->][?:Callable];
+            for k in kids {
+                if k.cid not in self.depth {
+                    self.depth[k.cid] = cur + 1;
+                }
+                visit :0: [k];
+            }
+        }
+    }
 }
 
-def register_callable(graph_root: Anchor, cid: str, ver: int, result: str, effects: str, boundary: str) -> Callable {
-    c = Callable(cid=cid, ver=ver, result=result, effects=effects, boundary=boundary);
-    graph_root +>:Calls:+> c;
+walker ReverseCallers {
+    has claimed: dict[str, bool] = {};
+    has out: list[str] = [];
+    can gather_rev with Callable entry {
+        if here.cid in self.claimed { skip; }
+        self.claimed[here.cid] = True;
+        print(here.cid);
+        preds: list[Callable] = [here <-:CallEdge:<-][?:Callable];
+        for p in preds {
+            if p.cid not in self.claimed {
+                self.out.append(p.cid);
+            }
+            visit :0: [p];
+        }
+    }
+}
+
+walker Demo {
+    can start with entry {
+        print("demo ready");
+    }
+}
+
+def find_callable(proj: Project, cid: str) -> Callable | None {
+    # scan Contains edges from project
+    cands: list[Callable] = [proj ->:Contains:->][?:Callable];
+    for c in cands {
+        if c.cid == cid {
+            return c;
+        }
+    }
+    return None;
+}
+
+def make_project(pid: str) -> Project {
+    p = Project(pid=pid);
+    root ++> p;
+    return p;
+}
+
+def add_callable(proj: Project, cid: str, effects: list[str] | None = None, values: list[str] | None = None, is_dynamic: bool = False) -> Callable {
+    eff: list[str] = [];
+    if effects is not None {
+        eff = effects;
+    }
+    vals: list[str] = [];
+    if values is not None {
+        vals = values;
+    }
+    c = Callable(cid=cid, is_dynamic=is_dynamic, effects=eff, values=vals, summary_ref="");
+    proj ++>:Contains:+> c;
     return c;
 }
 
-def add_call_edge(caller: Callable, callee: Callable) -> None {
-    caller +>:Calls:+> callee;
-    return;
+def add_call_edge(caller: Callable, callee: Callable) {
+    caller +>:CallEdge:+> callee;
 }
 
-def anchor_callable(graph_root: Anchor, c: Callable) -> None {
-    graph_root +>:Calls:+> c;
-    return;
+def define_summary(c: Callable, ref: str) -> str {
+    c.summary_ref = ref;
+    return c.summary_ref;
 }
 
-def build_summary(target: Callable) -> dict[str, str] {
-    out: dict[str, str] = {};
-    out["cid"] = target.cid;
-    out["ver"] = str(target.ver);
-    out["result"] = target.result;
-    out["effects"] = target.effects;
-    out["boundary"] = target.boundary;
-    out["place_fact"] = target.place_fact;
-    return out;
+def get_summary_ref(c: Callable) -> str {
+    return c.summary_ref;
 }
 
-def compose_at_callsite(caller: Callable, callee: Callable) -> dict[str, str] {
-    # compose exact current facts across admitted edge without provider scans
-    res: dict[str, str] = {};
-    res["caller"] = caller.cid;
-    res["callee"] = callee.cid;
-    if callee.boundary == "dynamic" {
-        res["result"] = "conservative";
-        res["effects"] = "conservative";
-        res["boundary"] = "refused";
-        return res;
+def is_composition_legal(c: Callable) -> bool {
+    if c.is_dynamic {
+        return False;
     }
-    res["result"] = callee.result;
-    if caller.effects == "pure" {
-        res["effects"] = callee.effects;
-    } else {
-        res["effects"] = caller.effects + "+" + callee.effects;
-    }
-    res["boundary"] = callee.boundary;
-    return res;
+    return True;
 }
 
-def bounded_closure(entry: Callable, bound: int) -> list[str] {
+def compose_values(start: Callable) -> list[str] {
+    w = start spawn CollectValues(claimed={}, out=[]);
+    return sorted(w.out);
+}
+
+def compose_effects(start: Callable) -> list[str] {
+    w = start spawn CollectEffects(claimed={}, out=[]);
+    return sorted(w.out);
+}
+
+def compose_call_values(proj: Project, cid: str) -> list[str] {
+    c = find_callable(proj, cid);
+    if c is None {
+        return [];
+    }
+    w = c spawn CollectValues(claimed={}, out=[]);
+    return sorted(w.out);
+}
+
+def compose_call_effects(proj: Project, cid: str) -> list[str] {
+    c = find_callable(proj, cid);
+    if c is None {
+        return [];
+    }
+    w = c spawn CollectEffects(claimed={}, out=[]);
+    return sorted(w.out);
+}
+
+def bounded_closure_ids(start: Callable, bound: int) -> list[str] {
     d: dict[str, int] = {};
-    d[entry.cid] = 0;
-    w = entry spawn CollectReachable(bound=bound, depth=d);
-    out: list[str] = w.found;
-    return out;
+    d[start.cid] = 0;
+    w = start spawn BoundedClosure(claimed={}, bound=bound, depth=d, out=[]);
+    return sorted(w.out);
 }
 
-def stale_after_change(changed: Callable) -> list[str] {
-    w = changed spawn CollectCallers(target=changed.cid);
-    out: list[str] = w.found;
-    return out;
+def bounded_closure_for(proj: Project, cid: str, bound: int) -> list[str] {
+    c = find_callable(proj, cid);
+    if c is None {
+        return [];
+    }
+    d: dict[str, int] = {};
+    d[c.cid] = 0;
+    w = c spawn BoundedClosure(claimed={}, bound=bound, depth=d, out=[]);
+    return sorted(w.out);
+}
+
+def stale_callers_ids(target: Callable) -> list[str] {
+    w = target spawn ReverseCallers(claimed={}, out=[]);
+    return sorted(w.out);
+}
+
+def stale_callers_for(proj: Project, cid: str) -> list[str] {
+    c = find_callable(proj, cid);
+    if c is None {
+        return [];
+    }
+    w = c spawn ReverseCallers(claimed={}, out=[]);
+    return sorted(w.out);
 }
 
 with entry {
-    demo_root = Anchor(name="demo");
-    root ++> demo_root;
-    a = Callable(cid="main", ver=1, result="int", effects="pure", boundary="exact");
-    b = Callable(cid="util", ver=2, result="str", effects="pure", boundary="exact");
-    demo_root +>:Calls:+> a;
-    demo_root +>:Calls:+> b;
-    a +>:Calls:+> b;
-    d: dict[str, int] = {};
-    d[a.cid] = 0;
-    w1 = a spawn CollectReachable(bound=2, depth=d);
-    print(w1.found);
-    w2 = b spawn CollectCallers(target=b.cid);
-    print(w2.found);
-    root spawn CollectReachable(bound=1);
+    root spawn Demo();
 }
 
-test "diamond closure deterministic despite edge insertion order" {
-    anch = Anchor(name="proj");
-    root ++> anch;
-    a = register_callable(anch, "a", 1, "int", "pure", "exact");
-    b = register_callable(anch, "b", 1, "int", "pure", "exact");
-    c = register_callable(anch, "c", 1, "int", "pure", "exact");
-    d = register_callable(anch, "d", 1, "int", "pure", "exact");
+test "diamond revisit collects once sorted" {
+    proj = make_project("p_diamond");
+    a = add_callable(proj, "A", effects=["eA"], values=["vA"]);
+    b = add_callable(proj, "B", effects=["eB"], values=["vB"]);
+    c = add_callable(proj, "C", effects=["eC"], values=["vC"]);
+    d = add_callable(proj, "D", effects=["eD"], values=["vD"]);
     add_call_edge(a, b);
     add_call_edge(a, c);
     add_call_edge(b, d);
     add_call_edge(c, d);
-    got = bounded_closure(a, 5);
-    assert(sorted(got) == ["a", "b", "c", "d"]);
+    assert sorted(compose_values(a)) == ["vA", "vB", "vC", "vD"];
+    assert sorted(compose_effects(a)) == ["eA", "eB", "eC", "eD"];
+    assert sorted(compose_values(d)) == ["vD"];
 }
 
-test "bounded closure respects bound one vs transitively" {
-    anch = Anchor(name="proj2");
-    root ++> anch;
-    x = register_callable(anch, "x", 1, "int", "pure", "exact");
-    y = register_callable(anch, "y", 1, "int", "pure", "exact");
-    z = register_callable(anch, "z", 1, "int", "pure", "exact");
-    add_call_edge(x, y);
-    add_call_edge(y, z);
-    got1 = bounded_closure(x, 1);
-    assert(sorted(got1) == ["x", "y"]);
-    got2 = bounded_closure(x, 5);
-    assert(sorted(got2) == ["x", "y", "z"]);
+test "bounded closure respects bound adversarial order" {
+    proj2 = make_project("p_bounded");
+    a2 = add_callable(proj2, "A2", values=["va"]);
+    b2 = add_callable(proj2, "B2", values=["vb"]);
+    c2 = add_callable(proj2, "C2", values=["vc"]);
+    d2 = add_callable(proj2, "D2", values=["vd"]);
+    add_call_edge(a2, b2);
+    add_call_edge(a2, c2);
+    add_call_edge(b2, d2);
+    add_call_edge(c2, d2);
+    assert sorted(bounded_closure_ids(a2, 0)) == ["A2"];
+    assert sorted(bounded_closure_ids(a2, 1)) == ["A2", "B2", "C2"];
+    assert sorted(bounded_closure_ids(a2, 2)) == ["A2", "B2", "C2", "D2"];
+    assert sorted(bounded_closure_for(proj2, "A2", 1)) == ["A2", "B2", "C2"];
 }
 
-test "compose exact vs dynamic boundary refusal" {
-    anch = Anchor(name="proj3");
-    root ++> anch;
-    caller = register_callable(anch, "caller", 1, "int", "pure", "exact");
-    exact_callee = register_callable(anch, "exact_c", 3, "str", "io", "exact");
-    dyn_callee = register_callable(anch, "dyn_c", 1, "str", "io", "dynamic");
-    add_call_edge(caller, exact_callee);
-    r1 = compose_at_callsite(caller, exact_callee);
-    assert(r1["result"] == "str");
-    assert(r1["boundary"] == "exact");
-    r2 = compose_at_callsite(caller, dyn_callee);
-    assert(r2["result"] == "conservative");
-    assert(r2["boundary"] == "refused");
-    # unknown-id tolerance: compose without edge admitted does not throw
-    orphan = Callable(cid="orphan", ver=1, result="bool", effects="pure", boundary="exact");
-    r3 = compose_at_callsite(caller, orphan);
-    assert(r3["callee"] == "orphan");
+test "unknown id tolerance returns empty" {
+    proj3 = make_project("p_unknown");
+    x = add_callable(proj3, "X", values=["vx"]);
+    assert compose_call_values(proj3, "MISSING") == [];
+    assert compose_call_effects(proj3, "MISSING") == [];
+    assert bounded_closure_for(proj3, "NOPE", 5) == [];
+    assert stale_callers_for(proj3, "NOPE") == [];
+    assert sorted(compose_call_values(proj3, "X")) == ["vx"];
 }
 
-test "stale callers after callee-only change is reverse closure" {
-    anch = Anchor(name="proj4");
-    root ++> anch;
-    top = register_callable(anch, "top", 1, "int", "pure", "exact");
-    mid = register_callable(anch, "mid", 1, "int", "pure", "exact");
-    leaf = register_callable(anch, "leaf", 1, "int", "pure", "exact");
-    add_call_edge(top, mid);
-    add_call_edge(mid, leaf);
-    stale = stale_after_change(leaf);
-    assert(sorted(stale) == ["mid", "top"]);
-    stale2 = stale_after_change(mid);
-    assert(sorted(stale2) == ["top"]);
+test "stale callers reverse closure and dynamic refusal" {
+    proj4 = make_project("p_stale");
+    r = add_callable(proj4, "R", values=["vr"]);
+    s = add_callable(proj4, "S", values=["vs"]);
+    t = add_callable(proj4, "T", values=["vt"], is_dynamic=True);
+    add_call_edge(r, s);
+    add_call_edge(s, t);
+    assert sorted(stale_callers_ids(t)) == ["R", "S"];
+    assert sorted(stale_callers_for(proj4, "T")) == ["R", "S"];
+    assert sorted(stale_callers_ids(s)) == ["R"];
+    assert is_composition_legal(t) == False;
+    assert is_composition_legal(r) == True;
+    define_summary(s, "summ_s_v1");
+    assert get_summary_ref(s) == "summ_s_v1";
 }
 
-test "summary envelope is immutable reference shape" {
-    anch = Anchor(name="proj5");
-    root ++> anch;
-    c = register_callable(anch, "summ", 7, "float", "pure", "exact");
-    s = build_summary(c);
-    assert(s["cid"] == "summ");
-    assert(s["ver"] == "7");
-    assert(s["result"] == "float");
-    assert(s["effects"] == "pure");
-    # mutation of copy does not affect source
-    s["result"] = "tampered";
-    s2 = build_summary(c);
-    assert(s2["result"] == "float");
-}
-
-test "cycle closure terminates via claim-map skip not disengage" {
-    anch = Anchor(name="proj6");
-    root ++> anch;
-    p = register_callable(anch, "p", 1, "int", "pure", "exact");
-    q = register_callable(anch, "q", 1, "int", "pure", "exact");
-    r = register_callable(anch, "r", 1, "int", "pure", "exact");
+test "cycle bounded closure terminates via claim map" {
+    proj5 = make_project("p_cycle");
+    p = add_callable(proj5, "P", values=["vp"]);
+    q = add_callable(proj5, "Q", values=["vq"]);
+    rr = add_callable(proj5, "RR", values=["vr"]);
     add_call_edge(p, q);
-    add_call_edge(q, r);
-    add_call_edge(r, p);
-    got = bounded_closure(p, 10);
-    assert(sorted(got) == ["p", "q", "r"]);
+    add_call_edge(q, rr);
+    add_call_edge(rr, p);
+    add_call_edge(rr, q);
+    assert sorted(compose_values(p)) == ["vp", "vq", "vr"];
+    assert sorted(bounded_closure_ids(p, 10)) == ["P", "Q", "RR"];
+    assert sorted(stale_callers_ids(p)) == ["Q", "RR"];
 }

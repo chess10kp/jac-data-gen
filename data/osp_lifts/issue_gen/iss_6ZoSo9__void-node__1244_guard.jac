@@ -1,223 +1,181 @@
-# iss_6ZoSo9__void-node__1244.jac — Dijkstra state-machine audit (6ZoSo9/void-node#1244)
-node AuditRoot { has cid: str; }
-node StateMachine { has cid: str; has lane: str = ""; has occupied: bool = False; }
-node Finding { has cid: str; has impact: int = 0; has occupied: bool = False; has reachable: bool = True; }
+"""6ZoSo9/void-node#1244 - Dijkstra state-machine audit: path reachability and terminal closure."""
+
+node Machine { has mid: str; }
+node State { has sid: str; has terminal: bool = False; }
+
 edge Contains {}
-edge Owns {}
+edge Trans {}
 
-walker InventoryWalker {
+walker Collect {
     has claimed: dict[str, bool] = {};
-    has result: list[str] = [];
-    can start with AuditRoot entry {
-        if here.cid in self.claimed { skip; }
-        self.claimed[here.cid] = True;
-        print("finder root");
-        kids: list[StateMachine] = [here ->:Contains:->][?:StateMachine];
-        for k in kids {
-            visit :0: [k];
-        }
-        if len(kids) == 0 { disengage; }
-    }
-    can handle_machine with StateMachine entry {
-        if here.cid in self.claimed { skip; }
-        self.claimed[here.cid] = True;
-        print("finder machine " + here.cid);
-        self.result.append(here.cid);
-        next_ms: list[StateMachine] = [here ->:Contains:->][?:StateMachine];
-        for n in next_ms { visit :0: [n]; }
-        owns: list[Finding] = [here ->:Owns:->][?:Finding];
-        for f in owns { visit :0: [f]; }
-        if len(next_ms) == 0 and len(owns) == 0 { disengage; }
-    }
-    can handle_finding with Finding entry {
-        if here.cid in self.claimed { skip; }
-        self.claimed[here.cid] = True;
-    }
-}
-
-walker RankWalker {
-    has claimed: dict[str, bool] = {};
-    has collected: list[Finding] = [];
-    can start_rank with AuditRoot entry {
-        if here.cid in self.claimed { skip; }
-        self.claimed[here.cid] = True;
-        print("rank root");
-        kids: list[StateMachine] = [here ->:Contains:->][?:StateMachine];
-        for k in kids { visit :0: [k]; }
-        if len(kids) == 0 { disengage; }
-    }
-    can step_machine with StateMachine entry {
-        if here.cid in self.claimed { skip; }
-        self.claimed[here.cid] = True;
-        print("rank machine " + here.cid);
-        if here.occupied {
-            next_ms: list[StateMachine] = [here ->:Contains:->][?:StateMachine];
-            for n in next_ms { visit :0: [n]; }
-            if len(next_ms) == 0 { disengage; }
-        } else {
-            next_ms: list[StateMachine] = [here ->:Contains:->][?:StateMachine];
-            for n in next_ms { visit :0: [n]; }
-            owns: list[Finding] = [here ->:Owns:->][?:Finding];
-            for f in owns { visit :0: [f]; }
-            if len(next_ms) == 0 and len(owns) == 0 { disengage; }
-        }
-    }
-    can step_finding with Finding entry {
-        if here.cid in self.claimed { skip; }
-        self.claimed[here.cid] = True;
-        print("rank fid " + here.cid);
-        if here.occupied { skip; }
-        if not here.reachable { skip; }
-        self.collected.append(here);
-    }
-}
-
-def make_audit(aid: str) -> AuditRoot {
-    rt = AuditRoot(cid=aid);
-    root ++> rt;
-    return rt;
-}
-
-def add_machine(root_node: AuditRoot, mid: str, lane: str = "", occupied: bool = False) -> StateMachine {
-    # lane may carry bool when caller uses positional occupied
-    real_occupied: bool = occupied;
-    real_lane: str = lane;
-    m = StateMachine(cid=mid, lane=real_lane, occupied=real_occupied);
-    root_node +>:Contains:+> m;
-    return m;
-}
-
-def add_state_machine(root_node: AuditRoot, mid: str, lane: str = "", occupied: bool = False) -> StateMachine {
-    return add_machine(root_node, mid, lane, occupied);
-}
-
-def add_finding(root_node: AuditRoot, fid: str, mid: str, impact: int = 0, occupied: bool = False, reachable: bool = True) -> Finding | None {
-    targets: list[StateMachine] = [root_node ->:Contains:->][?:StateMachine];
-    # also consider transitive machines for diamond reach
-    # collect via walker for broader search if direct miss
-    found: StateMachine | None = None;
-    for m in targets {
-        if m.cid == mid { found = m; }
-    }
-    if found == None {
-        w = root_node spawn InventoryWalker(claimed={}, result=[]);
-        # second pass: walk all reachable machines via traversal
-        # fallback linear scan over walker result not needed, do BFS via edges
-        all_ms: list[StateMachine] = [];
-        # collect via secondary navigation: check machine->machine
-        for m in targets {
-            deeper: list[StateMachine] = [m ->:Contains:->][?:StateMachine];
-            for d in deeper { targets.append(d); }
-        }
-        for m in targets {
-            if m.cid == mid { found = m; }
-        }
-    }
-    if found == None { return None; }
-    f = Finding(cid=fid, impact=impact, occupied=occupied, reachable=reachable);
-    found +>:Owns:+> f;
-    return f;
-}
-
-def inventory_machines(root_node: AuditRoot) -> list[str] {
-    w = root_node spawn InventoryWalker(claimed={}, result=[]);
-    return sorted(w.result);
-}
-
-def inventory_state_machines(root_node: AuditRoot) -> list[str] {
-    return inventory_machines(root_node);
-}
-
-def rank_candidates(root_node: AuditRoot) -> list[str] {
-    w = root_node spawn RankWalker(claimed={}, collected=[]);
-    # sort collected descending by impact
-    n: int = len(w.collected);
-    for i in range(0, n) {
-        for j in range(i + 1, n) {
-            if w.collected[j].impact > w.collected[i].impact {
-                tmp: Finding = w.collected[i];
-                w.collected[i] = w.collected[j];
-                w.collected[j] = tmp;
+    has collected: list[str] = [];
+    can step with State entry {
+        if here.sid in self.claimed { skip; }
+        self.claimed[here.sid] = True;
+        self.collected.append(here.sid);
+        print(here.sid);
+        kids: list[State] = [];
+        for nxt in [here ->:Trans:->][?:State] {
+            if nxt.sid not in self.claimed {
+                kids.append(nxt);
             }
         }
-    }
-    out: list[str] = [];
-    cnt: int = 0;
-    for f in w.collected {
-        if cnt < 3 {
-            out.append(f.cid);
-            cnt += 1;
+        if len(kids) > 0 {
+            visit :0: kids;
+        } else {
+            disengage;
         }
     }
-    return sorted(out);
 }
 
-def rank_findings(root_node: AuditRoot) -> list[str] {
-    return rank_candidates(root_node);
+walker CheckReach {
+    has target: str = "";
+    has claimed: dict[str, bool] = {};
+    has found: bool = False;
+    can step with State entry {
+        if here.sid in self.claimed { skip; }
+        self.claimed[here.sid] = True;
+        print(here.sid);
+        if here.sid == self.target {
+            self.found = True;
+        }
+        kids: list[State] = [];
+        for nxt in [here ->:Trans:->][?:State] {
+            if nxt.sid not in self.claimed {
+                kids.append(nxt);
+            }
+        }
+        if len(kids) > 0 {
+            visit :0: kids;
+        } else {
+            disengage;
+        }
+    }
+}
+
+def make_machine(mid: str) -> Machine {
+    nd: Machine = Machine(mid=mid);
+    root ++> nd;
+    return nd;
+}
+
+def make_state(sid: str, terminal: bool) -> State {
+    nd: State = State(sid=sid, terminal=terminal);
+    return nd;
+}
+
+def attach_machine_state(machine: Machine, state: State) -> None {
+    machine +>:Contains:+> state;
+}
+
+def link_states(src: State, dst: State) -> None {
+    src +>:Trans:+> dst;
+}
+
+def reachable_ids(start: State) -> list[str] {
+    w: Collect = start spawn Collect();
+    res: list[str] = w.collected;
+    return res;
+}
+
+def can_reach(start: State, target: str) -> bool {
+    w: CheckReach = start spawn CheckReach(target=target);
+    return w.found;
+}
+
+def terminal_ids(machine: Machine) -> list[str] {
+    out: list[str] = [];
+    for st in [machine ->:Contains:->][?:State] {
+        if st.terminal {
+            out.append(st.sid);
+        }
+    }
+    return out;
+}
+
+def list_all_states(machine: Machine) -> list[str] {
+    out: list[str] = [];
+    for st in [machine ->:Contains:->][?:State] {
+        out.append(st.sid);
+    }
+    return out;
 }
 
 with entry {
-    rt = AuditRoot(cid="demo");
-    root ++> rt;
-    m = StateMachine(cid="demo-m1");
-    rt +>:Contains:+> m;
-    f = Finding(cid="demo-f1", impact=10);
-    m +>:Owns:+> f;
-    inv = rt spawn InventoryWalker(claimed={}, result=[]);
-    print(inv.result);
-    rk = rt spawn RankWalker(claimed={}, collected=[]);
-    print(rk.collected);
+    demo_m: Machine = Machine(mid="demo");
+    root ++> demo_m;
+    demo_s: State = State(sid="demo_s", terminal=False);
+    demo_m +>:Contains:+> demo_s;
+    root spawn Collect();
+    print("demo ready");
 }
 
-test "inventory diamond dedup" {
-    rt = make_audit("diamond-audit");
-    m1 = add_machine(rt, "m1");
-    m2 = add_machine(rt, "m2");
-    m3 = add_machine(rt, "m3");
-    m1 +>:Contains:+> m3;
-    m2 +>:Contains:+> m3;
-    inv = inventory_machines(rt);
-    assert(sorted(inv) == sorted(["m1", "m2", "m3"]));;
+test "diamond revisit adversarial order" {
+    m = make_machine("m_dia");
+    a = make_state("a", False);
+    b = make_state("b", False);
+    c = make_state("c", False);
+    d = make_state("d", True);
+    attach_machine_state(m, a);
+    attach_machine_state(m, b);
+    attach_machine_state(m, c);
+    attach_machine_state(m, d);
+    link_states(a, b);
+    link_states(a, c);
+    link_states(b, d);
+    link_states(c, d);
+    got = reachable_ids(a);
+    assert(sorted(got) == ["a", "b", "c", "d"]);
+    assert(can_reach(a, "d") == True);
+    assert(can_reach(b, "c") == False);
 }
 
-test "rank filters unreachable and occupied diamond" {
-    rt = make_audit("rank-audit");
-    add_machine(rt, "m1", "", False);
-    add_machine(rt, "m2", "", False);
-    add_finding(rt, "F1", "m1", 10, False, True);
-    add_finding(rt, "F2", "m1", 5, True, True);
-    add_finding(rt, "F3", "m2", 8, False, True);
-    add_finding(rt, "F4", "m2", 9, False, False);
-    rk = rank_candidates(rt);
-    assert(sorted(rk) == sorted(["F1", "F3"]));;
+test "cycle does not loop and still reaches" {
+    m = make_machine("m_cyc");
+    x = make_state("x", False);
+    y = make_state("y", False);
+    z = make_state("z", False);
+    attach_machine_state(m, x);
+    attach_machine_state(m, y);
+    attach_machine_state(m, z);
+    link_states(x, y);
+    link_states(y, z);
+    link_states(z, x);
+    got = reachable_ids(x);
+    assert(sorted(got) == ["x", "y", "z"]);
+    assert(can_reach(x, "x") == True);
+    assert(can_reach(y, "x") == True);
 }
 
-test "unknown id tolerance" {
-    rt = make_audit("unknown-audit");
-    add_machine(rt, "m1");
-    res = add_finding(rt, "F99", "missing-mid", 5, False, True);
-    assert(res == None);;
-    assert(len(rank_candidates(rt)) == 0);;
-    assert("m1" in inventory_machines(rt));;
+test "unknown id tolerance and terminal closure" {
+    m = make_machine("m_unk");
+    s1 = make_state("s1", False);
+    s2 = make_state("s2", True);
+    attach_machine_state(m, s1);
+    attach_machine_state(m, s2);
+    # isolated s1 no edges
+    assert(reachable_ids(s1) == ["s1"]);
+    assert(can_reach(s1, "nope") == False);
+    assert(can_reach(s1, "s2") == False);
+    assert(sorted(terminal_ids(m)) == ["s2"]);
+    assert(sorted(list_all_states(m)) == ["s1", "s2"]);
+    # unknown target on isolated terminal
+    assert(can_reach(s2, "ghost") == False);
 }
 
-test "empty and occupied machine isolation" {
-    rt = make_audit("empty");
-    assert(len(inventory_machines(rt)) == 0);;
-    assert(len(rank_candidates(rt)) == 0);;
-    add_machine(rt, "mx", "", True);
-    add_finding(rt, "FX", "mx", 100, False, True);
-    assert(len(rank_candidates(rt)) == 0);;
-}
-
-test "rank limit at most three" {
-    rt = make_audit("limit-audit");
-    add_machine(rt, "m1");
-    add_finding(rt, "F1", "m1", 4);
-    add_finding(rt, "F2", "m1", 3);
-    add_finding(rt, "F3", "m1", 2);
-    add_finding(rt, "F4", "m1", 1);
-    rk = rank_candidates(rt);
-    assert(len(rk) == 3);;
-    assert("F4" not in rk);;
+test "parent child containment and path reach edge case" {
+    m = make_machine("m_pc");
+    p = make_state("p", False);
+    q = make_state("q", False);
+    r = make_state("r", True);
+    attach_machine_state(m, p);
+    attach_machine_state(m, q);
+    attach_machine_state(m, r);
+    link_states(p, q);
+    # no link to r, r unreachable
+    assert(can_reach(p, "r") == False);
+    assert(sorted(reachable_ids(p)) == ["p", "q"]);
+    link_states(q, r);
+    assert(can_reach(p, "r") == True);
+    assert(sorted(terminal_ids(m)) == ["r"]);
 }

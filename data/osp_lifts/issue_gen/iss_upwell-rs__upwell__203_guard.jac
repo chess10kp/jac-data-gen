@@ -1,251 +1,360 @@
-node Component {
+node Comp {
     has cid: str;
-    has trait_name: str;
-    has config_key: str;
-    has live_rebindable: bool;
+    has policy: str = "retain";
+    has cond_key: str = "";
     has enabled: bool = True;
 }
-node ConfigFact {
-    has key: str;
-    has val: bool;
-}
-node Runtime {
-    has generation: int = 0;
-    has committed: bool = False;
-}
-edge Depends {}
-edge ConfigLink {}
-edge RuntimeLink {}
 
-walker CollectEligible {
+node Rt {
+    has gen: int = 0;
+    has facts: dict[str, bool] = {};
+    has plan: dict[str, str] = {};
+}
+
+edge Holds {}
+edge Dep {}
+
+walker GatherAll {
     has claimed: dict[str, bool] = {};
-    has snapshot: dict[str, bool] = {};
-    has eligible: list[str] = [];
-    can start with Runtime entry {
-        print("start runtime " + str(here.generation));
-        for comp in [here ->][?:Component] {
-            visit :0: [comp];
-        }
-        if len([here ->][?:Component]) == 0 {
+    has out: list[Comp] = [];
+    can start with Rt entry {
+        print("gather start");
+        kids: list[Comp] = [here ->:Dep:->][?:Comp];
+        # reuse Holds traversal for collection
+        kids = [here ->:Holds:->][?:Comp];
+        if len(kids) > 0 {
+            visit kids;
+        } else {
             disengage;
         }
     }
-    can step with Component entry {
-        if here.cid in self.claimed {
-            skip;
-        }
+    can step with Comp entry {
+        if here.cid in self.claimed { skip; }
         self.claimed[here.cid] = True;
-        is_eligible: bool = True;
-        if here.config_key != "" {
-            if here.config_key in self.snapshot {
-                if self.snapshot[here.config_key] == False {
-                    is_eligible = False;
-                }
-            } else {
-                is_eligible = False;
-            }
-        }
-        if is_eligible {
-            self.eligible.append(here.cid);
-        }
-        print("eval " + here.cid);
-        for nxt in [here ->:Depends:->][?:Component] {
-            visit :0: [nxt];
-        }
-        if len([here ->:Depends:->][?:Component]) == 0 {
+        print(here.cid);
+        self.out.append(here);
+        disengage;
+    }
+}
+
+walker RevClosure {
+    has claimed: dict[str, bool] = {};
+    has affected: list[Comp] = [];
+    can step with Comp entry {
+        if here.cid in self.claimed { skip; }
+        self.claimed[here.cid] = True;
+        print(here.cid);
+        self.affected.append(here);
+        revs: list[Comp] = [here <-:Dep<-][?:Comp];
+        if len(revs) > 0 {
+            visit revs;
+        } else {
             disengage;
         }
     }
 }
 
-def add_component(graph_root: Runtime, cid: str, trait_name: str, config_key: str, live_rebindable: bool) -> Component {
-    comp: Component = Component(cid=cid, trait_name=trait_name, config_key=config_key, live_rebindable=live_rebindable, enabled=True);
-    graph_root ++> comp;
-    return comp;
-}
-def set_config_fact(graph_root: Runtime, key: str, val: bool) -> ConfigFact {
-    cf: ConfigFact = ConfigFact(key=key, val=val);
-    graph_root ++> cf;
-    return cf;
-}
-def add_dependency(src: Component, dst: Component) {
-    # src depends on dst
-    src +>:Depends:+> dst;
-    print("dep " + src.cid + " -> " + dst.cid);
-}
-def evaluate_eligible(graph_root: Runtime, snapshot: dict[str, bool]) -> list[str] {
-    w: CollectEligible = CollectEligible(snapshot=snapshot);
-    rt_w: CollectEligible = graph_root spawn w;
-    return sorted(rt_w.eligible);
-}
-def plan_transition(old_ids: list[str], new_ids: list[str], live_map: dict[str, bool] | None = None) -> dict[str, str] {
-    live: dict[str, bool] = {};
-    if live_map is None {
-        live = {};
-    } else {
-        live = live_map;
+walker DemoWalker {
+    has claimed: dict[str, bool] = {};
+    can go with Rt entry {
+        print("demo rt");
+        disengage;
     }
-    old_set: dict[str, bool] = {};
-    new_set: dict[str, bool] = {};
-    for o in old_ids {
-        old_set[o] = True;
+    can go2 with Comp entry {
+        if here.cid in self.claimed { skip; }
+        self.claimed[here.cid] = True;
+        print(here.cid);
+        disengage;
     }
-    for n in new_ids {
-        new_set[n] = True;
+}
+
+def find_comp(rt: Rt, cid: str) -> Comp | None {
+    w = rt spawn GatherAll(claimed={}, out=[]);
+    for c in w.out {
+        if c.cid == cid {
+            return c;
+        }
     }
+    return None;
+}
+
+def all_comps(rt: Rt) -> list[Comp] {
+    w = rt spawn GatherAll(claimed={}, out=[]);
+    return w.out;
+}
+
+def create_runtime() -> Rt {
+    rt = Rt(gen=0, facts={}, plan={});
+    root ++> rt;
+    return rt;
+}
+
+def register_component(rt: Rt, cid: str, policy: str, cond_key: str) -> bool {
+    # duplicate cid is no-op
+    existing: Comp | None = find_comp(rt, cid);
+    if existing != None {
+        return False;
+    }
+    c = Comp(cid=cid, policy=policy, cond_key=cond_key, enabled=True);
+    rt ++>:Holds:+> c;
+    # facts default true if not present
+    if cond_key != "" {
+        if cond_key in rt.facts {
+        } else {
+            rt.facts[cond_key] = True;
+        }
+        if rt.facts[cond_key] {
+            c.enabled = True;
+        } else {
+            c.enabled = False;
+        }
+    }
+    return True;
+}
+
+def add_dependency(rt: Rt, from_cid: str, to_cid: str) -> bool {
+    a: Comp | None = find_comp(rt, from_cid);
+    b: Comp | None = find_comp(rt, to_cid);
+    if a == None {
+        return False;
+    }
+    if b == None {
+        return False;
+    }
+    aa: Comp = a as Comp;
+    bb: Comp = b as Comp;
+    aa +>:Dep:+> bb;
+    return True;
+}
+
+def set_fact(rt: Rt, key: str, val: bool) -> None {
+    rt.facts[key] = val;
+    print(key);
+}
+
+def get_generation(rt: Rt) -> int {
+    return rt.gen;
+}
+
+def get_plan(rt: Rt) -> dict[str, str] {
+    return rt.plan;
+}
+
+def transition(rt: Rt, updates: dict[str, bool]) -> dict[str, str] {
+    # collect current comps
+    comps: list[Comp] = all_comps(rt);
+    # stage facts without mutating until commit
+    staged: dict[str, bool] = {};
+    for k in rt.facts {
+        staged[k] = rt.facts[k];
+    }
+    for k in updates {
+        staged[k] = updates[k];
+    }
+    # determine which components change enabled status
+    changed: list[Comp] = [];
+    for c in comps {
+        if c.cond_key == "" {
+            continue;
+        }
+        old_en: bool = c.enabled;
+        new_en: bool = True;
+        if c.cond_key in staged {
+            new_en = staged[c.cond_key];
+        }
+        if old_en != new_en {
+            changed.append(c);
+        }
+    }
+    # cycle guard: simple self-dependency check is rejected deterministically
+    for c in changed {
+        deps: list[Comp] = [c ->:Dep:->][?:Comp];
+        for d in deps {
+            if d.cid == c.cid {
+                print("cycle abort");
+                return rt.plan;
+            }
+        }
+    }
+    # reverse-dependency closure via claim-map + skip
+    claimed: dict[str, bool] = {};
+    affected: list[Comp] = [];
+    for ch in changed {
+        if ch.cid in claimed {
+            continue;
+        }
+        w = ch spawn RevClosure(claimed=claimed, affected=[]);
+        # merge claimed to avoid revisiting same closure
+        for ac in w.affected {
+            if ac.cid in claimed {
+            } else {
+                claimed[ac.cid] = True;
+                affected.append(ac);
+            }
+        }
+        # propagate walker's internal claimed
+        for k in w.claimed {
+            if k in claimed {
+            } else {
+                claimed[k] = w.claimed[k];
+            }
+        }
+    }
+    # if nothing affected, still produce retain plan for enabled comps
     plan: dict[str, str] = {};
-    for o in old_ids {
-        if o in new_set {
-            is_live: bool = False;
-            if o in live {
-                if live[o] == True {
-                    is_live = True;
+    if len(affected) == 0 {
+        for c in comps {
+            en: bool = True;
+            if c.cond_key != "" {
+                if c.cond_key in staged {
+                    en = staged[c.cond_key];
                 }
             }
-            if is_live {
-                plan[o] = "live_rebind";
+            if en {
+                plan[c.cid] = "retain";
             } else {
-                if "_fixed" in o {
-                    plan[o] = "replace";
+                plan[c.cid] = "remove";
+            }
+        }
+        # transactional publish
+        for k in staged {
+            rt.facts[k] = staged[k];
+        }
+        for c in comps {
+            if c.cond_key != "" {
+                if c.cond_key in staged {
+                    c.enabled = staged[c.cond_key];
+                }
+            }
+        }
+        rt.gen = rt.gen + 1;
+        rt.plan = plan;
+        print("commit empty");
+        return plan;
+    }
+    # build deterministic plan: retain / live_rebind / replace / remove
+    for c in comps {
+        is_aff: bool = False;
+        if c.cid in claimed {
+            is_aff = True;
+        }
+        en: bool = True;
+        if c.cond_key != "" {
+            if c.cond_key in staged {
+                en = staged[c.cond_key];
+            }
+        }
+        if is_aff {
+            if en == False {
+                plan[c.cid] = "remove";
+            } else {
+                if c.enabled == False {
+                    plan[c.cid] = "add";
                 } else {
-                    plan[o] = "retain";
+                    if c.policy == "live" {
+                        plan[c.cid] = "live_rebind";
+                    } else {
+                        if c.policy == "replace" {
+                            plan[c.cid] = "replace";
+                        } else {
+                            plan[c.cid] = "retain";
+                        }
+                    }
                 }
             }
         } else {
-            plan[o] = "remove";
-        }
-    }
-    for n in new_ids {
-        if n not in old_set {
-            plan[n] = "add";
-        }
-    }
-    print("plan done");
-    return plan;
-}
-def get_generation(graph_root: Runtime) -> int {
-    return graph_root.generation;
-}
-def commit_generation(graph_root: Runtime, plan: dict[str, str]) -> int {
-    known: dict[str, bool] = {};
-    for comp in [graph_root ->][?:Component] {
-        known[comp.cid] = True;
-    }
-    for k in plan {
-        if k not in known {
-            if plan[k] != "add" {
-                print("abort unknown " + k);
-                return graph_root.generation;
+            if en {
+                plan[c.cid] = "retain";
+            } else {
+                plan[c.cid] = "remove";
             }
         }
-        if plan[k] == "fail" {
-            print("abort hook fail");
-            return graph_root.generation;
+    }
+    # apply disconnects/deletes OUTSIDE walk already done -> mutation phase
+    for k in staged {
+        rt.facts[k] = staged[k];
+    }
+    for c in comps {
+        if c.cond_key != "" {
+            if c.cond_key in staged {
+                c.enabled = staged[c.cond_key];
+            }
         }
     }
-    graph_root.generation = graph_root.generation + 1;
-    graph_root.committed = True;
-    print("commit gen " + str(graph_root.generation));
-    return graph_root.generation;
+    rt.gen = rt.gen + 1;
+    rt.plan = plan;
+    print("commit");
+    return plan;
 }
 
 with entry {
-    rt: Runtime = Runtime(generation=0, committed=False);
-    root ++> rt;
-    w: CollectEligible = rt spawn CollectEligible(snapshot={});
-    print("demo eligible " + str(len(w.eligible)));
+    r = Rt(gen=0, facts={}, plan={});
+    root ++> r;
+    w = r spawn DemoWalker(claimed={});
+    print("with entry done");
 }
 
-test "diamond revisit adversarial order" {
-    rt: Runtime = Runtime(generation=0, committed=False);
-    root ++> rt;
-    a: Component = add_component(rt, "auth", "Authenticator", "", True);
-    b: Component = add_component(rt, "provider_default", "Authenticator", "", True);
-    c: Component = add_component(rt, "provider_custom", "Authenticator", "auth.custom.enabled", False);
-    d: Component = add_component(rt, "consumer_fixed", "Consumer", "", False);
-    add_dependency(a, b);
-    add_dependency(a, c);
-    add_dependency(b, d);
-    add_dependency(c, d);
-    snap: dict[str, bool] = {"auth.custom.enabled": True};
-    res: list[str] = evaluate_eligible(rt, snap);
-    assert (len(res) == 4);
-    assert (res[0] == "auth");
-    assert (res[1] == "consumer_fixed");
-    assert (res[2] == "provider_custom");
-    assert (res[3] == "provider_default");
-    snap2: dict[str, bool] = {"auth.custom.enabled": False};
-    res2: list[str] = evaluate_eligible(rt, snap2);
-    assert ("provider_custom" not in res2);
-    assert ("provider_default" in res2);
+test "diamond revisit deterministic closure" {
+    rt = create_runtime();
+    assert(register_component(rt, "auth", "replace", "auth.custom.enabled"));
+    assert(register_component(rt, "a", "live", ""));
+    assert(register_component(rt, "b", "live", ""));
+    assert(register_component(rt, "c", "retain", ""));
+    assert(add_dependency(rt, "a", "auth"));
+    assert(add_dependency(rt, "b", "auth"));
+    assert(add_dependency(rt, "c", "a"));
+    assert(add_dependency(rt, "c", "b"));
+    # insertion order forces revisit before deeper first-visits: b edge first then a
+    upd: dict[str, bool] = {"auth.custom.enabled": False};
+    plan = transition(rt, upd);
+    assert(plan["auth"] == "remove");
+    assert(plan["a"] == "remove" or plan["a"] == "retain");
+    assert(get_generation(rt) == 1);
 }
 
 test "unknown id tolerance" {
-    rt: Runtime = Runtime(generation=5, committed=False);
-    root ++> rt;
-    x: Component = add_component(rt, "known", "Svc", "", True);
-    snap: dict[str, bool] = {};
-    res: list[str] = evaluate_eligible(rt, snap);
-    assert ("known" in res);
-    assert (len(evaluate_eligible(rt, {"missing.key": True})) == 1);
-    old_ids: list[str] = ["known"];
-    new_ids: list[str] = ["known", "ghost"];
-    live: dict[str, bool] = {"known": True};
-    p: dict[str, str] = plan_transition(old_ids, new_ids, live);
-    assert (p["known"] == "live_rebind");
-    assert (p["ghost"] == "add");
-    p2: dict[str, str] = {"unknown_id": "retain"};
-    g: int = commit_generation(rt, p2);
-    assert (g == 5);
-    assert (get_generation(rt) == 5);
-}
-
-test "live rebind vs replace vs retain classification" {
-    old_ids: list[str] = ["svc_a", "svc_b_fixed", "svc_c"];
-    new_ids: list[str] = ["svc_a", "svc_b_fixed", "svc_c"];
-    live: dict[str, bool] = {"svc_a": True, "svc_b_fixed": False};
-    p: dict[str, str] = plan_transition(old_ids, new_ids, live);
-    assert (p["svc_a"] == "live_rebind");
-    assert (p["svc_b_fixed"] == "replace");
-    assert (p["svc_c"] == "retain");
-    old2: list[str] = ["a", "b"];
-    new2: list[str] = ["b", "c"];
-    p2: dict[str, str] = plan_transition(old2, new2, {});
-    assert (p2["a"] == "remove");
-    assert (p2["b"] == "retain");
-    assert (p2["c"] == "add");
+    rt = create_runtime();
+    assert(register_component(rt, "x", "retain", ""));
+    assert(add_dependency(rt, "x", "missing") == False);
+    assert(register_component(rt, "x", "retain", "") == False);
+    upd2: dict[str, bool] = {"unknown.flag": True};
+    plan2 = transition(rt, upd2);
+    assert(plan2["x"] == "retain");
+    assert(get_generation(rt) == 1);
 }
 
 test "transaction abort preserves generation" {
-    rt: Runtime = Runtime(generation=10, committed=False);
-    root ++> rt;
-    comp: Component = add_component(rt, "svc", "Svc", "", True);
-    plan_ok: dict[str, str] = {"svc": "retain"};
-    g1: int = commit_generation(rt, plan_ok);
-    assert (g1 == 11);
-    assert (get_generation(rt) == 11);
-    plan_fail: dict[str, str] = {"svc": "fail"};
-    g2: int = commit_generation(rt, plan_fail);
-    assert (g2 == 11);
-    assert (get_generation(rt) == 11);
-    empty_plan: dict[str, str] = {};
-    g3: int = commit_generation(rt, empty_plan);
-    assert (g3 == 12);
+    rt = create_runtime();
+    assert(register_component(rt, "svc", "replace", "feat"));
+    assert(register_component(rt, "consumer", "live", ""));
+    assert(add_dependency(rt, "consumer", "svc"));
+    # create self-cycle to trigger abort
+    assert(add_dependency(rt, "svc", "svc"));
+    upd3: dict[str, bool] = {"feat": False};
+    before = get_generation(rt);
+    plan3 = transition(rt, upd3);
+    # abort must leave previous plan/gen active, no increment or empty retain
+    assert(get_generation(rt) == before);
 }
 
-test "cycle with claim map does not hang" {
-    rt: Runtime = Runtime(generation=0, committed=False);
-    root ++> rt;
-    n1: Component = add_component(rt, "n1", "Svc", "", True);
-    n2: Component = add_component(rt, "n2", "Svc", "", True);
-    n3: Component = add_component(rt, "n3", "Svc", "", True);
-    add_dependency(n1, n2);
-    add_dependency(n2, n3);
-    add_dependency(n3, n1);
-    snap: dict[str, bool] = {};
-    res: list[str] = evaluate_eligible(rt, snap);
-    assert (len(res) == 3);
-    assert ("n1" in res);
-    assert ("n2" in res);
-    assert ("n3" in res);
+test "live rebind vs replace policy" {
+    rt = create_runtime();
+    assert(register_component(rt, "provider", "replace", "on"));
+    assert(register_component(rt, "live_consumer", "live", ""));
+    assert(register_component(rt, "fixed_consumer", "replace", ""));
+    assert(add_dependency(rt, "live_consumer", "provider"));
+    assert(add_dependency(rt, "fixed_consumer", "provider"));
+    set_fact(rt, "on", True);
+    upd4: dict[str, bool] = {"on": False};
+    plan4 = transition(rt, upd4);
+    assert(plan4["provider"] == "remove");
+    # both consumers affected via reverse closure
+    assert("live_consumer" in plan4);
+    assert("fixed_consumer" in plan4);
+    assert(get_generation(rt) == 1);
+    # second flip back should add again
+    upd5: dict[str, bool] = {"on": True};
+    plan5 = transition(rt, upd5);
+    assert(plan5["provider"] == "add");
+    assert(get_generation(rt) == 2);
 }

@@ -1,76 +1,117 @@
-node Target { has tid: str; }
-edge ImmediateDep {}
-edge ProductDep {}
+node Resolver {
+    has name: str = "resolver";
+}
+node Target {
+    has tid: str;
+    has is_pkg: bool = False;
+}
+edge Anchors {}
+edge Depends {}
 
-walker Discover {
-    has visited: dict[str, bool] = {};
-    has result: list[str] = [];
+walker DiscoverWalker {
+    has claimed: dict[str, bool] = {};
+    has order: list[str] = [];
     can discover with Target entry {
-        if here.tid in self.visited { skip; }
-        self.visited[here.tid] = True;
-        self.result.append(here.tid);
+        if here.tid in self.claimed { skip; }
+        self.claimed[here.tid] = True;
+        self.order.append(here.tid);
         print(here.tid);
         kids: list[Target] = [];
-        for nxt in [here ->:ImmediateDep:->][?:Target] {
-            kids.append(nxt);
-        }
-        for nxt in [here ->:ProductDep:->][?:Target] {
+        for nxt in [here ->:Depends:->][?:Target] {
             kids.append(nxt);
         }
         if len(kids) > 0 {
-            visit :0: kids;
+            visit kids;
         } else {
             disengage;
         }
     }
 }
 
-def create_target(tid: str) -> Target {
-    nd = Target(tid=tid);
-    root ++> nd;
-    return nd;
-}
-
-def add_immediate_dependency(src: Target, dst: Target) {
-    src +>:ImmediateDep:+> dst;
-}
-
-def add_package_product_dependency(src: Target, dst: Target) {
-    src +>:ProductDep:+> dst;
-}
-
-def add_dependency(src: Target, dst: Target, is_package_product: bool) {
-    if is_package_product {
-        src +>:ProductDep:+> dst;
-    } else {
-        src +>:ImmediateDep:+> dst;
+walker PrintRootWalker {
+    has dummy: str = "";
+    can start_resolver with Resolver entry {
+        print(here.name);
+        disengage;
+    }
+    can start_target with Target entry {
+        print(here.tid);
+        disengage;
     }
 }
 
-def compute_graph(start: Target) -> list[str] {
-    init_visited: dict[str, bool] = {};
-    init_result: list[str] = [];
-    w = start spawn Discover(visited=init_visited, result=init_result);
-    return w.result;
+def find_target(resolver: Resolver, tid: str) -> Target | None {
+    for cand in [resolver ->:Anchors:->][?:Target] {
+        if cand.tid == tid {
+            return cand;
+        }
+    }
+    return None;
 }
 
-def transitive_closure(start: Target) -> list[str] {
-    return compute_graph(start);
+def make_resolver() -> Resolver {
+    r = Resolver(name="resolver");
+    return r;
 }
 
-def reachable_tids(start: Target) -> list[str] {
-    return compute_graph(start);
+def add_target(resolver: Resolver, tid: str, is_pkg: bool) -> Target {
+    for cand in [resolver ->:Anchors:->][?:Target] {
+        if cand.tid == tid {
+            return cand;
+        }
+    }
+    nd = Target(tid=tid, is_pkg=is_pkg);
+    resolver +>:Anchors:+> nd;
+    return nd;
+}
+
+def add_dependency(resolver: Resolver, src_tid: str, dst_tid: str) -> None {
+    src: Target | None = find_target(resolver, src_tid);
+    dst: Target | None = find_target(resolver, dst_tid);
+    if src is None { return; }
+    if dst is None { return; }
+    s: Target = src as Target;
+    d: Target = dst as Target;
+    s +>:Depends:+> d;
+}
+
+def get_dependencies(resolver: Resolver, tid: str) -> list[str] {
+    ent: Target | None = find_target(resolver, tid);
+    if ent is None { return []; }
+    e: Target = ent as Target;
+    out: list[str] = [];
+    for nxt in [e ->:Depends:->][?:Target] {
+        out.append(nxt.tid);
+    }
+    return out;
+}
+
+def compute_graph(resolver: Resolver, entry_tid: str) -> list[str] {
+    ent: Target | None = find_target(resolver, entry_tid);
+    if ent is None { return []; }
+    e: Target = ent as Target;
+    w = e spawn DiscoverWalker(claimed={}, order=[]);
+    return w.order;
+}
+
+def is_reachable(resolver: Resolver, src_tid: str, dst_tid: str) -> bool {
+    reached: list[str] = compute_graph(resolver, src_tid);
+    for t in reached {
+        if t == dst_tid { return True; }
+    }
+    return False;
 }
 
 with entry {
-    demo = Target(tid="demo");
-    root ++> demo;
-    dep = Target(tid="dep");
-    root ++> dep;
-    demo +>:ImmediateDep:+> dep;
-    pkg = Target(tid="pkg");
-    root ++> pkg;
-    demo +>:ProductDep:+> pkg;
-    w = demo spawn Discover(visited={}, result=[]);
-    print(w.result);
+    r = Resolver(name="demo");
+    root ++> r;
+    a = Target(tid="A", is_pkg=False);
+    b = Target(tid="B", is_pkg=True);
+    r +>:Anchors:+> a;
+    r +>:Anchors:+> b;
+    a +>:Depends:+> b;
+    w1 = a spawn DiscoverWalker(claimed={}, order=[]);
+    print(w1.order);
+    w2 = root spawn PrintRootWalker(dummy="hi");
+    print(w2.dummy);
 }

@@ -1,141 +1,142 @@
 node Page {
-    has pid: str;
-    has title: str;
-    has isTrashed: bool = false;
+    has page_id: str;
+    has is_trashed: bool = False;
+    has trashed_at: str = "";
 }
 
-edge ParentChild {}
+edge Child {}
 
-obj PageStore {
-    has pages: dict[str, Page] = {};
+node Store {
+    has store_id: str = "store";
 }
 
-walker TrashCascade {
+walker CollectWalker {
     has claimed: dict[str, bool] = {};
-    has count: int = 0;
-    can cascade with Page entry {
-        if here.pid in self.claimed { skip; }
-        self.claimed[here.pid] = True;
-        if not here.isTrashed {
-            here.isTrashed = True;
-        }
-        self.count += 1;
-        print(here.pid);
-        for kid in [here ->:ParentChild:->][?:Page] {
-            visit [:0:][kid];
-        }
-    } else { disengage; }
-}
-
-walker CollectTrashed {
-    has claimed: dict[str, bool] = {};
-    has result: list[str] = [];
+    has found: list[Page] = [];
     can collect with Page entry {
-        if here.pid in self.claimed { skip; }
-        self.claimed[here.pid] = True;
-        if here.isTrashed {
-            self.result.append(here.pid);
+        if here.page_id in self.claimed { skip; }
+        self.claimed[here.page_id] = True;
+        self.found.append(here);
+        kids: list[Page] = [];
+        for ch in [here ->:Child:->][?:Page] {
+            kids.append(ch);
         }
-        for kid in [here ->:ParentChild:->][?:Page] {
-            visit [:0:][kid];
+        if len(kids) > 0 {
+            visit kids;
+        } else {
+            disengage;
         }
-        print(here.pid);
-    } else { disengage; }
+        print(here.page_id);
+    }
 }
 
-walker OrphanProbe {
+walker EntryWalker {
     has claimed: dict[str, bool] = {};
-    has orphans: list[Page] = [];
-    can probe with Page entry {
-        if here.pid in self.claimed { skip; }
-        self.claimed[here.pid] = True;
-        if not here.isTrashed {
-            self.orphans.append(here);
-        }
-        for kid in [here ->:ParentChild:->][?:Page] {
-            visit [:0:][kid];
-        }
-        print(here.pid);
-    } else { disengage; }
+    can start with Store entry {
+        if here.store_id in self.claimed { skip; }
+        self.claimed[here.store_id] = True;
+        print(here.store_id);
+        disengage;
+    }
 }
 
-def make_store -> PageStore {
-    s: PageStore = PageStore();
-    return s;
-}
-
-def add_page(store: PageStore, pid: str, title: str) -> Page {
-    # single owner for node creation
-    p: Page = Page(pid=pid, title=title);
-    store.pages[pid] = p;
-    return p;
-}
-
-def link_parent(store: PageStore, child_id: str, parent_id: str) -> bool {
-    if child_id not in store.pages { return False; }
-    if parent_id not in store.pages { return False; }
-    ch: Page = store.pages[child_id];
-    pa: Page = store.pages[parent_id];
-    pa +>:ParentChild:+> ch;
-    return True;
-}
-
-def trash_subtree(store: PageStore, root_id: str) -> int {
-    if root_id not in store.pages { return 0; }
-    start: Page = store.pages[root_id];
-    w = start spawn TrashCascade();
-    return w.count;
-}
-
-def trash_single_unsafe(store: PageStore, pid: str) -> bool {
-    if pid not in store.pages { return False; }
-    p: Page = store.pages[pid];
-    p.isTrashed = True;
-    return True;
-}
-
-def get_trashed(store: PageStore) -> list[str] {
-    out: list[str] = [];
-    for pid in store.pages {
-        p: Page = store.pages[pid];
-        if p.isTrashed {
-            out.append(pid);
+def get_page(graph_root: Store, page_id: str) -> Page | None {
+    for nd in [graph_root -->][?:Page] {
+        if nd.page_id == page_id {
+            return nd;
         }
     }
-    return out;
+    return None;
 }
 
-def is_trashed(store: PageStore, pid: str) -> bool {
-    if pid not in store.pages { return False; }
-    return store.pages[pid].isTrashed;
+def create_page(graph_root: Store, page_id: str, parent_id: str | None) -> Page | None {
+    # single owner helper for building the tree
+    existing: Page | None = get_page(graph_root, page_id);
+    if existing is not None {
+        return None;
+    }
+    nd = Page(page_id=page_id);
+    graph_root ++> nd;
+    if parent_id is not None {
+        parent: Page | None = get_page(graph_root, parent_id);
+        if parent is not None {
+            parent +>:Child:+> nd;
+        }
+    }
+    print(page_id);
+    return nd;
 }
 
-def repair_orphaned(store: PageStore) -> int {
-    done: dict[str, bool] = {};
-    total: int = 0;
-    for pid in store.pages {
-        p: Page = store.pages[pid];
-        if p.isTrashed {
-            w = p spawn OrphanProbe();
-            for o in w.orphans {
-                if o.pid not in done {
-                    done[o.pid] = True;
-                    if not o.isTrashed {
-                        o.isTrashed = True;
-                        total += 1;
-                    }
+def trash_single_page_unsafe(graph_root: Store, page_id: str) -> bool {
+    nd: Page | None = get_page(graph_root, page_id);
+    if nd is None {
+        print("not found");
+        return False;
+    }
+    if nd.is_trashed == False {
+        nd.is_trashed = True;
+        nd.trashed_at = "now";
+    }
+    print(page_id);
+    return True;
+}
+
+def recursively_trash(graph_root: Store, page_id: str) -> int {
+    nd: Page | None = get_page(graph_root, page_id);
+    if nd is None {
+        return 0;
+    }
+    w = nd spawn CollectWalker(claimed={});
+    cnt: int = 0;
+    for p in w.found {
+        if p.is_trashed == False {
+            p.is_trashed = True;
+            p.trashed_at = "now";
+            cnt += 1;
+        }
+    }
+    print("recursively trashed");
+    return cnt;
+}
+
+def repair_orphaned_trashed_pages(graph_root: Store) -> int {
+    # repairs drift created by trash_single_page_unsafe / raw writers
+    fixed: int = 0;
+    all: list[Page] = [];
+    for nd in [graph_root -->][?:Page] {
+        all.append(nd);
+    }
+    for pg in all {
+        if pg.is_trashed == True {
+            w = pg spawn CollectWalker(claimed={});
+            for kid in w.found {
+                if kid.is_trashed == False {
+                    kid.is_trashed = True;
+                    kid.trashed_at = "now";
+                    fixed += 1;
                 }
             }
         }
     }
-    return total;
+    print("repaired");
+    return fixed;
+}
+
+def list_trashed(graph_root: Store) -> list[str] {
+    out: list[str] = [];
+    for nd in [graph_root -->][?:Page] {
+        if nd.is_trashed == True {
+            out.append(nd.page_id);
+        }
+    }
+    out = sorted(out);
+    print("listed");
+    return out;
 }
 
 with entry {
-    s: PageStore = make_store();
-    r = add_page(s, "r", "root");
-    c = add_page(s, "c", "child");
-    link_parent(s, "c", "r");
-    trash_subtree(s, "r");
-    print("demo done");
+    s = Store(store_id="demo");
+    root ++> s;
+    w = s spawn EntryWalker();
+    print("entry");
 }

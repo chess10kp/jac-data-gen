@@ -1,180 +1,301 @@
-node Runtime { has rid: str = "rt"; }
-node Evidence { has eid: str; }
-node Assertion { has aid: str; has rule_ver: str = ""; }
-node TaskNode { has tid: str; }
-node EventNode { has eid: str; has provider: str = ""; }
-
-edge Prov {}
-edge Parent {}
-edge Ref {}
-
-walker ProvWalk {
-    has claimed: dict[str, bool] = {};
-    has found: list[str] = [];
-    can step_assert with Assertion entry {
-        if here.aid in self.claimed { skip; }
-        self.claimed[here.aid] = True;
-        print(here.aid);
-        kids: list[Assertion] = [];
-        for ch in [here ->:Prov:->][?:Assertion] { kids.append(ch); }
-        evs: list[Evidence] = [];
-        for ev in [here ->:Prov:->][?:Evidence] { evs.append(ev); }
-        for ev in evs {
-            if ev.eid in self.claimed { continue; }
-            self.claimed[ev.eid] = True;
-            self.found.append(ev.eid);
-            print(ev.eid);
-        }
-        if len(kids) > 0 {
-            visit :0: kids;
-        } else {
-            disengage;
-        }
-    }
+node Runtime {
+    has kb_rev: int = 0;
+    has prolog_alive: bool = True;
+}
+node Event {
+    has eid: str;
+    has provider: str;
+    has model_name: str;
+    has transport: str;
+    has ts: str;
+    has req_hash: str;
+    has resp_hash: str;
+}
+node Task {
+    has tid: str;
+}
+node Assertion {
+    has aid: str;
+    has rule_version: str;
 }
 
-walker LineageWalk {
+edge Stores {}
+edge HoldsTask {}
+edge HoldsAssertion {}
+edge TaskRequest {}
+edge Asserts {}
+edge ChildParent {}
+
+walker FindEvent {
+    has target_eid: str;
+    has found_event: Event | None = None;
     has claimed: dict[str, bool] = {};
-    has found: list[str] = [];
-    can step with TaskNode entry {
+    can seek_runtime with Runtime entry {
+        if "rt" in self.claimed { skip; }
+        self.claimed["rt"] = True;
+        for ev in [here ->:Stores:->][?:Event] {
+            visit :0: [ev];
+        }
+        for tk in [here ->:HoldsTask:->][?:Task] {
+            visit :0: [tk];
+        }
+        for ass in [here ->:HoldsAssertion:->][?:Assertion] {
+            visit :0: [ass];
+        }
+        print("FindEvent runtime");
+    }
+    can seek_event with Event entry {
+        if here.eid in self.claimed { skip; }
+        self.claimed[here.eid] = True;
+        if here.eid == self.target_eid {
+            self.found_event = here;
+        }
+        print("FindEvent event " + here.eid);
+    }
+    can seek_task with Task entry {
         if here.tid in self.claimed { skip; }
         self.claimed[here.tid] = True;
-        self.found.append(here.tid);
-        print(here.tid);
-        pars: list[TaskNode] = [];
-        for p in [here ->:Parent:->][?:TaskNode] { pars.append(p); }
-        if len(pars) > 0 {
-            visit :0: pars;
-        } else {
-            disengage;
+        for nxt in [here ->:ChildParent:->][?:Task] {
+            visit :0: [nxt];
         }
+        for ev in [here ->:TaskRequest:->][?:Event] {
+            visit :0: [ev];
+        }
+        print("FindEvent task " + here.tid);
+    }
+    can seek_assertion with Assertion entry {
+        if here.aid in self.claimed { skip; }
+        self.claimed[here.aid] = True;
+        for ev in [here ->:Asserts:->][?:Event] {
+            visit :0: [ev];
+        }
+        print("FindEvent assertion " + here.aid);
     }
 }
 
-walker HealthWalk {
+walker FindTask {
+    has target_tid: str;
+    has found_task: Task | None = None;
     has claimed: dict[str, bool] = {};
-    can check with Runtime entry {
-        if here.rid in self.claimed { skip; }
-        self.claimed[here.rid] = True;
-        print(here.rid);
-        disengage;
+    can ft_runtime with Runtime entry {
+        if "rt" in self.claimed { skip; }
+        self.claimed["rt"] = True;
+        for tk in [here ->:HoldsTask:->][?:Task] {
+            visit :0: [tk];
+        }
+        for ev in [here ->:Stores:->][?:Event] {
+            visit :0: [ev];
+        }
+        print("FindTask runtime");
+    }
+    can ft_task with Task entry {
+        if here.tid in self.claimed { skip; }
+        self.claimed[here.tid] = True;
+        if here.tid == self.target_tid {
+            self.found_task = here;
+        }
+        for nxt in [here ->:ChildParent:->][?:Task] {
+            visit :0: [nxt];
+        }
+        print("FindTask task " + here.tid);
+    }
+    can ft_event with Event entry {
+        if here.eid in self.claimed { skip; }
+        self.claimed[here.eid] = True;
+        print("FindTask event " + here.eid);
     }
 }
 
-def make_runtime() -> Runtime {
-    rt: Runtime = Runtime();
-    root ++> rt;
+walker FindAssertion {
+    has target_aid: str;
+    has found_assertion: Assertion | None = None;
+    has claimed: dict[str, bool] = {};
+    can fa_runtime with Runtime entry {
+        if "rt" in self.claimed { skip; }
+        self.claimed["rt"] = True;
+        for ass in [here ->:HoldsAssertion:->][?:Assertion] {
+            visit :0: [ass];
+        }
+        print("FindAssertion runtime");
+    }
+    can fa_assertion with Assertion entry {
+        if here.aid in self.claimed { skip; }
+        self.claimed[here.aid] = True;
+        if here.aid == self.target_aid {
+            self.found_assertion = here;
+        }
+        print("FindAssertion assertion " + here.aid);
+    }
+}
+
+walker CollectEvidence {
+    has target_aid: str;
+    has evidence: list[str] = [];
+    has claimed: dict[str, bool] = {};
+    can ce_runtime with Runtime entry {
+        if "rt" in self.claimed { skip; }
+        self.claimed["rt"] = True;
+        for ass in [here ->:HoldsAssertion:->][?:Assertion] {
+            visit :0: [ass];
+        }
+        print("CollectEvidence runtime");
+    }
+    can ce_assertion with Assertion entry {
+        if here.aid in self.claimed { skip; }
+        self.claimed[here.aid] = True;
+        if here.aid == self.target_aid {
+            for ev in [here ->:Asserts:->][?:Event] {
+                self.evidence.append(ev.eid);
+                visit :0: [ev];
+            }
+        }
+        print("CollectEvidence assertion " + here.aid);
+    }
+    can ce_event with Event entry {
+        if here.eid in self.claimed { skip; }
+        self.claimed[here.eid] = True;
+        print("CollectEvidence event " + here.eid);
+    }
+}
+
+def create_runtime() -> Runtime {
+    rt = Runtime(kb_rev=0, prolog_alive=True);
     return rt;
 }
 
-def add_evidence(rt: Runtime, eid: str) -> Evidence {
-    for ev in [rt ->:Ref:->][?:Evidence] { if ev.eid == eid { return ev; } }
-    ev: Evidence = Evidence(eid=eid);
-    rt +>:Ref:+> ev;
-    return ev;
+def ingest_event(rt: Runtime, eid: str, provider: str, model_name: str, transport: str, ts: str, req_hash: str, resp_hash: str) -> str {
+    w = rt spawn FindEvent(target_eid=eid);
+    found = w.found_event;
+    if found is not None {
+        ev = found as Event;
+        if ev.provider == provider and ev.model_name == model_name and ev.transport == transport and ev.ts == ts and ev.req_hash == req_hash and ev.resp_hash == resp_hash {
+            return "ok";
+        } else {
+            return "conflict";
+        }
+    }
+    ev2 = Event(eid=eid, provider=provider, model_name=model_name, transport=transport, ts=ts, req_hash=req_hash, resp_hash=resp_hash);
+    rt +>:Stores:+> ev2;
+    rt.kb_rev = rt.kb_rev + 1;
+    return "ok";
 }
 
-def add_assertion(rt: Runtime, aid: str, rule_ver: str) -> Assertion {
-    for a in [rt ->:Ref:->][?:Assertion] { if a.aid == aid { return a; } }
-    a: Assertion = Assertion(aid=aid, rule_ver=rule_ver);
-    rt +>:Ref:+> a;
-    return a;
+def add_task(rt: Runtime, tid: str, eid: str) -> str {
+    w = rt spawn FindEvent(target_eid=eid);
+    if w.found_event is None {
+        return "not_found";
+    }
+    ev = w.found_event as Event;
+    wt = rt spawn FindTask(target_tid=tid);
+    if wt.found_task is not None {
+        return tid;
+    }
+    tk = Task(tid=tid);
+    rt +>:HoldsTask:+> tk;
+    tk +>:TaskRequest:+> ev;
+    rt.kb_rev = rt.kb_rev + 1;
+    return tid;
 }
 
-def add_task(rt: Runtime, tid: str) -> TaskNode {
-    for t in [rt ->:Ref:->][?:TaskNode] { if t.tid == tid { return t; } }
-    t: TaskNode = TaskNode(tid=tid);
-    rt +>:Ref:+> t;
-    return t;
+def link_child_parent(rt: Runtime, child_tid: str, parent_tid: str) -> str {
+    wc = rt spawn FindTask(target_tid=child_tid);
+    wp = rt spawn FindTask(target_tid=parent_tid);
+    if wc.found_task is None {
+        return "not_found";
+    }
+    if wp.found_task is None {
+        return "not_found";
+    }
+    child = wc.found_task as Task;
+    parent = wp.found_task as Task;
+    child +>:ChildParent:+> parent;
+    return "ok";
 }
 
-def link_prov_evidence(rt: Runtime, aid: str, eid: str) -> bool {
-    src: Assertion | None = None;
-    dst: Evidence | None = None;
-    for a in [rt ->:Ref:->][?:Assertion] { if a.aid == aid { src = a; } }
-    for e in [rt ->:Ref:->][?:Evidence] { if e.eid == eid { dst = e; } }
-    if src is None { return False; }
-    if dst is None { return False; }
-    s = src as Assertion;
-    d = dst as Evidence;
-    s +>:Prov:+> d;
-    return True;
+def add_assertion(rt: Runtime, aid: str, eid: str, rule_version: str) -> str {
+    w = rt spawn FindEvent(target_eid=eid);
+    if w.found_event is None {
+        return "not_found";
+    }
+    ev = w.found_event as Event;
+    wa = rt spawn FindAssertion(target_aid=aid);
+    if wa.found_assertion is not None {
+        return aid;
+    }
+    ass = Assertion(aid=aid, rule_version=rule_version);
+    rt +>:HoldsAssertion:+> ass;
+    ass +>:Asserts:+> ev;
+    rt.kb_rev = rt.kb_rev + 1;
+    return aid;
 }
 
-def link_prov_assertion(rt: Runtime, src_aid: str, dst_aid: str) -> bool {
-    src: Assertion | None = None;
-    dst: Assertion | None = None;
-    for a in [rt ->:Ref:->][?:Assertion] { if a.aid == src_aid { src = a; } }
-    for a in [rt ->:Ref:->][?:Assertion] { if a.aid == dst_aid { dst = a; } }
-    if src is None { return False; }
-    if dst is None { return False; }
-    s = src as Assertion;
-    d = dst as Assertion;
-    s +>:Prov:+> d;
-    return True;
-}
-
-def link_parent(rt: Runtime, child: str, parent: str) -> bool {
-    c: TaskNode | None = None;
-    p: TaskNode | None = None;
-    for t in [rt ->:Ref:->][?:TaskNode] { if t.tid == child { c = t; } }
-    for t in [rt ->:Ref:->][?:TaskNode] { if t.tid == parent { p = t; } }
-    if c is None { return False; }
-    if p is None { return False; }
-    cn = c as TaskNode;
-    pn = p as TaskNode;
-    cn +>:Parent:+> pn;
-    return True;
-}
-
-def get_provenance(rt: Runtime, aid: str) -> list[str] {
-    target: Assertion | None = None;
-    for a in [rt ->:Ref:->][?:Assertion] { if a.aid == aid { target = a; } }
-    if target is None { return []; }
-    t = target as Assertion;
-    w = t spawn ProvWalk(claimed={}, found=[]);
-    return w.found;
-}
-
-def get_lineage(rt: Runtime, tid: str) -> list[str] {
-    target: TaskNode | None = None;
-    for t in [rt ->:Ref:->][?:TaskNode] { if t.tid == tid { target = t; } }
-    if target is None { return []; }
-    n = target as TaskNode;
-    w = n spawn LineageWalk(claimed={}, found=[]);
+def get_evidence_for_assertion(rt: Runtime, aid: str) -> list[str] {
+    w = rt spawn CollectEvidence(target_aid=aid);
     res: list[str] = [];
-    for x in w.found { if x != tid { res.append(x); } }
+    for e in w.evidence {
+        res.append(e);
+    }
     return res;
 }
 
-def observe_user_message(rt: Runtime, eid: str, provider: str) -> bool {
-    for e in [rt ->:Ref:->][?:EventNode] { if e.eid == eid { return False; } }
-    ev: EventNode = EventNode(eid=eid, provider=provider);
-    rt +>:Ref:+> ev;
-    return True;
+def query_expert(rt: Runtime, op: str, eid: str) -> dict[str, str] {
+    allowed: list[str] = [];
+    allowed.append("observe_user_message");
+    allowed.append("observe_request");
+    allowed.append("observe_response");
+    allowed.append("observe_usage");
+    allowed.append("query_classification");
+    allowed.append("query_task");
+    allowed.append("query_outcome");
+    allowed.append("query_rewrite");
+    allowed.append("health");
+    is_allowed = False;
+    for a in allowed {
+        if a == op {
+            is_allowed = True;
+        }
+    }
+    if not is_allowed {
+        err: dict[str, str] = {};
+        err["status"] = "error";
+        err["error"] = "unknown_operation";
+        return err;
+    }
+    w = rt spawn FindEvent(target_eid=eid);
+    if w.found_event is None {
+        err2: dict[str, str] = {};
+        err2["status"] = "error";
+        err2["error"] = "not_found";
+        return err2;
+    }
+    ev = w.found_event as Event;
+    out: dict[str, str] = {};
+    out["status"] = "ok";
+    out["op"] = op;
+    out["eid"] = ev.eid;
+    out["provider"] = ev.provider;
+    out["kb_rev"] = rt.kb_rev.__str__();
+    out["expert"] = "tek9_prolog";
+    return out;
 }
 
-def observe_request(rt: Runtime, eid: str, provider: str) -> bool { return observe_user_message(rt, eid, provider); }
-def observe_response(rt: Runtime, eid: str, provider: str) -> bool { return observe_user_message(rt, eid, provider); }
-def observe_usage(rt: Runtime, eid: str, provider: str) -> bool { return observe_user_message(rt, eid, provider); }
-def query_classification(rt: Runtime, aid: str) -> list[str] { return get_provenance(rt, aid); }
-def query_task(rt: Runtime, tid: str) -> list[str] { return get_lineage(rt, tid); }
-def query_outcome(rt: Runtime, aid: str) -> list[str] { return get_provenance(rt, aid); }
-def query_rewrite(rt: Runtime, aid: str) -> list[str] { return get_provenance(rt, aid); }
-
-def health(rt: Runtime) -> dict[str, bool] {
-    w = rt spawn HealthWalk(claimed={});
-    print(w.claimed);
-    res: dict[str, bool] = {};
-    res["ok"] = True;
-    return res;
+def health(rt: Runtime) -> dict[str, str] {
+    h: dict[str, str] = {};
+    if rt.prolog_alive {
+        h["prolog"] = "alive";
+    } else {
+        h["prolog"] = "dead";
+    }
+    h["kb_rev"] = rt.kb_rev.__str__();
+    h["status"] = "ok";
+    return h;
 }
 
 with entry {
-    rt: Runtime = make_runtime();
-    print("expert runtime ready");
-    w = rt spawn HealthWalk(claimed={});
-    print(w.claimed);
-    r = root spawn HealthWalk(claimed={});
-    print(r.claimed);
+    rt = create_runtime();
+    root ++> rt;
+    tmp = root spawn FindEvent(target_eid="demo");
+    print("entry demo " + tmp.target_eid);
+    res = ingest_event(rt, "e1", "openai", "gpt-4", "http", "t1", "h1", "h2");
+    print(res);
 }

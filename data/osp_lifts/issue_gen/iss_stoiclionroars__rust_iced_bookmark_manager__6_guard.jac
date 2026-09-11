@@ -1,259 +1,230 @@
-node GNode {
-    has nid: str;
-    has ws: str;
-    has kind: str;
-    has alive: bool = True;
-}
+node Store { has sid: str = "store"; }
+node Node { has nid: str; has workspace: str; has kind: str = "folder"; }
+edge Holds {}
 edge Contains {}
-
-walker Finder {
-    has target: str;
-    has found: GNode | None = None;
-    has claimed: dict[str, bool] = {};
-    can find with GNode entry {
-        if here.nid in self.claimed { skip; }
-        self.claimed[here.nid] = True;
-        print(here.nid);
-        if here.alive {
-            if here.nid == self.target {
-                self.found = here;
-            }
-        }
-        kids: list[GNode] = [here ->:Contains:->][?:GNode];
-        for k in kids { visit :0: [k]; }
-    }
-}
-
-walker ReachCheck {
-    has target: str;
-    has hit: bool = False;
-    has claimed: dict[str, bool] = {};
-    can check with GNode entry {
-        if here.nid in self.claimed { skip; }
-        self.claimed[here.nid] = True;
-        print(here.nid);
-        if here.nid == self.target { self.hit = True; }
-        kids: list[GNode] = [here ->:Contains:->][?:GNode];
-        for k in kids { visit :0: [k]; }
-    }
-}
-
-walker DescendantsCollector {
-    has claimed: dict[str, bool] = {};
-    has out: list[str] = [];
-    can collect with GNode entry {
-        if here.nid in self.claimed { skip; }
-        self.claimed[here.nid] = True;
-        print(here.nid);
-        if here.alive {
-            self.out.append(here.nid);
-        }
-        kids: list[GNode] = [here ->:Contains:->][?:GNode];
-        for k in kids { visit :0: [k]; }
-    }
-}
-
-walker AllCollector {
-    has claimed: dict[str, bool] = {};
-    has nodes: list[GNode] = [];
-    can collect with GNode entry {
-        if here.nid in self.claimed { skip; }
-        self.claimed[here.nid] = True;
-        print(here.nid);
-        if here.alive {
-            self.nodes.append(here);
-        }
-        kids: list[GNode] = [here ->:Contains:->][?:GNode];
-        for k in kids { visit :0: [k]; }
-    }
-}
 
 walker DemoWalker {
     has claimed: dict[str, bool] = {};
-    can demo with GNode entry {
+    can start with Store entry {
+        if here.sid in self.claimed { skip; }
+        self.claimed[here.sid] = True;
+        print(here.sid);
+        disengage;
+    }
+    can start_node with Node entry {
         if here.nid in self.claimed { skip; }
         self.claimed[here.nid] = True;
         print(here.nid);
-        kids: list[GNode] = [here ->:Contains:->][?:GNode];
-        for k in kids { visit :0: [k]; }
+        disengage;
     }
 }
 
-def find_node(nid: str) -> GNode | None {
-    # scan all alive nodes via root
-    w = root spawn Finder(target=nid);
-    return w.found;
+walker ReachWalker {
+    has claimed: dict[str, bool] = {};
+    has target: str = "";
+    has found: bool = False;
+    can reach with Node entry {
+        if here.nid in self.claimed { skip; }
+        self.claimed[here.nid] = True;
+        if here.nid == self.target {
+            self.found = True;
+            print("reach found");
+        }
+        kids: list[Node] = [];
+        for nxt in [here ->:Contains:->][?:Node] {
+            kids.append(nxt);
+        }
+        if len(kids) > 0 {
+            visit :0: kids;
+        } else {
+            disengage;
+        }
+    }
 }
 
-def create_workspace(wid: str) -> str {
-    e = find_node(wid);
-    if e is not None { return wid; }
-    nd = GNode(nid=wid, ws=wid, kind="workspace");
-    root ++> nd;
-    print("created workspace");
-    return wid;
+walker CollectWalker {
+    has claimed: dict[str, bool] = {};
+    has out: list[str] = [];
+    can collect with Node entry {
+        if here.nid in self.claimed { skip; }
+        self.claimed[here.nid] = True;
+        self.out.append(here.nid);
+        print(here.nid);
+        kids: list[Node] = [];
+        for nxt in [here ->:Contains:->][?:Node] {
+            kids.append(nxt);
+        }
+        if len(kids) > 0 {
+            visit :0: kids;
+        } else {
+            disengage;
+        }
+    }
 }
 
-def create_folder(fid: str, ws: str) -> str {
-    e = find_node(fid);
-    if e is not None { return fid; }
-    nd = GNode(nid=fid, ws=ws, kind="folder");
-    root ++> nd;
-    print("created folder");
-    return fid;
+walker CollectNodesWalker {
+    has claimed: dict[str, bool] = {};
+    has collected: list[Node] = [];
+    can grab with Node entry {
+        if here.nid in self.claimed { skip; }
+        self.claimed[here.nid] = True;
+        self.collected.append(here);
+        print(here.nid);
+        kids: list[Node] = [];
+        for nxt in [here ->:Contains:->][?:Node] {
+            kids.append(nxt);
+        }
+        if len(kids) > 0 {
+            visit :0: kids;
+        } else {
+            disengage;
+        }
+    }
 }
 
-def link_node(parent: str, child: str) -> bool {
-    p = find_node(parent);
-    c = find_node(child);
-    if p is None { return False; }
-    if c is None { return False; }
-    if parent == child { return False; }
-    if p.ws != c.ws { return False; }
-    # cycle check: is parent reachable from child ?
-    chk = c spawn ReachCheck(target=parent);
-    if chk.hit { return False; }
-    # already linked check - allow duplicate as success
-    # perform link
-    p +>:Contains:+> c;
-    print("linked");
+def find_node(store: Store, nid: str) -> Node | None {
+    for nd in [store ->:Holds:->][?:Node] {
+        if nd.nid == nid {
+            return nd;
+        }
+    }
+    return None;
+}
+
+def new_store() -> Store {
+    s = Store(sid="store");
+    root +>:Holds:+> s;
+    return s;
+}
+
+def create_node(store: Store, nid: str, workspace: str) -> bool {
+    existing = find_node(store, nid);
+    if existing is not None {
+        return False;
+    }
+    nd = Node(nid=nid, workspace=workspace);
+    store +>:Holds:+> nd;
     return True;
 }
 
-def get_descendants(nid: str) -> list[str] {
-    n = find_node(nid);
-    if n is None { return []; }
-    w = n spawn DescendantsCollector();
+def link_node(store: Store, parent_id: str, child_id: str) -> bool {
+    p = find_node(store, parent_id);
+    c = find_node(store, child_id);
+    if p is None { return False; }
+    if c is None { return False; }
+    if p.workspace != c.workspace { return False; }
+    if parent_id == child_id { return False; }
+    for nxt in [p ->:Contains:->][?:Node] {
+        if nxt.nid == child_id { return False; }
+    }
+    w = c spawn ReachWalker(target=parent_id, claimed={});
+    if w.found { return False; }
+    p +>:Contains:+> c;
+    return True;
+}
+
+def bfs_contains(store: Store, start_id: str) -> list[str] {
+    s = find_node(store, start_id);
+    if s is None { return []; }
+    w = s spawn CollectWalker(claimed={}, out=[]);
+    return w.out;
+}
+
+def get_workspace_of_node(store: Store, nid: str) -> str | None {
+    nd = find_node(store, nid);
+    if nd is None { return None; }
+    return nd.workspace;
+}
+
+def recursive_delete(store: Store, nid: str) -> list[str] {
+    nd = find_node(store, nid);
+    if nd is None { return []; }
+    w = nd spawn CollectNodesWalker(claimed={}, collected=[]);
     res: list[str] = [];
-    for x in w.out {
-        if x != nid { res.append(x); }
+    for cur in w.collected {
+        res.append(cur.nid);
     }
-    print("descendants done");
-    return sorted(res);
+    for cur in w.collected {
+        delete cur;
+    }
+    return res;
 }
 
-def get_workspace_of_node(nid: str) -> str {
-    n = find_node(nid);
-    if n is None { return ""; }
-    print(n.ws);
-    return n.ws;
-}
-
-def recursive_delete(nid: str) -> list[str] {
-    n = find_node(nid);
-    if n is None { return []; }
-    if !n.alive { return []; }
-    w = n spawn DescendantsCollector();
-    # two-phase: collect then mutate
-    victims: list[GNode] = [];
-    for vid in w.out {
-        nd = find_node(vid);
-        if nd is not None { victims.append(nd); }
-    }
-    deleted: list[str] = [];
-    for v in victims {
-        v.alive = False;
-        deleted.append(v.nid);
-    }
-    # disconnect contains edges outside walk
-    for v in victims {
-        kids: list[GNode] = [v ->:Contains:->][?:GNode];
-        for k in kids { v -:Contains:-> k; }
-    }
-    print("deleted");
-    return sorted(deleted);
-}
-
-def export_dot() -> str {
-    w = root spawn AllCollector();
-    nodes: list[str] = [];
-    for n in w.nodes { nodes.append(n.nid); }
-    nodes = sorted(nodes);
+def export_dot(store: Store) -> str {
     out: str = "digraph G {\n";
-    for nid in nodes { out += "  " + nid + ";\n"; }
-    for n in w.nodes {
-        kids: list[GNode] = [n ->:Contains:->][?:GNode];
-        for k in kids {
-            if k.alive { out += "  " + n.nid + " -> " + k.nid + ";\n"; }
+    for nd in [store ->:Holds:->][?:Node] {
+        for ch in [nd ->:Contains:->][?:Node] {
+            out += "  " + nd.nid + " -> " + ch.nid + ";\n";
         }
     }
-    out += "}";
-    print(out);
+    out += "}\n";
     return out;
 }
 
 with entry {
+    d = Store(sid="demo");
+    root +>:Holds:+> d;
     root spawn DemoWalker();
 }
 
-test "link_cycle_blocks_direct_and_indirect" {
-    create_workspace("w_cycle");
-    create_folder("A_c", "w_cycle");
-    create_folder("B_c", "w_cycle");
-    create_folder("C_c", "w_cycle");
-    assert(link_node("A_c", "B_c"));
-    assert(link_node("B_c", "C_c"));
-    assert(!link_node("C_c", "A_c"));
-    assert(!link_node("A_c", "A_c"));
-    assert(get_descendants("A_c") == ["B_c", "C_c"]);
+test "cycle blocked direct chain" {
+    s = new_store();
+    assert(create_node(s, "A", "w1"));
+    assert(create_node(s, "B", "w1"));
+    assert(create_node(s, "C", "w1"));
+    assert(link_node(s, "A", "B"));
+    assert(link_node(s, "B", "C"));
+    assert(!link_node(s, "C", "A"));
+    got = bfs_contains(s, "A");
+    assert(sorted(got) == sorted(["A", "B", "C"]));
+    assert(get_workspace_of_node(s, "A") == "w1");
 }
 
-test "diamond_revisit_adversarial_order" {
-    create_workspace("w_dia");
-    create_folder("A_d", "w_dia");
-    create_folder("B_d", "w_dia");
-    create_folder("C_d", "w_dia");
-    create_folder("D_d", "w_dia");
-    assert(link_node("A_d", "B_d"));
-    assert(link_node("A_d", "C_d"));
-    assert(link_node("B_d", "D_d"));
-    assert(link_node("C_d", "D_d"));
-    # D_d is reachable via two paths; linking D_d -> A_d must still be detected as cycle
-    assert(!link_node("D_d", "A_d"));
-    # descendants of A_d must be exactly B,D,C without duplicates even though D visited twice
-    assert(sorted(get_descendants("A_d")) == sorted(["B_d", "C_d", "D_d"]));
+test "diamond revisit adversarial order" {
+    s = new_store();
+    assert(create_node(s, "A", "w1"));
+    assert(create_node(s, "B", "w1"));
+    assert(create_node(s, "C", "w1"));
+    assert(create_node(s, "D", "w1"));
+    assert(link_node(s, "A", "B"));
+    assert(link_node(s, "A", "C"));
+    assert(link_node(s, "B", "D"));
+    assert(link_node(s, "C", "D"));
+    got = bfs_contains(s, "A");
+    assert(sorted(got) == sorted(["A", "B", "C", "D"]));
+    assert(!link_node(s, "D", "A"));
+    assert(!link_node(s, "D", "B"));
+    got2 = bfs_contains(s, "A");
+    assert(sorted(got2) == sorted(["A", "B", "C", "D"]));
 }
 
-test "unknown_id_and_workspace_mismatch_tolerance" {
-    create_workspace("w_u1");
-    create_workspace("w_u2");
-    create_folder("X_u", "w_u1");
-    create_folder("Y_u", "w_u2");
-    assert(!link_node("nope_parent", "X_u"));
-    assert(!link_node("X_u", "nope_child"));
-    assert(!link_node("X_u", "Y_u"));
-    assert(get_descendants("ghost") == []);
-    assert(get_workspace_of_node("ghost") == "");
-    assert(recursive_delete("ghost") == []);
-    assert(get_workspace_of_node("X_u") == "w_u1");
+test "unknown id tolerance and workspace isolation" {
+    s = new_store();
+    assert(create_node(s, "X", "w1"));
+    assert(create_node(s, "Y", "w2"));
+    assert(!link_node(s, "X", "nope"));
+    assert(!link_node(s, "nope", "X"));
+    assert(!link_node(s, "X", "Y"));
+    assert(!link_node(s, "X", "X"));
+    assert(bfs_contains(s, "nope") == []);
+    assert(get_workspace_of_node(s, "nope") == None);
+    assert(recursive_delete(s, "nope") == []);
+    assert(get_workspace_of_node(s, "X") == "w1");
 }
 
-test "recursive_delete_and_export_dot" {
-    create_workspace("w_del");
-    create_folder("P_del", "w_del");
-    create_folder("Q_del", "w_del");
-    create_folder("SIB_del", "w_del");
-    assert(link_node("w_del", "P_del"));
-    assert(link_node("P_del", "Q_del"));
-    assert(link_node("w_del", "SIB_del"));
-    dot1 = export_dot();
-    assert(dot1.contains("w_del -> P_del"));
-    assert(dot1.contains("P_del -> Q_del"));
-    got = recursive_delete("P_del");
-    assert(sorted(got) == sorted(["P_del", "Q_del"]));
-    assert(get_descendants("w_del") == ["SIB_del"]);
-    assert(recursive_delete("P_del") == []);
-    dot2 = export_dot();
-    assert(!dot2.contains("P_del -> Q_del"));
-}
-
-test "cycle_preserved_across_save_semantics_no_duplicate_traversal" {
-    create_workspace("w_save");
-    create_folder("M_save", "w_save");
-    create_folder("N_save", "w_save");
-    assert(link_node("M_save", "N_save"));
-    assert(!link_node("N_save", "M_save"));
-    # ensure bfs does not loop and returns correct closure
-    assert(get_descendants("M_save") == ["N_save"]);
-    assert(get_descendants("N_save") == []);
+test "recursive delete and export dot" {
+    s = new_store();
+    assert(create_node(s, "P", "w1"));
+    assert(create_node(s, "Q", "w1"));
+    assert(create_node(s, "R", "w1"));
+    assert(link_node(s, "P", "Q"));
+    assert(link_node(s, "Q", "R"));
+    dot = export_dot(s);
+    assert(len(dot) > 0);
+    del = recursive_delete(s, "Q");
+    assert(sorted(del) == sorted(["Q", "R"]));
+    assert(bfs_contains(s, "Q") == []);
+    assert(get_workspace_of_node(s, "Q") == None);
+    got = bfs_contains(s, "P");
+    assert(got == ["P"]);
 }

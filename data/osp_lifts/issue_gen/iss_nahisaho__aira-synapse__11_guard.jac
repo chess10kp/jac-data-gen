@@ -1,316 +1,194 @@
-# iss_nahisaho__aira-synapse__11.jac
-# nahisaho/aira-synapse#11 - fix: await Stage V dictionary persistence before indexing success
+# nahisaho/aira-synapse#11 - await Stage V dictionary persistence before indexing success
+node EntryNode { has term: str; has doc_id: str = ""; }
+node BuilderNode { has corpus_id: str; has state: str = "not_started"; has last_doc: str = ""; }
+node DictionaryNode { has call_count: int = 0; has should_fail: bool = False; has entries: list[str] = []; }
+node PipelineNode { has batch_open: bool = True; has last_error: str = ""; }
+node JobNode { has job_id: str; has status: str = "pending"; has batch_abandoned: bool = False; }
+edge HasEntry {}
+edge UsesDict {}
+edge PipelineLink {}
 
-node GraphRoot { has name: str = "g"; }
-node DocNode { has did: str; has corpus: str; }
-node TermNode { has tid: str; has text: str; }
-node DictNode { has store: dict[str, str] = {}; has should_fail: bool = False; }
-node LexiconBuilder { has graph_root: GraphRoot; has dict_node: DictNode; }
-node LexiconBuildResult { has doc_id: str; has entries: dict[str, str] = {}; has success: bool = True; }
-
-edge HasDoc {}
-edge Contains {}
-
-walker BuildCollectWalker {
+walker CollectEntries {
     has claimed: dict[str, bool] = {};
-    has collected: list[TermNode] = [];
-    can collect_doc with DocNode entry {
-        if here.did in self.claimed { skip; }
-        self.claimed[here.did] = True;
-        print(f"BuildWalker doc {here.did}");
-        kids: list[TermNode] = [here ->:Contains:->][?:TermNode];
-        if len(kids) > 0 {
-            visit :0: kids;
-        } else {
-            disengage;
-        }
+    has collected: list[str] = [];
+    can collect_b with BuilderNode entry {
+        if here.corpus_id in self.claimed { skip; }
+        self.claimed[here.corpus_id] = True;
+        print(here.corpus_id);
+        for kid in [here ->:HasEntry:->][?:EntryNode] { visit :0: [kid]; }
     }
-    can collect_term with TermNode entry {
-        if here.tid in self.claimed { skip; }
-        self.claimed[here.tid] = True;
-        print(f"entry {here.tid}");
-        self.collected.append(here);
-        kids: list[TermNode] = [here ->:Contains:->][?:TermNode];
-        if len(kids) > 0 {
-            visit :0: kids;
-        } else {
-            disengage;
-        }
+    can collect_e with EntryNode entry {
+        if here.term in self.claimed { skip; }
+        self.claimed[here.term] = True;
+        self.collected.append(here.term);
+        print(here.term);
     }
 }
-
-walker BackfillCollectWalker {
-    has corpus_id: str;
+walker ReachWalk {
     has claimed: dict[str, bool] = {};
-    has collected: list[TermNode] = [];
-    can bf_root with GraphRoot entry {
-        if here.name in self.claimed { skip; }
-        self.claimed[here.name] = True;
-        print(f"backfill start {self.corpus_id}");
-        docs: list[DocNode] = [here ->:HasDoc:->][?:DocNode];
-        if len(docs) > 0 {
-            visit :0: docs;
-        } else {
-            disengage;
-        }
+    has order: list[str] = [];
+    can r_b with BuilderNode entry {
+        if here.corpus_id in self.claimed { skip; }
+        self.claimed[here.corpus_id] = True;
+        print(here.corpus_id);
+        for nxt in [here ->:HasEntry:->][?:EntryNode] { visit :0: [nxt]; }
     }
-    can bf_doc with DocNode entry {
-        if here.did in self.claimed { skip; }
-        self.claimed[here.did] = True;
-        print(f"backfill doc {here.did}");
-        if here.corpus == self.corpus_id {
-            kids: list[TermNode] = [here ->:Contains:->][?:TermNode];
-            if len(kids) > 0 {
-                visit :0: kids;
-            } else {
-                disengage;
-            }
-        } else {
-            disengage;
-        }
-    }
-    can bf_term with TermNode entry {
-        if here.tid in self.claimed { skip; }
-        self.claimed[here.tid] = True;
-        print(f"backfill entry {here.tid}");
-        self.collected.append(here);
-        disengage;
+    can r_e with EntryNode entry {
+        if here.term in self.claimed { skip; }
+        self.claimed[here.term] = True;
+        self.order.append(here.term);
+        print(here.term);
     }
 }
-
-def new_graph() -> GraphRoot {
-    gr = GraphRoot(name="g");
-    root ++> gr;
-    print("new_graph");
-    return gr;
-}
-
-def make_builder(graph_root: GraphRoot) -> LexiconBuilder {
-    dn = DictNode(store={});
-    graph_root ++> dn;
-    b = LexiconBuilder(graph_root=graph_root, dict_node=dn);
-    root ++> b;
-    print("make_builder");
-    return b;
-}
-
-def find_doc(graph_root: GraphRoot, did: str) -> DocNode | None {
-    candidates: list[DocNode] = [graph_root ->:HasDoc:->][?:DocNode];
-    for c in candidates {
-        if c.did == did {
-            return c;
-        }
-    }
-    return None;
-}
-
-def add_document(graph_root: GraphRoot, did: str, corpus: str) -> DocNode {
-    d = DocNode(did=did, corpus=corpus);
-    graph_root +>:HasDoc:+> d;
-    print(f"add_document {did}");
-    return d;
-}
-
-def add_term(doc: DocNode, tid: str, text: str) -> TermNode {
-    t = TermNode(tid=tid, text=text);
-    doc +>:Contains:+> t;
-    print(f"add_term {tid}");
-    return t;
-}
-
-def upsert_entries(dict_node: DictNode, entries: list[TermNode]) -> bool {
-    # synchronous SQLite transaction semantics - fail before Promise
-    for e in entries {
-        if e.text == "FAIL" {
-            print("upsert sync fail");
-            raise Exception("dictionary settlement rejected");
-        }
-    }
-    for e in entries {
-        dict_node.store[e.tid] = e.text;
-        print(f"upsert {e.tid}");
-    }
-    print("upsert settled");
+def makeBuilder(corpus_id: str) -> BuilderNode { b = BuilderNode(corpus_id=corpus_id); return b; }
+def makeDictionary(should_fail: bool) -> DictionaryNode { d = DictionaryNode(should_fail=should_fail); return d; }
+def dictionaryUpsert(dict_node: DictionaryNode, terms: list[str]) -> bool {
+    dict_node.call_count = dict_node.call_count + 1;
+    if dict_node.should_fail { print("dict_fail"); return False; }
+    for tt in terms { dict_node.entries.append(tt); }
+    print("dict_ok");
     return True;
 }
-
-def buildIncremental(builder: LexiconBuilder, doc_id: str) -> LexiconBuildResult {
-    doc: DocNode | None = find_doc(builder.graph_root, doc_id);
-    if doc is None {
-        print("buildIncremental unknown doc");
-        res = LexiconBuildResult(doc_id=doc_id, entries={}, success=True);
-        return res;
+def buildIncremental(builder: BuilderNode, dict_node: DictionaryNode, doc_id: str, terms: list[str]) -> dict[str, str] {
+    builder.state = "local_transaction_running";
+    builder.last_doc = doc_id;
+    for t in terms { nd = EntryNode(term=t, doc_id=doc_id); builder +>:HasEntry:+> nd; }
+    builder.state = "dictionary_settlement_pending";
+    ok: bool = dictionaryUpsert(dict_node, terms);
+    if ok == False {
+        builder.state = "failed";
+        builder.state = "rejected";
+        print("settlement_rejected");
+        res_fail: dict[str, str] = {};
+        res_fail["doc_id"] = doc_id;
+        res_fail["status"] = "rejected";
+        res_fail["error"] = "dictionary settlement rejected";
+        return res_fail;
     }
-    w = doc spawn BuildCollectWalker(claimed={}, collected=[]);
-    entries: list[TermNode] = w.collected;
-    # exactly one awaited settlement if entries exist
-    if len(entries) > 0 {
-        upsert_entries(builder.dict_node, entries);
-        print("buildIncremental settled");
-    } else {
-        print("buildIncremental no entries");
-    }
-    out: dict[str, str] = {};
-    for e in entries {
-        out[e.tid] = e.text;
-    }
-    print(f"built {doc_id}");
-    res2 = LexiconBuildResult(doc_id=doc_id, entries=out, success=True);
-    return res2;
-}
-
-def backfill(builder: LexiconBuilder, corpus_id: str) -> LexiconBuildResult {
-    w = builder.graph_root spawn BackfillCollectWalker(corpus_id=corpus_id, claimed={}, collected=[]);
-    entries: list[TermNode] = w.collected;
-    if len(entries) > 0 {
-        upsert_entries(builder.dict_node, entries);
-        print("backfill settled");
-    } else {
-        print("backfill no entries");
-    }
-    out: dict[str, str] = {};
-    for e in entries {
-        out[e.tid] = e.text;
-    }
-    print(f"backfilled {corpus_id}");
-    res = LexiconBuildResult(doc_id=corpus_id, entries=out, success=True);
+    builder.state = "settled";
+    builder.state = "returned";
+    res: dict[str, str] = {};
+    res["doc_id"] = doc_id;
+    res["status"] = "settled";
+    res["corpus"] = builder.corpus_id;
+    print(res["status"]);
     return res;
 }
-
-def pipeline_index(builder: LexiconBuilder, doc_id: str) -> LexiconBuildResult {
-    try {
-        r = buildIncremental(builder, doc_id);
-        print("pipeline success");
-        return r;
-    } except Exception as e {
-        print(f"pipeline wrap {e}");
-        raise Exception(f"DocumentMutationError: {e}");
+def backfill(builder: BuilderNode, dict_node: DictionaryNode, doc_id: str, terms: list[str]) -> dict[str, str] { return buildIncremental(builder, dict_node, doc_id, terms); }
+def indexDocument(pipeline: PipelineNode, builder: BuilderNode, dict_node: DictionaryNode, doc_id: str, terms: list[str]) -> dict[str, str] {
+    res_inner: dict[str, str] = buildIncremental(builder, dict_node, doc_id, terms);
+    if res_inner["status"] == "rejected" {
+        pipeline.last_error = res_inner["error"];
+        pipeline.batch_open = False;
+        wrapped: dict[str, str] = {};
+        wrapped["doc_id"] = doc_id;
+        wrapped["status"] = "DocumentMutationError";
+        wrapped["cause"] = res_inner["error"];
+        print(wrapped["status"]);
+        return wrapped;
     }
+    print(res_inner["status"]);
+    return res_inner;
 }
-
-def run_job(builder: LexiconBuilder, doc_id: str) -> LexiconBuildResult {
-    batch_open: bool = True;
-    try {
-        r2 = pipeline_index(builder, doc_id);
-        if batch_open {
-            print("commit batch");
-            batch_open = False;
-        }
-        return r2;
-    } except Exception as e {
-        if batch_open {
-            print("abandon batch");
-            batch_open = False;
-        }
-        print(f"job failed {e}");
-        raise e;
+def runJob(job_node: JobNode, pipeline: PipelineNode, builder: BuilderNode, dict_node: DictionaryNode, doc_id: str, terms: list[str]) -> dict[str, str] {
+    job_node.status = "running";
+    res: dict[str, str] = indexDocument(pipeline, builder, dict_node, doc_id, terms);
+    if res["status"] == "DocumentMutationError" {
+        job_node.status = "failed";
+        job_node.batch_abandoned = True;
+        pipeline.batch_open = False;
+        print(job_node.status);
+        return res;
     }
+    job_node.status = "completed";
+    pipeline.batch_open = False;
+    print(job_node.status);
+    return res;
 }
-
+def getReachableTerms(builder: BuilderNode) -> list[str] {
+    w = builder spawn CollectEntries(claimed={});
+    print(w.collected);
+    out: list[str] = sorted(w.collected);
+    return out;
+}
 with entry {
-    gr2 = GraphRoot(name="demo");
-    root ++> gr2;
-    dn2 = DictNode(store={});
-    gr2 ++> dn2;
-    b2 = LexiconBuilder(graph_root=gr2, dict_node=dn2);
-    root ++> b2;
-    d0 = DocNode(did="demo_doc", corpus="c0");
-    gr2 +>:HasDoc:+> d0;
-    t0 = TermNode(tid="t0", text="hello");
-    d0 +>:Contains:+> t0;
-    w0 = gr2 spawn BackfillCollectWalker(corpus_id="c0", claimed={}, collected=[]);
-    print("demo done");
+    b = BuilderNode(corpus_id="demo");
+    d = DictionaryNode();
+    p = PipelineNode();
+    j = JobNode(job_id="j1");
+    root ++> b;
+    root ++> d;
+    root ++> p;
+    root ++> j;
+    b +>:UsesDict:+> d;
+    w = b spawn CollectEntries(claimed={});
+    print(w.collected);
+    w2 = b spawn ReachWalk(claimed={});
+    print(w2.order);
+    rw = root spawn CollectEntries(claimed={});
+    print(rw.collected);
 }
 
-test "buildIncremental stores two entries before return" {
-    gr = new_graph();
-    b = make_builder(gr);
-    d = add_document(gr, "d2", "c1");
-    add_term(d, "t1", "alpha");
-    add_term(d, "t2", "beta");
-    r = buildIncremental(b, "d2");
-    assert(len(b.dict_node.store) == 2);
-    assert("t1" in r.entries);
-    assert("t2" in r.entries);
-    assert(r.success == True);
+test "diamond revisit adversarial order claims once" {
+    b = makeBuilder("cA");
+    e1 = EntryNode(term="shared", doc_id="d1");
+    e2 = EntryNode(term="shared", doc_id="d1");
+    e3 = EntryNode(term="unique", doc_id="d1");
+    b +>:HasEntry:+> e1;
+    b +>:HasEntry:+> e2;
+    b +>:HasEntry:+> e3;
+    got: list[str] = getReachableTerms(b);
+    assert sorted(got) == sorted(["shared", "unique"]);
+    assert len(got) == 2;
 }
-
-test "backfill diamond revisit visits shared term once" {
-    gr = new_graph();
-    b = make_builder(gr);
-    d1 = add_document(gr, "d1", "cX");
-    d2 = add_document(gr, "d2", "cX");
-    shared = TermNode(tid="ts", text="shared");
-    # diamond: both docs contain same shared term node via two paths
-    d1 +>:Contains:+> shared;
-    d2 +>:Contains:+> shared;
-    add_term(d1, "t1", "a");
-    add_term(d2, "t2", "b");
-    # adversarial insertion order: d2 linked first, d1 second, walker must still dedup shared
-    r = backfill(b, "cX");
-    # shared counted once, plus t1 t2 = 3 total
-    assert(len(b.dict_node.store) == 3);
-    assert("ts" in r.entries);
-    assert(len(r.entries) == 3);
+test "unknown id tolerance empty builder" {
+    b2 = makeBuilder("c_empty");
+    got2: list[str] = getReachableTerms(b2);
+    assert len(got2) == 0;
+    assert got2 == [];
+    d2 = makeDictionary(False);
+    p2 = PipelineNode();
+    res_empty: dict[str, str] = buildIncremental(b2, d2, "doc_unknown", []);
+    assert res_empty["status"] == "settled";
+    assert d2.call_count == 1;
 }
-
-test "unknown doc id tolerance returns empty" {
-    gr = new_graph();
-    b = make_builder(gr);
-    d = add_document(gr, "d1", "c1");
-    add_term(d, "t1", "x");
-    r = buildIncremental(b, "unknown");
-    assert(len(r.entries) == 0);
-    assert(len(b.dict_node.store) == 0);
-    assert(r.success == True);
+test "buildIncremental await success one call" {
+    b3 = makeBuilder("corpus1");
+    d3 = makeDictionary(False);
+    terms3: list[str] = ["apple", "banana"];
+    res3: dict[str, str] = buildIncremental(b3, d3, "doc1", terms3);
+    assert res3["status"] == "settled";
+    assert res3["doc_id"] == "doc1";
+    assert d3.call_count == 1;
+    assert b3.state == "returned";
+    got3: list[str] = getReachableTerms(b3);
+    assert sorted(got3) == sorted(terms3);
 }
-
-test "settlement rejection propagates and wraps" {
-    gr = new_graph();
-    b = make_builder(gr);
-    d = add_document(gr, "dFail", "c1");
-    add_term(d, "tF", "FAIL");
-    got: bool = False;
-    try {
-        x = buildIncremental(b, "dFail");
-    } except Exception as e {
-        got = True;
-        assert("settlement rejected" in str(e));
-    }
-    assert(got == True);
-    assert(len(b.dict_node.store) == 0);
-    # pipeline wraps in DocumentMutationError
-    got2: bool = False;
-    try {
-        y = pipeline_index(b, "dFail");
-    } except Exception as e2 {
-        got2 = True;
-        assert("DocumentMutationError" in str(e2));
-    }
-    assert(got2 == True);
+test "buildIncremental failure propagates to DocumentMutationError and abandons batch" {
+    b4 = makeBuilder("corpus2");
+    d4 = makeDictionary(True);
+    p4 = PipelineNode();
+    j4 = JobNode(job_id="job_fail");
+    terms4: list[str] = ["x", "y"];
+    res4: dict[str, str] = runJob(j4, p4, b4, d4, "doc2", terms4);
+    assert res4["status"] == "DocumentMutationError";
+    assert res4["cause"] == "dictionary settlement rejected";
+    assert j4.status == "failed";
+    assert j4.batch_abandoned == True;
+    assert p4.batch_open == False;
+    assert b4.state == "rejected";
+    assert d4.call_count == 1;
 }
-
-test "run_job abandons batch on failure and backfill empty corpus" {
-    gr = new_graph();
-    b = make_builder(gr);
-    d = add_document(gr, "dOk", "c1");
-    add_term(d, "t1", "ok");
-    r = run_job(b, "dOk");
-    assert(len(b.dict_node.store) == 1);
-    assert(r.success == True);
-    # backfill on empty corpus returns empty without upsert
-    r2 = backfill(b, "empty");
-    assert(len(r2.entries) == 0);
-    # run_job with failing doc abandons
-    d2 = add_document(gr, "dBad", "c1");
-    add_term(d2, "tb", "FAIL");
-    failed: bool = False;
-    try {
-        z = run_job(b, "dBad");
-    } except Exception as e3 {
-        failed = True;
-    }
-    assert(failed == True);
-    # store still only has 1 from first success, no partial commit
-    assert(len(b.dict_node.store) == 1);
+test "backfill propagates failure never reports success early" {
+    b5 = makeBuilder("corpus3");
+    d5 = makeDictionary(True);
+    p5 = PipelineNode();
+    res5: dict[str, str] = backfill(b5, d5, "doc3", ["t1"]);
+    assert res5["status"] == "rejected";
+    assert p5.batch_open == True;
+    res5b: dict[str, str] = indexDocument(p5, b5, d5, "doc3", ["t1"]);
+    assert res5b["status"] == "DocumentMutationError";
+    assert p5.batch_open == False;
+    got5: list[str] = getReachableTerms(b5);
+    assert "t1" in got5;
 }
