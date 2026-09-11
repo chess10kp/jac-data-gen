@@ -1,0 +1,89 @@
+{
+  "line_counts": {
+    "issues_1.jsonl": 3,
+    "issues_2.jsonl": 10,
+    "issues_3.jsonl": 10
+  },
+  "restored": {
+    "issues_1.jsonl": [
+      "osp__opsmill__infrahub__8968__schemacy",
+      "osp__eumemic__aios__1152__cancelca",
+      "osp__keboola__agnes-the-ai-analyst__677__entitylin"
+    ],
+    "issues_2.jsonl": [
+      "osp__DataJunction__dj__2272__bulk_del",
+      "osp__probcomp__bdbcontrib__73__bayesdag",
+      "osp__francescomucio__tee-for-transform__8__dbt_depec",
+      "osp__QuEraComputing__bloqade-circuit__852__call_memo",
+      "osp__paulnsorensen__milknado__292__harvest_d",
+      "osp__sora-kisaragi__ai-open-textbook__74__remediat",
+      "osp__Giovannibriglia__NeuralBayesianNetworks__74__query_se",
+      "osp__dwovitz__memory-mcp__17__graph_ret",
+      "osp__camillanapoles__bioeolica-dev__14__prov_chai",
+      "osp__k-sandhu__dq-sentinel__242__bi_lineag"
+    ],
+    "issues_3.jsonl": [
+      "osp__sembeimx__nori__44__movetree",
+      "osp__pratapram__dale__24__entresolv",
+      "osp__hleserg__atman__1185__memograph",
+      "osp__NVLabs__SimFoundry__4__supgraph",
+      "osp__ut-issl__veriq__260__deptree",
+      "osp__decalage2__olefile__179__fatchain",
+      "osp__PersonalClaw__PersonalClaw__761__tagmerge",
+      "osp__richinmrudul__agentguard__182__sarifexp",
+      "osp__web3guru888__asi-build__280__causedag",
+      "osp__asielen__plaintext-family-history__115__pedigree"
+    ]
+  },
+  "dropped": [
+    "osp__PersonalClaw__PersonalClaw__761__tagcycle",
+    "osp__asielen__plaintext-family-history__115__pedigreef",
+    "osp__decalage2__olefile__179__catchain",
+    "osp__paulnsorensen__milknado__292__harvest",
+    "osp__probcomp__bdbcontrib__73__composer",
+    "osp__richinmrudul__agentguard__182__repodedup",
+    "osp__ut-issl__veriq__260__deptreed",
+    "osp__web3guru888__asi-build__280__causaldag"
+  ],
+  "removed_cross_batch_from_issues_1": [
+    "osp__ut-issl__veriq__260__deptree",
+    "osp__decalage2__olefile__179__fatchain",
+    "osp__PersonalClaw__PersonalClaw__761__tagmerge",
+    "osp__richinmrudul__agentguard__182__sarifexp",
+    "osp__probcomp__bdbcontrib__73__bayesdag",
+    "osp__web3guru888__asi-build__280__causedag",
+    "osp__asielen__plaintext-family-history__115__pedigree",
+    "osp__paulnsorensen__milknado__292__harvest"
+  ],
+  "validation": {
+    "issues_1.jsonl": {
+      "osp__opsmill__infrahub__8968__schemacy": "test fail:  failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 2.31s ===============================\n",
+      "osp__eumemic__aios__1152__cancelca": "test fail: ggy-1.6.0\nrootdir: /home/jac/repos/jac_llm_data/data/osp_lifts\nplugins: jaclang-0.36.1, xdist-3.8.0\ncollected 0 items\n\n============================ no tests ran in 18.34s ============================\n",
+      "osp__keboola__agnes-the-ai-analyst__677__entitylin": "test fail: 677_guard.jac::cross document linking\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n============================== 1 failed in 27.55s ==============================\n"
+    },
+    "issues_2.jsonl": {
+      "osp__DataJunction__dj__2272__bulk_del": "test fail: ggy-1.6.0\nrootdir: /home/jac/repos/jac_llm_data/data/osp_lifts\nplugins: jaclang-0.36.1, xdist-3.8.0\ncollected 0 items\n\n============================ no tests ran in 28.18s ============================\n",
+      "osp__probcomp__bdbcontrib__73__bayesdag": "test fail:  failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n========================= 1 error in 108.46s (0:01:48) =========================\n",
+      "osp__francescomucio__tee-for-transform__8__dbt_depec": "test fail: ggy-1.6.0\nrootdir: /home/jac/repos/jac_llm_data/data/osp_lifts\nplugins: jaclang-0.36.1, xdist-3.8.0\ncollected 0 items\n\n============================ no tests ran in 4.07s =============================\n",
+      "osp__QuEraComputing__bloqade-circuit__852__call_memo": "test fail: ggy-1.6.0\nrootdir: /home/jac/repos/jac_llm_data/data/osp_lifts\nplugins: jaclang-0.36.1, xdist-3.8.0\ncollected 0 items\n\n============================ no tests ran in 24.24s ============================\n",
+      "osp__paulnsorensen__milknado__292__harvest_d": "ok",
+      "osp__sora-kisaragi__ai-open-textbook__74__remediat": "test fail: ggy-1.6.0\nrootdir: /home/jac/repos/jac_llm_data/data/osp_lifts\nplugins: jaclang-0.36.1, xdist-3.8.0\ncollected 0 items\n\n============================ no tests ran in 7.01s =============================\n",
+      "osp__Giovannibriglia__NeuralBayesianNetworks__74__query_se": "test fail: ggy-1.6.0\nrootdir: /home/jac/repos/jac_llm_data/data/osp_lifts\nplugins: jaclang-0.36.1, xdist-3.8.0\ncollected 0 items\n\n============================ no tests ran in 7.56s =============================\n",
+      "osp__dwovitz__memory-mcp__17__graph_ret": "test fail: ggy-1.6.0\nrootdir: /home/jac/repos/jac_llm_data/data/osp_lifts\nplugins: jaclang-0.36.1, xdist-3.8.0\ncollected 0 items\n\n============================ no tests ran in 12.09s ============================\n",
+      "osp__camillanapoles__bioeolica-dev__14__prov_chai": "test fail: ggy-1.6.0\nrootdir: /home/jac/repos/jac_llm_data/data/osp_lifts\nplugins: jaclang-0.36.1, xdist-3.8.0\ncollected 0 items\n\n============================ no tests ran in 3.26s =============================\n",
+      "osp__k-sandhu__dq-sentinel__242__bi_lineag": "test fail: ggy-1.6.0\nrootdir: /home/jac/repos/jac_llm_data/data/osp_lifts\nplugins: jaclang-0.36.1, xdist-3.8.0\ncollected 0 items\n\n============================ no tests ran in 17.86s ============================\n"
+    },
+    "issues_3.jsonl": {
+      "osp__sembeimx__nori__44__movetree": "ok",
+      "osp__pratapram__dale__24__entresolv": "ok",
+      "osp__hleserg__atman__1185__memograph": "test fail: n cycle terminates without truncation\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n========================= 1 failed, 3 passed in 13.80s =========================\n",
+      "osp__NVLabs__SimFoundry__4__supgraph": "test fail:  failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n========================= 1 error in 61.72s (0:01:01) ==========================\n",
+      "osp__ut-issl__veriq__260__deptree": "test fail:  failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n============================== 1 error in 21.78s ===============================\n",
+      "osp__decalage2__olefile__179__fatchain": "test fail: c::linear chain materializes in order\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n============================== 1 failed in 45.37s ==============================\n",
+      "osp__PersonalClaw__PersonalClaw__761__tagmerge": "test fail: alClaw__761_guard.jac::happy_ancestry\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n========================= 1 failed, 4 passed in 52.22s =========================\n",
+      "osp__richinmrudul__agentguard__182__sarifexp": "test fail:  failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 1.25s ===============================\n",
+      "osp__web3guru888__asi-build__280__causedag": "test fail: ",
+      "osp__asielen__plaintext-family-history__115__pedigree": "test fail:  failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n=============================== 1 error in 2.75s ===============================\n"
+    }
+  }
+}

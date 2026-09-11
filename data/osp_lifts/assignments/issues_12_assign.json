@@ -1,0 +1,194 @@
+{
+  "manifest": "issues_12.jsonl",
+  "records": [
+    {
+      "repo": "abdeslam-menacere/ModelTree",
+      "issue": 39,
+      "url": "https://github.com/abdeslam-menacere/ModelTree/issues/39",
+      "title": "Add shareable lineage trails",
+      "score": 11,
+      "signals": [
+        "activity.recent_update",
+        "domain.lineage",
+        "relationship.depends",
+        "relationship.parent_child",
+        "traversal.cycle",
+        "traversal.path_reach",
+        "traversal.walk"
+      ],
+      "lang": null,
+      "osp_hits": 6,
+      "body": "## User / problem statement\n\nUsers inspecting one release need to isolate its ancestors, siblings, successors, and derivations and share that focused path.\n\n## Outcome\n\nSelecting a lineage trail dims unrelated nodes, labels relationship types, and produces a stable shareable URL.\n\n## Scope\n\n- Compute focused relationship subgraphs from validated edges\n- Add enter/exit trail controls and URL state\n- Distinguish predecessor, successor, sibling, and derivation relationships\n- Provide a text trail and copy-link action\n\n## Non-goals\n\n- Infer missing relationships\n- Create arbitrary graph queries\n- Hide the selected model context\n\n## Acceptance criteria\n\n- [ ] Only recorded relationships enter the trail\n- [ ] Cycles and multi-parent derivations are handled safely\n- [ ] Copied links restore the same trail\n- [ ] Relationship types are visible beyond color/line style\n- [ ] Exit restores prior explorer state\n\n## Design / interaction notes\n\nDim unrelated content without making it unreadable; use line style plus labels for relationship types.\n\n## Data and source implications\n\nTraversal uses typed edges and must detect cycles during validation and runtime projection.\n\n## Accessibility requirements\n\nThe focused trail has a semantic list and selection announcement; copy action has accessible feedback.\n\n## Testing requirements\n\n- [ ] Unit-test traversal, cycles, multi-parent paths, and empty trails\n- [ ] Component-test URL/copy and focus behavior\n- [ ] Test text/visual parity\n\n## Dependencies\n\n- Depends on #10 - Generalize the lineage explorer across featured ecosystems\n\n## Risks / open questions\n\n- Dense derivation graphs may exceed tree-layout assumptions\n- Dimming can violate contrast if applied carelessly.\n\n---\n\n<sub>Migration ID: `migrated-source-issue:38`</sub>"
+    },
+    {
+      "repo": "chittihq/pintail",
+      "issue": 29,
+      "url": "https://github.com/chittihq/pintail/issues/29",
+      "title": "Low-latency repair for CDC-invisible foreign-key actions",
+      "score": 11,
+      "signals": [
+        "activity.recent_update",
+        "relationship.parent_child",
+        "relationship.reference",
+        "traversal.cycle",
+        "traversal.path_reach",
+        "traversal.recursive",
+        "traversal.walk"
+      ],
+      "lang": null,
+      "osp_hits": 6,
+      "body": "MySQL performs `ON DELETE/UPDATE CASCADE` and `SET NULL` inside InnoDB without\nwriting row events, so the affected child rows never reach Pintail through CDC.\nToday the probe flags those tables (`requires_reconciliation`,\n`crates/pintail-probe/src/lib.rs:767`) and the supervisor schedules a full\nrepair every `reconcile_interval_seconds`\n(`crates/pintail-api/src/supervisor.rs:424`, default 600s at\n`crates/pintail-api/src/databases.rs:474`). Correct, but child deletes converge\nin minutes while everything else converges in seconds, and the repair\nmaterializes a table-sized comparison (`docs/limitations.md`).\n\nThis issue proposes closing that latency gap for a narrow, verified class of\nreferential actions.\n\n## The obvious design, and why it is wrong\n\nThe tempting approach is: on capturing a parent `DELETE`, walk the probe's\n`SourceForeignKey` graph and synthesize the corresponding child deletes into the\nsame buffered transaction. The metadata is already there \u2014 child columns,\nreferenced table and columns, and both action rules\n(`crates/pintail-probe/src/lib.rs:506`).\n\nIt does not survive review.\n\n- **`SET foreign_key_checks = 0`.** The schema says `CASCADE` while the session\n  performs no cascade at all. Graph-driven synthesis would delete child rows the\n  source still holds \u2014 silent data loss from a legitimate operation that\n  dump/restore and many migration tools use by default. The probe does not\n  capture the variable (`crates/pintail-probe/src/lib.rs:311`) and the DDL\n  handler does not recognise the statement (`crates/pintail-cdc/src/ddl.rs:35`).\n- **There is no cross-table atomic commit.** `commit_pending` ingests each\n  target sequentially, checkpoints sequentially, then advances SQLite\n  (`crates/pintail-cdc/src/lib.rs:1749`). A storage failure can leave a prefix\n  of table WALs (`docs/decisions.md:161`), so a query can observe the parent\n  gone and the child present. Synthesis must not be described as atomic.\n- **Replay can derive a different candidate set.** Versions are\n  `(event_position, ordinal)` (`crates/pintail-cdc/src/lib.rs:1965`) and\n  ordinals are assigned in insertion order (`:1717`). If candidates are\n  rediscovered by scanning the live store, a crash-recovered prefix changes the\n  set and shifts every later ordinal, breaking the identical-replay invariant.\n- **Single-level is not equivalent.** InnoDB recurses (up to 15 levels), treats\n  recursive `ON UPDATE` into an already-updated table as `RESTRICT`, and permits\n  self-referential delete cascades. A one-level implementation leaves\n  descendants wrong.\n- **The ordinal ceiling is reachable.** One source transaction is capped at\n  65,535 mutations (`crates/pintail-cdc/src/lib.rs:1724`); a single large\n  cascade can exceed it.\n\n## Proposed design: source-verified targeted repair\n\nDo not reconstruct the transformation from metadata. Use the FK graph only to\n*narrow the candidates*, and let the source arbitrate.\n\n1. Collect affected parent tuples from the FULL before/after image.\n2. Scan the child replica once, applying an overlay of the pending\n   transaction's own mutations, to obtain candidate stable child keys.\n3. After the source `Xid`, query the source in batches **by those candidate\n   keys**.\n4. Tombstone only keys the source confirms are absent. For rows still present,\n   ingest the authoritative current source row rather than guessing.\n5. Persist the complete ordered expansion plan durably **before** touching any\n   table WAL, then apply it with the CDC batch.\n\nThis is robust against `foreign_key_checks=0`, a stale FK graph, and children\nchanged by unrelated statements, because the source decides.\n\nIt remains **end-state repair, not an exact historical snapshot**: a lagging\nreader queries the source's current state, not its state at the parent\ntransaction. Exact transaction-time semantics would require source-side\ninstrumentation (outbox/audit) and cannot be reconstructed from a parent row\nevent plus a current FK graph.\n\n## v1 scope\n\nInclude:\n\n- Opt-in per **constraint identity** (database, child table, constraint name,\n  action, ordered columns, referenced table/columns, schema fingerprint) \u2014 not\n  per database, not per table.\n- `ON DELETE CASCADE` and `ON DELETE SET NULL` only.\n- Leaf, acyclic, non-self-referential edges.\n- InnoDB both sides; keyed child tables only (no `AppendRowId`).\n- Referenced tuple proven to be an exact non-null `PRIMARY`/`UNIQUE`\n  independently of `unique_constraint_name`; Pintail already computes safe\n  unique keys under those restrictions (`crates/pintail-probe/src/lib.rs:696`).\n- Integer or binary exact-equality FK columns only. Textual FKs need\n  MySQL-collation-equivalent comparison, which is not defined today.\n  Any-`NULL` child tuple is excluded, matching `MATCH SIMPLE`.\n- Parent-excluded/child-included support via watch-only parent decoding. The\n  CDC loop currently discards row events for untargeted tables\n  (`crates/pintail-cdc/src/lib.rs:497`), so this needs explicit work. Parent\n  included/chi"
+    },
+    {
+      "repo": "johnkim9524-collab/kaios_enterprise_repo",
+      "issue": 1272,
+      "url": "https://github.com/johnkim9524-collab/kaios_enterprise_repo/issues/1272",
+      "title": "[P0][Security Gate] Narrow trust-root migration for canonical Portal runtime dependencies",
+      "score": 11,
+      "signals": [
+        "activity.recent_update",
+        "domain.workflow_dag",
+        "relationship.depends",
+        "relationship.parent_child",
+        "traversal.path_reach",
+        "traversal.recursive",
+        "traversal.walk"
+      ],
+      "lang": null,
+      "osp_hits": 6,
+      "body": "## Purpose\nClose #1256 without weakening Trusted Merge Control and unblock #1249/#1250, #1270 and staged #1269 continuous assurance.\n\n## Root cause\nTrusted validators under `scripts/kidults/portal/` execute the real canonical Portal runtime modules:\n- `apps/kidults-enterprise-staging/public/portal-r001/projection-store.js`\n- `apps/kidults-enterprise-staging/public/portal-r001/proof-product-admission.js`\n- `apps/kidults-enterprise-staging/public/portal-r001/proof-product-schema-validator.js`\n\nThe `pull_request_target` trust checker currently treats every executable dependency outside `scripts/` as an escape, while repository-local validation already depends on these exact canonical runtime modules. Copying/mirroring them or hiding execution behind a subprocess would create semantic drift or checker bypass and is prohibited.\n\n## Proposed narrow migration\nDefine an explicit governed executable-root set containing:\n1. existing trusted `scripts/` closure; and\n2. ONLY the three exact canonical Portal runtime modules above, plus only their recursively resolved repository-local dependencies if independently enumerated and byte-bound.\n\nMandatory invariants:\n- repository filesystem escape remains rejected;\n- new executable dependency outside the enumerated governed roots remains rejected;\n- transitive dependency closure is recursively resolved;\n- baseline dependency bytes are immutable for ordinary PR merge-result comparison unless the PR explicitly changes the governed dependency and all affected controls run;\n- additive validator/action/workflow injection remains rejected;\n- action SHA/runtime/dependency locks remain required;\n- no wildcard `apps/**` allowlist;\n- no caller-controlled path or dynamic import expansion;\n- adversarial tests must reject sibling app modules, parent traversal, symlink/path normalization escape, dynamic dependency injection and dependency removal/downgrade.\n\n## Required proof before landing\n- exact dependency graph receipt for the three Portal modules;\n- mutation suite for escape/addition/removal/downgrade;\n- Trusted Merge Control exact-head and merge-result SUCCESS;\n- Full Value Chain aggregate SUCCESS;\n- independent security review;\n- #1250/#1270 merge-result reproof after migration.\n\n## Authority boundary\nTHIS ISSUE DOES NOT AUTHORIZE THE TRUST-ROOT CHANGE. Because this changes `pull_request_target` trust semantics, explicit Program Owner/Security approval is required before implementation/landing. Until approved, checker bypass, broad allowlisting, mirrored runtime copies and trust downgrade are prohibited.\n\nNo provider/data/spend/credential/remote mutation/Public/Production/G5 effect. Empirical launch truth unchanged."
+    },
+    {
+      "repo": "kevin-earl-denny/vibe-code-boilerplate",
+      "issue": 285,
+      "url": "https://github.com/kevin-earl-denny/vibe-code-boilerplate/issues/285",
+      "title": "Add interactive dependency graph visualization for Linear projects",
+      "score": 11,
+      "signals": [
+        "domain.lineage",
+        "domain.workflow_dag",
+        "perf.pain",
+        "relationship.depends",
+        "relationship.reference",
+        "traversal.path_reach"
+      ],
+      "lang": null,
+      "osp_hits": 6,
+      "body": "## Summary\n\nAdd a command that generates an interactive HTML dependency graph for Linear project(s), visualizing blocking relationships between tickets. Inspired by Shortcut's built-in dependency visualization \u2014 Linear doesn't have this natively.\n\n## Motivation\n\nWhen planning or triaging work across projects, it's hard to see the full blocking graph in Linear's flat list views. A visual graph makes bottlenecks, critical paths, and cross-project dependencies immediately obvious.\n\n## Requirements\n\n### CLI Integration\n\n- New subcommand: `bin/ticket graph` (or similar)\n- Accepts one or more Linear project names/IDs\n- Outputs a self-contained static HTML file (no server needed, easy to share)\n- Should pull blocking relationships from Linear API and generate the snapshot\n\n### Visualization\n\n- **Framework:** D3.js\n- **Layout:** Directed acyclic graph (DAG), defaulting to top-down\n  - Toggle between **top-down** and **left-to-right** orientation\n  - Edges flow from blocker \u2192 blocked (upstream \u2192 downstream)\n\n### Symbology Modes\n\nTwo switchable color modes via a toggle/dropdown in the UI:\n\n1. **By Project** \u2014 each Linear project gets a distinct color. Useful for seeing cross-project dependencies.\n2. **By Status** \u2014 nodes colored by ticket status (Backlog, Todo, In Progress, In Review, Done). Use conventional status colors (gray, blue, yellow, purple, green or similar).\n\n### Interactions\n\n- **Hover:** Tooltip or highlight showing ticket title and key info\n- **Click a node:** \n  - Highlights the full upstream and downstream dependency chain of that ticket\n  - Mutes/dims all other nodes and edges that aren't in the chain\n  - Opens an **RHS sidebar** with ticket details\n- **Click background** to deselect and restore full graph\n\n### RHS Sidebar (on node click)\n\nMirror the feel of Linear's ticket detail panel. Display:\n\n- **Ticket ID** \u2014 prominently displayed (e.g., `DEAL-1234`)\n- **Title** \u2014 linked to the ticket in Linear (clickable)\n- **Status** \u2014 with color indicator\n- **Priority** \u2014 icon or label (Urgent/High/Medium/Low)\n- **Assignee**\n- **Project**\n- **Labels**\n- **Description** \u2014 first ~200 chars or a collapsible snippet\n- **Blocking** \u2014 list of tickets this blocks (linked)\n- **Blocked by** \u2014 list of tickets blocking this (linked)\n\nStyle it cleanly \u2014 good typography, spacing, and subtle borders/shadows. Should feel polished, not like a debug panel.\n\n### Cross-Project Support\n\n- When multiple projects are specified, all their tickets and cross-project blocking relationships are included\n- Even when a single project is specified, include any tickets from OTHER projects that block or are blocked by tickets in the selected project (pulled in as \"external\" nodes, visually distinguished \u2014 e.g., dashed border or different opacity)\n\n### Graph Node Display\n\nEach node should show at minimum:\n- Ticket ID (e.g., `DEAL-1234`)\n- Abbreviated title (truncated if long)\n- Status indicator (small dot or border color)\n\n### Static HTML Output\n\n- Single self-contained `.html` file (inline CSS/JS, no external deps beyond CDN links for D3)\n- Works when opened directly in a browser (`file://` or served)\n- Easy to share via Slack, email, or PR comments\n\n## Non-Goals\n\n- No live/real-time updates (this is a snapshot generator)\n- No editing tickets from the graph\n- No automatic layout persistence between regenerations\n\n## Acceptance Criteria\n\n1. `bin/ticket graph \"Project Name\"` generates a `.html` file and opens it (or prints the path)\n2. `bin/ticket graph \"Project A\" \"Project B\"` works for multi-project graphs\n3. Graph renders top-down by default with a toggle to switch to left-to-right\n4. Symbology toggle switches between project colors and status colors\n5. Clicking a node highlights its full upstream/downstream chain and dims everything else\n6. Clicking a node opens an RHS sidebar with all specified ticket details\n7. Ticket ID in sidebar links to Linear\n8. Cross-project blocking edges are visible and external tickets are visually distinguished\n9. Output is a single self-contained HTML file that works when opened in a browser\n10. Graph handles 50+ tickets without major performance issues"
+    },
+    {
+      "repo": "mmtuentertainment/codex-make-me-money",
+      "issue": 32,
+      "url": "https://github.com/mmtuentertainment/codex-make-me-money/issues/32",
+      "title": "Reconcile uncertainty, repair a failed path, and reassess the changed subject",
+      "score": 11,
+      "signals": [
+        "activity.recent_update",
+        "domain.lineage",
+        "domain.workflow_dag",
+        "relationship.depends",
+        "relationship.parent_child",
+        "traversal.cycle",
+        "traversal.path_reach"
+      ],
+      "lang": null,
+      "osp_hits": 6,
+      "body": "<!-- issue-27-implementation-ticket: 05 -->\n\n## Parent specification\n\nSub-issue of #27. This ticket implements a bounded slice of that specification; #27 remains authoritative for shared semantics.\n\nControlling map: #14. Owner-confirmed closed decisions: #15\u2013#26.\nEspecially #20 primary; #15 / #19 / #22; #16 conditional; process #26.\n\nAuthority note: triage labels describe specification readiness only. They do not authorize coding, commits, deployment, operation, private-data use, spending, outreach, publication, or public claims. Those require the owner\u2019s separately authorized implementation write boundary and any other repository controls.\n\nNative prerequisites are defined only by this issue\u2019s GitHub-native blocked-by relationships. Do not rely on mutable titles or planned ordinal numbers as dependency identifiers.\n\nShared semantics (construction depth \u2260 surface; three binding layers + Paths A/B/C; immutable historical truth \u2260 perpetual payload access; runtime re-entry \u2260 reverse GitHub dependencies; authority layers; verification layers L1/2A/2B/3 and AC tags) are defined once in #27. This ticket cites and consumes them; it must not redefine them.\n\nEngineering-review dispositions and plan-maintenance drafts are maintenance inputs only. They are not conformance evidence and do not prove implementation, dependability, portability, security, demand, or commercial viability.\n\n## Purpose / ownership\n\n#32 owns:\n\n- reconciliation without material subject change (record-only path)\n- definition/policy/capability repair routing\n- binding/environment repair routing\n- re-entry orchestration semantics (not reverse GitHub edges)\n- independent reassessment of the changed subject\n- preservation of predecessor/failure evidence\n\n## Explicit non-ownership\n\n#32 does not grant authority by passing reassessment. Evaluation authority \u2260 operational authority.\n\n#32 does not own Draft/CP/Release formation (#29), binding resolution (#30), or Run (#31) except as re-entry targets.\n\nDo **not** add reverse GitHub dependency edges to encode runtime re-entry.\n\n## Inputs / outputs\n\n**Inputs:** unresolved conditions (dependency failure, interruption, duplicate/ambiguous effect, failed evaluation, contradictory state); repair proposals; prior evidence/lineage.\n\n**Outputs:** reconciliation records; repair lineage with rationale and residual uncertainty; reassessment results; explicit re-entry directives to #29/#30/#31 as applicable; never a silent pass from missing evidence.\n\n## Authority bounds\n\n- definition/policy/capability repair \u2192 Draft \u2192 #29 \u2192 new Release \u2192 #30 \u2192 reassessment; evaluation-only #31 if needed; separate/current #31 before consequential resume\n- binding/environment repair \u2192 #30 \u2192 reassessment; eval #31 if needed; separate/current #31 before resume\n- reconciliation without material change \u2192 record only\n\n## Acceptance criteria\n\n- AC-1: Dependency failure, interruption, duplicate or ambiguous effect, failed evaluation, and contradictory state remain explicit unresolved conditions until reconciled or repaired.  [L1-satisfiable]\n- AC-2: Reconciliation without material subject change is record-only and preserves intent, authority decisions, every attempt, receipts, observable state, and uncertainty.  [L1-satisfiable]\n- AC-3: Definition/policy/capability repair preserves predecessor and failure evidence, creates attributable changed lineage, and re-enters #29 \u2192 new Release \u2192 #30 \u2192 reassessment (evaluation-only #31 if needed; separate #31 before consequential resume).  [L1-satisfiable]\n- AC-4: Binding/environment repair preserves predecessor and failure evidence and re-enters #30 \u2192 reassessment (evaluation-only #31 if needed; separate #31 before resume).  [L1-satisfiable]\n- AC-5: Repair records rationale, changed material, and residual uncertainty and cannot self-validate.  [L1-satisfiable]\n- AC-6: Evaluation/reassessment is preregistered and bound to the exact applicable subject(s), including release, bindings, scope, consequence class, methods, thresholds, evidence window, evaluator, and conflicts.  [L1-satisfiable]\n- AC-7: Cross-release or cross-binding comparison occurs only when the preregistered judgment requires it.  [L1-satisfiable]\n- AC-8: Changed subjects trigger reassessment; missing or contradictory evidence is not a pass.  [L1-satisfiable]\n- AC-9: Evaluation authority is distinguishable from operational authority; passing reassessment grants no authority and does not authorize resume by itself.  [L1-satisfiable]\n- AC-10: Runtime re-entry is expressed in acceptance criteria and tests, not as reverse GitHub dependency edges that cycle the implementation DAG.  [L1-satisfiable]\n- AC-11: When reassessment establishes, revises, or invalidates a bounded claim, claim-class separation under #16 is preserved (no auto-promotion).  [L1-satisfiable]\n- AC-12: Public-contract tests demonstrate reconciliation/repair/re-entry without private-state reliance.  [L1-satisfiable]\n\n## Required tests\n\n- Positive: record-only reconciliation; de"
+    },
+    {
+      "repo": "nisshchayarathi/gitverse-nextjs",
+      "issue": 2095,
+      "url": "https://github.com/nisshchayarathi/gitverse-nextjs/issues/2095",
+      "title": "[Bug] Circular Dependency Parsing Causes Infinite Recursion in AST",
+      "score": 11,
+      "signals": [
+        "activity.recent_update",
+        "relationship.depends",
+        "relationship.reference",
+        "traversal.cycle",
+        "traversal.path_reach",
+        "traversal.recursive",
+        "traversal.walk"
+      ],
+      "lang": null,
+      "osp_hits": 6,
+      "body": "When analyzing a repository that contains circular imports (e.g., `fileA.ts` imports `fileB.ts`, which imports `fileC.ts`, which imports `fileA.ts`), the AST analyzer inside `analysisWorker.ts` throws a stack overflow error or enters an infinite loop, freezing the worker thread.\n\n### Steps to Reproduce\n1. Import a repository with a circular module chain.\n2. Trigger repository analysis.\n3. Observe worker server hanging, followed by a `RangeError: Maximum call stack size exceeded` in worker logs.\n\n### Proposed Solution\n- Maintain a `visited` set of absolute file paths during the AST import parsing phase.\n- If a file path is already in the `visited` set, immediately return the cached node reference and skip deeper AST traversal for that branch.\n- Add unit tests under `tests/analysis.test.ts` to assert safe handling of circular dependency graphs.\n\n### Checklist\n- [ ] Add cycle detection map/visited tracking to AST node generation logic.\n- [ ] Write a test fixture mimicking circular TS imports.\n- [ ] Run `npm run test` to verify no regression."
+    },
+    {
+      "repo": "rwrife/skill-sniffer",
+      "issue": 45,
+      "url": "https://github.com/rwrife/skill-sniffer/issues/45",
+      "title": "[feature] --follow-refs: recursively sniff bundled scripts/resources a skill references",
+      "score": 11,
+      "signals": [
+        "activity.recent_update",
+        "domain.lineage",
+        "relationship.parent_child",
+        "relationship.reference",
+        "traversal.cycle",
+        "traversal.path_reach",
+        "traversal.recursive"
+      ],
+      "lang": null,
+      "osp_hits": 6,
+      "body": "skill-sniffer detects secrets and injection bait statically, but a huge, growing class of skills *reference other files* \u2014 scripts under `scripts/`, `assets/`, bundled `references/*.md` \u2014 and the dangerous instruction often lives in the **referenced file**, not `SKILL.md` itself. Right now a clean SKILL.md gets a full Good Boy Score even if it says \"run scripts/setup.sh\" and that script `curl | bash`es a remote URL.\n\n**Feature: `--follow-refs` \u2014 recursively sniff a skill's bundled surface.**\n\nWhen enabled, resolve referenced local files (relative to the skill dir) and run the applicable rules (secrets, injection, provenance, token-bloat for bundled `.md`) over them too, folding findings into the parent skill's report and score.\n\n### Why now\nThe spec formalized skill *bundles* (scripts + resources), and SkillSpector-style research found 26% of skills carry vulnerabilities \u2014 many in the payload, not the manifest. Sniffing only the top-level `.md` misses the actual bite.\n\n### Acceptance criteria\n- [ ] `skill-sniffer <path> --follow-refs` resolves local file references from SKILL.md (existing broken-paths resolution logic reused) and lints them.\n- [ ] Applies secrets + provenance + injection rules to referenced shell/script files (as text) and full ruleset to referenced `.md`.\n- [ ] Findings in referenced files are attributed with the source path and roll up into the parent skill's score.\n- [ ] Guards against cycles and caps recursion depth (configurable, sane default).\n- [ ] Respects existing `.skillsnifferrc` rule enable/disable.\n- [ ] Tests: a clean SKILL.md that references a script containing a secret \u2192 non-clean result.\n- [ ] README documents the flag and the roll-up scoring behavior.\n\nBuilds directly on `broken-paths.ts` path resolution and the existing engine; no new network or execution (we read, never run, the scripts).\n"
+    },
+    {
+      "repo": "serrrfirat/bottega",
+      "issue": 165,
+      "url": "https://github.com/serrrfirat/bottega/issues/165",
+      "title": "Work-item chains: depends_on ordering with fail-closed propagation",
+      "score": 11,
+      "signals": [
+        "activity.recent_update",
+        "domain.workflow_dag",
+        "relationship.depends",
+        "relationship.parent_child",
+        "traversal.cycle",
+        "traversal.path_reach",
+        "traversal.walk"
+      ],
+      "lang": null,
+      "osp_hits": 6,
+      "body": "Part of #112 (Epic: Core loop). Related: #128 (delivery-neutral work items \u2014 closed), #88 (recurring work items), #108 (cross-space handoff), #149 (delivery approval round-trip).\n\n## Problem\n\nMulti-step work (\"migrate the schema, then update the three services that read it\") has no first-class shape. Today the options are one oversized work item (loses per-step approval, isolation, and evidence) or manually feeding the next step after each PR (the human becomes the scheduler). The queue, state machine, and per-item isolation already exist \u2014 what's missing is one ordering edge.\n\n## Proposal\n\nMinimal dependency support \u2014 one column, one claim rule, one completion hook:\n\n1. **`depends_on` column.** Nullable FK to another work item id on `work_items`. `create_work_item` accepts `depends_on`; validation: target exists, same space (cross-space is #108's territory), and no cycles (walk the parent chain at insert \u2014 chains are expected to be short; cap depth, e.g. 16, fail closed beyond).\n2. **Claim rule.** The executor's atomic claim query skips items whose dependency is not `done`. No new states \u2014 a dependent item is simply `open` and unclaimable, which keeps the state machine untouched (it just got a single choke point back; don't add states to it).\n3. **Completion hook.** When an item reaches `done`, one store-level check finds dependents that just became claimable and posts one in-channel note: \"unblocked: <item> (depended on #<id>)\". Pickup approval semantics are unchanged \u2014 each step was individually approved at creation; becoming claimable is not a new authorization.\n4. **Failure propagation \u2014 fail closed, visibly.** If a dependency reaches `blocked` or `aborted`, dependents move to `blocked` with evidence `dependency <id> blocked/aborted` (legal-move map extended accordingly). No silent waiting on a dead parent.\n5. **Surfacing.** `list_work_items` (#159) renders chains indented; the standup digest counts \"waiting on dependency\" separately from plain open.\n\nExplicitly out of scope: fan-in (multiple dependencies), parallel groups, templates/pipelines, auto-generated plans. If real usage demands fan-in, that's a v2 with its own issue \u2014 v1 is a linked list, not a DAG engine. The moment this grows YAML pipelines it's competing with workflow engines instead of being a co-worker.\n\n## Touched modules\n\n- `src/store/db.ts` + `schema.sql` \u2014 column (idempotent migration), claim-query predicate, cycle check, dependent-unblock/block queries, legal-move additions\n- `src/tools/work-items.ts` \u2014 `depends_on` param + validation errors\n- `src/executor.ts` \u2014 none expected (claim logic lives in the store) \u2014 keep it that way\n- `src/scheduler/standup.ts`, queue view \u2014 waiting-on-dependency rendering\n\n## Dependencies\n\n- **#149** \u2014 `done` must be reachable in production before completion hooks mean anything (today git items stall at `working`).\n- Pairs with #159 for rendering.\n\n## Acceptance\n\n- B with `depends_on: A` is never claimed while A is open/claimed/working/review (claim-race test with both items eligible except the dependency).\n- A \u2192 `done` makes B claimable and posts one unblock note; restart doesn't re-post.\n- A \u2192 `blocked` moves B to `blocked` with dependency evidence; audit rows on both.\n- Cycle (A\u2192B\u2192A) and cross-space `depends_on` are rejected at creation with clear errors.\n- Chain of 3 completes end-to-end in the hermetic executor test.\n"
+    },
+    {
+      "repo": "specd-sdd/SpecD",
+      "issue": 39,
+      "url": "https://github.com/specd-sdd/SpecD/issues/39",
+      "title": "feat(code-graph): detect execution flows (processes) for impact analysis",
+      "score": 11,
+      "signals": [
+        "activity.recent_update",
+        "domain.lineage",
+        "relationship.depends",
+        "relationship.reference",
+        "traversal.bfs_dfs",
+        "traversal.path_reach",
+        "traversal.walk"
+      ],
+      "lang": null,
+      "osp_hits": 6,
+      "body": "## Summary\n\nAdd execution flow (process) detection to `@specd/code-graph` so that `computeRiskLevel` can use real `processCount` instead of hardcoded `0`, and impact analysis can report which end-to-end flows are affected by a change.\n\n## Motivation\n\nToday, impact analysis only counts direct/indirect callers. This misses the *functional* dimension: a symbol with 2 callers but participating in 5 end-to-end flows (login, register, checkout, etc.) is more critical than one with 10 callers that's only used in a single flow.\n\nExecution flows answer **\"what breaks\"** instead of just **\"what depends on this\"**:\n- `broken_at_step` reveals if the breakage is early (severe) or late (contained)\n- `processCount` enables proper CRITICAL risk scoring (`>= 3` \u2192 HIGH, `>= 5` \u2192 CRITICAL)\n- Process-grouped search returns conceptual paths instead of flat symbol lists\n\n## Design\n\n### Detection algorithm (post-indexing phase)\n\n1. **Score entry points** \u2014 functions that call many others but are called by few. Boost for: exported/public, name patterns (`handle*`, `on*`, `*Controller`, `register*`), framework conventions\n2. **BFS forward** from each entry point along CALLS edges, max depth ~10\n3. **Collect traces** \u2014 each path with \u2265 3 steps becomes a process\n4. **Deduplicate** \u2014 remove subset traces, keep longest per entry\u2192terminal pair\n5. **Limit** \u2014 dynamic cap based on codebase size (`max(20, min(300, symbolCount / 10))`)\n\n### Data model additions\n\n**New node: `Process`**\n```\nid: string           // \"proc_0_handleLogin\"\nlabel: string        // heuristic: \"HandleLogin \u2192 UpdateSession\"\nstepCount: number\nentryPointId: string\nterminalId: string\n```\n\n**New relation: `STEP_IN_PROCESS`**\n```\nsource: Symbol \u2192 target: Process\nstep: number  // 1-indexed position in trace\n```\n\n**New relation type in `RelationType`:**\n```ts\nStepInProcess = 'STEP_IN_PROCESS'\n```\n\n### Populating `COVERS` (Spec \u2192 File)\n\nThe schema already defines `COVERS(FROM Spec TO File)` but it's not populated. This is the missing link between specs and the code graph. Once populated, the traversal chain becomes:\n\n```\nSpec --COVERS--> File --DEFINES--> Symbol --STEP_IN_PROCESS--> Process\n```\n\n**Detection strategy:**\n- During indexing, for each workspace, match spec paths against source file paths by convention:\n  - `specs/core/change/` covers files matching `core/**/change*`, `core/**/Change*`\n  - Use the spec's `dependsOn` to transitively cover files from dependent specs\n- Additionally, scan source files for import paths that reference types/functions whose names match spec keywords\n- This is heuristic \u2014 exact COVERS can be refined later with explicit annotations in metadata\n\n**Queries this enables:**\n- `graph impact --file auth.ts` \u2192 shows affected specs via `File \u2190 COVERS \u2190 Spec`\n- `graph search \"login\" --group-by flows` \u2192 specs grouped alongside their flows\n- `graph flows --spec core:core/auth` \u2192 flows that pass through files covered by this spec\n\n### Integration points\n\n- `computeRiskLevel(direct, total, processCount)` \u2014 wire the real count (currently `0`)\n- `analyzeImpact` \u2014 query STEP_IN_PROCESS to populate `affectedProcesses`\n- `ImpactResult.affectedProcesses` \u2014 already exists as `string[]`, populate with process labels\n- New `getProcesses(symbolId)` query on GraphStore\n- Schema DDL: add Process node table + STEP_IN_PROCESS rel table\n- Populate existing `COVERS` rel table during spec indexing phase\n\n### CLI surface\n\n**`graph impact`** \u2014 automatically includes `affectedProcesses` and `affectedSpecs` in output (no flag needed)\n\n**`graph search --group-by <mode>`** \u2014 opt-in flag to group search results. Default remains ungrouped (flat list). Modes:\n\n| Mode | Groups by | Use case |\n|------|-----------|----------|\n| `flows` | Execution flow | \"These symbols participate in the login flow\" |\n| `workspace` | Workspace name | Monorepo overview: results per `core`, `cli`, etc. |\n| `file` | File path | \"These 5 matches are in `auth.ts`\" |\n| `kind` | Symbol kind | \"All matching classes\", \"all matching functions\" |\n\nJSON output shape with `--group-by`:\n```json\n{\n  \"groups\": [\n    { \"key\": \"Login \u2192 UpdateSession\", \"symbols\": [...], \"specs\": [...] },\n    { \"key\": \"Register \u2192 SendEmail\", \"symbols\": [...], \"specs\": [...] }\n  ]\n}\n```\n\nWithout `--group-by`, output stays flat (`symbols[]` + `specs[]`) as today.\n\n**`graph flows`** \u2014 dedicated command for exploring flows:\n- `specd graph flows` \u2014 list all detected processes\n- `specd graph flows --symbol <name>` \u2014 flows a symbol participates in\n- `specd graph flows --file <path>` \u2014 flows passing through a file\n- `specd graph flows --spec <specId>` \u2014 flows related to a spec (via COVERS)\n\n### What already exists\n\n- CALLS graph \u2705\n- BFS traversal (`getUpstream`/`getDownstream`) \u2705\n- `affectedProcesses: []` field in ImpactResult \u2705 (just needs populating)\n- `processCount` parameter in `computeRiskLevel` \u2705 (just needs wiring)\n- Schema DDL with `COVERS` rel table \u2705 (just needs populating)\n- Schema DDL pattern for new node/rel types \u2705\n\n### What ne"
+    },
+    {
+      "repo": "AlisinaDevelo/LOOM",
+      "issue": 104,
+      "url": "https://github.com/AlisinaDevelo/LOOM/issues/104",
+      "title": "Implement bounded provenance graph queries",
+      "score": 10,
+      "signals": [
+        "activity.recent_update",
+        "domain.lineage",
+        "relationship.depends",
+        "relationship.parent_child",
+        "relationship.reference",
+        "traversal.cycle",
+        "traversal.walk"
+      ],
+      "lang": null,
+      "osp_hits": 6,
+      "body": "<!-- loom-roadmap:v2 id=0801 -->\n\nRoadmap ID: `0801`<br>\nQuarter: **Q14** \u2014 Q14 \u2014 Observatory \u2014 Temporal evidence<br>\nPhase: **v2.2 Observatory**<br>\nWorkstream: **provenance**<br>\nRoadmap parent: `0800`\n\n## Outcome\n\nImplement bounded provenance graph queries. Measurable result: Queries support source lineage, duplicate rationale, capture origin, and evidence-bearing relationships with typed limits.\n\n## Acceptance criteria\n\n- [ ] Queries support source lineage, duplicate rationale, capture origin, and evidence-bearing relationships with typed limits.\n- [ ] Traversal output is deterministic, paginated, and digest-bound to the graph snapshot.\n- [ ] Adversarial graph fixtures reject cycles or dangling references that violate the canonical model.\n\n## Prerequisites\n\n- Blocked by roadmap `0709`\n\n## Closure evidence\n\nRecord the exact tests, fixtures, measurements, review artifacts, or consented study evidence that satisfy every criterion; report only work actually performed.\n\n## Product boundary\n\nLOOM remains local-first and evidence-first. Canonical source identity and evidence stay authoritative; derived indexes, model output, snapshots, and transport state remain inspectable, rebuildable, and explicitly uncertain.\n"
+    }
+  ]
+}

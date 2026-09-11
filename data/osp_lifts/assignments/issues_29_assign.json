@@ -1,0 +1,166 @@
+{
+  "manifest": "issues_29.jsonl",
+  "records": [
+    {
+      "repo": "N0tS0Lucky/piflow",
+      "issue": 9,
+      "url": "https://github.com/N0tS0Lucky/piflow/issues/9",
+      "title": "[definition-format] T7: Resolve invoke and reject cycles",
+      "score": 11,
+      "signals": {
+        "activity.recent_update": 1,
+        "domain.build_pkg": 2,
+        "domain.workflow_dag": 2,
+        "relationship.depends": 1,
+        "relationship.parent_child": 1,
+        "traversal.cycle": 2,
+        "traversal.path_reach": 2
+      },
+      "body": "## Task 7: Resolve `invoke` and reject cycles\n\n**Module:** `definition-format`\n**Spec:** `SPEC-definition-format.md` \u2192 `type: invoke`, Success criteria 3, 4, 7\n\nAdd the `invoke` step type. Resolve `workflow:` names to linked (and themselves resolved) workflow objects. Reject cycles (`A invoke A`, `A\u2192B\u2192A`, `A\u2192B\u2192C\u2192A`) with the cycle path listed.\n\nImplicit baton only \u2014 no named input-mapping (deferred by spec).\n\n**Acceptance criteria:**\n- [ ] `invoke` schema: required `workflow` name; unknown keys rejected\n- [ ] Missing target workflow \u2192 `DefinitionError` naming file, step id, missing workflow\n- [ ] Self-invoke, two-cycle, and three-cycle each fail; message lists the cycle path\n- [ ] Valid fixture: parent workflow `invoke`s `review-loop` and a `parallel` of two other `invoke`s \u2014 resolves fully (spec success criterion 7)\n- [ ] Resolved `invoke` step carries the linked workflow object, which is itself resolved\n\n**Verification:**\n- [ ] `npx vitest run tests/definition-format/` green\n- [ ] Cycle fixtures live under `tests/fixtures/invalid/` and assert the path list\n- [ ] Spec success criteria 3, 4, 7 each have a test that was RED first\n\n**Dependencies:** Task 6\n\n**Files likely touched:**\n- `src/definition-format/schema.ts`\n- `src/definition-format/resolve.ts`\n- `src/definition-format/validate.ts`\n- `tests/definition-format/invoke.test.ts`\n- `tests/fixtures/valid/workflows/build-feature.yaml`\n- `tests/fixtures/invalid/cycle-*.yaml`\n\n**Estimated scope:** Medium (3\u20135 files)\n"
+    },
+    {
+      "repo": "OpenSPP/odoo-job-worker",
+      "issue": 27,
+      "url": "https://github.com/OpenSPP/odoo-job-worker/issues/27",
+      "title": "worker: raw-SQL parent cascade is single-level; grandchildren stay waiting forever",
+      "score": 11,
+      "signals": {
+        "activity.recent_update": 1,
+        "domain.build_pkg": 2,
+        "manual_impl.recursive_cte": 3,
+        "relationship.parent_child": 1,
+        "traversal.path_reach": 2,
+        "traversal.recursive": 2
+      },
+      "body": "The ORM failure cascade (`_cascade_children_on_parent_failure`) walks the chain, so\ngrandchildren of a cascade-failed job are also resolved. The raw-SQL control-plane\ncascade in `cli/worker.py` \u2014 the reclaim-exhausted cascade in `acquire_job_lock`\n(since #19 the single cascade path for timeouts and worker deaths) \u2014 only touches\ndirect `parent_id` children. A `waiting` grandchild of a child failed by that cascade\nis never resolved: not by the cascade (single-level), not by GC (only collects\ndone/failed/cancelled).\n\nRepro sketch: chain A \u2192 B \u2192 C (each `parent_id` of the previous); kill A's worker\nrepeatedly until reclaim exhausts retries. A `failed`, B `failed` by the cascade,\nC stuck `waiting` forever.\n\nProposed direction: either make the raw cascade iterate (loop until no rows updated,\nor a recursive CTE over `parent_id`), or route it through the model like the success\npath does where an env is available. Add the A\u2192B\u2192C regression test.\n\n_From the review of #18._\n"
+    },
+    {
+      "repo": "PostGraphDB/postgraph",
+      "issue": 1081,
+      "url": "https://github.com/PostGraphDB/postgraph/issues/1081",
+      "title": "[Proposal] Redesign of the Storage to combine Relational, Graph and Vector Databases",
+      "score": 11,
+      "signals": {
+        "domain.build_pkg": 2,
+        "manual_impl.adjacency": 3,
+        "perf.pain": 3,
+        "relationship.reference": 1,
+        "traversal.bfs_dfs": 2
+      },
+      "body": "# Where we are today\n\nCurrently, we use a table basic heap tables to store Vertices and Edges as separate entities.\n\nThe vertex table template:\n\nSudocode\n```SQL\n CREATE TABLE graph_name.vertex_label_name (\n  id graphid\n  properties gtype\n)\n```\n\n```SQL\n CREATE TABLE graph_name.edge_label_name (\n  id graphid,\nstartid graphid,\nendid graphid,\n  properties gtype\n)\n```\n\n# Where we should go\n\n1. Adjancency List\n2. Vector column\n3.  A way to generate a vector via some user system\n\n\n## The Storage Layer\n\nWe need to split the nodes adjacency lists from their properties (i.e. we need to have a set of pages holding adjacency lists and another page to hold properties. It the vector should probably go with the adjacency list.\n\nThis model as it is, allows for really good traditional graph search algorithms such is a wide variety of ways to implement. Dijkstra, A* BFS, DFS etc, but it also can serve as a format for new Approximation algorithms.\n\nThe normal graph tables will have an adjacency list that follows normal graph database conventions. (ie the user creates edges. The database itself does not create edges in these sets of pages.)\n\nHowever, the user can create indices on the graph that do approximate nearest neighbors. The page system that we have designed for absolute nearest neighbors.  \n\n### The Concept of Edges\n\nIn the cypher model, edges have properties. So that implies that the edge must be stored in a set of pages dedicated entirely to them.\n\nIn the nearest neighbor model, they do not by default and to the authors best knowledge there is a gap in research about K-ANN with properties to filter (and the label issue too, but we have some novel solutions to that I need to write down).  \n\nWhat this means for us in the implementation details to note is that we can either store half as many edges in the normal pages vs the index pages for the same amount of space or we can store a reference to the edge's properties AND a reference to the connected vertex.\n\n1. If we store a reference to the just the edge not the other vertex, that may be a performance slowdown, for traversals. because we have to pull the edge page up no matter what in this case.\n2. On the other hand, if they reference property filters, we have to go that page anyway. \n\n\n## What does the DDL and DQL Features Look Like to Support This\n\nI am not sure yet what this will ultimately look like. Fundamentally the question is, whether I force the user to make it clear whether to use a certain index or not. Postgres's planner may select the ANN index, or it may choose the normal table. It's debatable. Other databases implemented extensions to the SQL language to tell the server whether the use wants to use the approximate index or if it wants exact k-NN.\n\n"
+    },
+    {
+      "repo": "ProvisioInsights/LivingAtlas",
+      "issue": 49,
+      "url": "https://github.com/ProvisioInsights/LivingAtlas/issues/49",
+      "title": "M1: expose typed Praxis knowledge APIs and canonical export/import",
+      "score": 11,
+      "signals": {
+        "activity.recent_update": 1,
+        "domain.build_pkg": 2,
+        "domain.lineage": 2,
+        "relationship.depends": 1,
+        "relationship.parent_child": 1,
+        "traversal.path_reach": 2,
+        "traversal.walk": 2
+      },
+      "body": "Parent: #43\n\nDepends on: #44, #45, and #47\n\n## Problem\n\nPraxis and future clients currently reach generic object/MCP operations. Without typed knowledge APIs and a portable canonical export, consumers must understand storage envelopes and importer-specific payloads.\n\n## Chosen path\n\nExpose the approved canonical contracts through @living-atlas/atlas-client and the shared graph-service boundary. Keep generic raw object mutation administrative.\n\n## Acceptance criteria\n\n- Typed client operations cover entity read/query, fact and bounded-observation query, relationship traversal, timeline valid_at/known_at, provenance/evidence inspection, and resolution_apply.\n- Typed mutations require idempotency and expected-version/generation preconditions.\n- Normal Praxis paths cannot bypass the mutation service with raw graph-store writes.\n- Raw object CRUD is limited to documented administrative capabilities.\n- Responses expose active, tombstone, and total counts separately where counts are returned.\n- Canonical export is versioned, encrypted or explicitly local-keyholding, and excludes migration-only payloads.\n- Fresh import preserves ids, hashes, access classes, assertion lineage, evidence links, observations, and entity-resolution decisions.\n- Contract compatibility and unsupported-version behavior are tested.\n- Public examples and issue evidence contain no personal graph content, private source paths, or credentials.\n\n## What not to do\n\n- Do not rebuild Praxis in this repository.\n- Do not expose private payload schemas in Cloudflare-visible metadata.\n- Do not make markdown export or generated indexes authoritative.\n"
+    },
+    {
+      "repo": "QwenLM/qwen-code",
+      "issue": 7272,
+      "url": "https://github.com/QwenLM/qwen-code/issues/7272",
+      "title": "perf(web-shell): each streaming token recomputes the full message pipeline O(n)",
+      "score": 11,
+      "signals": {
+        "activity.recent_update": 1,
+        "domain.build_pkg": 2,
+        "domain.workflow_dag": 2,
+        "perf.pain": 3,
+        "relationship.reference": 1,
+        "traversal.path_reach": 2
+      },
+      "body": "### What would you like to be added?\n\nMake the transcript-to-display pipeline incremental so a single streaming text delta only reprocesses the affected (last) message, instead of recomputing the full array at every layer.\n\n### Why is this needed?\n\nEvery SSE text delta changes the `blocks` array reference, which cascades through four `useMemo` recomputations, each O(n) over the whole transcript:\n\n- `blocks -> messages` (`packages/web-shell/client/hooks/useMessages.ts:26-31`)\n- `messages -> mergedMessages` (`MessageList.tsx:2214`)\n- `mergedMessages -> displayItems` (`MessageList.tsx:2221`)\n- `displayItems -> visibleItems` (`MessageList.tsx:2404`)\n\nFor a session with hundreds of messages this is significant per-token main-thread overhead, and it grows linearly with session length even though only one message changed.\n\n### Additional context\n\n- The store already batches dispatch (`queueMicrotask`) and SSE events are coalesced per macrotask, so the remaining cost is the per-render O(n) pipeline.\n- Possible directions: append-only fast path for the streaming tail, structural sharing so unchanged prefixes keep referential identity, or moving the transform into the store so only the changed block produces a new message."
+    },
+    {
+      "repo": "RicoSuter/Namotion.Interceptor",
+      "issue": 410,
+      "url": "https://github.com/RicoSuter/Namotion.Interceptor/issues/410",
+      "title": "ContextInheritanceHandler strands fallback edges on a partial detach",
+      "score": 11,
+      "signals": {
+        "activity.recent_update": 1,
+        "domain.build_pkg": 2,
+        "manual_impl.visited_set": 3,
+        "relationship.parent_child": 1,
+        "traversal.cycle": 2,
+        "traversal.path_reach": 2
+      },
+      "body": "Split out of #401, which is closed by #400. #400 fixed the symptom named in that issue's title, the uncatchable `StackOverflowException` on a pure delegation cycle, which now raises a catchable `InvalidOperationException` instead. It did not touch the mechanism that builds those cycles, and it did not address the second symptom #401 recorded. This issue carries both forward so they are not lost with the close.\n\n## Root cause\n\n`ContextInheritanceHandler.HandleLifecycleChange` removes an inherited fallback only on `{ ReferenceCount: 0, IsPropertyReferenceRemoved: true }`:\n\n```csharp\nelse if (change is { ReferenceCount: 0, IsPropertyReferenceRemoved: true })\n{\n    change.Subject.Context.RemoveFallbackContext(change.Property.Value.Subject.Context);\n}\n```\n\nA detach that leaves property values set therefore strands the fallback edge. Orderings exist where a mutually referencing subject pair is orphaned from the root and then partially detached, leaving `A.Context` with `[B.Context]` and `B.Context` with `[A.Context]` and no services on either.\n\n## Symptom 1: the graph builds a cycle nobody asked for\n\nOnce both contexts are pure delegators pointing at each other, every service resolution and every intercepted property access on either subject raises. Before #400 the same shape killed the process, so this is strictly better, but the graph still ends up in a state the consumer never constructed and cannot easily diagnose.\n\nA cycle with at least one service on either side is fine and must stay fine: the delegation fast path does not apply and the service walk's visited set terminates it. That behaviour is pinned by `ContextDelegationCycleTests.WhenCycleContainsContextWithService_ThenResolvingSucceeds`.\n\n## Symptom 2: stale resolution through a detached context\n\nThe same stranded edge lets a still-attached subject keep a fallback to a fully detached context and keep resolving services through it. This one produces no exception at all: the subject silently resolves against a context that is no longer part of the graph. Nothing in #400 changes it, and no other open issue covers it.\n\n## Relationship to the other fallback issues\n\n- #207 is the memory consequence of the same class of stranded edge: the reverse `_usedByContexts` entry retains the detached child.\n- #402 hardens the removal path itself (callback ordering, exactly-once detach, and behaviour when the context being removed is on a cycle). Its \"related fix scope\" already calls for a shared removal primitive and names #207.\n\nThis issue is the third piece: the *decision to remove* is wrong, not just the mechanics of removing. Fixing #402 and #207 makes removal correct and non-leaking, but a detach that never calls `RemoveFallbackContext` at all is untouched by both.\n\n## Shape of a fix\n\n#401 listed three options and preferred the second:\n\n1. a depth guard or visited set on the delegation path (done by #400, for symptom 1 only)\n2. fix the detach path so it strips stale fallback edges, which addresses the root cause and both symptoms\n3. reject a cycle at `AddFallbackContext` when both contexts would be pure delegators\n\n(2) still looks right, and it needs a reproduction from the registry detach path first. That reproduction is the first piece of work here: a test that drives the registry through the partial-detach ordering and asserts the fallback edge is gone afterwards.\n\nWorth deciding alongside: whether a subject detached from the graph should drop *all* inherited fallbacks unconditionally, which would make (2) simple, or whether any consumer legitimately relies on a detached subtree continuing to resolve through its former parent.\n"
+    },
+    {
+      "repo": "Shared-Reality-Lab/IMAGE-server",
+      "issue": 1020,
+      "url": "https://github.com/Shared-Reality-Lab/IMAGE-server/issues/1020",
+      "title": "Determine whether orchestrator dependencies should resolve preprocessor outputs instead of service names",
+      "score": 11,
+      "signals": {
+        "activity.recent_update": 1,
+        "domain.build_pkg": 2,
+        "domain.lineage": 2,
+        "relationship.depends": 1,
+        "relationship.parent_child": 1,
+        "traversal.cycle": 2,
+        "traversal.ordering": 2
+      },
+      "body": "### Question to answer\n\nShould required and optional dependencies in the orchestrator graph identify the **preprocessor output they depend on** (currently represented by `PreprocessorResponse.name`) rather than the **Docker Compose service expected to produce that output**?\n\nThe Investigation should also determine whether the current dependency labels are intended to represent **execution-order constraints, data requirements, or both**, since the current implementation does not make these semantics equivalent.\n\n### Decision or next step this enables\n\nThe result will determine whether IMAGE-server should:\n\n* retain the current service-name-based dependency model;\n* define follow-up work for output-based dependency resolution; or\n* adopt a limited hybrid approach where service names remain available when a specific implementation is required.\n\nIf output-based resolution is recommended, subsequent implementation work should define how preprocessors advertise the outputs they can provide and how the orchestrator resolves those advertised outputs to concrete services.\n\nA production implementation is not part of this Investigation.\n\n### Current understanding and key unknowns\n\n**Confirmed:**\n\n* The orchestrator reads `ca.mcgill.a11y.image.required_dependencies` and `ca.mcgill.a11y.image.optional_dependencies` from Docker labels.\n* Entries in those labels currently identify Docker Compose service names.\n* `orchestrator/src/docker.ts` resolves those names against the active services visible to the orchestrator.\n* `orchestrator/src/graph.ts` then represents the resulting dependencies as graph edges between concrete services.\n* In practice, these edges primarily control **execution order**: once a parent service finishes executing, its dependent service may run.\n* A dependency edge does not currently guarantee that the parent produced data. A preprocessor may, for example, return `204 No Content`, after which dependent services may still execute.\n* A required service name that is not present in the active service list is currently filtered out during dependency resolution rather than being retained as an unresolved requirement.\n* Successful preprocessor responses contain a `name` identifying their output, and the orchestrator stores the returned data under `data.preprocessors[name]`.\n* Different concrete services can already produce the same output identifier. In particular:\n\n  * `object-detection` and `object-detection-llm` are separate services;\n  * both produce `ca.mcgill.a11y.image.preprocessor.objectDetection`; and\n  * downstream consumers such as `object-grouping` access that output identifier rather than the service that produced it.\n* Because `data.preprocessors` is keyed by the response `name`, multiple services producing the same output currently target the same logical data entry.\n* Route filtering occurs before the dependency graph is constructed.\n\n**Current hypothesis:**\n\nAllowing consumers to declare the preprocessor outputs they require or can use may reduce coupling between downstream services and specific provider implementations.\n\nFor example, a consumer that needs `ca.mcgill.a11y.image.preprocessor.objectDetection` could potentially depend on that output rather than separately naming `object-detection`, `object-detection-llm`, or a future compatible provider.\n\nThis could make provider substitution easier, but it would also require the orchestrator to resolve output requirements to concrete services before constructing and executing the graph.\n\n**Key unknowns:**\n\n* Whether `PreprocessorResponse.name` is the appropriate identifier for declaring dependencies, or whether a separate advertised output identifier is needed.\n* Whether every ordinary preprocessor can reliably advertise, before execution, the output or outputs it may produce.\n* Whether current `required_dependencies` and `optional_dependencies` should be understood as execution-order constraints, data requirements, or a combination of both.\n* What **required** should mean if a provider executes successfully but produces no output for a particular request.\n* What should happen when no active service advertises a required output.\n* What should happen when no active service advertises an optional output.\n* What should happen when exactly one service advertises an output.\n* What should happen when multiple services advertise the same output.\n* Whether multiple providers of the same output should ever execute, given that their results currently use the same key in `data.preprocessors`, or whether one provider must be selected.\n* If one provider must be selected, what deterministic provider-selection or precedence mechanism is appropriate.\n* Whether a consumer ever needs to depend on a **specific implementation** rather than any provider of a compatible output.\n* How route filtering should constrain the set of eligible providers.\n* How provider resolution should occur before graph construction so that cycle detection continues to operate on concrete service edges.\n* Whether compatibility requires explicit schema or version information in addition to the existing preprocessor response `name`.\n* Whether the practical benefit of provider substitution and reduced coupling justifies the additional discovery and resolution logic.\n\n### Proposed approach\n\n1. **Document the current mechanism.**\n\n   * Trace how required and optional dependency labels are read in `orchestrator/src/docker.ts`.\n   * Trace how they become graph edges in `orchestrator/src/graph.ts`.\n   * Trace how those edges affect execution in `orchestrator/src/server.ts`.\n   * Record the current behaviour when a named dependency is unavailable or executes without producing data.\n\n2. **Compare declared service dependencies with actual data consumption.**\n\n   * Review representative preprocessors and handlers.\n   * Identify the `data.preprocessors[...]` entries they actually inspect.\n   * Compare those output identifiers with their required and optional service-name labels in"
+    },
+    {
+      "repo": "ShippedLabs/soroban-upgrade-safeguard",
+      "issue": 431,
+      "url": "https://github.com/ShippedLabs/soroban-upgrade-safeguard/issues/431",
+      "title": "Stack overflow when comparing specs with mutually recursive type references",
+      "score": 11,
+      "signals": {
+        "activity.recent_update": 1,
+        "manual_impl.visited_set": 3,
+        "relationship.reference": 1,
+        "traversal.cycle": 2,
+        "traversal.path_reach": 2,
+        "traversal.recursive": 2
+      },
+      "body": "## Description\n\nWhile adding property-based tests for the diff rules (issue #130), I found that `compare` can recurse forever on a spec whose user-defined types form a **mutually recursive** reference cycle.\n\nThe classifier walk in `classify_finding_axes` calls `is_type_used_in_functions`, which calls `references_type` in `src/diff.rs`. `references_type` only guards against **direct** self-reference (`if f_udt.name == udt_name { continue; }`), so a cycle of length > 1 recurses without bound:\n\n- `A { b: B }`, `B { a: A }`, with a function taking `A`.\n- A finding on some other type `C` triggers `classify_finding_axes`, which calls `is_type_used_in_functions(C, spec)`.\n- The walk enters `A -> B -> A -> ...` and never terminates.\n\nThe `extract_udts` path in `src/mapper.rs` guards cycles with a visited set, and `detect_cascading_layout_breaks` uses a `cascaded` set, so those two terminate. The gap is specifically `references_type` (and the analogous walk in `is_type_used_in_events`).\n\n## Reproduction\n\n```rust\n// A { b: B }, B { a: A } (mutually recursive), plus C { x: u32 }.\n// Function f takes A. Break C's field type.\nlet report = diff::compare(&old, &new); // stack overflow\n```\n\nVerified locally: `compare` aborts with `STATUS_STACK_OVERFLOW` on a 2-type mutual cycle with a function referencing it and a finding on an unrelated type.\n\n## Impact\n\nAny user-controlled contract spec with mutually recursive UDTs (or a function signature referencing one) can crash the tool. Soroban specs are user-controlled input, so this is reachable from the CLI/RPC paths.\n\n## Suggested fix\n\nGive `references_type` a visited set of type names (mirroring the `deps` guard already used by `extract_udts` in `src/mapper.rs`), or track the names already walked and stop recursion when a name repeats.\n\nFound by the new property tests in `tests/diff_properties.rs` (issue #130), which currently generate only self-cyclic (not mutually cyclic) type references because of this defect."
+    },
+    {
+      "repo": "Shyden-Ltd/ShyTalk",
+      "issue": 1963,
+      "url": "https://github.com/Shyden-Ltd/ShyTalk/issues/1963",
+      "title": "SHY-0423: The resolved cohort is never recomputed after somebody sets their date of birth",
+      "score": 11,
+      "signals": {
+        "activity.recent_update": 1,
+        "domain.build_pkg": 2,
+        "domain.lineage": 2,
+        "perf.pain": 3,
+        "relationship.depends": 1,
+        "traversal.path_reach": 2
+      },
+      "body": "\n# SHY-0423: The resolved cohort is never recomputed after somebody sets their date of birth\n\n## User Story\n\nAs **somebody who has just given my date of birth**, I want the app to know\nwhich cohort I am in from that moment, so that nothing downstream is working\nfrom the answer it had before I told it.\n\n## Why\n\n`AuthViewModel.resolveProfileState` sets `authRepository.resolvedCohort =\nuser.effectiveCohort` once, when the profile is first resolved. Somebody who\nsigns in without a stored date of birth is sent to the \"One More Step\" gate,\ngives their date of birth, and continues \u2014 and `resolvedCohort` still holds the\nvalue from before.\n\nObserved on a real iPhone on 2026-08-22: after storing a 1995 date of birth, the\npreview overlay still read `UID: 50000010 \u00b7 minor` for the rest of the session.\n\n### What it does and does not affect today\n\n`resolvedCohort` is read in exactly two places:\n\n- `core/PreviewWatermark.kt` \u2014 the debug overlay, preview builds only.\n- `IosAuthRepositoryImpl` \u2014 the value written into the SESSION CACHE, which\n  `MainViewController` restores into `resolvedCohort` at the next cold start.\n\n**No age gate reads it.** The cohort walls read the user document, so nothing a\nperson can see or reach is wrong today. That is why this is P3 and not P1.\n\n**Why file it anyway.** The stale value is PERSISTED into the session cache and\nrestored on the next launch, so it is not merely a display bug that a refresh\nclears \u2014 it survives. And the loop is closed only for as long as nobody uses\n`resolvedCohort` for a decision. In an app with a minor cohort and age\nsegregation, a field named \"resolved cohort\" that can hold a value contradicting\nthe account is a trap sitting in wait, not a cosmetic slip.\n\n## Acceptance Criteria\n\n### Happy path\n\n- [ ] Completing the date-of-birth gate recomputes `resolvedCohort` from the\n      stored profile, in the same session, with no relaunch.\n- [ ] The session cache is written with the recomputed value, so the next cold\n      start restores the right one.\n\n### Error paths\n\n- [ ] If the profile cannot be re-read after the gate, `resolvedCohort` is\n      CLEARED rather than left stale. Absent is honest; wrong is not.\n\n### Edge cases\n\n- [ ] The same holds for any other route that changes the stored date of birth,\n      including an admin correcting it \u2014 the cohort must not outlive the fact it\n      was derived from.\n\n### Performance\n\n- [ ] No extra network call on the ordinary sign-in path, which already resolves\n      the profile.\n\n### Security\n\n- [ ] Nothing may begin reading `resolvedCohort` for a cohort gate as part of\n      this story. The gates stay server-backed.\n\n### UX\n\n- [ ] No user-visible change on a correct build; the preview overlay stops\n      contradicting the account.\n\n### i18n\n\n- [ ] No new strings.\n\n### Observability\n\n- [ ] The recompute is logged with the before and after value, so a future\n      \"wrong cohort\" report has evidence.\n\n## BDD Scenarios\n\n**Scenario: The cohort follows the date of birth**\n\n- **Given** somebody who has just given their date of birth\n- **When** they carry on using the app\n- **Then** the app treats them as the cohort that date puts them in\n\n**Scenario: It is still right after a relaunch**\n\n- **Given** somebody who gave their date of birth last session\n- **When** they open the app again\n- **Then** the cohort restored from the cache matches their account\n\n## Test Plan\n\n| Layer | What it proves |\n| --- | --- |\n| ViewModel | Completing the gate recomputes the cohort; a failed re-read clears it rather than keeping the old one. |\n| Contract | What is written to the session cache matches what the profile says, so a cold start cannot restore a contradiction. |\n| Guard | `resolvedCohort` is not read by any cohort GATE \u2014 the check that stops this latent trap becoming a real one. |\n| Journey | Walked on a real device: sign in without a date of birth, give one, confirm the app agrees. |\n\n## Out of Scope\n\n- Changing how cohort walls are enforced. They read the server and must keep\n  doing so.\n\n## Dependencies\n\n- None.\n\n## Risks & Mitigations\n\n| Risk | Mitigation |\n| --- | --- |\n| Somebody \"fixes\" this by pointing a gate at `resolvedCohort` | The AC forbids it and a guard asserts it. |\n| The recompute races the navigation off the gate | Assert the value AFTER the gate completes, not during. |\n\n## Definition of Done\n\n- [ ] Merged to `develop`, all checks green.\n- [ ] Seen correct on a real device, in the same session and after a relaunch.\n\n## Notes\n\n- Found on 2026-08-22 during the [[SHY-0396]] iPhone walk. The persona's local\n  seed had no date of birth, which is what surfaced the gate at all \u2014 worth\n  noting because it means the ordinary walk never hits this path.\n- `AuthRepositorySignOutContractTest` already asserts `resolvedCohort` is\n  cleared on sign-out (SHY-0205). This is the same field's other lifecycle\n  moment, which was never given the same treatment.\n\n---\n\n_Source: https://github.com/Shyden-Ltd/ShyTalk/blob/develop/.project/stories/SHY-0423-the-resolved-cohort-goes-stale-after-the-dob-gate.md_\n_Status: Draft_\n_Last synced: 2026-08-25T23:22:36Z from commit 8eebe4c61edff39b312eca745dba3e03e29fec42 body-hash: ca55a37913a6bd11417ead7bb9d7c4ae7059a204763876b861ba13bc06443666_\n"
+    },
+    {
+      "repo": "Sirivennela-ANW/Epics_userstories",
+      "issue": 46,
+      "url": "https://github.com/Sirivennela-ANW/Epics_userstories/issues/46",
+      "title": "US-7.5: Data Lineage Visualization & Impact Analysis",
+      "score": 11,
+      "signals": {
+        "domain.build_pkg": 2,
+        "domain.lineage": 2,
+        "domain.workflow_dag": 2,
+        "perf.pain": 3,
+        "traversal.walk": 2
+      },
+      "body": "## User Story\n\n- **As a:** Data Architect\n- **I want:** to visualize complete data lineage showing source-to-target transformations\n- **So that:** I can understand data flow and test change impacts\n\n## Acceptance Criteria\n- Shows visual graph of data lineage\n- Displays transformation steps between sources and targets\n- Provides both forward lineage (impact) and backward lineage (origin)\n- Highlights data quality and transformation rules\n- Shows data volumes and processing time\n- Enables drill-down to see code/SQL for each transformation\n- Supports export to formats (DOT, JSON, image)\n- Performance: renders lineage for 100K+ datasets\n\n## Implementation Notes\n- Build on graph database (Neo4j)\n- d3.js or Cytoscape for visualization\n- Performance optimization for large graphs\n- Query lineage through DAG traversal\n\n---\n**Epic:** EPIC 7  \n**Status:** Not Started  \n**Type:** User Story\n"
+    }
+  ]
+}
