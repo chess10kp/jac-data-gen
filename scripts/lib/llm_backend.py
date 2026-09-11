@@ -30,6 +30,7 @@ import re
 import subprocess
 import time
 import threading
+import uuid
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
@@ -96,20 +97,59 @@ _or_key_idx = 0
 _or_key_lock = threading.Lock()
 
 
-def _opencode_key() -> str:
-    k = os.environ.get("OPENCODE_KEY")
-    if k and k.startswith("sk-"):
-        return k
+_zen_key_idx = 0
+_zen_key_lock = threading.Lock()
+
+
+def _opencode_keys() -> list[str]:
+    keys: list[str] = []
+    # env vars (numbered + API variants)
+    for env in ("OPENCODE_KEY", "OPENCODE_API_KEY",
+                "OPENCODE_KEY_2", "OPENCODE_API_KEY_2",
+                "OPENCODE_KEY_3", "OPENCODE_API_KEY_3",
+                "OPENCODE_KEY_4", "OPENCODE_API_KEY_4",
+                "OPENCODE_KEY_5", "OPENCODE_API_KEY_5"):
+        k = os.environ.get(env)
+        if k and k.startswith("sk-") and k not in keys:
+            keys.append(k)
+    # scan secrets + all worker env files (second-worker.env etc.)
+    env_files = [Path.home() / ".secrets", Path.home() / ".secrets.env"] + list(Path.home().glob(".*.env"))
+    # also explicit worker files without dot? keep for compat
+    for p in env_files:
+        if not p.exists():
+            continue
+        try:
+            for ln in p.read_text().splitlines():
+                m = re.match(r"(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)=(.+)$", ln.strip())
+                if not m:
+                    continue
+                name = m.group(1)
+                if not name.startswith("OPENCODE"):
+                    continue
+                k = m.group(2).strip().strip("'\"")
+                if k.startswith("sk-") and k not in keys:
+                    keys.append(k)
+        except OSError:
+            pass
+    # auth files — opencode key only
     for p in (Path.home() / ".pi/agent/auth.json",
               Path.home() / ".local/share/opencode/auth.json"):
         if p.exists():
             try:
                 d = json.loads(p.read_text())
                 if isinstance(d, dict) and d.get("opencode", {}).get("key"):
-                    return d["opencode"]["key"]
+                    k = d["opencode"]["key"]
+                    if k and k.startswith("sk-") and k not in keys:
+                        keys.append(k)
             except Exception:
                 pass
-    raise RuntimeError("opencode key not found (set OPENCODE_KEY or configure pi/opencode auth)")
+    if not keys:
+        raise RuntimeError("opencode key not found (set OPENCODE_API_KEY or configure pi/opencode auth)")
+    return keys
+
+
+def _opencode_key() -> str:
+    return _opencode_keys()[0]
 
 
 def _or_keys() -> list[str]:
@@ -173,14 +213,27 @@ class Backend(Protocol):
 class PiBackend:
     name = "pi"
 
+    # pi provider per model: muse/zen models ride the opencode provider,
+    # everything else (luna etc.) uses openai-codex. OSP_PI_PROVIDER overrides.
+    @staticmethod
+    def _provider(model: str) -> str:
+        env = os.environ.get("OSP_PI_PROVIDER")
+        if env:
+            return env
+        m = model.lower()
+        if "muse" in m or m.endswith("-free"):
+            return "opencode"
+        return "openai-codex"
+
     def call(self, system: str, user: str, model: str, timeout: int, tries: int = 2
              ) -> tuple[str | None, str | None, dict]:
         last = "not attempted"
         t0 = time.perf_counter()
+        provider = self._provider(model)
         for attempt in range(tries):
             try:
                 r = subprocess.run(
-                    ["pi", "-p", "--provider", "openai-codex", "--model", model,
+                    ["pi", "-p", "--provider", provider, "--model", model,
                      "--no-session", "--system-prompt", system, user],
                     capture_output=True, text=True, timeout=timeout)
             except subprocess.TimeoutExpired:
@@ -320,21 +373,33 @@ class ZenBackend:
     def call(self, system: str, user: str, model: str, timeout: int, tries: int = 3
              ) -> tuple[str | None, str | None, dict]:
         try:
-            key = _opencode_key()
+            keys = _opencode_keys()
         except Exception as e:
             return None, f"zen auth: {e}", {"inputTokens": 0, "outputTokens": 0, "cacheReadTokens": 0, "ms": 0}
         body = {"model": model, "max_tokens": 16384,
                 "messages": [{"role": "system", "content": system},
                              {"role": "user", "content": user}]}
-        headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
         last = "not attempted"
+        # round-robin start so parallel shards spread across keys
+        global _zen_key_idx
+        with _zen_key_lock:
+            start_idx = _zen_key_idx % len(keys)
+            _zen_key_idx += 1
         t0 = time.perf_counter()
+        session_id = uuid.uuid4().hex  # zen free models (nemotron/mimo) require x-session-id
         for attempt in range(tries):
+            key = keys[(start_idx + attempt) % len(keys)]
+            headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json",
+                       "x-session-id": session_id}
             try:
                 r = httpx.post(f"{ZEN_BASE}/chat/completions", headers=headers, json=body, timeout=timeout)
                 if r.status_code in (429, 500, 502, 503, 504):
-                    last = f"zen {r.status_code}"
+                    last = f"zen {r.status_code}: {r.text[:120]}"
                     time.sleep(2 ** attempt)
+                    continue
+                if r.status_code in (401, 402, 403):
+                    last = f"zen {r.status_code}: {r.text[:120]}"
+                    time.sleep(1 * (attempt + 1))
                     continue
                 if 400 <= r.status_code < 500:
                     return None, f"zen client {r.status_code}: {r.text[:200]}", {"inputTokens": 0, "outputTokens": 0, "cacheReadTokens": 0, "ms": 0}
@@ -451,7 +516,7 @@ def get_backend(backend: str, model: str) -> Backend:
         return _BACKENDS[b]()
     # auto
     m = model.lower()
-    if "luna" in m:
+    if "luna" in m or "muse" in m:
         return PiBackend()
     if m.endswith("-free") or m.endswith(":free"):
         if "minimax" in m or "nemotron" in m:

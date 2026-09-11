@@ -492,6 +492,31 @@ def clear_downstream(stem: str) -> None:
             p.unlink()
 
 
+FAILURES_LEDGER = BASE / "_gen_failures.jsonl"
+
+
+def log_gen_failure(rec: dict, stem: str, phase: str, err: str, output: str,
+                    attempt: int) -> None:
+    """Persist a rejected generation attempt — raw output + validation error —
+    so failed attempts can be triaged and used as repair-training pairs."""
+    row = {
+        "ts": time.time(),
+        "stem": stem,
+        "repo": rec.get("repo", ""),
+        "issue": rec.get("issue", 0),
+        "phase": phase,
+        "attempt": attempt,
+        "model": MODEL,
+        "error": (err or "?")[-1500:],
+        "output": (output or "")[-40000:],
+    }
+    try:
+        with FAILURES_LEDGER.open("a") as fh:
+            fh.write(json.dumps(row) + "\n")
+    except OSError:
+        pass
+
+
 def generate_record(rec: dict, conv: str | None, spec: str, force: bool,
                     flow: str = "py-first") -> tuple[bool, str | None]:
     if flow in ("jac-first", "jac-only"):
@@ -615,7 +640,7 @@ def generate_record_jac_first(rec: dict, conv: str | None, spec: str,
         print(f"{stem}: reuse jac/guards")
     if not authed:
         err = ""
-        for _ in range(PHASE_TRIES):
+        for attempt in range(PHASE_TRIES):
             out = call(SYSTEM + "\n" + spec[:4000], prompt_auth(rec, stem, err),
                        MODEL, "auth" if not err else "auth-fix")
             blocks = [m.group(1).strip() for m in JAC_FENCE.finditer(out)]
@@ -628,6 +653,8 @@ def generate_record_jac_first(rec: dict, conv: str | None, spec: str,
                     break
             else:
                 err = f"expected >=2 jac blocks, got {len(blocks)}"
+            log_gen_failure(rec, stem, "auth" if attempt == 0 else "auth-fix",
+                            err, out, attempt)
         if not authed:
             print(f"{stem}: FAIL auth ({(err or '?').splitlines()[-1][:120]})")
             return False, conv
