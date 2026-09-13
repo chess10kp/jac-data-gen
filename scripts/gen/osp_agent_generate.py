@@ -152,7 +152,8 @@ JAC_FENCE = re.compile(r"```jac\s*\n(.*?)```", re.S)
 
 def stem_for(repo: str, issue: int) -> str:
     owner, name = repo.split("/", 1)
-    return f"iss_{owner}__{name.replace('/', '__')}__{issue}"
+    # dots break the jac test module import (No module named '_jac_test_pkg_0.<stem>')
+    return f"iss_{owner}__{name.replace('/', '__').replace('.', '_')}__{issue}"
 
 
 def ledger_since(t0: float) -> dict:
@@ -239,6 +240,9 @@ JAC DIALECT (verified against jac 0.36.1 — follow EXACTLY):
   (duplicate `can step with ...` twice in one walker = E0076, FAILS)
 - `root` is a RESERVED keyword: NEVER a def param, local, or field name
   (E0013, FAILS). Name it `root_node` / `graph_root` instead.
+- `walker` is ALSO a RESERVED keyword: NEVER a variable name
+  (E0013, FAILS). Name walker instances `w` / `wk` / the lowercase type name.
+- comments are `#` ONLY — NEVER C-style `//` (E0005, FAILS).
 - module-level helpers: def helper(x: str) -> list[N] { ... return xs; }
 - locals NEED type annotations when assigned empty/ambiguous literals:
   kids: list[N] = [];  seen: dict[str, int] = {};   # bare `x = {};`/`x = [];` FAILS
@@ -291,6 +295,7 @@ def prompt_guard(rec: dict, py_src: str, jac_src: str, err: str = "") -> str:
     fix = ""
     if err:
         fix = (f"\nThe record FAILED validation:\n{err[-600:]}\n"
+               f"{remedies_for(err)}"
                f"Regenerate the hidden tests corrected. Tests must only use the "
                f"candidate's public API and deterministic values.\n")
     return (
@@ -309,6 +314,7 @@ def prompt_auth(rec: dict, stem: str, err: str = "") -> str:
     fix = ""
     if err:
         fix = (f"\nYour previous attempt FAILED validation:\n{err[-600:]}\n"
+               f"{remedies_for(err)}"
                f"Regenerate BOTH blocks fully corrected.\n")
     return (
         f"GitHub issue: {rec['repo']}#{rec['issue']}\n"
@@ -411,11 +417,54 @@ def jac_validate(stem: str) -> tuple[bool, str]:
     """Jac-side validation only (check + guard test) — no py required."""
     rc, out = run(["jac", "check", f"issue_gen/{stem}.jac"], BASE)
     if rc != 0:
-        return False, f"check: {out[-300:]}"
+        return False, f"check: {out[-1200:]}"
     rc, out = run(["jac", "test", f"issue_gen/{stem}_guard.jac"], BASE, timeout=300)
     if rc != 0:
-        return False, f"test: {out[-300:]}"
+        return False, f"test: {out[-1200:]}"
     return True, "ok"
+
+
+# Targeted remedies for known jac failure classes — injected into fix prompts
+# so the fix round is error-driven instead of raw-tail guesswork. Only classes
+# verified against jac 0.36.1 output get an entry; unknown codes just see the
+# raw error tail.
+JAC_ERR_REMEDIES: dict[str, str] = {
+    "E0013": "reserved-keyword misuse: `walker` and `root` can NEVER be variable, "
+             "param, or field names — rename them (walker -> `w`, root -> "
+             "`root_node`). `walker X { }` type declarations stay as-is.",
+    "E0005": "C-style `//` comments are illegal in Jac — use `#` comments only.",
+    "E0002": "missing `;` / `print` without parens — every statement ends with "
+             "`;`, and print takes parentheses: `print(x);` NOT `print x;`.",
+    "E1030": "attribute does not exist on that type — only `has` fields declared "
+             "on the node/edge/walker are accessible; check the name and the "
+             "declaring object.",
+}
+_TESTS_FAILED_REMEDY = (
+    "the tests must match the PROGRAM's actual behavior: make assertions "
+    "deterministic (sorted(...) for unordered walks), never assert on values "
+    "the program neither returns nor prints, and never disengage mid-traversal "
+    "to escape a dead end."
+)
+
+
+def remedies_for(err: str) -> str:
+    """Guidance block for the error classes actually present in `err`."""
+    if not err:
+        return ""
+    lines: list[str] = []
+    seen: set[str] = set()
+    for m in re.finditer(r"error\[(E\d+)\]", err):
+        code = m.group(1)
+        if code in JAC_ERR_REMEDIES and code not in seen:
+            seen.add(code)
+            lines.append(f"- {code}: {JAC_ERR_REMEDIES[code]}")
+    if "Tests failed" in err or "assertion failed" in err:
+        lines.append(f"- guard-test failure: {_TESTS_FAILED_REMEDY}")
+    if not lines:
+        return ""
+    return ("Apply EXACTLY these corrections for the reported error classes "
+            "(fix the FIRST reported error first — later errors are often "
+            "cascade fallout):\n" + "\n".join(lines) + "\n")
 
 
 def mech_translate(stem: str) -> str | None:
