@@ -291,6 +291,26 @@ def prompt_jac(rec: dict, py_src: str, err: str = "") -> str:
     )
 
 
+def prompt_repair(rec: dict, stem: str, prev_jac: str, err: str) -> str:
+    """Fix round for a previously-failed record: show the model its own last
+    candidate so it patches targeted errors instead of rerolling from scratch."""
+    return (
+        f"GitHub issue: {rec['repo']}#{rec['issue']}\n"
+        f"Title: {rec['title']}\n\n"
+        f"You previously authored this OSP record; it FAILED validation:\n"
+        f"{err[-1200:]}\n"
+        f"{remedies_for(err)}\n"
+        f"Your previous program:\n```jac\n{prev_jac[:6000]}\n```\n\n"
+        f"REPAIR it: keep the overall design and public API, fix ONLY the "
+        f"reported errors (first error first — later ones are often cascade "
+        f"fallout). Do not start over from scratch.\n"
+        f"Output TWO fenced ```jac blocks, nothing else:\n"
+        f"1. repaired PROGRAM `{stem}.jac`\n"
+        f"2. hidden tests, 3-6 `test \"name\" {{ assert (...);; }}` blocks "
+        f"matching the REPAIRED program's behavior.\n"
+    )
+
+
 def prompt_guard(rec: dict, py_src: str, jac_src: str, err: str = "") -> str:
     fix = ""
     if err:
@@ -543,6 +563,30 @@ def clear_downstream(stem: str) -> None:
 
 FAILURES_LEDGER = BASE / "_gen_failures.jsonl"
 
+REPAIR_AFTER = 2   # prior rejections before fix rounds switch to repair mode
+
+_PRIOR_REJECTS: dict[str, int] | None = None
+
+
+def prior_rejections(stem: str) -> int:
+    """Cumulative rejected attempts for a stem, read once from the failures
+    ledger — drives repair-mode escalation in the auth fix loop."""
+    global _PRIOR_REJECTS
+    if _PRIOR_REJECTS is None:
+        _PRIOR_REJECTS = {}
+        if FAILURES_LEDGER.exists():
+            for line in FAILURES_LEDGER.read_text().splitlines():
+                if not line.strip():
+                    continue
+                try:
+                    row = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                s = row.get("stem")
+                if s:
+                    _PRIOR_REJECTS[s] = _PRIOR_REJECTS.get(s, 0) + 1
+    return _PRIOR_REJECTS.get(stem, 0)
+
 
 def log_gen_failure(rec: dict, stem: str, phase: str, err: str, output: str,
                     attempt: int) -> None:
@@ -567,9 +611,11 @@ def log_gen_failure(rec: dict, stem: str, phase: str, err: str, output: str,
 
 
 def generate_record(rec: dict, conv: str | None, spec: str, force: bool,
-                    flow: str = "py-first") -> tuple[bool, str | None]:
+                    flow: str = "py-first",
+                    phase_tries: int | None = None) -> tuple[bool, str | None]:
     if flow in ("jac-first", "jac-only"):
-        return generate_record_jac_first(rec, conv, spec, force, flow)
+        return generate_record_jac_first(rec, conv, spec, force, flow,
+                                         phase_tries)
     """One record through py → jac → guard, chaining calls in one conversation.
 
     Returns (ok, conversation id). Every phase is validated locally before
@@ -664,7 +710,9 @@ def generate_record(rec: dict, conv: str | None, spec: str, force: bool,
 
 
 def generate_record_jac_first(rec: dict, conv: str | None, spec: str,
-                             force: bool, flow: str = "jac-first") -> tuple[bool, str | None]:
+                             force: bool, flow: str = "jac-first",
+                             phase_tries: int | None = None
+                             ) -> tuple[bool, str | None]:
     """jac-first: author OSP jac + guards, then jac2py anchors the before-code.
 
     issue -> OSP .jac + tests (full model)
@@ -689,9 +737,15 @@ def generate_record_jac_first(rec: dict, conv: str | None, spec: str,
         print(f"{stem}: reuse jac/guards")
     if not authed:
         err = ""
-        for attempt in range(PHASE_TRIES):
-            out = call(SYSTEM + "\n" + spec[:4000], prompt_auth(rec, stem, err),
-                       MODEL, "auth" if not err else "auth-fix")
+        for attempt in range(phase_tries or PHASE_TRIES):
+            prev_jac_p = IG / f"{stem}.jac"
+            repair = bool(err) and prev_jac_p.exists() \
+                and prior_rejections(stem) >= REPAIR_AFTER
+            user = prompt_repair(rec, stem, prev_jac_p.read_text(), err) \
+                if repair else prompt_auth(rec, stem, err)
+            out = call(SYSTEM + "\n" + spec[:4000], user,
+                       MODEL, "auth" if not err else
+                       ("auth-repair" if repair else "auth-fix"))
             blocks = [m.group(1).strip() for m in JAC_FENCE.finditer(out)]
             if len(blocks) >= 2:
                 write_jac(stem, blocks[0])
