@@ -1,0 +1,157 @@
+{
+  "manifest": "issues_54.jsonl",
+  "records": [
+    {
+      "repo": "Rick1330/collabsphere",
+      "issue": 519,
+      "url": "https://github.com/Rick1330/collabsphere/issues/519",
+      "title": "[CS-065-1] Implement GET /api/v1/workspaces/:workspaceId/documents/tree endpoint with recursive query",
+      "score": 10,
+      "signals": {
+        "domain.build_pkg": 2,
+        "manual_impl.recursive_cte": 3,
+        "relationship.reference": 1,
+        "traversal.path_reach": 2,
+        "traversal.recursive": 2
+      },
+      "body": "## Objective\n\n- Implement GET /api/v1/workspaces/:workspaceId/documents/tree endpoint with recursive query\n\n---\n\n## Task Boundary Guidance\n\n- Prefer **one primary execution surface** and **one dominant specialization** per task (e.g., API endpoint, UI view, worker job, integration test).\n- Avoid mixing backend behavior + frontend UI + audit/telemetry in one task unless the change is tiny and inseparable.\n- If a task must include a side effect (audit log, event emission), make it explicit in the objective and validation.\n- This task has one primary execution surface: api.\n- Avoid coupling UI and backend side effects in this task.\n- If side effects expand materially, split into a dedicated follow-up task.\n\n---\n\n## Deliverables\n\n- Tree endpoint returns nested folders/documents per API contract.\n- Workspace scoping enforced with NOT_WORKSPACE_MEMBER.\n\n---\n\n## Files\n\n| Path | Change Type | Owner | Notes |\n|---|---|---|---|\n| apps/api/src/modules/documents/documents.controller.ts | add | api | Document tree endpoint contract. |\n| apps/api/src/modules/documents/documents.service.ts | add | api | Recursive tree query and assembly logic. |\n| apps/api/src/modules/documents/dto/documents-tree.query.dto.ts | add | api | Tree query DTO; filename may vary. |\n\n---\n\n## Spec References\n\n- docs/agent-ref/api/document-endpoints.md\n- docs/agent-ref/rules/workspace-isolation.md\n- docs/spec/05-features/05.4-documents.md\n- docs/spec/12-errors/12.4-error-code-catalog.md\n\n---\n\n## Implementation Notes\n\n- Endpoint: GET /api/v1/workspaces/:workspaceId/documents/tree.\n- Error codes: NOT_WORKSPACE_MEMBER, WORKSPACE_NOT_FOUND.\n- Domain events: none (read-only endpoint).\n\n---\n\n## Constraints\n\n- Workspace isolation: all workspace-owned queries must include workspace_id.\n- REST must not return collaborative Yjs content.\n- Follow response envelope and canonical error codes.\n- Follow AGENTS and docs/agent-ref contracts.\n- Follow module AGENTS and `docs/agent-ref` contracts.\n\n---\n\n## Validation\n\nCommands:\n```bash\npnpm -w lint\npnpm -w test\nAPI_BASE_URL=\"${API_BASE_URL:-http://localhost:3001}\"\ncurl -fsS \"$API_BASE_URL/api/v1/health\"\n```\nExpected outcomes:\n- Positive path: nested tree returned with folders and documents ordered by position.\n- Negative path: NOT_WORKSPACE_MEMBER for non-member access.\n- If not run, explain why and risk.\n\n---\n\n## Done When\n\n- [ ] Deliverables implemented.\n- [ ] Validation commands executed or explicitly waived.\n- [ ] Errors/envelopes match docs/agent-ref.\n- [ ] No scope creep beyond listed files.\n- [ ] Handoff completed.\n\n---\n\n## Handoff\n\n- Summary of changes:\n- Validation evidence:\n- Open issues / follow-ups:\n- Risks or deviations:\n\n---\n\n## References\n\n- AGENTS.md\n- docs/agent-ref/*"
+    },
+    {
+      "repo": "Ruihang2017/AustraliaEmploymentRAG",
+      "issue": 169,
+      "url": "https://github.com/Ruihang2017/AustraliaEmploymentRAG/issues/169",
+      "title": "[RCRD-07] Corrections: preserve original, link replacement, impact analysis",
+      "score": 10,
+      "signals": {
+        "activity.recent_update": 1,
+        "domain.build_pkg": 2,
+        "domain.lineage": 2,
+        "relationship.depends": 1,
+        "relationship.parent_child": 1,
+        "relationship.reference": 1,
+        "traversal.path_reach": 2
+      },
+      "body": "> **Blocked by:** #168, #165 \u00b7 **Blocks:** `INTL-08` (pending)\n>\n> _dependency graph \u2014 auto-rendered from the ticket frontmatter (issue #52)_\n\n# RCRD-07 \u2014 Corrections: preserve original, link replacement, impact analysis\n\nImplements PRD \u00a712.3 \u2014 requirement **COR-002**, epic `E24-RECORDS`.\nNo ADR \u2014 the decision is already made in PRD \u00a712.3 (*\"Confirmed errors MUST create a Correction,\npreserve the original answer, create or link a replacement Answer Snapshot, run impact analysis and\nnotify affected customers when required\"*) and PRD \u00a735.8 invariants 5 and 6; this is build ticket 7 of\n9 against it.\nParent sub-PRD: [17-records-collab README](../README.md). Master spec: [PRD](../../../PRD.md).\nDepends on: [RCRD-06 \u2014 Issue reports at answer/claim/citation/source level](RCRD-06-issue-reports-at-answer-claim-citation-source-level.md)\n\u00b7 [RCRD-03 \u2014 Record\u2194answer linkage, rerun under current law, version diff](RCRD-03-record-answer-linkage-rerun-under-current-law-version-diff.md)\n**Why `builder`:** a bounded change inside one module's declared file-scope against a fixed contract \u2014\nPRD \u00a712.3 fixes the four obligations and `RCRD-03`/`RCRD-06` supply the replacement and the trigger;\nthis composes them.\n\n## Background + basis\n\n**PRD \u00a712.3 User issues and corrections**, the whole basis:\n\n> Users MUST be able to report incorrect citations, outdated sources, wrong jurisdiction/date,\n> unsupported claims, missing authority and privacy issues at answer/claim/citation/source level.\n> **Confirmed errors MUST create a Correction, preserve the original answer, create or link a\n> replacement Answer Snapshot, run impact analysis and notify affected customers when required.**\n\nFour obligations in one sentence: **create**, **preserve**, **link**, **analyse-and-notify**. Each is\na deliverable below.\n\n**Requirement COR-002** (PRD \u00a730.2): *\"Confirmed correction preserves original, links replacement and\nperforms impact analysis | **Internal issue flow** | correction endpoints | App | **Affected records\nbecome reviewable/notifyable**.\"* The primary surface is the internal issue flow \u2014 sub-PRD **D9**.\n\n**PRD \u00a735.8**, the two invariants that make this mechanical rather than aspirational:\n\n> 5. Formal snapshots and legal corpus versions have **no UPDATE/DELETE application path**;\n>    corrections **append replacements**.\n> 6. Outbox event and corresponding business state commit **in one transaction**.\n\n**PRD \u00a735.6**, the storage contract:\n\n> | `issue_report` / `correction` | tenant target/category/description/status; **replacement and\n> impact linkage** | **original answer preserved** |\n\n**PRD \u00a734.5** carries the customer-visible marker: the Answer Snapshot payload includes\n`\"correction_state\": \"NONE\"`. That field is how `RCRD-08`'s correction badge and `19-exports`'\ncorrection banner are driven (sub-PRD **D12**, **QR-3**), and `UAT-EXP-01` depends on it:\n*\"Export old corrected answer \u2192 Export shows original legal date/release and **correction banner**; no\nregeneration.\"*\n\n**PRD \u00a732.6** requires a **correction badge** in the Research Record header, and gives the transition\nthat impact analysis performs:\n\n> | Any active state | `REVIEW_REQUIRED` | system/admin/reviewer | **correction**, source change or\n> material issue; **reason required** |\n> | `REVIEW_REQUIRED` | `IN_REVIEW` | owner/reviewer | **replacement/rerun linked** |\n\n**PRD \u00a733.4 steps 7\u20139** give the shape impact analysis must follow \u2014 written there for the\nsource-change path (`16-monitor-alerts`/`WTCH-03`), and the same shape applies here:\n\n> 7. Transaction creates tenant alerts and **marks materially affected records `REVIEW_REQUIRED`**.\n> 8. **Outbox delivers** in-app/email/webhook **idempotently**.\n> 9. Customer can rerun; **the original answer remains unchanged**.\n\n**PRD \u00a78.11 / \u00a716.2**: internal administration covers *\"issue triage and corrections\"* and MUST be\n*\"separated under `/internal/v1`, require internal identity, MFA and short sessions\"*. Sub-PRD **D9**\ntherefore mounts this area's **create/confirm** operation behind `RUNT-02`'s `internal` admission\nprofile as a per-route override, while reads stay `tenant`. `22-internal-admin`/`INTL-08` is\n`blocked_by` this ticket and builds the console on top (plan \u00a75.23).\n\n**PRD \u00a739.5**: the impact-analysis worker belongs to the `maintenance` queue class \u2014 *\"cleanup,\n**impact matching**, usage reconciliation\"*, priority 4, cooperative and bounded. That is the same\nclass `WTCH-02`'s change matcher uses, and it is the reason impact analysis is a job rather than a\nsynchronous request: PRD \u00a713.2 gives no latency objective for it, and an unbounded fan-out inside an\nHTTP request would violate \u00a738.5's request-size and concurrency discipline.\n\n**PRD \u00a742.7** lists `docs/runbooks/legal-correction.md` as required *\"before generated answers\"*. That\nfile is `18-ops-release`/`RLSE-10`'s; this ticket provides the mechanism the runbook describes and must\nnot write `docs/runbooks/**`.\n\n**Accepted caveats carried forward, documented not enforced here:**\n\n- **`correction` is a `DATA-07` table and this ticket has no `blocked_by DATA-07` edge**\n  (sub-PRD **QR-1**), exactly as for `RCRD-06`. In the global schedule `01-app-data` delivers roughly\n  twelve waves earlier. **If the repository is absent, stop and write back** to\n  `docs/prd/breakdown-plan.md` \u00a75.18 + \u00a76.2 and this module's README; never create the table here\n  (plan **A3**, **R4**).\n- **This ticket has no `blocked_by FND-08` and no `blocked_by RCRD-04` edge** (sub-PRD **QR-2**), yet\n  it must move affected records to `REVIEW_REQUIRED`. It therefore writes the transition through\n  **`DATA-06.applyReviewAction(tx, ctx, { recordId, fromStatus, toStatus: 'REVIEW_REQUIRED',\n  actorId: system, reason })`** \u2014 the structural half of PRD \u00a735.8 invariant 7, reachable through\n  `RCRD-01 \u2192 DATA-06`. `DATA-06` states the split explicitly: *\"There is no other write path to\n  `workflow_status` \u2026 **Which transitions are *legal* is `RCRD-04`'s (via `FND-08`)**.\"* If the\n  Builder finds it "
+    },
+    {
+      "repo": "Rust-GCC/gccrs",
+      "issue": 3703,
+      "url": "https://github.com/Rust-GCC/gccrs/issues/3703",
+      "title": "Performance issue with recursive macro expansion",
+      "score": 10,
+      "signals": {
+        "domain.build_pkg": 2,
+        "manual_impl.recursive_cte": 3,
+        "perf.pain": 3,
+        "traversal.recursive": 2
+      },
+      "body": "### Summary\n\nThe compiler experiences significant performance degradation when handling deep recursive macro expansions, leading to timeouts.\n\n### Reproducer\n\nI tried this code:\n\n```rust\nmacro_rules! fooN {\n    ($cur:ident $prev:ty) => {\n        #[allow(dead_code)]\n        enum $cur {\n            Empty,\n            First($prev),\n            Second($prev),\n            Third($prev),\n            Fourth($prev),\n        }\n    }\n}\n\nfooN!(Foo0 ());\nfooN!(Foo1 Foo0);\nfooN!(Foo2 Foo1);\nfooN!(Foo3 Foo2);\nfooN!(Foo4 Foo3);\nfooN!(Foo5 Foo4);\nfooN!(Foo6 Foo5);\nfooN!(Foo7 Foo6);\nfooN!(Foo8 Foo7);\nfooN!(Foo9 Foo8);\nfooN!(Foo10 Foo9);\nfooN!(Foo11 Foo10);\nfooN!(Foo12 Foo11);\nfooN!(Foo13 Foo12);\nfooN!(Foo14 Foo13);\nfooN!(Foo15 Foo14);\nfooN!(Foo16 Foo15);\nfooN!(Foo17 Foo16);\nfooN!(Foo18 Foo17);\nfooN!(Foo19 Foo18);\nfooN!(Foo20 Foo19);\nfooN!(Foo21 Foo20);\nfooN!(Foo22 Foo21);\nfooN!(Foo23 Foo22);\nfooN!(Foo24 Foo23);\nfooN!(Foo25 Foo24);\nfooN!(Foo26 Foo25);\nfooN!(Foo27 Foo26);\n\nfn main() {\n    let _foo = Foo27::Empty;\n}\n```\n\n\n### Does the code make use of any (1.49) nightly feature ?\n\n- [ ] Nightly\n\n### Godbolt link\n\nhttps://godbolt.org/z/7zxxM6Wdf\n\n### Actual behavior\n\ngccrs Fail to compile this code.\n\n### Expected behavior\n\ngccrs should compile the code successfully.\n\n\n### GCC Version\n\n14.0.1"
+    },
+    {
+      "repo": "Rust-GCC/gccrs",
+      "issue": 3704,
+      "url": "https://github.com/Rust-GCC/gccrs/issues/3704",
+      "title": "Performance issue with recursive calls",
+      "score": 10,
+      "signals": {
+        "domain.build_pkg": 2,
+        "manual_impl.recursive_cte": 3,
+        "perf.pain": 3,
+        "traversal.recursive": 2
+      },
+      "body": "### Summary\n\nThis code causes an error in gccrs, but rustc didn't report the error.  The compiler experiences significant performance degradation when handling recursive calls and nested structures, leading to timeouts.\n\n### Reproducer\n\nSee it in compiler explorer.\n\n### Does the code make use of any (1.49) nightly feature ?\n\n- [ ] Nightly\n\n### Godbolt link\n\nhttps://godbolt.org/z/G49Tfbxff\n\n### Actual behavior\n\nThe compiler times out.\n\n### Expected behavior\n\nThe compiler should compile the code quickly.\n\n\n### GCC Version\n\n14.0.1"
+    },
+    {
+      "repo": "SEI-Mkittok/omnir-refactor",
+      "issue": 304,
+      "url": "https://github.com/SEI-Mkittok/omnir-refactor/issues/304",
+      "title": "Feature: Visual drag-and-drop role hierarchy for tiered permissions",
+      "score": 10,
+      "signals": {
+        "domain.authz": 2,
+        "domain.build_pkg": 2,
+        "relationship.parent_child": 1,
+        "relationship.reference": 1,
+        "traversal.cycle": 2,
+        "traversal.path_reach": 2
+      },
+      "body": "## Summary\nAdd a vtiger-style role hierarchy builder so admins can visually model organizational authority and use that hierarchy for tiered permissions.\n\nThis should be more than a flat roles table. Roles need a parent/child structure where higher roles can be granted access to users, records, and administrative scope beneath them, while sibling branches remain isolated unless sharing rules explicitly open them.\n\n## Reference Example\nThe live database example attached to the original request shows a tree like:\n\n```text\nOrganization\n\u251c\u2500\u2500 ADMIN/EXEC\n\u2514\u2500\u2500 Exec\n    \u251c\u2500\u2500 Sales Ops\n    \u2514\u2500\u2500 Operations Total\n        \u251c\u2500\u2500 Partner Admin TEMPLATE\n        \u251c\u2500\u2500 MobileSage\n        \u2514\u2500\u2500 Exagrow\n```\n\nThe important behavior is the tree relationship: `Operations Total` sits below `Exec`, while `Partner Admin TEMPLATE`, `MobileSage`, and `Exagrow` sit beneath `Operations Total`. This enables permissions to be reasoned about by branch instead of by unrelated role names.\n\n## User Story\nAs an Omnir administrator, I need to create and rearrange roles in a visual hierarchy so the CRM can enforce tiered permissions that match the real organization.\n\n## Functional Requirements\n- Provide an admin UI for roles as a hierarchical tree, similar to vtiger's role editor.\n- Show a clear root node, such as `Organization`, with nested role nodes underneath.\n- Support drag-and-drop reparenting of roles onto another role or back to the root level.\n- Support sibling ordering so admins can keep the tree readable.\n- Support create, rename, archive/delete, and move actions from the hierarchy view.\n- Provide expand/collapse for branches and enough indentation/connector styling to make ancestry obvious.\n- Prevent invalid moves, including cycles, moving a role beneath itself, cross-tenant moves, or orphaning required system roles.\n- Warn or require confirmation before moves that change access for users or records under that branch.\n- Persist moves transactionally and handle optimistic UI rollback if the API rejects the move.\n\n## Permissions Semantics\n- Role hierarchy should be available to the authorization layer, not just stored for display.\n- Users assigned to a role are considered part of that role's branch.\n- A higher role should be able to receive configurable visibility/admin authority over descendant roles.\n- Descendant roles should not automatically gain access upward.\n- Sibling branches should not automatically see each other.\n- Module/action permissions still apply; hierarchy should determine scope, not bypass object-level privileges.\n- Sharing rules should be able to override or extend hierarchy visibility where needed.\n\n## Backend / Data Model Notes\n- Roles should be tenant-scoped.\n- Store parent relationship and sibling order, e.g. `parent_role_id` plus `sort_order`.\n- Consider a materialized path, closure table, or equivalent helper structure if descendant lookups become hot in permission checks.\n- API should expose endpoints for reading the full hierarchy, creating roles, updating role metadata, and moving/reordering roles.\n- Move operations should validate cycle prevention server-side, even if the UI also blocks invalid drops.\n- Changes should be audit logged because hierarchy edits can materially alter access.\n\n## Acceptance Criteria\n- Admin can view the role hierarchy as a visual tree.\n- Admin can drag a role under another role and see the new parent/child relationship persist after refresh.\n- Admin can reorder sibling roles and see order persist after refresh.\n- Invalid drag targets are visibly rejected and cannot be saved.\n- Moving a role updates permission-scope calculations for affected users.\n- Existing flat role permissions continue to work after hierarchy is introduced.\n- Role hierarchy is isolated per organization/tenant.\n- Automated tests cover hierarchy move validation, cycle prevention, descendant lookup, and permission-scope behavior.\n\n## Open Questions\n- Should hierarchy grant view-only descendant access by default, or should each module/action explicitly opt into descendant visibility?\n- Do we need separate concepts for reporting hierarchy vs. administrative hierarchy, or can one tree serve both for the first implementation?\n- Which roles should be protected system roles that cannot be deleted or moved?"
+    },
+    {
+      "repo": "SanchayPahalwani/BlockWorks",
+      "issue": 1,
+      "url": "https://github.com/SanchayPahalwani/BlockWorks/issues/1",
+      "title": "What I'd Build Next",
+      "score": 10,
+      "signals": {
+        "domain.build_pkg": 2,
+        "domain.lineage": 2,
+        "domain.workflow_dag": 2,
+        "perf.pain": 3,
+        "relationship.depends": 1
+      },
+      "body": "A running list of what would come next if BlockWorks were a production SDK \u2014 in rough priority order.\n\n## Roadmap Items\n\n- **DataFusion engine** \u2014 DataFusion is the next engine to slot in via the same sidecar-store + `prefix:*` dispatch pattern that the Polars integration uses. Parquet is the on-disk frame format. The runtime sees no difference; only the block author's import changes.\n\n- **Block marketplace** \u2014 versioned manifests, dependency resolution between blocks whose output schemas feed each other. Extends the manifest format, adds a registry server, keeps the runtime unchanged.\n\n- **Schema evolution** \u2014 when upstream output changes, downstream blocks need migration paths. Automatic compatibility checks with clear error messages rather than silent breakage.\n\n- **Capability system** \u2014 `ctx.http`, `ctx.fs`, `ctx.llm` as registered capabilities rather than methods on `EngineAPI`. The `BlockContext` already reads this way; the change is moving from a fixed `engine` field to a `capabilities` map.\n\n- **Execution sandboxing** \u2014 AI-generated blocks currently run in the main process via `new Function`. A Node `vm` context or Web Worker with a capability allow-list would let community blocks run without trusting their code.\n\n- **Column arithmetic** \u2014 `engine.addComputedColumn(frameId, expression)` lets blocks derive new columns (e.g. `revenue = quantity * price`) without pushing a full pipeline of custom transforms.\n\n- **Streaming execution** \u2014 row-batch streaming through the pipeline for files larger than memory. Requires changing `FrameStore` from full-frame IDs to batched iterators; the block author's API stays the same.\n\n- **Telemetry overlay** \u2014 per-node timing and row counts rendered on the canvas, plus a \"slow node\" hint system.\n\n---\n\nDiscussion welcome \u2014 open a comment or a separate issue for any of these."
+    },
+    {
+      "repo": "ShaiKKO/ASTRA_",
+      "issue": 39,
+      "url": "https://github.com/ShaiKKO/ASTRA_/issues/39",
+      "title": "[astra-context-intel] Implement knowledge graph",
+      "score": 10,
+      "signals": {
+        "domain.build_pkg": 2,
+        "relationship.depends": 1,
+        "relationship.reference": 1,
+        "traversal.bfs_dfs": 2,
+        "traversal.path_reach": 2,
+        "traversal.walk": 2
+      },
+      "body": "## Summary\n\nImplement a knowledge graph that builds relationship graphs between context items, enabling relationship extraction, graph traversal, and persistence for understanding how context items relate to each other.\n\n## Motivation\n\nWithout knowledge graph:\n- No visibility into relationships between context items\n- Cannot find related concepts efficiently\n- No structured knowledge representation\n- Limited reasoning about context dependencies\n\nKnowledge graph enables structured knowledge navigation.\n\n## Technical Approach\n\n### Goals\n- Define `KnowledgeGraph` struct with nodes and edges\n- Implement relationship extraction from context\n- Support graph traversal API (`get_related`)\n- Persist graph for reuse\n\n### Implementation Details\n\n```rust\n// crates/astra-context-intel/src/knowledge_graph.rs\n\n/// Knowledge graph node\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct KnowledgeNode {\n    pub id: String,\n    pub context_item_id: String,\n    pub node_type: NodeType,\n    pub label: String,\n    pub properties: HashMap<String, String>,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub enum NodeType {\n    Concept,\n    Entity,\n    Fact,\n    Decision,\n    Requirement,\n}\n\n/// Knowledge graph edge\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct KnowledgeEdge {\n    pub id: String,\n    pub from_node: String,\n    pub to_node: String,\n    pub relation_type: RelationType,\n    pub weight: f32,\n    pub properties: HashMap<String, String>,\n}\n\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub enum RelationType {\n    RelatedTo,\n    DependsOn,\n    Contradicts,\n    Supports,\n    DerivedFrom,\n    PartOf,\n    Implements,\n}\n\n/// Knowledge graph builder\npub struct KnowledgeGraphBuilder {\n    model_gateway: Arc<ModelGateway>,\n    embedding_model: Arc<dyn EmbeddingModel>,\n    similarity_threshold: f32,\n}\n\nimpl KnowledgeGraphBuilder {\n    /// Build graph from context items\n    pub async fn build(\n        &self,\n        items: Vec<ContextItem>,\n    ) -> Result<KnowledgeGraph, AstraError> {\n        let mut nodes = Vec::new();\n        let mut edges = Vec::new();\n        \n        // Create nodes from items\n        for item in &items {\n            let node = self.extract_node(item).await?;\n            nodes.push(node);\n        }\n        \n        // Create edges based on relationships\n        for i in 0..nodes.len() {\n            for j in (i + 1)..nodes.len() {\n                if let Some(edge) = self.detect_relationship(&nodes[i], &nodes[j], &items[i], &items[j]).await? {\n                    edges.push(edge);\n                }\n            }\n        }\n        \n        Ok(KnowledgeGraph { nodes, edges })\n    }\n    \n    /// Get related nodes via traversal\n    pub fn get_related(\n        &self,\n        graph: &KnowledgeGraph,\n        node_id: &str,\n        max_depth: usize,\n        max_items: usize,\n    ) -> Vec<(KnowledgeNode, Vec<RelationType>, usize)> {\n        // BFS traversal\n        let mut visited = HashSet::new();\n        let mut queue = VecDeque::new();\n        let mut results = Vec::new();\n        \n        queue.push_back((node_id.to_string(), Vec::new(), 0));\n        \n        while let Some((current_id, path, depth)) = queue.pop_front() {\n            if depth > max_depth || visited.contains(&current_id) {\n                continue;\n            }\n            visited.insert(current_id.clone());\n            \n            if let Some(node) = graph.nodes.iter().find(|n| n.id == current_id) {\n                if !path.is_empty() {\n                    results.push((node.clone(), path.clone(), depth));\n                }\n                \n                // Find connected edges\n                for edge in &graph.edges {\n                    let (next_id, relation) = if edge.from_node == current_id {\n                        (&edge.to_node, edge.relation_type.clone())\n                    } else if edge.to_node == current_id {\n                        (&edge.from_node, edge.relation_type.clone())\n                    } else {\n                        continue;\n                    };\n                    \n                    let mut new_path = path.clone();\n                    new_path.push(relation);\n                    queue.push_back((next_id.clone(), new_path, depth + 1));\n                }\n            }\n            \n            if results.len() >= max_items {\n                break;\n            }\n        }\n        \n        results\n    }\n}\n```\n\n## Acceptance Criteria\n\n- [ ] `KnowledgeNode` with type and properties\n- [ ] `NodeType` enum (Concept, Entity, Fact, etc.)\n- [ ] `KnowledgeEdge` with relation type and weight\n- [ ] `RelationType` enum (RelatedTo, DependsOn, etc.)\n- [ ] `KnowledgeGraph` struct\n- [ ] `KnowledgeGraphBuilder` for graph construction\n- [ ] `build()` extracts nodes and relationships\n- [ ] `get_related()` for graph traversal\n- [ ] Similarity-based edge detection\n- [ ] LLM-based relationship extraction\n- [ ] Graph persistence/serialization\n- [ ] Unit tests for traversal\n\n## File Manifest\n\n| File | Purpose |\n|------|---------|\n| `crates/astra-context-intel/src/knowledge_graph.rs` | Graph types and builder |\n| `crates/astra-context-intel/src/traversal.rs` | Graph traversal algorithms |\n\n## Dependencies\n\n- **Blocked by:** #36 (Intelligence abstraction), #25 (Embeddings)\n- **Blocks:** Advanced context reasoning\n\n## References\n\n- IMPLEMENTATION_PLAN.md: Issue #039\n"
+    },
+    {
+      "repo": "ShaistaShabbir-prog/ETL_Pipeline",
+      "issue": 22,
+      "url": "https://github.com/ShaistaShabbir-prog/ETL_Pipeline/issues/22",
+      "title": "feat: add data lineage visualization + great-expectations data quality report",
+      "score": 10,
+      "signals": {
+        "activity.recent_update": 1,
+        "domain.build_pkg": 2,
+        "domain.lineage": 2,
+        "domain.workflow_dag": 2,
+        "perf.pain": 3
+      },
+      "body": "## Current state\nGood ETL pipeline with Airflow DAG, dbt, Docker. 3 stars \u2014 popular. Can be made much more impressive.\n\n## Recommended additions\n\n### 1. Data lineage diagram (Mermaid)\n```mermaid\ngraph LR\n    CSV[Raw CSV] --> Extract\n    Extract --> Validate[Great Expectations]\n    Validate --> Transform[Pandas/dbt]\n    Transform --> Load[PostgreSQL]\n    Load --> Dashboard[Metabase/Grafana]\n```\n\n### 2. Great Expectations data quality report\n- Add `great_expectations/` with expectation suite\n- Auto-generate HTML data docs on each pipeline run\n- Badge: \"Data Quality: PASSED \u2705\"\n\n### 3. Performance benchmarks\n- Add pipeline timing metrics\n- Show throughput: X rows/second\n\n### 4. Makefile commands\n```bash\nmake run       # run full pipeline\nmake test      # run data quality checks\nmake docs      # generate data docs\n```\n\n### Tasks\n- [ ] Add Mermaid data lineage diagram to README\n- [ ] Add `great_expectations/` data quality suite\n- [ ] Add pipeline benchmarks section to README\n- [ ] Add Makefile with common commands\n- [ ] Fix `.DS_Store` in repo (add to `.gitignore`)\n- [ ] Add sample output/results to docs/\n"
+    },
+    {
+      "repo": "Sirivennela-ANW/Epics_userstories",
+      "issue": 12,
+      "url": "https://github.com/Sirivennela-ANW/Epics_userstories/issues/12",
+      "title": "US-2.5: Data Lineage & Impact Analysis for Quality Issues",
+      "score": 10,
+      "signals": {
+        "domain.build_pkg": 2,
+        "domain.lineage": 2,
+        "domain.workflow_dag": 2,
+        "traversal.path_reach": 2,
+        "traversal.walk": 2
+      },
+      "body": "## User Story\n\n- **As a:** Data Steward\n- **I want:** to visualize data lineage and identify downstream systems affected by a quality issue\n- **So that:** I can quickly assess impact and notify affected teams\n\n## Acceptance Criteria\n- Visual graph showing data flow from source to destination\n- Highlights contaminated data path when issue is detected\n- Shows all downstream consumers of affected data\n- Provides impact report (# of records, systems, dashboards affected)\n- Supports automated notifications to affected team owners\n- Enables tracing back to root cause (which source or transformation caused issue)\n\n## Implementation Notes\n- Build DAG (Directed Acyclic Graph) of data pipelines\n- Integrate with metadata repository (Apache Atlas or Collibra)\n- Use graph database for fast traversal\n\n---\n**Epic:** EPIC 2  \n**Status:** Not Started  \n**Type:** User Story\n"
+    },
+    {
+      "repo": "Sirivennela-ANW/Epics_userstories",
+      "issue": 59,
+      "url": "https://github.com/Sirivennela-ANW/Epics_userstories/issues/59",
+      "title": "US-2.5: Data Lineage & Impact Analysis for Quality Issues",
+      "score": 10,
+      "signals": {
+        "domain.build_pkg": 2,
+        "domain.lineage": 2,
+        "domain.workflow_dag": 2,
+        "traversal.path_reach": 2,
+        "traversal.walk": 2
+      },
+      "body": "## User Story\n\n**As a:** Data Steward  \n**I want:** to visualize data lineage and identify downstream systems affected by a quality issue  \n**So that:** I can quickly assess impact and notify affected teams\n\n### Acceptance Criteria\n- Visual graph showing data flow from source to destination\n- Highlights contaminated data path when issue is detected\n- Shows all downstream consumers of affected data\n- Provides impact report (# of records, systems, dashboards affected)\n- Supports automated notifications to affected team owners\n- Enables tracing back to root cause (which source or transformation caused issue)\n\n### Implementation Notes\n- Build DAG (Directed Acyclic Graph) of data pipelines\n- Integrate with metadata repository (Apache Atlas or Collibra)\n- Use graph database for fast traversal\n\n---\n**Epic:** #54 - EPIC 2  \n**Status:** Not Started  \n**Type:** User Story  \n**Related:** Part of 2\n"
+    }
+  ]
+}

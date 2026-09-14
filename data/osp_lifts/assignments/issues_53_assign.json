@@ -1,0 +1,163 @@
+{
+  "manifest": "issues_53.jsonl",
+  "records": [
+    {
+      "repo": "NousResearch/hermes-agent",
+      "issue": 93046,
+      "url": "https://github.com/NousResearch/hermes-agent/issues/93046",
+      "title": "[Feature]: Add safe Kanban workspace rebinding after Project primary changes",
+      "score": 10,
+      "signals": {
+        "activity.recent_update": 1,
+        "domain.build_pkg": 2,
+        "domain.lineage": 2,
+        "domain.workflow_dag": 2,
+        "relationship.depends": 1,
+        "traversal.path_reach": 2
+      },
+      "body": "### Problem or Use Case\n\nWhen a Project primary repository or board default_workdir is corrected after Kanban cards have been created, existing cards retain their materialized workspace_path. The cards continue targeting the old anchor even though `hermes project show` reports the corrected primary.\n\nObserved on Windows 11 with Hermes v0.20.5:\n\n1. A Project was initially created with a wrapper folder as primary; the actual Git repository was one level below it.\n2. 2. Nineteen project-linked implementation cards materialized under `<wrapper>/.worktrees/<task-id>`.\n3. 3. `hermes project set-primary` corrected the Project to the actual repository.\n4. 4. Existing cards kept the old paths.\n5. 5. Dispatch rejected them as outside a Git repository and consumed retries until the circuit breaker blocked the cards.\nRecovery required recreating every affected card, rewiring dependencies, commenting and archiving the originals, and separately preserving partial worker output. This is error-prone and gives up stable task IDs.\n\nRelated work #92645, #92519, and #70865 guards new unanchored or unresolvable cards, but does not repair existing materialized cards after an intentional Project or board-anchor correction. #81336 handles missing worktrees; #91169/#91191 handles reciprocal Project-board binding. Those are adjacent but distinct.\n\n### Proposed Solution\n\nAdd a first-class, fail-closed rebind workflow for Project-derived Kanban workspaces.\n\nSuggested shape:\n\n- `hermes project set-primary <project> <path>` and `hermes kanban boards set-default-workdir` should detect active cards whose stored workspace_path was derived from the previous anchor and print an explicit affected-card count.\n- - Provide a dry-run/apply repair command, for example `hermes kanban rebind-workspaces --project <project> --from <old-root> --to <new-root> [--apply]`.\n- - - Preserve task IDs, bodies, comments, runs, dependency edges, branches, retries, and review state; update only the workspace routing fields and append an auditable event.\n- - - - Refuse running/claimed tasks, ambiguous paths, explicit user overrides, branch collisions, and destinations that are not verified Git roots/worktree targets.\n- - - - - Distinguish Project-derived paths from explicit workspace overrides, ideally with persisted provenance for newly created tasks.\n- - - - - - Verify every rewritten destination before committing the transaction and report exact changed/skipped/refused counts.\n- - - - - - - Document that card workspace paths are snapshots at creation time and that changing a Project or board anchor does not silently mutate existing cards.\nThis should complement, not duplicate, the creation-time validation in the related PRs.\n\n### Alternatives Considered\n\n- Manual recreate/link/unlink/archive preserves audit history but is too complex for bulk recovery and changes task IDs.\n- - Re-deriving every workspace dynamically at dispatch would make Project changes unexpectedly mutate active tasks and could redirect explicit overrides.\n- - - Creation-time validation alone prevents some future incidents but cannot recover legacy or already-materialized rows.\nA scoped, provenance-aware, dry-run-first rebind command is safer and more predictable.\n\n### Feature Type\n\nCLI improvement\n\n### Scope\n\nNone\n\n### Contribution\n\n- [ ] I'd like to implement this myself and submit a PR\n\n### Debug Report (optional)\n\n```shell\n\n```"
+    },
+    {
+      "repo": "OpenIntegrationEngine/engine",
+      "issue": 337,
+      "url": "https://github.com/OpenIntegrationEngine/engine/issues/337",
+      "title": "Gradle migration follow-ups (post-#326)",
+      "score": 10,
+      "signals": {
+        "activity.reactions": 1,
+        "activity.recent_update": 1,
+        "domain.build_pkg": 2,
+        "perf.pain": 3,
+        "relationship.depends": 1,
+        "relationship.parent_child": 1,
+        "relationship.reference": 1
+      },
+      "body": "PR #326 migrated the build from Ant to Gradle with output verified byte-identical. To keep that PR reviewable and parity-checkable, several improvements were deliberately deferred. This issue tracks them. Parent: #52.\n\n### Build tooling\n- [ ] **Try Gradle 9.** The wrapper ships on 8.14.1. Confirm the build runs clean under Gradle 9 and bump when it does. One known item to clear first: a `Task.project`-at-execution-time deprecation in `verifyDistributionPlacement` that Gradle 9 warns on and Gradle 10 removes. _(raised by @jbeckers in #326)_\n- [ ] **Consider the Kotlin DSL for the build scripts.** Currently Groovy; Kotlin is Gradle's official recommendation. _(raised in #326, agreed as a follow-up)_\n- [ ] **Clean up stale `.gitignore` headers.** ~111 inert commented section headers (`# /client/src/com/...`) date to the original 2017 `.gitignore` and still reference the pre-move layout. Update to `src/main/java` or drop them. _(raised by @jbeckers in #326)_\n\n### Dependencies\n- [ ] **Align multi-artifact dependency families with BOMs.** The catalog versions every artifact of a family independently, so a bot can bump part of a set and leave it incoherent with nothing to catch it. That is #389: `log4j-api` stayed at 2.25.3 while `log4j-core` and `log4j-1.2-api` moved to 2.25.4, and the server would not boot. Import `platform(libs.<x>.bom)` for log4j, jackson, netty, jetty, and the AWS SDK. Constrains versions only, pulls nothing transitively, flat explicit list stays intact.\n- [ ] **Normalize to transitive resolution, one library at a time.** The migration intentionally pins a non-transitive, audited set matching the historical vendored jars. Enable transitivity per library during routine version bumps, diff against the flat list, reconcile, re-verify with the parity harness. Flat lists remain better for scanning accuracy, so this is a slow bridge with no deadline. _(objection from @jbeckers in the comments)_\n- [ ] **CVE burn-down.** An initial dependency-check baseline flagged ~54 distinct CVEs across ~46 jars. Start with the one-line, parity-checkable bumps (netty, jackson-databind, pdfbox), then the harder ones: Jetty 9.4.57 (EOL line), MyBatis (#320), Derby, iText -> OpenPDF (#289), commons-httpclient -> httpclient5. See also #304.\n- [ ] **Adopt byte-identical repackaged jars from Maven Central.** 13 vendored jars are content-identical to Central artifacts (the HAPI 2.3 set, jtds, sqlite-jdbc, rsyntaxtextarea, autocomplete) and can be sourced from Central. The 3 genuine forks (javaparser 1.0.8, zip4j 1.3.3, not-going-to-be-commons-ssl) stay vendored.\n\n"
+    },
+    {
+      "repo": "PRQL/prql",
+      "issue": 407,
+      "url": "https://github.com/PRQL/prql/issues/407",
+      "title": "`WITH RECURSIVE` based iteration",
+      "score": 10,
+      "signals": {
+        "activity.discussion": 1,
+        "activity.reactions": 1,
+        "manual_impl.n_plus_one": 3,
+        "manual_impl.recursive_cte": 3,
+        "traversal.recursive": 2
+      },
+      "body": "At my shop we do lot of *ELT* where the *T* happens in database.\r\nA typical use case is the following:\r\n- We get JSON files and we insert them inside the database, this is our *E* and *L*\r\n- We write materialized views/queries to process those JSON files, this is our *T*\r\n\r\nThis has the benefit that everything happens in database, and if there is an error in the business logic we only need to refresh the materialized views. We love materialized views. Our *E* are literally scripts which do a single request and a single INSERT query. And when we need to dump the database, the only content are the JSON files content + definition, so our dumps are very light.\r\n\r\nIn our context some times we need iteration, for example, we have a feed of events, a single JSON document, we need to process those events accumulating some state, to process the message T[n], we need the state derived from T[1],...,T[n-1]. \r\nIn functional programming languages this is called a `fold`.\r\n\r\nIn postgres we use `WITH-RECURSIVE` queries, https://www.postgresql.org/docs/14/queries-with.html#QUERIES-WITH-RECURSIVE\r\n```sql\r\nWITH RECURSIVE t(n) AS (\r\n    VALUES (1)\r\n  UNION ALL\r\n    SELECT n+1 FROM t WHERE n < 100\r\n)\r\nSELECT sum(n) FROM t;\r\n```\r\n\r\nI can see a world where I would write the body of materialized views in `PRQL`.\r\n"
+    },
+    {
+      "repo": "Pascapone/pibo",
+      "issue": 676,
+      "url": "https://github.com/Pascapone/pibo/issues/676",
+      "title": "Permanent session deletion leaves externalized payload rows and files orphaned",
+      "score": 10,
+      "signals": {
+        "activity.recent_update": 1,
+        "domain.build_pkg": 2,
+        "domain.lineage": 2,
+        "relationship.reference": 1,
+        "traversal.cycle": 2,
+        "traversal.path_reach": 2
+      },
+      "body": "## Summary\n\nPermanently deleting a session removes its message, event, observation, and navigation rows but does not release the externalized payloads those rows referenced. The `payloads` row keeps its old `ref_count`, and the content-addressed file remains under the payload directory with no database references.\n\nReopening the store does not reconcile the orphan. Repeated create/delete cycles therefore accumulate payload rows and files even though the sessions that owned them were permanently deleted.\n\n## Base and environment\n\n- Repository: `Pascapone/pibo`\n- Base: `upstream/dev` at `2aef244301f5d181624662fdad53e18e83e80bd9`\n- Isolated Docker worker: `pibo-dev-bughunt-data-0830-11`\n- Node.js: v24.15.0\n- Build: `npm run build` passed before reproduction\n- Data: disposable `pibo.sqlite` and payload directory containing synthetic messages only\n\n## Reproduction\n\nRun this from the built checkout. It creates a large user message through the normal ingestion service, deletes its session through the same projection-deletion service used by permanent Chat Web deletion, closes the database, and reopens it.\n\n```bash\nREPRO=/tmp/pibo-session-payload-delete-repro\nmkdir -p \"$REPRO\"\n\nREPRO_DIR=\"$REPRO\" node --input-type=module -e '\nimport { existsSync } from \"node:fs\";\nimport { join } from \"node:path\";\nimport { PiboDataStore } from \"./dist/data/pibo-store.js\";\nimport { ChatDataIngestService } from \"./dist/data/ingest-service.js\";\nimport { ChatSessionQueryService } from \"./dist/apps/chat/data/session-query-service.js\";\nimport { createPiboSession } from \"./dist/sessions/store.js\";\n\nconst root = process.env.REPRO_DIR;\nconst dbPath = join(root, \"pibo.sqlite\");\nconst payloadRoot = join(root, \"payloads\");\nconst session = createPiboSession({\n  id: \"ps_synthetic_payload_delete\",\n  piSessionId: \"pi_synthetic_payload_delete\",\n  channel: \"pibo.chat-web\",\n  kind: \"interactive\",\n  profile: \"base\",\n  metadata: { chatRoomId: \"room_synthetic_payload_delete\" },\n}, \"2026-08-30T02:45:00.000Z\");\nconst text = \"SYNTHETIC-LARGE-MESSAGE-\".repeat(1200);\n\nlet store = new PiboDataStore(dbPath, { payloadRootDir: payloadRoot });\nconst result = new ChatDataIngestService(store).ingestUserMessageAccepted({\n  session,\n  roomId: \"room_synthetic_payload_delete\",\n  actorId: \"synthetic-user\",\n  text,\n  clientTxnId: \"txn-synthetic-payload-delete\",\n});\nconst message = store.db.prepare(\n  \"SELECT content_payload_ref FROM chat_messages WHERE id = ?\",\n).get(result.messageId);\nconst payload = store.payloads.getPayload(message.content_payload_ref);\nconst file = join(payloadRoot, payload.storagePath);\n\nconsole.log(\"before\", {\n  refCount: payload.refCount,\n  fileExists: existsSync(file),\n});\n\nnew ChatSessionQueryService(store).deleteSessions([session.id]);\nconsole.log(\"after-delete\", {\n  messageRows: store.db.prepare(\"SELECT COUNT(*) AS count FROM chat_messages WHERE session_id = ?\").get(session.id).count,\n  eventRows: store.db.prepare(\"SELECT COUNT(*) AS count FROM event_log WHERE session_id = ?\").get(session.id).count,\n  payloadRows: store.db.prepare(\"SELECT COUNT(*) AS count FROM payloads WHERE id = ?\").get(payload.id).count,\n  refCount: store.payloads.getPayload(payload.id).refCount,\n  fileExists: existsSync(file),\n});\nstore.close();\n\nstore = new PiboDataStore(dbPath, { payloadRootDir: payloadRoot });\nconsole.log(\"after-restart\", {\n  payloadRows: store.db.prepare(\"SELECT COUNT(*) AS count FROM payloads WHERE id = ?\").get(payload.id).count,\n  refCount: store.payloads.getPayload(payload.id).refCount,\n  fileExists: existsSync(file),\n  readableBytes: store.payloads.readPayloadBytes(payload.id).byteLength,\n  contentMatches: store.payloads.readPayloadText(payload.id) === text,\n});\nstore.close();\n'\n```\n\n## Actual behavior\n\nThe isolated reproduction produced:\n\n```text\nBEFORE={\"messageRows\":1,\"eventRows\":1,\"payloadRows\":1,\"payloadRefCount\":1,\"fileExists\":true,\"byteSize\":28800}\nAFTER_DELETE={\"deleted\":1,\"messageRows\":0,\"eventRows\":0,\"observationRows\":0,\"navigationRows\":0,\"remainingDbReferences\":0,\"payloadRows\":1,\"payloadRefCount\":1,\"fileExists\":true}\nAFTER_RESTART={\"payloadRows\":1,\"payloadRefCount\":1,\"fileExists\":true,\"readableBytes\":28800,\"contentMatches\":true}\n```\n\nA schema-wide scan of every `payload_ref`, `payload_preview_ref`, and `content_payload_ref` column found zero references to the surviving payload id. The row and file nevertheless remained.\n\nA shared-content control showed the reference counter also remains stale during partial deletion:\n\n```text\nbefore both deletes:        refCount=2, liveReferences=4\nafter deleting one session: refCount=2, liveReferences=2\nafter deleting both:        refCount=2, liveReferences=0, fileExists=true\n```\n\n## Expected behavior\n\nPermanent session deletion should release each payload write referenced by the deleted projections. Deduplicated payloads should remain while another live record references them, then have their row and file removed when the final reference is released. A reference-aware reconciliation or prune pass could provide the same end state.\n\nAfter the last owning session is deleted and the store is reopened, there should be no zero-reference payload row or file.\n\n## Impact and severity\n\nSeverity: moderate functional storage-lifecycle defect.\n\nLarge messages, tool results, images, and other externalized values can outlive every session that referenced them. Users who permanently delete old sessions do not reclaim those payload files, and repeated deletion cycles can grow the payload tree indefinitely. The stale `ref_count` also prevents the database from representing current references accurately.\n\nThis is distinct from #646: that issue concerns content-type metadata during SHA-256 deduplication; this issue concerns reference release and file cleanup during permanent deletion.\n\n## Relevant implementation detail\n\n`ChatSessionQueryService.deleteSessions()` deletes rows from `observations`, `chat_messages`, `event_log`, and `session_navigation`, then tombstones the session. It does not collect or r"
+    },
+    {
+      "repo": "Pascapone/pibo",
+      "issue": 750,
+      "url": "https://github.com/Pascapone/pibo/issues/750",
+      "title": "pibo data migrate sessions-to-v2 leaves room_id stale on newer re-import",
+      "score": 10,
+      "signals": {
+        "activity.recent_update": 1,
+        "domain.lineage": 2,
+        "perf.pain": 3,
+        "traversal.path_reach": 2,
+        "traversal.recursive": 2
+      },
+      "body": "## Summary\n\nWhen `pibo data migrate sessions-to-v2` re-imports a newer legacy session, it updates `metadata_json.chatRoomId` but leaves the structured `sessions.room_id` column at its previous value. The command reports the row as updated and advances `updated_at`, so later migration runs skip the row and preserve the contradiction.\n\nThis leaves one Pibo Session associated with two rooms in the same target row. Normal session and Chat data paths use the structured `room_id`, while metadata inspection reports the newer room.\n\n## Base and environment\n\n- Repository: `Pascapone/pibo`\n- Base branch: current `upstream/dev`\n- Base SHA: `2aef244301f5d181624662fdad53e18e83e80bd9`\n- Isolated Docker dev worker with a disposable legacy database and target Pibo home\n- No gateway, controller service, provider, or Pibo2 environment was invoked\n\n## Native discovery\n\nI followed the CLI's discovery path before creating the fixture:\n\n```text\npibo data --help\npibo debug --help\npibo debug db --help\npibo debug pty --help\n```\n\nThe data help describes `migrate sessions-to-v2` as an idempotent import into `pibo.sqlite`; the debug commands provide the native read-only checks below.\n\n## Deterministic fixture\n\nCreate a disposable legacy store containing one session assigned to `room_old`:\n\n```js\nimport { mkdirSync, rmSync } from \"node:fs\";\nimport { DatabaseSync } from \"node:sqlite\";\n\nconst root = \"/workspace/.bughunt-fixture/migration-home\";\nrmSync(root, { recursive: true, force: true });\nmkdirSync(root, { recursive: true });\n\nconst db = new DatabaseSync(`${root}/pibo-sessions.sqlite`);\ndb.exec(`\n  CREATE TABLE pibo_sessions (\n    id TEXT PRIMARY KEY,\n    pi_session_id TEXT NOT NULL UNIQUE,\n    channel TEXT NOT NULL,\n    kind TEXT NOT NULL,\n    profile TEXT NOT NULL,\n    owner_scope TEXT,\n    parent_id TEXT,\n    origin_id TEXT,\n    workspace TEXT,\n    title TEXT,\n    metadata_json TEXT,\n    active_model_json TEXT,\n    created_at TEXT NOT NULL,\n    updated_at TEXT NOT NULL\n  );\n`);\ndb.prepare(\"INSERT INTO pibo_sessions VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)\").run(\n  \"ps_room_move_fixture\",\n  \"pi_room_move_fixture\",\n  \"pibo.chat-web\",\n  \"chat\",\n  \"base\",\n  \"shared:app\",\n  null,\n  null,\n  \"/workspace\",\n  \"Room move fixture\",\n  JSON.stringify({ chatRoomId: \"room_old\" }),\n  null,\n  \"2026-08-30T00:00:00.000Z\",\n  \"2026-08-30T00:01:00.000Z\",\n);\ndb.close();\n```\n\nRun the first import:\n\n```bash\nPIBO_HOME=/workspace/.bughunt-fixture/migration-home \\\n  npm run --silent dev -- data migrate sessions-to-v2 --json\n```\n\nIt reports `inserted: 1`. A native debug query confirms that both representations initially agree:\n\n```bash\nPIBO_HOME=/workspace/.bughunt-fixture/migration-home \\\n  npm run --silent dev -- debug db query sessions \\\n  \"SELECT id, room_id, metadata_json, updated_at FROM sessions WHERE id = 'ps_room_move_fixture'\" \\\n  --json\n```\n\n```json\n{\n  \"id\": \"ps_room_move_fixture\",\n  \"room_id\": \"room_old\",\n  \"metadata_json\": \"{\\\"chatRoomId\\\":\\\"room_old\\\"}\",\n  \"updated_at\": \"2026-08-30T00:01:00.000Z\"\n}\n```\n\nAdvance the legacy source to a newer room assignment:\n\n```js\nimport { DatabaseSync } from \"node:sqlite\";\n\nconst db = new DatabaseSync(\"/workspace/.bughunt-fixture/migration-home/pibo-sessions.sqlite\");\ndb.prepare(\"UPDATE pibo_sessions SET metadata_json = ?, updated_at = ? WHERE id = ?\").run(\n  JSON.stringify({ chatRoomId: \"room_new\" }),\n  \"2026-08-30T00:02:00.000Z\",\n  \"ps_room_move_fixture\",\n);\ndb.close();\n```\n\nRun the second import under a real PTY:\n\n```bash\npibo debug pty run \\\n  --docker-worker pibo-dev-bughunt-functional-20260830-next \\\n  --workdir /workspace \\\n  --rows 24 --cols 110 \\\n  --timeout-ms 15000 --idle-timeout-ms 5000 \\\n  --artifact-dir /root/code/pibo/.worktrees/bughunt-functional-20260830-next/.bughunt-fixture/pty-second-migration \\\n  --artifact \\\n  --expect '\"updated\": 1' \\\n  -- env PIBO_HOME=/workspace/.bughunt-fixture/migration-home \\\n    npm run --silent dev -- data migrate sessions-to-v2 --json\n```\n\n## Actual result\n\nThe PTY run succeeds and the migration reports a complete update:\n\n```json\n{\n  \"inputExists\": true,\n  \"read\": 1,\n  \"inserted\": 0,\n  \"updated\": 1,\n  \"skipped\": 0\n}\n```\n\nPTY metadata records `backend: docker`, `ptyMethod: docker-python-pty`, `exitCode: 0`, `ok: true`, and `stopReason: completed`.\n\nHowever, `pibo debug session ps_room_move_fixture --json` shows the split state:\n\n```json\n{\n  \"session\": {\n    \"id\": \"ps_room_move_fixture\",\n    \"room_id\": \"room_old\",\n    \"updated_at\": \"2026-08-30T00:02:00.000Z\"\n  },\n  \"metadata\": {\n    \"chatRoomId\": \"room_new\"\n  },\n  \"room\": {\n    \"sessionRoomId\": \"room_old\"\n  },\n  \"chat\": {\n    \"pibo_session_id\": \"ps_room_move_fixture\",\n    \"room_id\": \"room_old\"\n  }\n}\n```\n\nA third migration run reports `skipped: 1`; the stale `room_id` remains because the target now has the same `updated_at` as the source.\n\n## Control\n\nDeleting only the disposable target `pibo.sqlite` after advancing the source, then importing that same `room_new` source into a fresh target, produces:\n\n```json\n{\n  \"room_id\": \"room_new\",\n  \"metadata_room\": \"room_new\",\n  \"updated_at\": \"2026-08-30T00:02:00.000Z\"\n}\n```\n\nThis isolates the defect to the newer-row update path rather than legacy metadata parsing or initial insertion.\n\n## Expected result\n\nWhen a newer legacy row is accepted as an update, the migration should keep the target's structured room association and imported metadata coherent. If `metadata_json.chatRoomId` changes to `room_new`, `sessions.room_id` should also become `room_new` before the migration advances `updated_at` and reports the row as updated.\n\n## Impact and severity\n\nSuggested severity: moderate, migration-specific.\n\nRe-running the documented idempotent migration against a changed legacy source can leave a session routed and listed under the old room while its imported metadata names the new room. The successful update count hides the partial update, and the copied timestamp prevents later reruns from repairing it.\n\n## Suspected subsystem\n\nThe likely boundary is the"
+    },
+    {
+      "repo": "PedroLimaSilva/BionicleIdleRPG",
+      "issue": 332,
+      "url": "https://github.com/PedroLimaSilva/BionicleIdleRPG/issues/332",
+      "title": "Add quest prerequisite cycle detection",
+      "score": 10,
+      "signals": {
+        "activity.recent_update": 1,
+        "domain.build_pkg": 2,
+        "relationship.depends": 1,
+        "traversal.bfs_dfs": 2,
+        "traversal.cycle": 2,
+        "traversal.ordering": 2
+      },
+      "body": "## Summary\n\nNo validation currently prevents circular quest dependencies in `unlockedAfter` chains. The system assumes quest designers do not create cycles.\n\n## Recommendation\n\nAdd a validation function that detects cycles in `unlockedAfter` chains.\n\n## Proposed approach\n\n```typescript\nfunction detectQuestCycles(quests: Quest[]): string[] {\n  // Implement topological sort or DFS cycle detection\n  // Return array of quest IDs involved in cycles\n}\n```\n\n## Acceptance Criteria\n\n- [ ] Cycles are detected at build time or app initialization\n- [ ] Error is logged with cycle details\n- [ ] Development build fails if cycles exist\n\n## Context\n\nFormerly tracked in `ARCHITECTURE_ROADMAP.md` \u00a73.2."
+    },
+    {
+      "repo": "PoliceConductUS/casegraph",
+      "issue": 13,
+      "url": "https://github.com/PoliceConductUS/casegraph/issues/13",
+      "title": "Recursively index an existing package folder",
+      "score": 10,
+      "signals": {
+        "activity.recent_update": 1,
+        "domain.build_pkg": 2,
+        "domain.lineage": 2,
+        "relationship.reference": 1,
+        "traversal.path_reach": 2,
+        "traversal.recursive": 2
+      },
+      "body": "## User story\n\nAs a CaseGraph user, I want to index an existing package folder recursively so that CaseGraph can inventory its files, create reusable case-independent artifacts, and progressively enrich them without reorganizing or copying the source collection.\n\n## Acceptance criteria\n\n- The index operation starts from an explicitly selected folder or resolved package.\n- The operation recursively inventories supported files and records relative path, media type, size, and SHA-256.\n- Original source files remain unchanged.\n- When the target package has opted into managed writes, CaseGraph can create validated sidecars and case-independent derived artifacts within that package.\n- PDF extraction can create `ruling.md` and `ruling.md.casegraph.yaml` from `ruling.pdf` and `ruling.pdf.casegraph.yaml`.\n- The derived-artifact sidecar records the exact source SHA-256 used for extraction.\n- Unsupported files and extraction failures remain in the inventory with a clear status.\n- Re-indexing unchanged content does not create duplicate artifact identities.\n- A changed source SHA-256 is reported as a possible stale derivation.\n- Automatic re-extraction, immutable source-version policy, and downstream reference reevaluation are deferred.\n- Initial indexing does not present machine observations as verified case facts, legal propositions, or legal-effect relationships.\n"
+    },
+    {
+      "repo": "QuEraComputing/kirin",
+      "issue": 703,
+      "url": "https://github.com/QuEraComputing/kirin/issues/703",
+      "title": "CallGraph.__build recurses without a visited set: RecursionError on recursive call graphs",
+      "score": 10,
+      "signals": {
+        "activity.recent_update": 1,
+        "domain.lineage": 2,
+        "manual_impl.visited_set": 3,
+        "traversal.cycle": 2,
+        "traversal.recursive": 2
+      },
+      "body": "## Summary\n\n`kirin.analysis.CallGraph` recurses into callees without tracking visited methods, so building a call graph for any method whose call graph contains a cycle raises `RecursionError`. This makes `CallGraph` unusable for the one task it is most obviously suited to: detecting recursion.\n\n`kirin-toolchain` 0.22.11, `kirin/analysis/callgraph.py:32-42`:\n\n```python\ndef __build(self, mt: ir.Method):\n    for stmt in mt.callable_region.walk():\n        if isinstance(stmt, func.Invoke):\n            edges = self.edges.setdefault(stmt.callee, set())\n            edges.add(mt)\n            self.__build(stmt.callee)     # <-- no visited set\n```\n\n`self.edges` is populated as it goes, but is never consulted to decide whether to descend, so a self-referential or mutually-recursive method recurses until the Python stack is exhausted.\n\n## Reproducer\n\n```python\nfrom bloqade import squin\nfrom kirin.analysis.callgraph import CallGraph\n\n@squin.kernel(fold=False)\ndef B(main):\n    B(main)\n    main()\n\nCallGraph(B)   # RecursionError: maximum recursion depth exceeded\n```\n\nConfirmed on `kirin-toolchain` 0.22.11.\n\n## Fix\n\nGuard the descent on a visited set, e.g.:\n\n```diff\n-    def __build(self, mt: ir.Method):\n+    def __build(self, mt: ir.Method, visited: set[ir.Method] | None = None):\n+        visited = set() if visited is None else visited\n+        if mt in visited:\n+            return\n+        visited.add(mt)\n         for stmt in mt.callable_region.walk():\n             if isinstance(stmt, func.Invoke):\n                 edges = self.edges.setdefault(stmt.callee, set())\n                 edges.add(mt)\n-                self.__build(stmt.callee)\n+                self.__build(stmt.callee, visited)\n```\n\nCycles are then represented in `edges`/`backedges` (which is what a caller wanting to *detect* recursion needs) rather than blowing the stack.\n\nTwo notes on adjacent behaviour, in case they are also unintended:\n\n- `edges` is documented as \"caller -> callee\" but is populated as `edges[callee].add(caller)` \u2014 i.e. it is keyed by callee. `get_neighbors`/`get_edges`/`get_nodes` all read it as though it were keyed by caller, so the direction is inverted relative to the docstring.\n- Only `func.Invoke` is traversed; dynamic `func.Call` edges are invisible to the graph.\n\nFound while looking for a way to reject recursive kernels in a downstream compiler (`bloqade-lanes`), where recursion currently causes an unbounded blowup in an abstract interpreter.\n"
+    },
+    {
+      "repo": "QueryaHub/OxyRoute",
+      "issue": 141,
+      "url": "https://github.com/QueryaHub/OxyRoute/issues/141",
+      "title": "feat(di): DAG dependency resolution with precomputed parameter graph",
+      "score": 10,
+      "signals": {
+        "activity.recent_update": 1,
+        "domain.build_pkg": 2,
+        "domain.workflow_dag": 2,
+        "relationship.depends": 1,
+        "traversal.cycle": 2,
+        "traversal.ordering": 2
+      },
+      "body": "### Summary\nIn `src/dispatch.rs`, route dependencies are resolved linearly by feeding all previous dependency outputs 0..i-1 into `kwargs` of the subsequent dependency factory. This results in O(D^2) `PyDict::set_item` calls and prevents true directed acyclic graph (DAG) composition.\n\n### Proposed Changes\n1. Analyze dependency callables at registration/`freeze()` time and build a dependency DAG.\n2. Perform topological sort and cycle validation at startup.\n3. At request time, pass only the exact arguments required by each dependency callable.\n4. Support concurrent resolution of independent async dependency nodes where applicable.\n\n### Acceptance Criteria\n- Circular dependencies are detected and rejected at startup/freeze time with a descriptive error.\n- Dependencies only receive their declared keyword arguments.\n- Existing linear dependency chains continue to work seamlessly."
+    },
+    {
+      "repo": "Railroad-Team/Railroad",
+      "issue": 582,
+      "url": "https://github.com/Railroad-Team/Railroad/issues/582",
+      "title": "[SST][P3] SST-P3-014: Add configurable call-graph precision",
+      "score": 10,
+      "signals": {
+        "activity.recent_update": 1,
+        "perf.pain": 3,
+        "relationship.depends": 1,
+        "relationship.reference": 1,
+        "traversal.cycle": 2,
+        "traversal.recursive": 2
+      },
+      "body": "## Problem\n\nHigher-order IDE intelligence requires reusable graphs and flow facts with explicit soundness, completeness, and cost expectations. The missing platform outcome is advanced analysis services.\n\nThe roadmap identifies the concrete gap as **Add configurable call-graph precision**. Until it is delivered, the feature remains unavailable, incomplete at scale, or coupled to current Java and UI implementation details.\n\n## Required outcome\n\nAdd configurable call-graph precision. The result must integrate with stable documents, locations, symbols, semantic snapshots, indexes, and workspace edits wherever applicable, while providing explicit lifecycle and failure semantics.\n\nThis issue defines the problem and acceptance boundary without supplying implementation code.\n\n## Acceptance criteria\n\n- [ ] Add configurable call-graph precision.\n- [ ] The capability remains language-extensible and handles source, generated, binary, decompiled, and virtual origins where relevant.\n- [ ] Versioning, cancellation, concurrency, compatibility, security, performance, and bounded-resource behavior are defined as applicable.\n- [ ] Automated tests cover cycles, recursion, aliasing, incomplete code, approximation, caching, invalidation, cancellation, and performance bounds.\n- [ ] Existing Java behavior and Railroad's zero-error self-analysis baseline remain correct.\n- [ ] Plugin-facing and user-facing behavior, limitations, approximation, and failure modes are documented.\n\n## Dependencies and related work\n\n- Roadmap group: **P3.3 Advanced analyses**\n- Related SST umbrella: #63\n- Roadmap reference: `SST-P3-014`\n\n## Possible approach\n\nExpose a narrow capability or query service with explicit snapshot inputs, cancellation, deterministic result semantics, and conformance tests for partial and failing providers.\n\nAlternative implementations are welcome when they satisfy the same externally observable guarantees."
+    }
+  ]
+}
