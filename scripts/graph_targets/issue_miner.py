@@ -242,28 +242,25 @@ def enrich(hit: dict) -> dict:
 
 # ---- 3. scoring rubric ------------------------------------------------------- #
 # Each family scores once (distinct-signal counting, not raw regex hits).
+# Weights refit against luna-wave outcomes (batches 38-55: 180 assigned
+# issues, 100 landed, base rate 56%) — kept only families whose firing
+# beats base landing rate. Killed as noise (delta ~0 or negative at n>=20):
+# relationship.*, traversal.path_reach, traversal.walk, domain.* (build_pkg,
+# lineage, workflow_dag, authz), manual_impl.visited_set, perf.pain, and
+# activity.recent_update (fires on 90% of issues). Refit details:
+# ~/notes/osp_signal_refit.md
 _SIGNALS: list[tuple[str, str, int, int]] = [
-    # (bucket, family, weight, cap) — pattern matched against title+body+labels
-    ("relationship", "parent_child", 1, 4, r"\b(parent|child(?:ren)?|ancestor|descendant)\b"),
-    ("relationship", "depends", 1, 0, r"\bdepend(?:s|ency|encies|ent)?\b|\bprerequisite"),
-    ("relationship", "reference", 1, 0, r"\b(refers? to|references?|linked? to|belongs to)\b"),
-    ("traversal", "recursive", 2, 8, r"\brecursi(?:ve|on|vely)\b|WITH RECURSIVE|recursive CTE"),
-    ("traversal", "walk", 2, 0, r"\b(traverse|traversal|walk(?:ing)? the)\b"),
-    ("traversal", "path_reach", 2, 0, r"\b(path|reachab(?:le|ility)|shortest path)\b"),
+    # (bucket, family, weight, cap, pattern) — title+body+labels+comments
+    ("traversal", "recursive", 3, 8, r"\brecursi(?:ve|on|vely)\b|WITH RECURSIVE|recursive CTE"),
     ("traversal", "cycle", 2, 0, r"\bcycle|circular\b"),
-    ("traversal", "ordering", 2, 0, r"\btopolog(?:ical|y)|execution order|resolve order"),
-    ("traversal", "bfs_dfs", 2, 0, r"\b(BFS|DFS|breadth[- ]first|depth[- ]first)\b"),
-    ("manual_impl", "visited_set", 3, 12, r"\b(visited|seen)\s+set\b"),
-    ("manual_impl", "adjacency", 3, 0, r"\badjacency (list|dict|matrix)|adj[_a-z]*\s*[:=]\s*[\[{]"),
-    ("manual_impl", "recursive_cte", 3, 0, r"WITH RECURSIVE|recursive CTE|connect by"),
-    ("manual_impl", "queue_walk", 3, 0, r"\b(deque|popleft|pop\(0\)|queue\.(get|put))\b"),
-    ("manual_impl", "memo_ancestors", 3, 0, r"\b(memoiz|cache).{0,40}(parent|ancestor|dependenc)"),
-    ("manual_impl", "n_plus_one", 3, 0, r"N\+1|too many (quer|request)|query per (node|parent|item)"),
-    ("perf", "pain", 3, 3, r"\b(slow|performance|timeout|hang|quadratic|exponential|O\(n\^?2\)|minutes to)\b"),
-    ("domain", "workflow_dag", 2, 6, r"\b(workflow|pipeline|DAG|task dependencies?)\b"),
-    ("domain", "build_pkg", 2, 0, r"\b(build|compile|make(target)?|package|module resolution|import cycle)\b"),
-    ("domain", "authz", 2, 0, r"\b(permss?ion|role (hierarchy|inherit)|group membership|RBAC|ACL)\b"),
-    ("domain", "lineage", 2, 0, r"\b(lineage|provenance|upstream|downstream|impact analysis)\b"),
+    ("traversal", "ordering", 3, 0, r"\btopolog(?:ical|y)|execution order|resolve order"),
+    ("traversal", "bfs_dfs", 3, 0, r"\b(BFS|DFS|breadth[- ]first|depth[- ]first)\b"),
+    ("manual_impl", "recursive_cte", 4, 8, r"WITH RECURSIVE|recursive CTE|connect by"),
+    ("manual_impl", "adjacency", 2, 0, r"\badjacency (list|dict|matrix)|adj[_a-z]*\s*[:=]\s*[\[{]"),
+    ("manual_impl", "queue_walk", 2, 0, r"\b(deque|popleft|pop\(0\)|queue\.(get|put))\b"),
+    ("manual_impl", "memo_ancestors", 2, 0, r"\b(memoiz|cache).{0,40}(parent|ancestor|dependenc)"),
+    ("manual_impl", "n_plus_one", 4, 0, r"N\+1|too many (quer|request)|query per (node|parent|item)"),
+    ("refactor", "refactor", 2, 2, r"\brefactor\w*\b|\brewrite\b|\brestructur\w*\b"),
 ]
 NEG_LABELS = re.compile(r"wontfix|not planned|duplicate|out of scope|invalid", re.I)
 
@@ -290,17 +287,14 @@ def score(hit: dict) -> dict:
         bucket_counts[bucket] = bucket_counts.get(bucket, 0) + 1
         matched[f"{bucket}.{family}"] = weight
         total += weight
-    # activity: recent update / discussion heat / reactions
-    upd = hit.get("updated_at") or ""
-    if upd and upd[:10] >= time.strftime("%Y-%m-%d", time.gmtime(time.time() - 90 * 86400)):
-        total += 1
-        matched["activity.recent_update"] = 1
+    # activity: discussion heat / reactions — both predict lift landing
+    # (+21% / +32% on luna outcomes). recent_update dropped: 90% fire rate.
     if (hit.get("comments") or 0) > 2:
-        total += 1
-        matched["activity.discussion"] = 1
+        total += 2
+        matched["activity.discussion"] = 2
     if (hit.get("reactions") or 0) > 0:
-        total += 1
-        matched["activity.reactions"] = 1
+        total += 2
+        matched["activity.reactions"] = 2
     # penalties
     if hit.get("assignees"):
         total -= 6
