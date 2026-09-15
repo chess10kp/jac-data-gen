@@ -1,0 +1,143 @@
+{
+  "manifest": "issues_57.jsonl",
+  "records": [
+    {
+      "repo": "huxley-barbee/cols",
+      "issue": 75,
+      "url": "https://github.com/huxley-barbee/cols/issues/75",
+      "title": "Topological sort of dependency graph",
+      "score": 11,
+      "signals": {
+        "traversal.recursive": 3,
+        "traversal.cycle": 2,
+        "traversal.ordering": 3,
+        "traversal.bfs_dfs": 3
+      },
+      "body": "## What\nGiven a map of cell \u2192 its dependencies, produce a topological ordering so cells are recalculated in the right order (dependencies before dependents).\n\n## File: include/dep_graph.h + src/dep_graph.cpp\n```cpp\n#pragma once\n#include \"cell_address.h\"\n#include <unordered_map>\n#include <unordered_set>\n#include <vector>\n\nclass DepGraph {\npublic:\n    // Record that `cell` depends on `dependency`\n    void add_dependency(const CellAddress& cell, const CellAddress& dependency);\n\n    // Remove all dependencies for a cell (call before re-parsing its formula)\n    void remove_cell(const CellAddress& cell);\n\n    // Returns cells in evaluation order (dependencies before dependents)\n    // Returns empty if a cycle is detected\n    std::vector<CellAddress> topo_sort() const;\n\n    bool has_cycle() const;\n\nprivate:\n    // adjacency: cell -> set of cells it depends on\n    std::unordered_map<CellAddress, std::unordered_set<CellAddress>> deps_;\n};\n```\n\n## Algorithm\nUse DFS-based topological sort (Kahn's algorithm or recursive DFS with a \"visited\" set and a \"in-stack\" set for cycle detection).\n\n## Acceptance criteria\n- A \u2192 B \u2192 C sorts as [C, B, A] (C evaluated first, then B uses C, then A uses B)\n- A graph with no dependencies sorts in any valid order"
+    },
+    {
+      "repo": "jacksmith15/statham-schema",
+      "issue": 63,
+      "url": "https://github.com/jacksmith15/statham-schema/issues/63",
+      "title": "Support schemas with recursive references",
+      "score": 11,
+      "signals": {
+        "traversal.recursive": 3,
+        "traversal.cycle": 2,
+        "manual_impl.recursive_cte": 4,
+        "activity.reactions": 2
+      },
+      "body": "There are several issues with this.\r\n\r\n1. The parser needs to be able to handle infinite schemas. This likely means instantiating default elements and keeping track of them, and then recursing through and setting attributes. There is a POC of this in `feature/recursive-schema`.\r\n2. The orderer needs to be able to identify cycles, and either annotate them for manual resolution in the output or resolve them as is.\r\n3. The DSL itself needs to be able to handle infinite recursion. This chiefly causes problems in places with default values. If the default value is the element with no arguments, but some properties have defaults, then instantiating with no arguments will trigger an infinite recursion.\r\n\r\nWhat is the correct way to write recursive schemas in the DSL?\r\n```python\r\nclass TreeNode(Object):\r\n    parent = Property(Element())\r\n\r\nTreeNode.properties[\"value\"].element = TreeNode\r\n```\r\nor maybe\r\n```python\r\nclass TreeNode(Object):\r\n    parent = Property(lambda: TreeNode)\r\n```\r\n\r\n"
+    },
+    {
+      "repo": "jdorn/json-editor",
+      "issue": 764,
+      "url": "https://github.com/jdorn/json-editor/issues/764",
+      "title": "Problem with recursive - self references",
+      "score": 11,
+      "signals": {
+        "traversal.recursive": 3,
+        "traversal.cycle": 2,
+        "manual_impl.recursive_cte": 4,
+        "activity.reactions": 2
+      },
+      "body": "\r\n![20170529_jsoneditor_selfreference_issue](https://cloud.githubusercontent.com/assets/20010694/26546663/537119be-4495-11e7-9329-7b6843334c41.png)\r\nHi,\r\nI just checked an examples of recursive reference in the examples folder.\r\nIn the sample file **examples/recursive.html**, if I change the schema like this:\r\n```\r\n{\r\n        // The schema for the editor\r\n        schema: {\r\n            title: \"Person\",\r\n            $ref: \"#/definitions/person\",\r\n            definitions: {\r\n                experson:{\r\n                    type: \"object\",\r\n                    id: \"experson\",\r\n                    properties: {\r\n                        lname: {\r\n                            type: \"string\",\r\n                            title: \"lastname\"\r\n                        }\r\n                    }\r\n                },\r\n                person: {\r\n                    type: \"object\",\r\n                    id: \"person\",\r\n                    // The object will start with only these properties\r\n                    defaultProperties: [\r\n                        \"fname\",\r\n                        \"lname\",\r\n                        \"bestFriends\",\r\n                        \"coworkers\"\r\n                    ],\r\n                    patternProperties: {\r\n                      // Self-referntial schema in patternProperties\r\n                      \"^cousin_[0-9]+$\": {\r\n                        $ref: \"#/definitions/person\"\r\n                      }\r\n                    },\r\n                    properties: {\r\n                        fname: {\r\n                            title: \"first name\",\r\n                            type: \"string\"\r\n                        },\r\n                        lname: {\r\n                            title: \"last name\",\r\n                            type: \"string\"\r\n                        },\r\n                        bestFriends: {\r\n                          title: \"best friends\",\r\n                          type: \"array\",\r\n                          items:{\r\n                              oneOf: [\r\n                                {\r\n                                  title: \"exPerson\",\r\n                                  $ref: \"#/definitions/experson\"\r\n                                },\r\n                                // Self-referential schema as 2nd choice in oneOf\r\n                                {\r\n                                  title: \"person\",\r\n                                  $ref: \"#/definitions/person\"\r\n                                }\r\n                              ]\r\n                          }\r\n                        },\r\n                        coworkers: {\r\n                          type: \"array\",\r\n                          // Self-referential schema in array items\r\n                          items: {\r\n                            title: \"Coworker\",                            \r\n                            $ref: \"#/definitions/person\"                                                    \r\n                          }\r\n                        },\r\n                        // Self-referential schemas in non-default properties\r\n                        mother: {\r\n                          title: \"mother\",\r\n                          $ref: \"#/definitions/person\"\r\n                        }\r\n                    }\r\n                },\r\n                year: {\r\n                    type: \"integer\",\r\n                    pattern: \"^[0-9]{4}$\",\r\n                    minimum: 1900,\r\n                    maximum: 2100\r\n                }\r\n            }\r\n        }\r\n    }\r\n```\r\nI added an additional schema called \"experson\" and a new property named \"bestfriends\" whose type is an array of \"person\" or \"experson\".\r\nThen I got an error in Developer Tools in my browser: (see attachment)\r\n\r\n> Uncaught TypeError: Converting circular structure to JSON\r\n\r\nAnd the form is generated incorrectly.\r\n\r\nAnyone has idea about this issue?\r\n"
+    },
+    {
+      "repo": "open-learning-exchange/myplanet",
+      "issue": 15710,
+      "url": "https://github.com/open-learning-exchange/myplanet/issues/15710",
+      "title": "Refactor `collectNewsAndReplies` using recursive CTE",
+      "score": 11,
+      "signals": {
+        "traversal.recursive": 3,
+        "traversal.cycle": 2,
+        "manual_impl.recursive_cte": 4,
+        "refactor.refactor": 2
+      },
+      "body": "Replaced the expensive recursive database calls in `VoicesRepositoryImpl.collectNewsAndReplies` for deleting news threads with a cycle-safe, recursive CTE returning only the IDs directly in `NewsDao`.\n\nTracked in PR #15605."
+    },
+    {
+      "repo": "pavanvd/postgres-xl",
+      "issue": 22,
+      "url": "https://github.com/pavanvd/postgres-xl/issues/22",
+      "title": "Recursive queries do not work",
+      "score": 11,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "manual_impl.n_plus_one": 4
+      },
+      "body": "Even simple recursive queries which do not involve any real tables are not working.. We had seen such reports in the past and probably had a patch to fix them as well. Needs investigation\n\n``` sql\n WITH RECURSIVE t(n) AS (\n      SELECT (VALUES(1))\n  UNION ALL\n      SELECT n+1 FROM t WHERE n < 5\n  )\n  SELECT * FROM t ORDER BY n;\n```\n"
+    },
+    {
+      "repo": "pola-rs/polars",
+      "issue": 11154,
+      "url": "https://github.com/pola-rs/polars/issues/11154",
+      "title": "Add support for Recursive CTEs \ud83d\ude80",
+      "score": 11,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "activity.discussion": 2,
+        "activity.reactions": 2
+      },
+      "body": "### Description\r\n\r\nWould love support for recursive CTEs via the `rust sql api`. My use case requires calculations/columns that recursively depend on themselves over some dimension (think compounding growth or beg and ending bank balances over time). As of now, I have to resort to using `duckdb-rs`. \r\n\r\nExample \r\n\r\n```sql\r\nWITH RECURSIVE GrowthCTE AS (\r\n      -- Base case\r\n      SELECT 1 as Index, CAST(100 as FLOAT4) AS Value\r\n      UNION ALL\r\n      -- Recursive step\r\n      SELECT\r\n          Index + 1,\r\n          Value * 1.08\r\n      FROM GrowthCTE\r\n      WHERE Index < 10 \r\n  )\r\n  SELECT\r\n      Index,\r\n      Value\r\n  FROM GrowthCTE;\r\n```\r\n\r\nresults in the error \r\n\r\n```bash\r\nError: ComputeError(ErrString(\"Recursive CTEs are not supported\"))\r\n```\r\n"
+    },
+    {
+      "repo": "prisma/orm",
+      "issue": 3725,
+      "url": "https://github.com/prisma/orm/issues/3725",
+      "title": "Support recursive relationships",
+      "score": 11,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "activity.discussion": 2,
+        "activity.reactions": 2
+      },
+      "body": "## Problem\r\nLet's say I have a table called `categories`. This table can refer to itself as a foreign key with `parentCategory`.\r\nSo a categories can have many subcategories, and subcategories can also have subcategories, with an unlimited combination. The idea is to support recursive queries to easily query them along with their sub categories.\r\n\r\n## Suggested solution\r\nSome valid implementation of something similar to Postgres `WITH RECURSIVE`\r\nhttps://www.postgresqltutorial.com/postgresql-recursive-query/\r\n\r\n## Alternatives\r\nN/A\r\n\r\n## Additional context\r\nN/A\r\n"
+    },
+    {
+      "repo": "scalapb/sparksql-scalapb",
+      "issue": 5,
+      "url": "https://github.com/scalapb/sparksql-scalapb/issues/5",
+      "title": "Protos with recursive fields fail with stack overflow",
+      "score": 11,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "activity.discussion": 2,
+        "activity.reactions": 2
+      },
+      "body": "Adding a recursive field to a proto breaks things, see https://github.com/drewrobb/sparksql-scalapb-test/commit/4cfc436c5a3a9f75d4218a0695ff7e9c2b8300e3 for a reproduction. I'm happy to help address this if you have a recommended approach to solving it?\r\n\r\n\r\n```\r\nException in thread \"main\" java.lang.StackOverflowError\r\n\tat shadeproto.Descriptors$FieldDescriptor.getName(Descriptors.java:881)\r\n\tat com.trueaccord.scalapb.spark.ProtoSQL$.com$trueaccord$scalapb$spark$ProtoSQL$$structFieldFor(ProtoSQL.scala:65)\r\n\tat com.trueaccord.scalapb.spark.ProtoSQL$$anonfun$1.apply(ProtoSQL.scala:62)\r\n\tat com.trueaccord.scalapb.spark.ProtoSQL$$anonfun$1.apply(ProtoSQL.scala:62)\r\n\tat scala.collection.TraversableLike$$anonfun$map$1.apply(TraversableLike.scala:234)\r\n\tat scala.collection.TraversableLike$$anonfun$map$1.apply(TraversableLike.scala:234)\r\n\tat scala.collection.Iterator$class.foreach(Iterator.scala:893)\r\n\tat scala.collection.AbstractIterator.foreach(Iterator.scala:1336)\r\n\tat scala.collection.IterableLike$class.foreach(IterableLike.scala:72)\r\n\tat scala.collection.AbstractIterable.foreach(Iterable.scala:54)\r\n\tat scala.collection.TraversableLike$class.map(TraversableLike.scala:234)\r\n\tat scala.collection.AbstractTraversable.map(Traversable.scala:104)\r\n \r\n\r\n      ......\r\n\r\n\tat com.trueaccord.scalapb.spark.ProtoSQL$.com$trueaccord$scalapb$spark$ProtoSQL$$structFieldFor(ProtoSQL.scala:62)\r\n\tat com.trueaccord.scalapb.spark.ProtoSQL$$anonfun$1.apply(ProtoSQL.scala:62)\r\n\tat com.trueaccord.scalapb.spark.ProtoSQL$$anonfun$1.apply(ProtoSQL.scala:62)\r\n\tat scala.collection.TraversableLike$$anonfun$map$1.apply(TraversableLike.scala:234)\r\n\tat scala.collection.TraversableLike$$anonfun$map$1.apply(TraversableLike.scala:234)\r\n\tat scala.collection.Iterator$class.foreach(Iterator.scala:893)\r\n\tat scala.collection.AbstractIterator.foreach(Iterator.scala:1336)\r\n\tat scala.collection.IterableLike$class.foreach(IterableLike.scala:72)\r\n\tat scala.collection.AbstractIterable.foreach(Iterable.scala:54)\r\n\tat scala.collection.TraversableLike$class.map(TraversableLike.scala:234)\r\n\tat scala.collection.AbstractTraversable.map(Traversable.scala:104)\r\n```\r\n"
+    },
+    {
+      "repo": "sequelize/sequelize",
+      "issue": 4890,
+      "url": "https://github.com/sequelize/sequelize/issues/4890",
+      "title": "Proposal: Common Table Expressions and Recursive Queries",
+      "score": 11,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "activity.discussion": 2,
+        "activity.reactions": 2
+      },
+      "body": "Sequelize currently has no support for common table expressions and recursive CTEs. Adding the ability to include a CTE into the find* family of methods would allow find* to perform recursive queries. To see some examples of situations where this would be helpful skip to the \"Examples\" section at the end of the proposal.\n# CTE Background\n\nBefore we get into the API proposal the following is some information about CTEs and how they work.\n## Common Table Expressions\n\nA common table expression is a temporary result that lasts only as long as the query it accompanies, can reference itself, and can be referenced multiple times from the query it is part of. The general form of a CTE is a table name definition, column name definitions, and a SELECT statement.\n## Recursive CTEs\n\nA recursive cte follows the same guidelines as a normal CTE, but has an additional SELECT statement. In a recursive CTE the first SELECT is called the initial select and the second is called the recursive select.\nThe following procedure is followed when running a recursive CTE.\n1. The initial selection is made and added to a queue\n2. While the queue is not empty\n   1. Pull a single row from the queue\n   2. Add it to the recursive selection table\n   3. Perform the recursive select, but only on the single added row\n   4. Add the results of the recursive selection to the queue\n\nWhen a query uses a recursive CTE it becomes a recursive query.\n# API Proposal\n\nTo allow CTEs through the Sequelize API add a new optional `cte` property to the `options` argument of the find* family of methods. `cte` will describe one or more CTEs that will be part of the find. To support some common use cases of recursive queries new methods will also need to be added to `Sequelize` to represent binary SQL operators.\n## `cte` option\n\nThe new optional property `cte` is a array of plain objects that each represent a CTE, from now on referred to as `cte objects`.\n### Ordinary `cte objects`\n\nEach `cte object` is required to have a single property, `name`. `name` is simply a title the CTE will use. You may notice that there is no required property that deals with the name and number of columns for the CTE. This is because by default a CTE is selecting `Models` of the type that called the find* method. It will select all attributes of that model, or only the ones given in `attributes`. If a CTE needs to be used for a different model than the model type that called it the property `model` can be given to change the model type of the CTE. It may also be useful to have additional attributes in the CTE. By defining the property `cteAttributes` on a `cte object` as an array of strings the CTE will have an extra attribute for each string, from now on referred to as \"additional attributes\". It is also possible to specify the `model` as `null`. In this case the CTE will not represent any model and instead will be a custom set of attributes. If `model` is `null` then at least one additional attribute must be defined. \n\nThe `initial` property will describe the selection that fills the CTE. `initial` isn't required if the CTE has a model and no additional attributes because the CTE can select every result and go from there. However, if any additional attributes for the CTE have been defined the `initial` property must be given. For each additional attribute the `initial` property must have a property itself that has the same name. The value of the property will be the selection of the initial attribute. `initial` can also have the `where` and `include` properties to limit the selection of a table.\n### Recursive `cte objects`\n\nSo far we have only described a ordinary CTE. To use a `cte object` in a recursive way the `recursive` property must be given. As with `initial`, if there are any additional attributes they must be defined through a property in `recursive`. `recursive` has a property, `find`,  that can be used when the CTE is being used with a model. `find` needs to be a string that represents an association (through the `through` property). If `find` is given then the recursive select will automatically create a select that finds the associated instance of the model. The association must be from the model to itself, otherwise the selection will not work. recursive can also use `where`, `include`, `limit`, `offset`, and `order`, with some twists. `where` can use additional attributes, as can `order`. `include` can be used to limit the selection based on a attributes of a associated model, but will not eagerly load the associated model. \n\n`cte` has another property related to recursion, `unique`. By default when building a recursive CTE, the CTE will not be allowed to have duplicate rows. In the case of CTEs a duplicate row must have identical model attributes and identical additional attributes. However, `unique` can be set to `false` to allow the CTE to contain duplicates. \n\nThere is no guarantee that a recursive CTE will stop selecting. When creating a recursive `cte object` it is important to consider if it has a `find`, `where`, or `include` property that will stop the selection. \n### Using `cte objects` Elsewhere\n\nAfter a `cte object` is defined it can be used in any subsequent cte or in the find* selection. To access a attribute, simply use the usual Sequelize method, `Sequelize.col(\"a.attribute\")` where a is the name of the CTE and attribute is the name of the attribute. CTEs can only be used in the find method they are defined in.\n### Defining CTE attribute values\n\nIn some recursive queries it is useful to perform arithmetic in the recursive select, such as incrementing a counter. To assist in these cases objects used to define CTE attributes can have a special objects that references columns and binary operators properties. To reference a column use `{ $col: 'cteName.attribute' }`. This object can be used in combination with numbers and operators to create a select statement. The supported operators are:\n\n| Operator | Type | Description |\n| --- | --- "
+    },
+    {
+      "repo": "trinodb/trino",
+      "issue": 19278,
+      "url": "https://github.com/trinodb/trino/issues/19278",
+      "title": "Failure for table function parameter in recursive query",
+      "score": 11,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "manual_impl.n_plus_one": 4
+      },
+      "body": "A query involving a recursive CTE containing a table function that takes the recursive reference as a parameter fails with _Column cannot be resolved_\r\n\r\nQuery:\r\n\r\n```sql\r\nWITH RECURSIVE t(n, m) AS (\r\n    VALUES(1, 0)\r\n    UNION ALL\r\n    SELECT n+1, max(sequential_number) FROM TABLE(sequence(stop => n+1)) WHERE n < 5\r\n)\r\nSELECT * FROM t;\r\n```\r\n\r\nResult:\r\n\r\n> Query 20231005_152216_00015_daic9 failed: line 4:68: Column 'n' cannot be resolved\r\n\r\nExpected Result:\r\n\r\n```sql\r\nVALUES(1, 0)\r\nUNION ALL\r\nSELECT 2, max(sequential_number) FROM TABLE(sequence(stop => 2))\r\nUNION ALL\r\nSELECT 3, max(sequential_number) FROM TABLE(sequence(stop => 3))\r\nUNION ALL\r\nSELECT 4, max(sequential_number) FROM TABLE(sequence(stop => 4))\r\n\r\n-- Result\r\n\r\n _col0 | _col1 \r\n-------+-------\r\n     1 |     0 \r\n     4 |     4 \r\n     3 |     3 \r\n     2 |     2 \r\n(4 rows)\r\n```"
+    }
+  ]
+}

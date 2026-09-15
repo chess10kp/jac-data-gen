@@ -1,0 +1,135 @@
+{
+  "manifest": "issues_73.jsonl",
+  "records": [
+    {
+      "repo": "lucianfialho/effect-gates",
+      "issue": 58,
+      "url": "https://github.com/lucianfialho/effect-gates/issues/58",
+      "title": "Cycle detection in TaskQueue only checks direct-dep duplicates, not graph cycles",
+      "score": 8,
+      "signals": {
+        "traversal.cycle": 2,
+        "traversal.ordering": 3,
+        "traversal.bfs_dfs": 3
+      },
+      "body": "## Problem\nThe cycle detection in `tasks.ts` (lines 200-208) uses a `seen` Set to detect duplicate entries within the immediate `deps` array. It does not detect real cycles such as A\u2192B\u2192A, where no single dependency list has duplicates.\n\n## Why\n`runAll` will enter an infinite loop when a real cycle exists: after completing all immediately-ready tasks, the remaining tasks keep appearing as 'pending with unsatisfied deps' and the loop never terminates.\n\n## Fix\nImplement a proper DFS topological-sort check: assign a new task a tentative ID, then DFS from each declared dependency and fail if the DFS visits a node that is an ancestor of the new node.\n\n**File:** `packages/skills/src/tasks.ts`\n\n---\n**Severity:** medium  \n**Labels:** bug"
+    },
+    {
+      "repo": "manudiv16/vertebrae",
+      "issue": 11,
+      "url": "https://github.com/manudiv16/vertebrae/issues/11",
+      "title": "Issue #2: TaskService Implementation",
+      "score": 8,
+      "signals": {
+        "traversal.recursive": 3,
+        "traversal.cycle": 2,
+        "traversal.bfs_dfs": 3
+      },
+      "body": "Implement all ~38 `TaskService` methods (`crates/core/src/service.rs`) against libSQL.\n\n## Goal\nImplement all ~38 `TaskService` methods against libSQL.\n\n## Files\n- **`crates/local-backend/src/tasks.rs`**: `LocalTaskService` implementing `TaskService` trait.\n\n## Non-Obvious Semantics (from `crates/sacrum-client/src/queries/tasks.rs`)\n1. **`short_id`**: First 6 hex chars of UUID. `resolve_short_id` = prefix lookup over `id`/`short_id`, error on zero or multiple matches.\n2. **`find_path`**: BFS shortest path over `task_dependencies` in Rust.\n3. **`add_dependency`**: Reject cycles (error if path exists from `depends_on_id` back to `task_id`).\n4. **Ready queue (`list_ready`)**: Tasks with zero incomplete blockers (`completed_at IS NULL`) and not archived.\n5. **Cascade delete**: `DeleteTask(cascade)` deletes children recursively.\n6. **Archive = soft delete**: `archived` flag, not physical delete.\n7. **Sections**: Singleton types (`goal`, `context`, `current_behavior`, `desired_behavior`) upsert; multi types ordered by `position`; `check_item` toggles `done`.\n8. **`set_code_refs`/`sync_dependencies`**: Idempotent delete+insert in one transaction.\n9. **Every mutation**: Writes `changes` row in same transaction + pushes to in-process broadcast.\n\n## Key Trait Methods (~38)\n- CRUD: `create_task`, `get_task`, `update_task`, `delete_task`, `task_exists`, `resolve_short_id`\n- Listing: `list_tasks`, `list_tasks_without_lookups`, `list_tasks_with_lookups`, `list_ready`\n- Relationships: `set_parent`, `remove_parent`, `add_dependency`, `remove_dependency`, `sync_dependencies`, `get_blockers`, `get_incomplete_blockers_with_details`, `find_path`, `get_parent`, `get_children`, `get_dependencies`, `get_dependents`\n- Sections: `add_section`, `upsert_section`, `remove_sections`, `edit_section_by_ordinal`, `remove_section_by_ordinal`, `mark_checklist_item_done`, `toggle_checklist_item_done`\n- Code refs: `add_code_ref`, `remove_code_refs`, `set_code_refs`, `append_ref`, `append_section_ref`\n- Workflow: `assign_workflow`, `unassign_workflow`, `set_current_step`, `advance_to_step`\n- Show: `get_task_show_bundle`, `get_task_title`, `get_task_titles`\n\n## Acceptance Criteria\n- All CRUD round-trips pass with tempdir DB.\n- Dependency cycle rejection works.\n- Ready queue excludes tasks with incomplete blockers.\n- `resolve_short_id` returns error on ambiguity.\n- Cascade delete removes all children."
+    },
+    {
+      "repo": "manudiv16/vertebrae",
+      "issue": 2,
+      "url": "https://github.com/manudiv16/vertebrae/issues/2",
+      "title": "Step 2: TaskService implementation (~38 methods)",
+      "score": 8,
+      "signals": {
+        "traversal.recursive": 3,
+        "traversal.cycle": 2,
+        "traversal.bfs_dfs": 3
+      },
+      "body": "# Step 2: TaskService Implementation\n\n> **Master plan:** [LOCAL-BACKEND-PLAN.md](LOCAL-BACKEND-PLAN.md)\n> **Depends on:** #1 (crate skeleton, DB wrapper, schema)\n> **Blocks:** #6 (backend selection wiring)\n\n## Goal\nImplement all ~38 `TaskService` methods (`crates/core/src/service.rs`) against libSQL in `crates/local-backend/src/tasks.rs`.\n\n## Trait Methods to Implement (~38)\n\n### CRUD\n- `create_task`, `get_task`, `update_task`, `delete_task`, `task_exists`, `resolve_short_id`\n\n### Listing & Filtering\n- `list_tasks`, `list_tasks_without_lookups`, `list_tasks_with_lookups`, `list_ready`\n\n### Relationships\n- `set_parent`, `remove_parent`, `add_dependency`, `remove_dependency`, `sync_dependencies`\n- `get_blockers`, `get_incomplete_blockers_with_details`, `find_path`\n- `get_parent`, `get_children`, `get_dependencies`, `get_dependents`\n\n### Sections\n- `add_section`, `upsert_section`, `remove_sections`, `edit_section_by_ordinal`, `remove_section_by_ordinal`\n- `mark_checklist_item_done`, `toggle_checklist_item_done`\n\n### Code References\n- `add_code_ref`, `remove_code_refs`, `set_code_refs`, `append_ref`, `append_section_ref`\n\n### Workflow\n- `assign_workflow`, `unassign_workflow`, `set_current_step`, `advance_to_step`\n\n### Show\n- `get_task_show_bundle`, `get_task_title`, `get_task_titles`\n\n## Non-Obvious Semantics (from `crates/sacrum-client/src/queries/tasks.rs`)\n\n1. **`short_id`**: First 6 hex chars of UUID. `resolve_short_id` = prefix lookup over `id`/`short_id`, error on zero or multiple matches.\n2. **`find_path`**: BFS shortest path over `task_dependencies` in Rust.\n3. **`add_dependency`**: Reject cycles (error if path exists from `depends_on_id` back to `task_id`).\n4. **Ready queue (`list_ready`)**: Tasks with zero incomplete blockers (`completed_at IS NULL`) and not archived.\n5. **Cascade delete**: `delete_task(cascade=true)` deletes children recursively.\n6. **Archive = soft delete**: `archived` flag, not physical delete.\n7. **Sections**: Singleton types (`goal`, `context`, `current_behavior`, `desired_behavior`) upsert; multi types ordered by `position`; `check_item` toggles `done`.\n8. **`set_code_refs`/`sync_dependencies`**: Idempotent delete+insert in one transaction.\n9. **Every mutation**: Writes `changes` row in same transaction + pushes to in-process broadcast.\n\n## Key Files\n- `crates/local-backend/src/tasks.rs` \u2014 `LocalTaskService` struct implementing `TaskService` trait.\n- `crates/core/src/service.rs` \u2014 trait definition (source of truth).\n- `crates/core/src/models.rs` \u2014 domain models (Task, Section, CodeRef, etc.).\n\n## Acceptance Criteria\n- [ ] All CRUD round-trips pass with tempdir DB.\n- [ ] Dependency cycle rejection works.\n- [ ] Ready queue excludes tasks with incomplete blockers.\n- [ ] `resolve_short_id` returns error on ambiguity.\n- [ ] Cascade delete removes all children.\n- [ ] `cargo test -p vertebrae-local-backend` passes."
+    },
+    {
+      "repo": "rajat-wyrm/InternOps",
+      "issue": 1967,
+      "url": "https://github.com/rajat-wyrm/InternOps/issues/1967",
+      "title": "Implement a Directed Acyclic Graph (DAG) Traversal Engine to Identify Circular Dependencies",
+      "score": 8,
+      "signals": {
+        "traversal.cycle": 2,
+        "traversal.ordering": 3,
+        "traversal.bfs_dfs": 3
+      },
+      "body": "Domain: Graph Theory & Algorithmic Design\n\nThe application allows tasks to have prerequisites, meaning an intern must finish certain assignments before unlocking others. Currently, the system lacks checks to prevent circular dependencies, meaning a user could accidentally lock a workflow by making Task A depend on Task B, while Task B depends on Task A. Build an automated graph validation utility within the task configuration router using a Directed Acyclic Graph (DAG) design model. Implement a cycle detection algorithm using Depth-First Search (DFS) or Topological Sorting to analyze task relationships. This engine should automatically block any updates that create a loop, giving students practical experience applying graph theory algorithms to real-world software workflows."
+    },
+    {
+      "repo": "rajat-wyrm/InternOps",
+      "issue": 1969,
+      "url": "https://github.com/rajat-wyrm/InternOps/issues/1969",
+      "title": "Implement a Directed Acyclic Graph (DAG) Traversal Engine to Identify Circular Dependencies",
+      "score": 8,
+      "signals": {
+        "traversal.cycle": 2,
+        "traversal.ordering": 3,
+        "traversal.bfs_dfs": 3
+      },
+      "body": "Domain: Graph Theory & Algorithmic Design\n\nThe application allows tasks to have prerequisites, meaning an intern must finish certain assignments before unlocking others. Currently, the system lacks checks to prevent circular dependencies, meaning a user could accidentally lock a workflow by making Task A depend on Task B, while Task B depends on Task A. Build an automated graph validation utility within the task configuration router using a Directed Acyclic Graph (DAG) design model. Implement a cycle detection algorithm using Depth-First Search (DFS) or Topological Sorting to analyze task relationships. This engine should automatically block any updates that create a loop, giving students practical experience applying graph theory algorithms to real-world software workflows."
+    },
+    {
+      "repo": "rayhuang2006/asymptote",
+      "issue": 25,
+      "url": "https://github.com/rayhuang2006/asymptote/issues/25",
+      "title": "[Feature] Advanced Recursion Analysis (Master Theorem & Graph Traversal Patterns)",
+      "score": 8,
+      "signals": {
+        "traversal.recursive": 3,
+        "traversal.bfs_dfs": 3,
+        "manual_impl.adjacency": 2
+      },
+      "body": "## Summary\n\nAs noted in our [Known Limitations](https://github.com/rayhuang2006/asymptote#known-limitations), complex recursive trees and divide-and-conquer algorithms are not fully resolvable by the current analyzer. This umbrella issue tracks incremental improvements to recursion handling.\n\n## Scope\n\nThis is a long-term effort. The following milestones break it into achievable stages:\n\n### Phase 1: Common Recursive Patterns (regex/AST fingerprinting)\n- [ ] Detect **binary search** pattern: single recursive call with `mid = (lo + hi) / 2` \u2192 O(log N)\n- [ ] Detect **merge sort** pattern: two recursive calls each on `n/2` + linear merge \u2192 O(N log N)\n- [ ] Detect **DFS/BFS on adjacency list**: loop over `adj[node]` with visited check \u2192 O(V + E)\n\n### Phase 2: Basic Master Theorem Heuristics\n- [ ] Identify recurrence form `T(n) = a * T(n/b) + O(n^d)` from AST\n- [ ] Apply Master Theorem cases to estimate complexity\n- [ ] Mark result with `(?)` confidence when detection is uncertain\n\n### Phase 3: Backtracking & Exponential Detection\n- [ ] Detect multiple recursive calls without problem-size reduction \u2192 flag as O(2^N) or O(N!)\n- [ ] Detect pruning (`if` guards before recursive calls) and note it in confidence\n\n## Non-Goals\n\n- Formal proof-level analysis (this remains a heuristic tool)\n- Handling of memoized recursion / dynamic programming (separate issue)\n\n## Why This Matters\n\nRecursion is central to competitive programming. Even rough estimations (e.g., \"this looks exponential\") are valuable for catching TLE-prone submissions before testing."
+    },
+    {
+      "repo": "stlab/cel-rs",
+      "issue": 187,
+      "url": "https://github.com/stlab/cel-rs/issues/187",
+      "title": "Planner cleanup: adopt Kahn's topological sort, prune the acyclic search, factor propagate() duplication",
+      "score": 8,
+      "signals": {
+        "traversal.cycle": 2,
+        "traversal.ordering": 3,
+        "traversal.bfs_dfs": 3
+      },
+      "body": "Review pass over `adam-rs`'s planner (`planner.rs`, `matching.rs`, `release.rs`, `digraph.rs`, `scc.rs`, `seed.rs`) and `sheet.rs`'s `propagate`/`execute_plan`. Out of scope for PR #185 (seedfill); tracked here for later. Ranked by value.\n\n## High value\n\n### 1. Replace the hand-rolled Tarjan SCC (`planner/scc.rs`) with Kahn's topological sort, deleting the module\n\n`tarjan_scc` (~180 lines) has exactly two callers, and both want something simpler than full SCC:\n\n- `plan()` runs `tarjan_scc`, reverses it, asserts every component is size 1, and flattens \u2014 i.e. it wants *a topological order, or a cycle error*. Kahn's gives both directly: the emitted order is the execution order; any nodes left un-emitted are a `FilterCycle`.\n- `is_acyclic()` computes `tarjan_scc(...).all(len == 1)` \u2014 it wants *a boolean*, but allocates a `Vec<Vec<Node>>` of components just to check their sizes.\n\nAdopting Kahn's for both removes the whole `scc.rs` module and makes `plan()`'s intent obvious. Net-negative lines. Needs test validation that the (still valid) topological order among independent steps doesn't shift any observable behavior.\n\n### 2. `is_acyclic` is the hot loop and does the most wasteful work\n\n`search_acyclic` (the `M^R` exhaustive search behind `Assignment::solve_acyclic`) calls `is_acyclic` at *every complete leaf*, and `is_acyclic` rebuilds the digraph and runs full Tarjan each time. Two independent wins:\n\n- **Per-leaf:** a DFS 3-color cycle check (or Kahn's, per #1) avoids the component-vector allocation.\n- **Structural:** `search_acyclic` only checks acyclicity at complete leaves. It could prune mid-tree \u2014 reject a partial assignment the moment it forms a cycle \u2014 turning the `M^R` brute force into branch-and-bound. Bigger change, but it directly attacks the planner's one exponential.\n\n## Medium\n\n### 3. `resolve` re-runs the full exponential `solve_acyclic` C+1 times from scratch\n\nThe greedy release loop in `release.rs` re-solves the entire matching + acyclicity search once per cell-release candidate. The known incremental alternative \u2014 maintain the matching and *augment* when a cell is forbidden (SkyBlue/DeltaBlue incremental style) \u2014 is noted as \"Future Work\" in the 2026-08-04 cyclic-planner design doc. This is the real scaling ceiling.\n\n### 4. Factor the `plan -> build_seeds -> execute_plan` triple in `propagate()`\n\n`sheet.rs` `propagate()` does the identical three-step in both Phase 1 (pre-plan for conditional match cells) and Phase 3 (general plan). A small `plan_and_execute(active, &mut violations)` helper removes the duplication and the two easy-to-desync `build_seeds` call sites.\n\n### 5. `resolve`'s per-cell `released.clone()`\n\nEach greedy step clones the whole released set to add one cell. `released.insert(cell)` / `released.remove(cell)` on failure avoids the allocation. Minor, but it's in the C-iteration loop.\n\n## Low / framing\n\n### 6. Name the algorithms in the docs\n\n`Assignment::solve` / `try_assign` is Kuhn's bipartite matching by augmenting paths (with an undo trail); saying so orients a reader faster than re-deriving it. `resolve` is greedy-by-weight over a downward-closed (gammoid) independence system \u2014 the design doc says this, the code comment doesn't.\n\n### 7. `forced_output_cells` overlaps with the matching's own infeasibility detection\n\nIt's a separate fixpoint computing \"cells that can never be a source,\" purely informational (UI). Dulmage-Mendelsohn decomposition of the matching yields exactly that set (the always-matched vertices) as a byproduct, so if the matching ever moves to a DM-based structure this fixpoint could fold in. Research-y; not worth doing standalone.\n\n## Suggested first step\n\n**#1 + #2 together** \u2014 one coherent change (standardize on Kahn's / a DFS cycle check, delete `scc.rs`), net-negative lines, hitting the one hot path."
+    },
+    {
+      "repo": "sudosf/leetcode",
+      "issue": 123,
+      "url": "https://github.com/sudosf/leetcode/issues/123",
+      "title": "[Graph BFS/DFS] Course Schedule",
+      "score": 8,
+      "signals": {
+        "traversal.cycle": 2,
+        "traversal.ordering": 3,
+        "traversal.bfs_dfs": 3
+      },
+      "body": "## Problem\n\nThere are n courses. Given prerequisites as pairs [a, b] meaning b must be taken before a, determine if it is possible to finish all courses (i.e. no cycle exists).\n\n## References\n\n- LeetCode: https://leetcode.com/problems/course-schedule/\n- GFG: https://www.geeksforgeeks.org/problems/detect-cycle-in-a-directed-graph/1\n- Sheet: https://www.risingbrain.org/sheet#graph (BFS/DFS section)\n- Parent: #122\n\n## Difficulty\n\n\ud83d\udfe1 Medium\n\n## Companies\n\nAmazon, Google, Goldman Sachs\n\n## Notes\n\nLanguage: Java\nTopological sort / cycle detection in directed graph. BFS (Kahn's algorithm using in-degree) or DFS with three-state coloring (unvisited/visiting/visited)."
+    },
+    {
+      "repo": "vx-lang/Vx",
+      "issue": 132,
+      "url": "https://github.com/vx-lang/Vx/issues/132",
+      "title": "Stack overflow during semantic verification of multi-hop transfers",
+      "score": 8,
+      "signals": {
+        "traversal.recursive": 3,
+        "traversal.ordering": 3,
+        "refactor.refactor": 2
+      },
+      "body": "The compiler stack overflows during semantic verification when evaluating implicit multi-hop memory transfers via Dijkstra's algorithm.\n\n**Cause:**\n`src/sema/expr.rs` automatically rewrites transfers like `transfer(tensor, RemoteHbm)` into an explicit path e.g. `transfer(transfer(tensor, NicRam), RemoteHbm)`.\nHowever, because both `NicRam` and `RemoteHbm` dynamically fall back to the same parent `Topology::NPU(0)` inside the `Type::Pinned` representation, the compiler loses the exact intermediate `MemorySpace`. \nWhen it re-evaluates the inner transfer's type, it extracts `MemorySpace::NPUHBM` instead of `MemorySpace::NicRam`. This triggers another multi-hop rewrite, leading to infinite recursion and a stack overflow.\n\n**Fix:**\nExtract the exact memory space directly from `TransferExpr.space` instead of the type's default memory space when re-evaluating explicit intermediate transfers."
+    },
+    {
+      "repo": "yevheniidehtiar/gitpm",
+      "issue": 223,
+      "url": "https://github.com/yevheniidehtiar/gitpm/issues/223",
+      "title": "Implement cross-reference resolver and dependency graph in Go",
+      "score": 8,
+      "signals": {
+        "traversal.cycle": 2,
+        "traversal.ordering": 3,
+        "traversal.bfs_dfs": 3
+      },
+      "body": "**Phase 1 \u2014 Core**\n\nPort `packages/core/src/resolver/` to `go/internal/resolver/`.\n\n- Build lookup maps: story\u2192epic, epic\u2192milestone, roadmap\u2192milestones, prd\u2192epics\n- Resolve `EntityRef` fields to actual entity pointers\n- Build adjacency-list dependency graph\n- Implement topological sort (Kahn's algorithm or DFS)\n- Implement cycle detection (DFS with coloring)\n- Return `ResolvedTree` with populated cross-references\n\n**Source reference**: `packages/core/src/resolver/` (~172 LOC)\n\n**Acceptance criteria**:\n- All reference chains resolve correctly (story\u2192epic\u2192milestone\u2192roadmap)\n- Broken references are reported as errors, not panics\n- Cycle detection catches circular dependencies"
+    }
+  ]
+}

@@ -1,0 +1,135 @@
+{
+  "manifest": "issues_63.jsonl",
+  "records": [
+    {
+      "repo": "maik-hasler/vocational-training-resources",
+      "issue": 3,
+      "url": "https://github.com/maik-hasler/vocational-training-resources/issues/3",
+      "title": "More tasks",
+      "score": 9,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "refactor.refactor": 2
+      },
+      "body": "Great database! Here's a comprehensive list of SQL tasks organized by difficulty and concept. These cover all major SQL operations:\n\n## \ud83d\udccb **Basic SELECT Tasks**\n\n1. **Simple Filtering**\n   - Find all players with more than 5000 gold\n   - List all Orc players\n   - Show players whose username contains \"dragon\"\n\n2. **Sorting & Limiting**\n   - Top 10 richest players\n   - 5 most recently created accounts\n   - Players sorted by username alphabetically\n\n3. **Aggregation Basics**\n   - Total number of players per class\n   - Average gold across all players\n   - Count of players per race\n\n---\n\n## \ud83d\udd17 **JOIN Tasks**\n\n### **INNER JOIN**\n4. Show all players with their class names and race names\n5. List players with their current level and experience\n6. Display guild members with their guild names\n\n### **LEFT JOIN / LEFT OUTER JOIN**\n7. **Find all accounts (including those without players)** and show how many players each has\n8. **List all players and their guild membership** (show NULL for players not in guilds)\n9. Show all guilds with their member count (including guilds with 0 members)\n\n### **RIGHT JOIN (simulate in SQLite)**\n10. Since SQLite doesn't have RIGHT JOIN, rewrite a LEFT JOIN as a RIGHT JOIN equivalent\n\n### **FULL OUTER JOIN (simulate in SQLite)**\n11. **Show all classes and races, with player counts** - include classes/races with 0 players\n\n---\n\n## \ud83c\udfaf **Advanced JOIN Tasks**\n\n### **SELF JOIN**\n12. Find pairs of players from the same account (alt characters)\n13. Find players in the same guild with the same class\n14. List players who joined a guild on the same date\n\n### **CROSS JOIN**\n15. **Generate all possible class-race combinations** and count how many players exist for each\n16. Create a matrix showing average gold per class-race combination\n17. Show all possible guild-role combinations (even if no player has that combo)\n\n### **Multiple JOINs**\n18. List players with: username, class, race, guild name, role name, and level\n19. Show guild leaders (Guildwardens) with their complete player info\n20. Find the richest player in each guild with all their details\n\n---\n\n## \ud83d\udcca **Aggregation & Grouping Tasks**\n\n21. **GROUP BY with HAVING**\n    - Find classes with more than 500 players\n    - Guilds where average member gold > 5000\n    - Accounts with 3+ characters\n\n22. **Window Functions**\n    - Rank players by gold within their class\n    - Running total of players by account creation date\n    - Calculate gold percentile for each player\n\n23. **Advanced Aggregation**\n    - Average stats (HP, ATK, DEF) per class\n    - Guild with highest total member gold\n    - Race-class combinations with highest average level\n\n---\n\n## \ud83d\udd0d **Subquery Tasks**\n\n### **Simple Subqueries**\n24. Find players richer than the average\n25. List guilds with more members than average\n26. Players with above-average attack stats\n\n### **Correlated Subqueries**\n27. For each player, show how their gold compares to their class average\n28. Find the most experienced player in each guild\n29. List players whose stats are above their race average\n\n### **EXISTS / NOT EXISTS**\n30. **Find accounts with no players** (the 5% empty accounts)\n31. Players who are NOT in any guild (the 30%)\n32. Classes that have no players in a specific guild\n\n---\n\n## \ud83c\udfb2 **Complex Analysis Tasks**\n\n33. **Pivot-style Query**\n    - Show each player with their stats as columns (HP, MP, ATK as separate columns)\n\n34. **Ranking & Dense Ranking**\n    - Top 3 richest players per guild\n    - Find median level player in each guild\n\n35. **Date/Time Analysis**\n    - Accounts that haven't logged in for 90+ days\n    - Players who joined guilds within 30 days of account creation\n    - Guild growth over time (members per month)\n\n36. **Statistical Queries**\n    - Standard deviation of gold per class\n    - Correlation between level and gold\n    - Outlier detection: players with unusually high stats\n\n---\n\n## \ud83c\udfc6 **Expert Level Tasks**\n\n37. **Recursive CTE**\n    - Create a level progression path (show XP needed from level 1 to 5)\n    - Build a hierarchy of guild roles by importance\n\n38. **Complex Multi-Table Analysis**\n    - Find the \"best\" race-class combo based on average stats\n    - Identify \"whale\" accounts (accounts with multiple high-level, rich characters)\n    - Guild power ranking (based on total member levels, gold, and stats)\n\n39. **UNION / UNION ALL**\n    - Combine active players (logged in last 30 days) with guild leaders\n    - List of all \"names\" in the database (class names, race names, guild names)\n\n40. **CASE Statements**\n    - Categorize players as \"Beginner\" (level 1-2), \"Intermediate\" (3-4), \"Expert\" (5)\n    - Label guilds by size: Small (<1000), Medium (1000-2000), Large (>2000)\n    - Create player \"archetypes\" based on stat distribution\n\n---\n\n## \ud83c\udfae **Real-World Scenario Tasks**\n\n41. **Guild Leaderboard**: Rank guilds by average member power (combined stats + level + gold)\n42. **Inactive Account Cleanup**: Find accounts that haven't logged in for 120+ days with <1000 gold\n43. **Class Balance Report**: Show which classes are over/under-represented\n44. **Race-Class Meta Analysis**: Find the most popular and strongest race-class combinations\n45. **Guild Recruitment Report**: Find active, high-level players not in guilds (potential recruits)\n46. **Alt Detection**: Find suspicious accounts with multiple max-level characters\n47. **Economy Report**: Gold distribution analysis (top 1%, median, bottom 10%)\n48. **Guild Health Check**: Find guilds with no Guildwarden or missing key roles\n49. **Player Retention**: Correlation between guild membership and account activity\n50. **Perfect Player Search**: Find players matching specific criteria (e.g., level 5 Orc Warrior in \"Iron Vanguard\" with ATK > 35)\n\n---\n\nThese tasks will give you excellent practice with:\n- \u2705 INNER/LEFT/OUTER JOINs\n- \u2705 CROSS JOINs\n- \u2705 SELF JOINs\n- \u2705 Subqueries (correlated & non-correlated)\n- \u2705 CTEs (Common Table Expressions)\n- \u2705 Window functions\n- \u2705 Aggregations with GROUP BY/HAVING\n- \u2705 UNION operations\n- \u2705 Complex filte"
+    },
+    {
+      "repo": "mark3labs/mcp-filesystem-server",
+      "issue": 68,
+      "url": "https://github.com/mark3labs/mcp-filesystem-server/issues/68",
+      "title": "Security consideration: Indirect Prompt Injection risk with recursive file operations",
+      "score": 9,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "activity.reactions": 2
+      },
+      "body": "Hi @mark3labs,\n\nI'm Joerg from [ClawGuard](https://github.com/joergmichno/clawguard), an open-source prompt injection scanner. While auditing popular MCP servers for security risks, I identified a potential vulnerability in mcp-filesystem-server.\n\n### The Risk\n\nThe `delete_file` (recursive), `modify_file` (regex-replace), and `write_file` tools expose powerful filesystem operations to LLM agents. This creates a risk for **Indirect Prompt Injection** attacks:\n\n1. An attacker places a crafted `.txt` file in a monitored directory\n2. The AI agent reads the file during a legitimate operation\n3. The injected instructions trigger `delete_file` with recursive flag, or `modify_file` to alter config files\n\nThis is classified as **OWASP LLM05 (Insecure Output Handling)** \u2014 the LLM output (file operations) is not validated against the user's original intent.\n\n### Suggested Mitigations\n\n- Add a security disclaimer to the README warning users about prompt injection risks\n- Implement a confirmation step before destructive operations (delete recursive, modify system files)\n- Add path allowlisting beyond the current directory validation\n- Consider rate limiting and audit logging for write/delete operations\n\n### Our Scan Results\n\nWe scanned mcp-filesystem-server with ClawGuard Shield (120 patterns, 12 languages, F1=97.4%) and found patterns matching data exfiltration and insecure output handling risks.\n\nRelated reading: [6 Real MCP Security Breaches](https://prompttools.co/blog/6-real-mcp-security-breaches) \u2014 documented incidents from WhatsApp, GitHub, Asana, and Smithery that show why MCP security scanning matters.\n\nHappy to share the full scan report if helpful. This is not a CVE filing \u2014 just a heads-up from the security community.\n\nBest,\nJoerg Michno\n[ClawGuard](https://github.com/joergmichno/clawguard) \u2014 Open-Source AI Agent Security"
+    },
+    {
+      "repo": "michelin/snowflake-grafana-datasource",
+      "issue": 29,
+      "url": "https://github.com/michelin/snowflake-grafana-datasource/issues/29",
+      "title": "Metric Request Error on simple recursive query",
+      "score": 9,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "activity.discussion": 2
+      },
+      "body": "Grafana Version: v7.5.5 (b5190ee547)\r\nPlugin Version: 1.2.0\r\n\r\nI have the following query\r\n```\r\nWITH RECURSIVE recurseruns AS (\r\n SELECT p.id as pr, p.created_at as pr_create, runs.upstream_run_id, runs.run_id, runs.job_name, runs.started, runs.completed\r\n FROM \"FIVETRAN_DATABASE\".\"FB_CI_METRICS_PUBLIC\".runs\r\n JOIN \"FIVETRAN_DATABASE\".\"FB_CI_METRICS_PUBLIC\".premerge_stats p\r\n ON p.run_id = runs.run_id\r\n  WHERE p.run_id IS NOT NULL\r\n  AND CONVERT_TIMEZONE('UTC', 'UTC', p.created_at::TIMESTAMP_NTZ) < '2022-10-11T17:18:15.49Z' AND CONVERT_TIMEZONE('UTC', 'UTC', p.created_at::TIMESTAMP_NTZ) > '2022-10-11T11:18:15.49Z'\r\n  UNION ALL\r\n    SELECT rt.pr as pr, rt.pr_create as pr_create, r.upstream_run_id, r.run_id, r.job_name, r.started, r.completed\r\n    FROM \"FIVETRAN_DATABASE\".\"FB_CI_METRICS_PUBLIC\".runs r\r\n    JOIN recurseruns rt ON rt.run_id = r.upstream_run_id\r\n  )\r\nSELECT\r\n  rr.pr_create as \"time\",\r\n  SUM(CASE WHEN (rr.job_name LIKE 's3_%') THEN TIMEDIFF('seconds', rr.started, rr.completed) END) as s3_machine_time\r\nFROM recurseruns rr\r\ngroup by (rr.pr, \"time\")\r\norder by \"time\";\r\n```\r\n\r\nThe error\r\n```\r\n{\r\n  \"request\": {\r\n    \"url\": \"api/ds/query\",\r\n    \"method\": \"POST\",\r\n    \"data\": {\r\n      \"queries\": [\r\n        {\r\n          \"refId\": \"A\",\r\n          \"key\": \"Q-56419b51-e0d2-40db-8641-8828c213e003-0\",\r\n          \"queryText\": \"WITH RECURSIVE recurseruns AS (\\n SELECT p.id as pr, p.created_at as pr_create, runs.upstream_run_id, runs.run_id, runs.job_name, runs.started, runs.completed\\n FROM \\\"FIVETRAN_DATABASE\\\".\\\"FB_CI_METRICS_PUBLIC\\\".runs\\n JOIN \\\"FIVETRAN_DATABASE\\\".\\\"FB_CI_METRICS_PUBLIC\\\".premerge_stats p\\n ON p.run_id = runs.run_id\\n  WHERE p.run_id IS NOT NULL\\n  AND CONVERT_TIMEZONE('UTC', 'UTC', p.created_at::TIMESTAMP_NTZ) < '2022-10-11T17:18:15.49Z' AND CONVERT_TIMEZONE('UTC', 'UTC', p.created_at::TIMESTAMP_NTZ) > '2022-10-11T11:18:15.49Z'\\n  UNION ALL\\n    SELECT rt.pr as pr, rt.pr_create as pr_create, r.upstream_run_id, r.run_id, r.job_name, r.started, r.completed\\n    FROM \\\"FIVETRAN_DATABASE\\\".\\\"FB_CI_METRICS_PUBLIC\\\".runs r\\n    JOIN recurseruns rt ON rt.run_id = r.upstream_run_id\\n  )\\nSELECT\\n  rr.pr_create as \\\"time\\\",\\n  SUM(CASE WHEN (rr.job_name LIKE 's3_%') THEN TIMEDIFF('seconds', rr.started, rr.completed) END) as s3_machine_time\\nFROM recurseruns rr\\ngroup by (rr.pr, \\\"time\\\")\\norder by \\\"time\\\";\",\r\n          \"queryType\": \"table\",\r\n          \"timeColumns\": [\r\n            \"time\"\r\n          ],\r\n          \"datasourceId\": 78,\r\n          \"intervalMs\": 1000,\r\n          \"maxDataPoints\": 3778\r\n        }\r\n      ],\r\n      \"range\": {\r\n        \"from\": \"2022-10-11T18:27:59.275Z\",\r\n        \"to\": \"2022-10-11T19:27:59.275Z\",\r\n        \"raw\": {\r\n          \"from\": \"now-1h\",\r\n          \"to\": \"now\"\r\n        }\r\n      },\r\n      \"from\": \"1665512879275\",\r\n      \"to\": \"1665516479275\"\r\n    },\r\n    \"hideFromInspector\": false\r\n  },\r\n  \"response\": {\r\n    \"message\": \"Metric request error\"\r\n  }\r\n}```"
+    },
+    {
+      "repo": "microsoft/Power-Fx",
+      "issue": 726,
+      "url": "https://github.com/microsoft/Power-Fx/issues/726",
+      "title": "[Serializer] Deal with recursive objects  ",
+      "score": 9,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "activity.discussion": 2
+      },
+      "body": "Records can be recursive - \r\nEnsure that doesn't cause an infinite loop in the serializer. \r\n"
+    },
+    {
+      "repo": "moj-analytical-services/splink",
+      "issue": 2251,
+      "url": "https://github.com/moj-analytical-services/splink/issues/2251",
+      "title": "Use with recursive for faster clustering ",
+      "score": 9,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "activity.discussion": 2
+      },
+      "body": "https://duckdb.org/docs/sql/query_syntax/with.html#recursive-ctes"
+    },
+    {
+      "repo": "moller2866/webinar",
+      "issue": 7,
+      "url": "https://github.com/moller2866/webinar/issues/7",
+      "title": "Threaded comments \u2014 replies to replies",
+      "score": 9,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.n_plus_one": 4,
+        "refactor.refactor": 2
+      },
+      "body": "## Context\nPart of the Campfire platform (see `docs/prd-campfire.md`). Comments should support threaded conversations \u2014 replies to replies \u2014 so discussions can branch naturally, like a real campfire conversation.\n\n## Requirements\n- `POST /api/posts/{id}/comments` accepts optional `parentId`\n- `GET /api/posts/{id}` returns comments as a flat list with `parentId` (frontend assembles the tree)\n- Frontend renders nested replies up to 5 levels deep; each reply shows \"Replying to [display name]\"\n\n## Acceptance Criteria\n- [ ] `POST /api/posts/{id}/comments` accepts optional `parentId`; if provided, validates that the parent comment belongs to the same post; returns 400 otherwise\n- [ ] `Comment` model updated: `ParentID *int64` (nullable), `AuthorDisplayName string`\n- [ ] `GET /api/posts/{id}` returns a flat list of all comments with `parentId` and `authorDisplayName` populated\n- [ ] Comments loaded in a single query \u2014 no N+1 (use a single `SELECT` with a JOIN on `users`)\n- [ ] Frontend assembles the flat list into a nested tree by `parentId`\n- [ ] Replies nested up to 5 visual levels; comments deeper than level 5 are rendered at level 5\n- [ ] Each reply shows \"Replying to [display name]\" above the comment body\n- [ ] Logged-in users see a \"Reply\" button on each comment; clicking it opens an inline reply form\n- [ ] `author` string field removed from the comment create request (comes from JWT token)\n- [ ] Tests written and passing\n\n## Technical Notes\n- Frontend tree assembly: recursive reduce over the flat array, keyed by `id`\n- `frontend/src/pages/PostDetailPage.tsx` \u2014 refactor comment rendering into a recursive `CommentThread` component\n- `frontend/src/types.ts` \u2014 `Comment` type updated: add `parentId`, `authorDisplayName`; remove `author` string\n\n## Dependencies\n- Depends on #1 (parent_id column on comments)\n- Depends on #2 (author comes from JWT, not request body)"
+    },
+    {
+      "repo": "mscdex/node-imap",
+      "issue": 818,
+      "url": "https://github.com/mscdex/node-imap/issues/818",
+      "title": "get wrong struct with recursive attachment",
+      "score": 9,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "activity.discussion": 2
+      },
+      "body": "I got the structure like this, there are two part id 2. The correct id would be 2 and 2.1.\r\nMy attachment is an eml file including an pdf attachment inside, and the content type inside eml file is directly application/pdf.\r\n\r\n```\r\n[\r\n  {\r\n    type: 'mixed',\r\n    params: { boundary: '--_NmP-54c1758dc47913d1-Part_1' },\r\n    disposition: null,\r\n    language: null,\r\n    location: null,\r\n  },\r\n  [\r\n    {\r\n      partID: '1',\r\n      type: 'text',\r\n      subtype: 'html',\r\n      params: { charset: 'utf-8' },\r\n      id: null,\r\n      description: null,\r\n      encoding: '7bit',\r\n      size: 11,\r\n      lines: 0,\r\n      md5: null,\r\n      disposition: null,\r\n      language: null,\r\n      location: null,\r\n    },\r\n  ],\r\n  [\r\n    {\r\n      partID: '2',\r\n      type: 'message',\r\n      subtype: 'rfc822',\r\n      params: { name: 'attachment.eml' },\r\n      id: null,\r\n      description: null,\r\n      encoding: '7bit',\r\n      size: 25843,\r\n      body: [\r\n        {\r\n          partID: '2',\r\n          type: 'application',\r\n          subtype: 'pdf',\r\n          params: { name: '20200910.pdf' },\r\n          id: null,\r\n          description: '20200910',\r\n          encoding: 'base64',\r\n          size: 18944,\r\n          md5: null,\r\n          disposition: null,\r\n          language: null,\r\n          location: null,\r\n        },\r\n      ],\r\n      lines: 340,\r\n      md5: null,\r\n      disposition: { type: 'attachment', params: [Object] },\r\n      language: null,\r\n      location: null,\r\n    },\r\n  ]\r\n```"
+    },
+    {
+      "repo": "orion-ecs/keen-eye",
+      "issue": 1310,
+      "url": "https://github.com/orion-ecs/keen-eye/issues/1310",
+      "title": "fix(ui): Confirmed medium audit findings \u2014 layout dirty-flag no-op, text-cursor crash, window z-counter overflow",
+      "score": 9,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "refactor.refactor": 2
+      },
+      "body": "**3 confirmed medium findings \u2014 2026-07-25 full-engine audit, each adversarially verified. Part of #1282.**\n\nBatched by subsystem; split any item into its own issue if it grows during triage. Evidence snippets and verifier traces are in the internal audit report.\n\n## Layout dirty-flag machinery is a no-op: UILayoutSystem relayouts the entire tree every frame regardless, with heavy per-node LINQ/List allocations\n\n`src/KeenEyes.UI/Systems/UILayoutSystem.cs:105` \u2014 *perf*\n\nTen-plus call sites across the UI module (UIWindowSystem x6, UISplitterSystem, UISliderSystem, UITooltipSystem, UIMenuSystem, UIModalSystem, UITreeViewSystem, UICheckboxSystem, UIContext.SetLayoutDirty) dutifully add UILayoutDirtyTag \u2014 each an archetype move \u2014 and UITags.cs documents 'The layout system will recalculate bounds for this element and its subtree.' But UILayoutSystem.Update never reads the tag: it unconditionally recomputes layout for every root every frame, then blindly strips the tags. So the invalidation API is pure archetype-churn overhead with zero effect, and the actual cost profile is a full-tree relayout per frame that allocates aggressively: 'World.GetChildren(parent).ToList()' for every element every frame (line 114), a LINQ Where().ToList() per flex container (206-208), a new List<Vector2> per container in MeasureChildren (560), childSizes.Sum(...) closures (316), and MeasureContentWidth/Height each rebuild a 3-stage Where chain + ToList per node per frame (606-610, 670-674) with recursive re-measurement. Failure scenario: any nontrivial UI (editor with a few hundred elements) pays thousands of heap allocations and full recursive measure passes every frame even when nothing changed, plus one archetype move per widget interaction for a tag nothing consumes.\n\n## Text insertion uses an unclamped CursorPosition, crashing with ArgumentOutOfRangeException if text content was shortened externally while a field is focused\n\n`src/KeenEyes.UI/Systems/UITextInputSystem.cs:208` \u2014 *bug*\n\nOnTextInput inserts at textInput.CursorPosition without validating it against the current content length: 'var newText = oldText.Insert(textInput.CursorPosition, character.ToString());'. CursorPosition is only maintained by this system's own edits; UIText.Content is a plain public component field that game code can (and in a data-binding scenario will) rewrite. Failure scenario: a text field is focused with content 'hello' (CursorPosition=5, set by OnFocusGained's select-all path); game logic clears the field programmatically via 'World.Get<UIText>(e).Content = \"\"' (without touching UITextInput); the user's next keystroke calls string.Insert(5, ...) on an empty string -> ArgumentOutOfRangeException propagates out of the input-context event handler and crashes the frame. The sibling handlers guard their indices (HandleBackspace checks 'textInput.CursorPosition > 0', HandleDelete checks '< text.Length'), so the insert path is the one seam without a clamp.\n\n## Window BringToFront writes an unbounded z counter into LocalZIndex; after ~1000 focus switches windows cross the overlay threshold and render above modals/menus, escaping clipping\n\n`src/KeenEyes.UI/Systems/UIWindowSystem.cs:343` \u2014 *bug*\n\nBringToFront increments nextZOrder on every window focus change ('windowComponent.ZOrder = nextZOrder++') and copies it into UIRect.LocalZIndex. UIRenderSystem treats LocalZIndex >= 1000 as an overlay element ('private const short OverlayZIndexThreshold = 1000' ... 'if (rect.LocalZIndex >= OverlayZIndexThreshold) { ... deferredOverlays?.Add(...); return; }', UIRenderSystem.cs:32,138-143), a pass reserved for 'menus, tooltips, modals' that clears clip rects (renderer2D.ClearClip()) and ignores scroll offsets (RenderOverlayElement uses raw ComputedBounds). UIHitTester similarly weights z-index at totalZIndex * 100000. Failure scenario: in a long editor session the user alternates focus between two windows; each alternation increments nextZOrder (the 'already at front' guard only skips re-clicks on the same front window). After the counter passes 1000, ordinary windows silently migrate into the overlay pass: they draw on top of open modal dialogs, dropdown menus, and tooltips, stop being clipped by their parents, and dominate hit-test scoring \u2014 with no way back since the counter never resets or compacts.\n\n## Acceptance criteria\n\n- [ ] Each item above fixed with a regression test covering its failure scenario, or split into its own issue with a reason\n"
+    },
+    {
+      "repo": "praat/praat.github.io",
+      "issue": 58,
+      "url": "https://github.com/praat/praat.github.io/issues/58",
+      "title": "Memory issues with recursive script calls",
+      "score": 9,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "activity.discussion": 2
+      },
+      "body": "I've been trying to write [a script](https://gitlab.com/cpran/plugin_strutils/blob/master/scripts/recursive_file_list_full_path.praat) to make lists of all files and directories under a given path. I've been doing that using recursive calls to script files (with `runScript`), and it's been working well (although maybe the problem is with the recursive script calls and not the Strings objects).\n\nI came across two odd errors throwing segmentation faults or core dumps. And both seem to be triggered by lines in my script that would otherwise be pretty innocuous tasks:\n1. Inserting a string with `Insert string...`\n2. Removing a Strings object, both through the GUI or with commands like `Remove` or `removeObject`\n\nThe problems will come up for specific directory structures, but it's hard to predict which ones will be problematic. I don't think the problem is with the script, though, since the same script that will work in a directory with 2 subdirectories, crashes in a directory with 3 subdirectories. And the problem I find when removing the Strings object happens _after_ my script has otherwise successfully finished.\n\nAmong the errors I get:\n\n```\n*** Error in `praat': free(): invalid next size (fast): 0x0e705d28 ***\nAborted (core dumped)\n```\n\n<!-- -->\n\n```\n*** Error in `praat': corrupted double-linked list: 0x10148d20 ***\nAborted (core dumped)\n```\n\n<!-- -->\n\n```\n*** Error in `praat': double free or corruption (out): 0x0edcd830 ***\nAborted (core dumped)\n```\n\nOther times, I just get a segmentation fault.\n\nThe problems are erratic, in that they appear only when querying some directories (with specific sub-directory structures), and sometimes only when using specific values for the `max_depth` argument, which modifies how deep the recursion should be. In these cases, running the script with a `max_depth` of `0` throws no errors, but specifying a value of eg. `2` might give me the `double free or corruption` error above.\n\nThis I tested on a machine running Kubuntu 14.04 (32-bit) using Praat 5.4.22. The problems exist both from the command line and from the GUI.\n"
+    },
+    {
+      "repo": "pydantic/pydantic",
+      "issue": 13581,
+      "url": "https://github.com/pydantic/pydantic/issues/13581",
+      "title": "Validators called twice with recursive models",
+      "score": 9,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "activity.discussion": 2
+      },
+      "body": "```python\nfrom pydantic import BaseMode, model_validator\n\nclass NodeVal(BaseModel):\n    child: NodeVal | None = None\n\n    @model_validator(mode='after')\n    def validate_model(self) -> NodeVal:\n        print('validator called')\n        return self\n\nclass OuterVal(BaseModel):\n    node: NodeVal\n\nOuterVal.model_validate({'node': {}})\n#> validator called\n#> validator called\n```\n\nPresumably due to prebuilt validators logic. Could also be an issue for serializers. Is probably related: https://github.com/pydantic/pydantic/issues/11812#issuecomment-2841673291.\n\n"
+    }
+  ]
+}

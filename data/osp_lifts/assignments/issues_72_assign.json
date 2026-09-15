@@ -1,0 +1,135 @@
+{
+  "manifest": "issues_72.jsonl",
+  "records": [
+    {
+      "repo": "aaronwesthoff84/SAP-IM-Config-Explorer",
+      "issue": 119,
+      "url": "https://github.com/aaronwesthoff84/SAP-IM-Config-Explorer/issues/119",
+      "title": "[Simulator] Interactive Compensation Rule Simulator with Event Propagation and Graph Animation",
+      "score": 8,
+      "signals": {
+        "traversal.recursive": 3,
+        "traversal.cycle": 2,
+        "traversal.ordering": 3
+      },
+      "body": "## Goal\nImplement an Interactive Compensation Rule Simulator that allows plan designers and compensation analysts to inject simulated credit or measurement events and visualize value propagation step-by-step through the formula graph.\n\n## Scope\n- Create `sap_im_config_graph_explorer/simulator.py` implementing a formula evaluation and event propagation engine based on SAP IM calculation pipeline semantics.\n- Support pipeline stages:\n  1. Allocation & Crediting (`CreditRule` evaluations based on transaction event types).\n  2. Primary Measurement (`MeasurementRule` aggregations, quotas, attainment calculations).\n  3. Secondary Measurement (multi-tier composite measurements).\n  4. Incentive Calculation (`IncentiveRule` commission rates, accelerators, formulas).\n  5. Deposit (`DepositRule` holding, draws, payment caps).\n- Produce a step-by-step deterministic `SimulationTrace` documenting active nodes, input variables, evaluated expressions, and output values at each stage.\n- Add `POST /api/simulator/run` endpoint with cycle detection and recursion depth limits.\n- Build a dedicated Simulator panel in the web UI with input presets (\"Standard Sale\", \"Over-Quota Accelerator\", \"Split Commission\") and interactive player controls (Play, Pause, Step Next, Step Previous, Speed Control).\n- Animate graph execution in Cytoscape: nodes pulse as they evaluate, edges illuminate with flow direction, and intermediate values display in tooltips.\n\n## Acceptance criteria\n1. Calculation Pipeline Fidelity:\n   - Faithfully follows the sequential execution semantics defined in `pipeline.py` (`Credit -> Primary Measurement -> Secondary Measurement -> Incentive -> Deposit`).\n   - Supports basic arithmetic, min/max, rate table tier lookups, and attainment percentage calculations from formula ASTs.\n2. Safety & Bounded Execution:\n   - Includes cycle detection and maximum step limits (default 1,000 steps) to prevent infinite loops from circular formulas or malformed rules.\n3. Deterministic Simulation Trace:\n   - Emits structured execution traces with node ID, stage name, input values, formula expression text, intermediate evaluations, and output values.\n4. Interactive UI Controls:\n   - Simulator drawer or tab with JSON/form input for simulation events.\n   - Player controls (Play, Pause, Step Forward, Step Back, Reset) and slider for animation speed.\n   - Real-time Cytoscape highlighting: active node glows, edges pulse, and intermediate value badges appear on nodes.\n5. Engineering & Tests:\n   - Unit tests in `tests/test_simulator.py` testing credit generation, rate lookup evaluation, tiered calculations, and cycle protection.\n   - E2E Playwright test in `tests/e2e/rule-simulator.spec.ts` verifying event input submission, step-by-step playback, and graph highlighting.\n\n## Agent Brief\n- **Category:** `enhancement`\n- **Current Behavior:** The explorer provides static structural topology and pipeline classification, but cannot evaluate or simulate transactional data through rules.\n- **Desired Behavior:** An interactive simulator with step-by-step event propagation, formula evaluation, and visual Cytoscape animation.\n- **Key Interfaces:**\n  - `class CompensationRuleSimulator` in `sap_im_config_graph_explorer/simulator.py`\n  - `SimulationEvent`, `SimulationStep`, `SimulationTrace` in `models.py`\n  - `POST /api/simulator/run` in `app.py`\n- **Out of Scope:** Connecting to live SAP HANA/Oracle databases or importing real employee PII.\n"
+    },
+    {
+      "repo": "asif-arman/dsa-roadmap",
+      "issue": 1,
+      "url": "https://github.com/asif-arman/dsa-roadmap/issues/1",
+      "title": "Complete Graph Algorithms Roadmap",
+      "score": 8,
+      "signals": {
+        "traversal.cycle": 2,
+        "traversal.ordering": 3,
+        "traversal.bfs_dfs": 3
+      },
+      "body": "- [ ] BFS\n- [ ] DFS\n- [ ] Connected Components\n- [ ] Cycle Detection\n- [ ] Bipartite Graph\n- [ ] Topological Sort\n- [ ] Dijkstra\n- [ ] Bellman-Ford\n- [ ] Floyd-Warshall\n- [ ] Minimum Spanning Tree\n- [ ] Disjoint Set Union\n- [ ] Strongly Connected Components\n- [ ] Bridges\n- [ ] Articulation Points\n- [ ] Lowest Common Ancestor\n- [ ] Binary Lifting"
+    },
+    {
+      "repo": "burner-agent/agent-tools",
+      "issue": 67,
+      "url": "https://github.com/burner-agent/agent-tools/issues/67",
+      "title": "[new tool] @agent-tools/graph \u2014 General-purpose graph data structures and algorithms",
+      "score": 8,
+      "signals": {
+        "traversal.cycle": 2,
+        "traversal.ordering": 3,
+        "traversal.bfs_dfs": 3
+      },
+      "body": "## Tool Name\n`@agent-tools/graph`\n\n## Description\nA general-purpose graph data structure package providing directed, undirected, and mixed graphs with built-in traversal, shortest-path, community detection, and topological sort algorithms \u2014 enabling agents to model and reason about relationships, dependencies, and networks.\n\n## Why It's Useful for Agents\nAgents frequently need to model relationships: task dependency ordering, knowledge graphs, call graphs, entity relationship mapping, workflow DAGs, and impact analysis. Currently there's no agent-tools package for general graph operations beyond the built-in dependency graph (issue #15, which was narrowly scoped to dependency ordering).\n\nBased on research into [graphology](https://github.com/graphology/graphology) (1.6k stars, MIT, TypeScript, v0.26.0 Feb 2025) \u2014 a robust multipurpose graph library with a comprehensive standard library including:\n- **Traversal**: BFS, DFS\n- **Shortest path**: Dijkstra, A*\n- **Community detection**: Louvain method\n- **Components**: connected/strongly-connected component decomposition\n- **DAG utilities**: cycle detection, topological sort\n- **Centrality/metrics**: modularity, density, betweenness\n- **Operators**: union, intersection, reverse, conversion\n- **Generators**: random, complete, lattice graphs\n- **Serialization**: GEXF, GraphML import/export\n\nAlso evaluated [@dagrejs/graphlib](https://github.com/dagrejs/graphlib) (1.7k stars, MIT, TypeScript) \u2014 solid for directed multigraphs but narrower algorithm set and less active ecosystem.\n\n## Proposed API\n```typescript\nimport { createGraph, algorithms } from \"@agent-tools/graph\";\n\n// Create a directed graph\nconst g = createGraph({ type: \"directed\" });\n\n// Add nodes and edges with metadata\ng.addNode(\"taskA\", { label: \"Build\", duration: 30 });\ng.addNode(\"taskB\", { label: \"Test\", duration: 15 });\ng.addEdge(\"taskA\", \"taskB\", { weight: 1 });\n\n// Traversal\nalgorithms.bfs(g, \"taskA\", (node, attrs) => { /* visit */ });\nalgorithms.dfs(g, \"taskA\", (node, attrs) => { /* visit */ });\n\n// Shortest path (Dijkstra)\nconst path = algorithms.shortestPath(g, \"taskA\", \"taskD\");\n// => { path: [\"taskA\", \"taskB\", \"taskD\"], weight: 3 }\n\n// Topological sort (DAG operations)\nconst order = algorithms.topoSort(g);\n// => [\"taskA\", \"taskB\", \"taskC\", \"taskD\"]\n\n// Cycle detection\nconst cycles = algorithms.detectCycles(g);\n// => [] or [[\"A\", \"B\", \"C\", \"A\"]]\n\n// Connected components\nconst components = algorithms.connectedComponents(g);\n\n// Community detection (Louvain)\nconst communities = algorithms.communities(g);\n\n// Centrality metrics\nconst centrality = algorithms.betweenness(g);\n\n// Serialization\nconst json = g.export(); // JSON-serializable\nconst restored = createGraph({ data: json });\n```\n\n## Scope\n**In scope:**\n- Directed, undirected, and mixed graph creation\n- Node/edge CRUD with arbitrary metadata\n- BFS/DFS traversal\n- Shortest path (Dijkstra, A*)\n- Topological sort and cycle detection\n- Connected/strongly-connected components\n- Community detection (Louvain)\n- Centrality metrics (betweenness, closeness, degree)\n- Graph operators (union, intersection, reverse)\n- JSON serialization/deserialization\n\n**Out of scope:**\n- Visualization/rendering (use sigma.js or similar directly)\n- Force-directed layouts (rendering concern)\n- GEXF/GraphML file format support (niche, can be added later)\n- Distributed/remote graph databases"
+    },
+    {
+      "repo": "corese-stack/corese-core",
+      "issue": 566,
+      "url": "https://github.com/corese-stack/corese-core/issues/566",
+      "title": "[Query] Implement SPARQL 1.1 Property Paths (/, ^, *, +, !)",
+      "score": 8,
+      "signals": {
+        "traversal.recursive": 3,
+        "traversal.cycle": 2,
+        "traversal.bfs_dfs": 3
+      },
+      "body": "### Summary\nImplement SPARQL 1.1 Property Path evaluation and graph traversal algorithms across RDF graphs in `core.next.query`.\n\n---\n\n### Objectives and Technical Scope\n\n#### 1. Property Path Operators\n- **Sequence Path**: `elt1 / elt2` (chained edge traversal).\n- **Inverse Path**: `^elt` (reverse traversal).\n- **Alternative Path**: `elt1 | elt2` (union of path evaluations).\n- **Recursive Paths**: Zero-or-More (`elt*`), One-or-More (`elt+`), Zero-or-One (`elt?`).\n- **Negated Property Sets**: `!iri`, `!(iri1 | iri2)`, `!(^iri1 | iri2)`.\n\n#### 2. Graph Traversal and Cycle Detection\n- Implement breadth-first and depth-first traversal algorithms with visited node tracking to handle cyclic graphs safely.\n- Maintain correct multiset solution multiplicity matching W3C ALP evaluation semantics.\n- Handle unbound subject and object variable states on recursive path evaluations.\n\n#### 3. Validation and Conformance\n- Validate against official W3C SPARQL 1.1 test suites (`property-path`) in `corese-w3c`.\n\n---\n\n### Dependencies\n- **Blocked by**:\n  - [x] https://github.com/corese-stack/corese-core/issues/568\n- **Blocks**:\n  - https://github.com/corese-stack/corese-core/issues/567\n"
+    },
+    {
+      "repo": "djm204/frankenbeast",
+      "issue": 4184,
+      "url": "https://github.com/djm204/frankenbeast/issues/4184",
+      "title": "RecursivePlanner._buildSubGraph discards validated fromTasks result, returning an unordered raw-edge graph",
+      "score": 8,
+      "signals": {
+        "traversal.recursive": 3,
+        "traversal.cycle": 2,
+        "traversal.ordering": 3
+      },
+      "body": "## Summary\n\nIn `packages/franken-planner/src/planners/recursive.ts` at line 124, `_buildSubGraph` calls `PlanGraph.fromTasks()` purely for its validation side-effect (cycle detection + topological sort), then immediately discards the return value. The actual graph returned on line 125 is built via `PlanGraph.createWithRawEdges(nodes, edges, ...)`, which **bypasses topological ordering** entirely.\n\n## Affected File\n\n`packages/franken-planner/src/planners/recursive.ts`, lines 97\u2013126\n\n## Code (lines 124\u2013125)\n\n```ts\n// Line 124 \u2014 return value is discarded!\nPlanGraph.fromTasks(tasksWithInternalDependencies, { reason: 'recursive expansion' });\n// Line 125 \u2014 actual return uses the raw, unordered graph\nreturn PlanGraph.createWithRawEdges(nodes, edges, 0, 'recursive expansion');\n```\n\n## Impact\n\n1. **The validated, topologically-sorted graph is thrown away.** `RecursivePlanner._exec` calls `graph.topoSort()` on the returned graph, so in practice the re-sort compensates \u2014 but any structural difference between the raw `nodes` Map insertion order and the topologically correct order is silently corrected at execution time rather than at build time.\n2. **The validation is completely wasteful.** If `fromTasks` throws `CyclicDependencyError`, the exception propagates correctly, so cycle detection still works \u2014 but the correct sorted graph is immediately discarded and reconstructed from raw edges, making the cycle-detection-only path confusing and fragile.\n3. **Silent divergence risk:** If future code paths consume the returned graph's task order before calling `topoSort()` (e.g. iterating `getTasks()`), they will receive tasks in arbitrary insertion order rather than dependency order.\n\n## Fix\n\nReplace lines 124\u2013125 with a single call to `PlanGraph.fromTasks` and return its result:\n\n```ts\nreturn PlanGraph.fromTasks(tasksWithInternalDependencies, { reason: 'recursive expansion' });\n```\n\nThis eliminates the redundant double-graph construction and ensures the returned sub-graph is both validated and topologically ordered."
+    },
+    {
+      "repo": "djm204/frankenbeast",
+      "issue": 4253,
+      "url": "https://github.com/djm204/frankenbeast/issues/4253",
+      "title": "Dead cycle-detection call in RecursivePlanner._buildSubGraph \u2014 validated PlanGraph discarded, raw unvalidated graph returned",
+      "score": 8,
+      "signals": {
+        "traversal.recursive": 3,
+        "traversal.cycle": 2,
+        "traversal.ordering": 3
+      },
+      "body": "## Summary\n\nIn `packages/franken-planner/src/planners/recursive.ts`, the `_buildSubGraph` method calls `PlanGraph.fromTasks()` to validate and topologically sort the expansion sub-graph, but then **discards the result** and returns a `PlanGraph.createWithRawEdges()` graph instead. This makes the cycle-detection call a no-op dead statement.\n\n## Location\n\n```\npackages/franken-planner/src/planners/recursive.ts\n```\n\nLines 124\u2013125:\n```ts\n    PlanGraph.fromTasks(tasksWithInternalDependencies, { reason: 'recursive expansion' }); // \u2190 result discarded\n    return PlanGraph.createWithRawEdges(nodes, edges, 0, 'recursive expansion');             // \u2190 unvalidated raw graph returned\n```\n\n## Root Cause\n\n`PlanGraph.fromTasks()` performs:\n1. Duplicate ID detection\n2. Dependency reference validation (all `dependsOn` IDs must exist)\n3. Kahn's topological sort with cycle detection (throws `CyclicDependencyError` if cyclic)\n\nThe sorted, validated `PlanGraph` it returns is **never assigned or used**. Instead, the method falls through to `PlanGraph.createWithRawEdges()`, the test-escape-hatch factory that explicitly skips all validation. The cycle check on line 124 therefore has zero effect \u2014 a sub-graph with a dependency cycle will pass silently through `_buildSubGraph` and the cycle will only be detected later when `topoSort()` is called inside `_exec`. However because the raw graph's node-map order is not topologically sorted, the error message quality degrades and any future code path that reads the graph before calling `topoSort()` (e.g. for inspection or recovery) will see an unvalidated graph.\n\n## Impact\n\n- **Cycle detection in recursive expansion is a dead code path.** A cyclic sub-graph produced by an expanding task will not be caught early at sub-graph construction time.\n- The returned `PlanGraph` has un-topologically-sorted internal node order (raw insertion order), which differs from the contract guaranteed by `fromTasks`.\n- The `createWithRawEdges` factory is documented as an `/** Escape hatch for testing */` method. Returning it from production code is an unintentional misuse.\n\n## Steps to Reproduce\n\n1. Create a `RecursivePlanner` and a parent task whose executor returns `{ expand: true, newTasks: [sub1, sub2] }` where `sub1` and `sub2` form a dependency cycle.\n2. Observe that `_buildSubGraph` does **not** throw `CyclicDependencyError` \u2014 it returns successfully.\n3. The error surfaces only on the subsequent `topoSort()` call inside `_exec`.\n\nThe existing unit test (`recursive.test.ts` line 239) documents the cycle being caught, but it is caught by `_exec \u2192 topoSort()`, not by `_buildSubGraph` as intended.\n\n## Fix\n\nAssign and return the result of `PlanGraph.fromTasks()`:\n\n```ts\n- PlanGraph.fromTasks(tasksWithInternalDependencies, { reason: 'recursive expansion' });\n- return PlanGraph.createWithRawEdges(nodes, edges, 0, 'recursive expansion');\n+ return PlanGraph.fromTasks(tasksWithInternalDependencies, { reason: 'recursive expansion' });\n```\n\nThis removes the `createWithRawEdges` call from production code entirely and lets the validated, topologically-sorted graph be used downstream.\n\n## Affected Files\n\n- `packages/franken-planner/src/planners/recursive.ts` (lines 124\u2013125)"
+    },
+    {
+      "repo": "djm204/frankenbeast",
+      "issue": 4363,
+      "url": "https://github.com/djm204/frankenbeast/issues/4363",
+      "title": "RecursivePlanner._buildSubGraph: fromTasks result discarded; returned sub-graph nodes carry stale cross-graph dependsOn",
+      "score": 8,
+      "signals": {
+        "traversal.recursive": 3,
+        "traversal.cycle": 2,
+        "traversal.ordering": 3
+      },
+      "body": "## Summary\n\nIn `packages/franken-planner/src/planners/recursive.ts`, the `_buildSubGraph` method (lines 97\u2013126) has two related defects:\n\n### 1. Dead `fromTasks` call (result discarded)\n\n```typescript\n// line 124\nPlanGraph.fromTasks(tasksWithInternalDependencies, { reason: 'recursive expansion' });\n// \u2191 return value thrown away\nreturn PlanGraph.createWithRawEdges(nodes, edges, 0, 'recursive expansion');\n```\n\n`PlanGraph.fromTasks` is called for its cycle-detection side-effect, but the validated, sorted, cleaned graph it produces is **never used**. Its return value is discarded.\n\n### 2. Returned sub-graph nodes are inconsistent with edges\n\nThe graph ultimately returned by `_buildSubGraph` is built from:\n- `nodes` \u2014 the **original** task map, where each Task's `dependsOn` array still contains *all* raw dependency ids (including cross-graph / already-completed ones).\n- `edges` \u2014 the filtered edge map that has correctly removed external dependencies.\n\nThis means the nodes embedded in the sub-graph each carry `dependsOn` arrays that name dependency ids absent from the sub-graph's edge table. Any consumer that reads `task.dependsOn` directly (rather than calling `graph.getDependencies(task.id)`) will see phantom dependencies.\n\n### Correct fix\n\nReplace the discarded `fromTasks` call and the `createWithRawEdges` call with the validated result:\n\n```typescript\nreturn PlanGraph.fromTasks(tasksWithInternalDependencies, { reason: 'recursive expansion' });\n```\n\nThis simultaneously performs cycle detection, validates the graph, and returns a consistent object whose node `dependsOn` arrays match the edge table.\n\n## Affected file\n`packages/franken-planner/src/planners/recursive.ts`, lines 124\u2013125\n\n## Severity\nMedium \u2014 the sub-graph is functionally used via `getDependencies()` in `topoSort()`, so execution order is correct in the happy path. However the inconsistency between node metadata and the edge table is a latent correctness hazard for any future code that reads `task.dependsOn` from a sub-graph task, and the dead `fromTasks` call is dead code that misleads maintainers into thinking a validated graph is in use."
+    },
+    {
+      "repo": "djm204/frankenbeast",
+      "issue": 4561,
+      "url": "https://github.com/djm204/frankenbeast/issues/4561",
+      "title": "RecursivePlanner._buildSubGraph: validated PlanGraph from fromTasks() is silently discarded, raw unvalidated graph returned instead",
+      "score": 8,
+      "signals": {
+        "traversal.recursive": 3,
+        "traversal.cycle": 2,
+        "traversal.ordering": 3
+      },
+      "body": "## Summary\n\nIn `packages/franken-planner/src/planners/recursive.ts`, `_buildSubGraph()` calls `PlanGraph.fromTasks()` to validate and topologically sort the sub-graph (line 124), but then immediately discards the result and returns a `PlanGraph.createWithRawEdges()` built from the \\*pre-validation\\* mutable maps (line 125):\n\n```ts\n// Line 124-125 in recursive.ts\nPlanGraph.fromTasks(tasksWithInternalDependencies, { reason: 'recursive expansion' });\nreturn PlanGraph.createWithRawEdges(nodes, edges, 0, 'recursive expansion');\n```\n\n`createWithRawEdges` is documented as an escape hatch for testing that skips validation. The validated+sorted `PlanGraph` returned by `fromTasks()` is never stored or returned.\n\n## Impact\n\n- Cycle detection run by `fromTasks()` (Kahn's sort) is performed correctly and will throw `CyclicDependencyError` on cyclic sub-graphs \u2014 so the validation itself fires.\n- However, the returned graph is built from the raw unsorted `nodes`/`edges` maps. Any downstream consumer that calls `topoSort()` on the returned graph will re-sort, so execution order is still correct.\n- The \\*real\\* bug: `createWithRawEdges` does **not** re-run the `_assertEdgesReferenceKnownNodes()` check on use, and duplicate entries that were silently de-duped by the `nodes` Map in `_buildSubGraph` do not have their corresponding edges de-duped. If a task appears twice in `result.newTasks` with conflicting edge sets, only the first occurrence is stored in `nodes` but the second occurrence's edges would overwrite the first in `edges`, producing a graph whose edges and nodes are inconsistent.\n- Because the `fromTasks()` result is discarded, none of the internal invariants it establishes (sorted node/edge insertion order, edge-node alignment) are preserved.\n\n## Steps to Reproduce\n\n1. Have a recursive task expand with `newTasks` that includes a duplicate task id with different `dependsOn` arrays.\n2. The first occurrence's `dependsOn` wins in `nodes` but the second overwrites the edge set. The discrepancy between the task's `dependsOn` field and its entry in `edges` causes incorrect dependency evaluation.\n\n## Fix\n\nStore and return the graph produced by `fromTasks()`:\n\n```ts\n// Replace lines 124-125\nreturn PlanGraph.fromTasks(tasksWithInternalDependencies, { reason: 'recursive expansion' });\n```\n\n## Affected Files\n\n- `packages/franken-planner/src/planners/recursive.ts` (lines 124-125)"
+    },
+    {
+      "repo": "dsa-collective/algorithm-pattern-classifier",
+      "issue": 18,
+      "url": "https://github.com/dsa-collective/algorithm-pattern-classifier/issues/18",
+      "title": "Implement BFSDetector and DFSDetector with Graph Traversal Rules",
+      "score": 8,
+      "signals": {
+        "traversal.recursive": 3,
+        "traversal.bfs_dfs": 3,
+        "manual_impl.queue_walk": 2
+      },
+      "body": "Description\nWe need to implement detectors for two of the most fundamental algorithmic patterns: Breadth-First Search (AlgorithmPattern.BFS) and Depth-First Search (AlgorithmPattern.DFS). These detectors will live in src/algorithm_pattern_classifier/detectors/bfs.py and src/algorithm_pattern_classifier/detectors/dfs.py.\n\nDetailed Requirements\n\n1.BFS Detection Criteria:\nSearch the AST for queue usage:\nInitialization of a queue using collections.deque or a list: queue = deque(...) or queue = [...].\nA loop condition checking the queue: while queue:.\nPopping from the left/front of the queue: queue.popleft() or queue.pop(0).\nNode expansion: appending children/neighbors to the queue inside the loop (queue.append(...) or queue.extend(...)).\n\n2. DFS Detection Criteria:\nIterative DFS: Similar to BFS, but checks for popping from the end of a list (stack.pop()) within a while stack: loop.\nRecursive DFS: Checks for a recursive helper function traversing neighbors or child nodes. The function should make a recursive call referencing itself within a loop or branch, passing a modified node/state parameter.\n\n3. Suppression Arbitration:\nA recursive DFS with memoization can be classified as both DFS and Dynamic Programming. Register suppression rules in PatternClassifier so that DP suppresses DFS if the confidence threshold for DP is met.\n\nTechnical Design Hints\nIn BFSDetector, check ast.Call nodes. If func is an ast.Attribute with attribute name popleft or pop (with constant argument 0), assign high confidence for queue usage.\nIn recursive DFS, write a visitor that detects when a function calls itself (matching the function's own name inside an ast.Call).\n\nAcceptance Criteria\n BFSDetector identifies iterative BFS on trees and graphs with a confidence score $> 0.8$.\n DFSDetector identifies both iterative stack-based DFS and recursive DFS.\n Detections on standard tree traversal problems are correctly classified and verified by unit tests."
+    },
+    {
+      "repo": "git-stunts/git-warp",
+      "issue": 220,
+      "url": "https://github.com/git-stunts/git-warp/issues/220",
+      "title": "GraphTraversal.js has 11 algorithms in 1617 LOC",
+      "score": 8,
+      "signals": {
+        "traversal.cycle": 2,
+        "traversal.ordering": 3,
+        "traversal.bfs_dfs": 3
+      },
+      "body": "## Migrated from Method backlog\n\nGitHub Issues are now the live work tracker. Repository docs remain Method evidence.\n\n| Field | Value |\n| --- | --- |\n| Source backlog | `docs/method/backlog/bad-code/OWN_graph-traversal-monolith.md` |\n| Archived source | `docs/archive/backlog/github-issue-migration-2026-06-01/docs/method/backlog/bad-code/OWN_graph-traversal-monolith.md` |\n| Original lane | `bad-code` |\n| Original id | `OWN_graph-traversal-monolith` |\n| Original legend | `OWN` |\n| Original feature | `testing-quality` |\n| Original release home | `v20.0.0` |\n\n## Original backlog card\n\n# GraphTraversal.js has 11 algorithms in 1617 LOC\n\n**Effort:** L\n\n## What's Wrong\n\n`GraphTraversal.js` contains BFS, DFS, Dijkstra, A*, topological sort,\nconnected components, shortest path, all pairs, cycle detection,\nreachability, and PageRank -- all in one file. Each algorithm is\ninternally cohesive but the file is a monolith with too many reasons\nto change. Adding or modifying one algorithm risks breaking others.\n\n## Suggested Fix\n\n- One file per algorithm (or per algorithm family, e.g., shortest-path\n  family: Dijkstra + A* + all-pairs).\n- `GraphTraversal` becomes a dispatcher/facade that delegates to the\n  individual algorithm modules.\n- Each algorithm module exports a single function or small class,\n  accepting a `NeighborProviderPort` for graph access.\n"
+    }
+  ]
+}

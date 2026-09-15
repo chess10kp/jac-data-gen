@@ -1,0 +1,146 @@
+{
+  "manifest": "issues_56.jsonl",
+  "records": [
+    {
+      "repo": "microsoft/TypeScript",
+      "issue": 63783,
+      "url": "https://github.com/microsoft/TypeScript/issues/63783",
+      "title": "Unbounded memory consumption with recursive conditional types causes compilation OOM",
+      "score": 13,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "refactor.refactor": 2,
+        "activity.discussion": 2,
+        "activity.reactions": 2
+      },
+      "body": "## Steps to reproduce\n\nnpx tsgo the following.ts file:\n\n\n```typescript\nexport type NumericProperty = \"n1\" | \"n2\" | \"n3\" | \"n4\" | \"n5\" | \"n6\" | \"n7\" | \"n8\" | \"n9\" | \"n10\" | \"n11\" | \"n12\" | \"n13\" | \"n14\" | \"n15\" | \"n16\" | \"n17\" | \"n18\" | \"n19\" | \"n20\" | \"n21\" | \"n22\" | \"n23\" | \"n24\" | \"n25\" | \"n26\" | \"n27\" | \"n28\" | \"n29\" | \"n30\" | \"n31\" | \"n32\" | \"n33\" | \"n34\" | \"n35\" | \"n36\" | \"n37\" | \"n38\" | \"n39\" | \"n40\" | \"n41\" | \"n42\" | \"n43\" | \"n44\" | \"n45\" | \"n46\" | \"n47\" | \"n48\" | \"n49\" | \"n50\" | \"n51\" | \"n52\" | \"n53\" | \"n54\" | \"n55\" | \"n56\" | \"n57\" | \"n58\" | \"n59\" | \"n60\" | \"n61\" | \"n62\" | \"n63\" | \"n64\" | \"n65\" | \"n66\" | \"n67\" | \"n68\" | \"n69\" | \"n70\" | \"n71\" | \"n72\" | \"n73\" | \"n74\" | \"n75\" | \"n76\" | \"n77\" | \"n78\" | \"n79\" | \"n80\" | \"n81\" | \"n82\" | \"n83\" | \"n84\" | \"n85\" | \"n86\" | \"n87\" | \"n88\" | \"n89\" | \"n90\" | \"n91\" | \"n92\" | \"n93\" | \"n94\" | \"n95\" | \"n96\" | \"n97\" | \"n98\" | \"n99\" | \"n100\";\n\nexport type StringProperty = \"s1\" | \"s2\" | \"s3\" | \"s4\" | \"s5\" | \"s6\" | \"s7\" | \"s8\" | \"s9\" | \"s10\" | \"s11\" | \"s12\" | \"s13\" | \"s14\" | \"s15\" | \"s16\" | \"s17\" | \"s18\" | \"s19\" | \"s20\" | \"s21\" | \"s22\" | \"s23\" | \"s24\" | \"s25\" | \"s26\" | \"s27\" | \"s28\" | \"s29\" | \"s30\" | \"s31\" | \"s32\" | \"s33\" | \"s34\" | \"s35\" | \"s36\" | \"s37\" | \"s38\" | \"s39\" | \"s40\" | \"s41\" | \"s42\" | \"s43\" | \"s44\" | \"s45\" | \"s46\" | \"s47\" | \"s48\" | \"s49\" | \"s50\" | \"s51\" | \"s52\" | \"s53\" | \"s54\" | \"s55\" | \"s56\" | \"s57\" | \"s58\" | \"s59\" | \"s60\" | \"s61\" | \"s62\" | \"s63\" | \"s64\" | \"s65\" | \"s66\" | \"s67\" | \"s68\" | \"s69\" | \"s70\" | \"s71\" | \"s72\" | \"s73\" | \"s74\" | \"s75\" | \"s76\" | \"s77\" | \"s78\" | \"s79\" | \"s80\" | \"s81\" | \"s82\" | \"s83\" | \"s84\" | \"s85\" | \"s86\" | \"s87\" | \"s88\" | \"s89\" | \"s90\" | \"s91\" | \"s92\" | \"s93\" | \"s94\" | \"s95\" | \"s96\" | \"s97\" | \"s98\" | \"s99\" | \"s100\";\n\ntype Seq = { _brand: \"Seq\" };\n\n// `Branch` to connect Branch<A,B>\ntype Branch<L1 extends Seq, L2 extends Seq, R1 extends Seq, R2 extends Seq> = Seq & {\n  type: \"Branch\";\n  left1: L1;\n  left2: L2;\n  right1: R1;\n  right2: R2;\n};\n\n// `A` and `B` are the basic elements of the sequence.\ntype A = Seq & { type: \"A\" };\ntype B = Seq & { type: \"B\" };\ntype C = Seq & { type: \"C\" };\ntype D = Seq & { type: \"D\" };\n\n// Recursively rewrite the entire sequence tree.\ntype Rewrite<T extends Seq> = T extends A\n  ? Branch<A, B, C, D>\n  : T extends B\n  ? Branch<B, C, D, A>\n\t: T extends C\n\t? Branch<C, D, A, B>\n\t: T extends D\n\t? Branch<D, A, B, C>\n  : T extends Branch<infer L1 extends Seq, infer L2 extends Seq, infer R1 extends Seq, infer R2 extends Seq>\n  ? Branch<Rewrite<L1>, Rewrite<L2>, Rewrite<R1>, Rewrite<R2>>\n  : never;\n\n// `Nat` and `Succ`/`Zero` are used for type-level counting.\n// Represents numbers at the type level.\ntype Nat = { _brand: \"nat\" };\ntype Zero = Nat & { type: \"Zero\" };\ntype Succ<N extends Nat> = Nat & { type: \"Succ\"; pred: N };\n\n// Apply rewrite rules N times using recursive conditional types\n// TypeScript has recursion depth limits, so large N values will fail\ntype ApplyRewrite<S extends Seq, N extends Nat> = N extends Zero\n  ? S // Base case: 0 iterations returns original\n  : N extends Succ<infer P extends Nat> // Recursive case: N = Succ(P)\n  ? ApplyRewrite<Rewrite<S>, P> // Apply one rewrite, then recurse with P\n  : never;\n\n// Define a more complex type union calculation\ntype SeqUnion<T extends Seq> = T extends A\n  ? StringProperty\n  : T extends B\n  ? NumericProperty\n\t: T extends C\n\t? `${NumericProperty}${StringProperty}`\n\t: T extends D\n\t? `${StringProperty}${NumericProperty}`\n  : T extends Branch<infer L1 extends Seq, infer L2 extends Seq, infer R1 extends Seq, infer R2 extends Seq> \n  ? `${SeqUnion<L1>}${SeqUnion<R1>}` | `${SeqUnion<L2>}${SeqUnion<R2>}`\n  : never;\n\n// trigger the compile-time evaluation.\ntype InitialState = A;\n\n// Note: the following is harmful. Set iteration count to N=40.\n// Complex binary tree\n// Result: Compilation bomb! Compilation leads to OOM, takes a very long time, and causes a Denial of Service.\ntype N40 = Succ<Succ<Succ<Succ<Succ<Succ<Succ<Succ<Succ<Succ<\n          Succ<Succ<Succ<Succ<Succ<Succ<Succ<Succ<Succ<Succ<\n          Succ<Succ<Succ<Succ<Succ<Succ<Succ<Succ<Succ<Succ<\n          Succ<Succ<Succ<Succ<Succ<Succ<Succ<Succ<Succ<Succ<\n          Zero>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>;\n\n// Generate final result type.\ntype FinalState = ApplyRewrite<InitialState, N40>;\ntype FinalUnion = SeqUnion<FinalState>;\n\nconst finalUnion = {} as FinalUnion;\nconsole.log(\"Compilation succeeded! The final type is:\", finalUnion);\n\n```\n\n<img width=\"846\" height=\"119\" alt=\"Image\" src=\"https://github.com/user-attachments/assets/13131bbc-cd5d-4094-bdc5-8f9343cacec9\" />\n\n## Behavior with `typescript@5.8`\n\nThe compilation fails gracefully with a standard Out of Memory (OOM) error. The Node.js runtime (V8 engine) enforces a default heap memory limit (typically ~4GB on 64-bit systems), which prevents the process from consuming all available system resources.\n\nResult: The process terminates immediately, leaving the host operating system responsive.\n\nRef: https://v8.dev/blog/4gb-wasm-memory\nhttps://stackoverflow.com/questions/79250132/how-does-node-v8-determine-its-max-heap-size\n\n## Behavior with `tsgo`\n\nThe compiler exhibits unbounded memory consumption. Unlike the Node.js runtime, tsgo lacks a default heap ceiling. It continues to allocate memory until it exhausts both physical RAM and swap space.\n\nResult: The host system hangs or freezes, rendering it unresponsive until the operating system's kernel OOM Killer forcibly terminates the process.\n\n## My Point\n\nSuggest evaluating mitigation strategies for this unbounded memory usage. If tsgo is intended for broader use (other than web), the current behavior risks stability. If tsgo targets only web, adopting a V8-like memory limit is an acceptable solution. This choice warrants careful consideration.\n"
+    },
+    {
+      "repo": "BharatDBPG/BharatDBMS-PG",
+      "issue": 1177,
+      "url": "https://github.com/BharatDBPG/BharatDBMS-PG/issues/1177",
+      "title": "bug #17061: impossible to query the fields of the tuple created by search breadth first by .. set ..",
+      "score": 12,
+      "signals": {
+        "traversal.recursive": 3,
+        "traversal.bfs_dfs": 3,
+        "manual_impl.recursive_cte": 4,
+        "activity.discussion": 2
+      },
+      "body": "**\ud83d\udce8 Subject**: BUG #17061: Impossible to query the fields of the tuple created by SEARCH BREADTH FIRST BY .. SET ..\n\n**\ud83d\udcc5 Date:** 2021-06-17 11:44:28\n**\ud83d\udce4 Sender:** PG Bug reporting form <noreply(at)postgresql(dot)org>\n**\ud83d\udce5 Receiver:** pgsql-bugs(at)lists(dot)postgresql(dot)org\n**\ud83d\udcee Message ID:** `17061-dd7f4825b7da3a9d@postgresql.org`\n\n**\ud83d\udcdd Message :**\nThe following bug has been logged on the website:\n\nBug reference: 17061  \nLogged by: Benoit Lobr\u00e9au  \nEmail address: blo(dot)talkto(at)gmail(dot)com  \nPostgreSQL version: 14beta1  \nOperating system: Fedora 33  \nDescription: \n\nHi,\n\nI try to access the field inside the tuple generated by SEARCH BREADTH  \nFIRST.   \nA use case would be to get all the records with depth 3.\n\nI fail to access it and I don't understand the error. I wonder if it works  \nas intended ?\n\nHere is a test case :\n\nDROP TABLE tree;  \nCREATE TABLE tree(id int, parent_id int, name text);  \nALTER TABLE tree ADD PRIMARY KEY (id);  \nINSERT INTO tree(id, parent_id, name)   \nVALUES (1, NULL, 'Albert'),  \n(2, 1, 'Bob'),  \n(3, 1, 'Barbara'),  \n(4, 1, 'Britney'),  \n(5, 3, 'Clara'),  \n(6, 3, 'Clement'),  \n(7, 2, 'Craig'),  \n(8, 5, 'Debby'),  \n(9, 5, 'Dave'),  \n(10, 9, 'Edwin');\n\n\\-- The following query shows that the fields of the tuple are named:  \n\\--  \n\\-- row_to_json  \n\\-- -----------------------  \n\\-- {\"*DEPTH*\":0,\"id\":1}  \n\\-- {\"*DEPTH*\":1,\"id\":2}  \n\\-- {\"*DEPTH*\":1,\"id\":3}  \n\\-- {\"*DEPTH*\":1,\"id\":4}  \n\\-- {\"*DEPTH*\":2,\"id\":5}  \n\\-- {\"*DEPTH*\":2,\"id\":6}  \n\\-- {\"*DEPTH*\":2,\"id\":7}  \n\\-- {\"*DEPTH*\":3,\"id\":8}  \n\\-- {\"*DEPTH*\":3,\"id\":9}  \n\\-- {\"*DEPTH*\":4,\"id\":10}  \n\\-- (10 rows)\n\nWITH RECURSIVE mtree(id, name) AS (  \nSELECT id, name  \nFROM tree  \nWHERE id = 1  \nUNION ALL  \nSELECT t.id, t.name  \nFROM tree AS t  \nINNER JOIN mtree AS m ON t.parent_id = m.id  \n) SEARCH BREADTH FIRST BY id SET breadth  \nSELECT row_to_json(breadth)  \nFROM mtree m;\n\n\\-- So I try to get the \"*DEPTH*\" column but it fails with (I get the same  \nerror with (breadth).id) :  \n\\--  \n\\-- ERROR: CTE m does not have attribute 3\n\nWITH RECURSIVE mtree(id, name) AS (  \nSELECT id, name  \nFROM tree  \nWHERE id = 1  \nUNION ALL  \nSELECT t.id, t.name  \nFROM tree AS t  \nINNER JOIN mtree AS m ON t.parent_id = m.id  \n) SEARCH BREADTH FIRST BY id SET breadth  \nSELECT (breadth).\"*DEPTH*\"  \nFROM mtree m;\n\n\\-- The following works but feels a little hacky\n\nWITH RECURSIVE mtree(id, name) AS (  \nSELECT id, name  \nFROM tree  \nWHERE id = 1  \nUNION ALL  \nSELECT t.id, t.name  \nFROM tree AS t  \nINNER JOIN mtree AS m ON t.parent_id = m.id  \n) SEARCH BREADTH FIRST BY id SET breadth  \nSELECT row_to_json(breadth) -> '*DEPTH*'  \nFROM mtree m;\n\n"
+    },
+    {
+      "repo": "astahmer/openapi-zod-client",
+      "issue": 199,
+      "url": "https://github.com/astahmer/openapi-zod-client/issues/199",
+      "title": "Missing Export with recursive Schemas",
+      "score": 11,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "activity.discussion": 2,
+        "activity.reactions": 2
+      },
+      "body": "## Description:\r\n\r\nI am working with a recursive schema in an OpenAPI specification file (openapi.json) and generating TypeScript types using this library. The generated types include a Zod schema for the recursive object. However, I'm facing an issue when I attempt to use the exported type in my code.\r\n\r\n## Steps to reproduce:\r\n### OpenAPI Specification (openapi.json):\r\n```json \r\n{\r\n    \"openapi\": \"3.0.0\",\r\n    \"info\": {\r\n      \"title\": \"Recursive Example API\",\r\n      \"version\": \"1.0.0\"\r\n    },\r\n    \"paths\": {\r\n      \"/items\": {\r\n        \"get\": {\r\n          \"responses\": {\r\n            \"200\": {\r\n              \"description\": \"An array of items\",\r\n              \"content\": {\r\n                \"application/json\": {\r\n                  \"schema\": {\r\n                    \"$ref\": \"#/components/schemas/Item\"\r\n                  }\r\n                }\r\n              }\r\n            }\r\n          }\r\n        }\r\n      }\r\n    },\r\n    \"components\": {\r\n      \"schemas\": {\r\n        \"Item\": {\r\n          \"type\": \"object\",\r\n          \"properties\": {\r\n            \"name\": {\r\n              \"type\": \"string\"\r\n            },\r\n            \"children\": {\r\n              \"type\": \"array\",\r\n              \"items\": {\r\n                \"$ref\": \"#/components/schemas/Item\"\r\n              }\r\n            }\r\n          }\r\n        }\r\n      }\r\n    }\r\n  }\r\n  \r\n```\r\n### Generated Code:\r\nI generated the code using the following command:\r\n```\r\n$ npx openapi-zod-client openapi.json\r\n```\r\n\r\nThis produces the following TypeScript code:\r\n```ts\r\ntype Item = Partial<{\r\n\tname: string;\r\n\tchildren: Array<Item>;\r\n}>;\r\n\r\nconst Item: z.ZodType<Item> = z.lazy(() =>\r\n\tz\r\n\t\t.object({ name: z.string(), children: z.array(Item) })\r\n\t\t.partial()\r\n\t\t.passthrough()\r\n);\r\n\r\nexport const schemas = {\r\n\tItem\r\n};\r\n\r\n```\r\n\r\nFor reference, I export it like this in my index.ts:\r\n```ts\r\nexport * from './api/client';\r\n```\r\n\r\n## Error Encountered:\r\nWhen I use the Item type, I encounter the following compiler error:\r\n```\r\nExported variable 'router' has or is using name 'Item' from external module \"[...]\" but cannot be named.\r\n```\r\n\r\n## Temporary Fix\r\n\r\nI can work around this issue by manually adding an export statement to the `Item` type as follows:\r\n```ts\r\nexport type Item = Partial<{\r\n\tname: string;\r\n\tchildren: Array<Item>;\r\n}>;\r\n```\r\n\r\nThis manual fix seems to resolve the error but there might be an underlying problem that needs addressing. I tried to use something like ` --export-schemas` but it didn't had an effect. \r\nAny assistance or suggestions to rectify this error would be greatly appreciated!\r\n"
+    },
+    {
+      "repo": "austintheriot/resonix",
+      "issue": 2,
+      "url": "https://github.com/austintheriot/resonix/issues/2",
+      "title": "Possible solutions for resolving audio dependency graph",
+      "score": 11,
+      "signals": {
+        "traversal.recursive": 3,
+        "traversal.cycle": 2,
+        "traversal.ordering": 3,
+        "traversal.bfs_dfs": 3
+      },
+      "body": "Resolving the audio dependency graph into a static, ordered visit-list is fundamentally a dependency resolution challenge with some interesting audio-specific nuances. \r\n\r\n# Constraints\r\n\r\nThe key constraints are:\r\n- Nodes have dependencies\r\n- Some nodes can have self-recursive connections, where the node's output becomes its own a parent node's input on the next frame\r\n- We want a static, deterministic order of node processing\r\n- Every node must have all its input dependencies resolved before it can process\r\n\r\n# Goal\r\n\r\nThe goal is a linearized list where:\r\n- Every node appears exactly once\r\n- All node dependencies are satisfied before the node is processed\r\n- Circular/recursive dependencies are handled gracefully\r\n\r\n# Approach\r\n\r\nThe most natural approach here is to use a Topological Sort algorithm, specifically adapted for handling potential recursive dependencies. A classic Depth-First Search (DFS)-based topological sort won't work perfectly because of the self-referential connections.\r\n\r\nSome things to keep in mind:\r\n- Treat self-recursive connections as a special case of circular dependency\r\n- Potentially introduce \"delay\" or \"state\" nodes that can break pure cyclic dependencies\r\n- Ensure that nodes with circular dependencies are processed in a way that allows reasonable signal propagation\r\n\r\n# Possible solution\r\n\r\nOne potential algorithm structure might look like:\r\n- Start with nodes that have no incoming dependencies\r\n- Progressively mark nodes as \"visited\" or \"processed\"\r\n- For nodes with self-recursion, ensure their state can be initialized and that they have a well-defined first-frame behavior\r\n- Potentially use a \"staging\" mechanism where nodes with circular dependencies get special processing order"
+    },
+    {
+      "repo": "blacksmithgu/obsidian-dataview",
+      "issue": 318,
+      "url": "https://github.com/blacksmithgu/obsidian-dataview/issues/318",
+      "title": "Recursive queries? Finding all ancestors of a node",
+      "score": 11,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "activity.discussion": 2,
+        "activity.reactions": 2
+      },
+      "body": "I see a lot of potential for dataview to become a powerful tool to facilitate the creation of meaningful hierarchies and ontologies.\r\n\r\nI couldn't find any mention of what I'm asking in the documentation, so please forgive me if this is already a feature.\r\n\r\nI suppose this could potentially be done with dataview-js, but this feels like a common enough use case that it should be part of the query language itself.\r\n\r\nHere's a possible example (from Agile development):\r\nAn Epic is an aggregation of multiple projects, and each of these projects could have stories and tasks and subtasks and so on.\r\n\r\nWith recursive queries and maintaining a parent link in each of these nodes, it would be possible to create the whole \"breadcrumb\" of the specific task -> story -> project -> epic, so you can simultaneously see the task as well as the bigger picture of what you are doing.\r\n\r\nRight now it is definitely possible to see the outlinks of a task and find out who the parent is and follow the trail up, (this can even be done with Obsidian vanilla backlinks itself). It would be great if you could facilitate more powerful ways to navigate the graph and represent relationships like (is-a, has-a, contains, etc.).\r\n\r\nWith the features to recursively query the graph, it would even become possible to build your own semantic web of meaning.\r\n\r\nPSQL for example has the `WITH RECURSIVE` clause to facilitate writing such queries, even though I don't really know how that would be working internally.\r\n\r\nI have a decent amount of experience working with TS/JS before, and if you think this is a good idea, I could potentially contribute, if I had a few pointers."
+    },
+    {
+      "repo": "coryodaniel/arbor",
+      "issue": 23,
+      "url": "https://github.com/coryodaniel/arbor/issues/23",
+      "title": "Support dynamic switching of schema prefixes",
+      "score": 11,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "activity.discussion": 2,
+        "activity.reactions": 2
+      },
+      "body": "Howdy!\r\n\r\nSo right now when we're using Arbor, the `fragment/1` call in `ancestors/1` and `descendants/1` are essentially hard coded at compile time because of the restrictions of `fragment/1`.\r\n\r\nHowever, it would be really nice if they could use the `prefix` in the given's struct's `:__meta__.prefix` field so we're always searching for ancestors and descendants in the same schema as the given struct.\r\n\r\nSince all of these strings used in `fragment/1` need to be compiled and not interpolated, my initial thought is to allow users to configure a number of prefixes that they want to compile functions for, sort of like this:\r\n\r\n```elixir\r\nfor prefix <- opts[:prefixes] do\r\n  def descendants(%{__meta__: %{prefix: unquote(prefix)}} = struct, depth \\\\ 2_147_483_647) do\r\n    from(\r\n      t in unquote(definition),\r\n      where:\r\n        t.unquote(opts[:primary_key]) in fragment(\r\n          unquote(\"\"\"\r\n          WITH RECURSIVE #{opts[:tree_name]} AS (\r\n            SELECT #{opts[:primary_key]},\r\n                    0 AS depth\r\n            FROM #{prefix}.#{opts[:table_name]}\r\n            WHERE #{opts[:foreign_key]} = ?\r\n          UNION ALL\r\n            SELECT #{opts[:table_name]}.#{opts[:primary_key]},\r\n                    #{opts[:tree_name]}.depth + 1\r\n            FROM #{prefix}.#{opts[:table_name]}\r\n              JOIN #{opts[:tree_name]}\r\n              ON #{opts[:table_name]}.#{opts[:foreign_key]} = #{opts[:tree_name]}.#{\r\n            opts[:primary_key]\r\n          }\r\n            WHERE #{opts[:tree_name]}.depth + 1 < ?\r\n          )\r\n          SELECT #{opts[:primary_key]} FROM #{opts[:tree_name]}\r\n          \"\"\"),\r\n          type(^struct.unquote(opts[:primary_key]), unquote(opts[:foreign_key_type])),\r\n          type(^depth, :integer)\r\n        )\r\n    )\r\n  end\r\nend\r\n```\r\n\r\nThen there could be at the end the same definition that you have now with no pattern matching.\r\n\r\nSo, sound like something that makes sense to you? If so, I'll send along a PR."
+    },
+    {
+      "repo": "dbt-labs/dbt-adapters",
+      "issue": 568,
+      "url": "https://github.com/dbt-labs/dbt-adapters/issues/568",
+      "title": "[Feature] unit testing a recursive CTE fails",
+      "score": 11,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "activity.discussion": 2,
+        "activity.reactions": 2
+      },
+      "body": "### Is this a new bug in dbt-bigquery?\n\n- [X] I believe this is a new bug in dbt-bigquery\n- [X] I have searched the existing issues, and I could not find an existing issue for this bug\n\n### Current Behavior\n\nI'm trying to unit test a model with a recursive CTE (a use case [specifically called out in the docs](https://docs.getdbt.com/docs/build/unit-tests#when-to-add-a-unit-test-to-your-model)), but it's failing with this error in dbt Cloud:\r\n\r\n> WITH RECURSIVE is only allowed at the top level of the SELECT, CREATE TABLE AS SELECT, CREATE VIEW, INSERT, EXPORT DATA statements.\r\n\r\nExamining the generated code, I can confirm that it starts with `select * from (WITH RECURSIVE`.\n\n### Expected Behavior\n\nI expect to be able to use unit tests with recursive CTEs on BigQuery.\n\n### Steps To Reproduce\n\n1. Add the attached 3 files to a BigQuery dbt environment with version 1.8. (I used dbt Cloud.)\r\n2. `dbt build --select +recursive_cte+`\n\n### Relevant log output\n\n```shell\n13:32:41 Began running node unit_test.edsights.recursive_cte.test_recursive_cte\r\n13:32:41 2 of 3 START unit_test recursive_cte::test_recursive_cte ....................... [RUN]\r\n13:32:41 Acquiring new bigquery connection 'unit_test.edsights.recursive_cte.test_recursive_cte'\r\n13:32:41 Began compiling node unit_test.edsights.recursive_cte.test_recursive_cte\r\n13:32:41 Timing info for unit_test.edsights.recursive_cte.test_recursive_cte (compile): 13:32:41.383097 => 13:32:41.383103\r\n13:32:41 Began executing node unit_test.edsights.recursive_cte.test_recursive_cte\r\n13:32:41 Opening a new connection, currently in state init\r\n13:32:41 Writing injected SQL for node \"unit_test.edsights.recursive_cte.test_recursive_cte\"\r\n13:32:41 Writing injected SQL for node \"unit_test.edsights.recursive_cte.test_recursive_cte\"\r\n13:32:41 On unit_test.edsights.recursive_cte.test_recursive_cte: /* {\"app\": \"dbt\", \"dbt_version\": \"2024.0.0\", \"profile_name\": \"user\", \"target_name\": \"default\", \"node_id\": \"unit_test.edsights.recursive_cte.test_recursive_cte\"} */\r\n\r\n    \r\n  \r\n    \r\n\r\n    create or replace table `production-one-405017`.`dbt_harlan`.`test_recursive_cte__dbt_tmp`\r\n      \r\n    \r\n    \r\n\r\n    OPTIONS(\r\n      expiration_timestamp=TIMESTAMP_ADD(CURRENT_TIMESTAMP(), INTERVAL 12 hour)\r\n    )\r\n    as (\r\n      select * from (\r\n        WITH RECURSIVE\r\n __dbt__cte__recursive_cte_given as (\r\n\r\n-- Fixture for recursive_cte_given\r\nselect safe_cast('1' as INT64) as x\r\n), asdf AS (\r\n    SELECT *\r\n    FROM __dbt__cte__recursive_cte_given\r\n)\r\n\r\nSELECT *\r\nFROM asdf\r\n    ) as __dbt_sbq\r\n    where false and current_timestamp() = current_timestamp()\r\n    limit 0\r\n\r\n    );\r\n  \r\n  \r\n13:32:41 BigQuery adapter: https://console.cloud.google.com/bigquery?project=production-one-405017&j=bq:us-central1:a993367b-a621-4a41-8bf7-23d7275b7e5a&page=queryresults\r\n13:32:42 BigQuery adapter: Retry attempt 1 of 1 after error: BadRequest('WITH RECURSIVE is only allowed at the top level of the SELECT, CREATE TABLE AS SELECT, CREATE VIEW, INSERT, EXPORT DATA statements.; reason: invalidQuery, location: query, message: WITH RECURSIVE is only allowed at the top level of the SELECT, CREATE TABLE AS SELECT, CREATE VIEW, INSERT, EXPORT DATA statements.')\r\n13:32:43 BigQuery adapter: https://console.cloud.google.com/bigquery?project=production-one-405017&j=bq:us-central1:16d300ec-588c-4414-aafd-9583fc051629&page=queryresults\r\n13:32:43 BigQuery adapter: https://console.cloud.google.com/bigquery?project=production-one-405017&j=bq:us-central1:16d300ec-588c-4414-aafd-9583fc051629&page=queryresults\r\n13:32:43 Timing info for unit_test.edsights.recursive_cte.test_recursive_cte (execute): 13:32:41.384037 => 13:32:43.609843\r\n13:32:43 Runtime Error in unit_test test_recursive_cte (models/intermediate/recursive_cte.yml)\r\n  An error occurred during execution of unit test 'test_recursive_cte'. There may be an error in the unit test definition: check the data types.\r\n   Database Error\r\n    WITH RECURSIVE is only allowed at the top level of the SELECT, CREATE TABLE AS SELECT, CREATE VIEW, INSERT, EXPORT DATA statements.\r\n13:32:43 2 of 3 ERROR recursive_cte::test_recursive_cte ................................. [^[[31mERROR^[[0m in 2.23s]\r\n13:32:43 Finished running node unit_test.edsights.recursive_cte.test_recursive_cte\r\n13:32:43   Runtime Error in unit_test test_recursive_cte (models/intermediate/recursive_cte.yml)\r\n  An error occurred during execution of unit test 'test_recursive_cte'. There may be an error in the unit test definition: check the data types.\r\n   Database Error\r\n    WITH RECURSIVE is only allowed at the top level of the SELECT, CREATE TABLE AS SELECT, CREATE VIEW, INSERT, EXPORT DATA statements.\n```\n\n\n### Environment\n\n```markdown\ndbt Cloud with version 1.8\n```\n\n\n### Additional Context\n\nSee also dbt Labs support ticket 64761."
+    },
+    {
+      "repo": "diesel-rs/diesel",
+      "issue": 356,
+      "url": "https://github.com/diesel-rs/diesel/issues/356",
+      "title": "Support WITH RECURSIVE queries",
+      "score": 11,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "activity.discussion": 2,
+        "activity.reactions": 2
+      },
+      "body": "https://www.postgresql.org/docs/current/static/queries-with.html\r\nhttps://www.sqlite.org/lang_with.html\r\n\r\nBlocked on #33."
+    },
+    {
+      "repo": "ent/ent",
+      "issue": 1024,
+      "url": "https://github.com/ent/ent/issues/1024",
+      "title": "Get all descendants / ancestors",
+      "score": 11,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "activity.discussion": 2,
+        "activity.reactions": 2
+      },
+      "body": "Hi folks! Is there any way to basically mimic what Postgres' [`WITH RECURSIVE`](https://www.postgresqltutorial.com/postgresql-recursive-query/) does, so that I could get eg. all followers, their followers, and their followers etc in the `m2mrecur` example https://github.com/facebook/ent/blob/9ff32ad60afd31c163cc76e7b208ebb627d7ee4f/examples/m2mrecur/ent/schema/user.go#L18-L32\r\n\r\n\r\nSo basically a way to find all reachable vertices from some vertex along some edge.\r\n\r\nI'd be happy with just being able to provide a raw SQL expression, but I couldn't quite come up with a way to do that either."
+    },
+    {
+      "repo": "gorakhargosh/watchdog",
+      "issue": 386,
+      "url": "https://github.com/gorakhargosh/watchdog/issues/386",
+      "title": "Problem with Recursive",
+      "score": 11,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "activity.discussion": 2,
+        "activity.reactions": 2
+      },
+      "body": "Hi.\r\n\r\nI try to use watchdog for syncing my home-folder and its content to a server like folder redirection for windows machines in a domain.\r\n\r\nIf i specify a subfolder in my home directory (e.g. Desktop) everything works. but if i specify \"/Users/thomas\" watchdog wont recognize changes anywere in there.\r\n\r\nRunning on OS X 10.10.5\r\n\r\nKind Regards\r\nThomas"
+    }
+  ]
+}

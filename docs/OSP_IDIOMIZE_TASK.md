@@ -42,7 +42,11 @@ Run `jac run scripts/graph_targets/probe_walker_cycle.jac` (30s timeout):
 | Typed-edge traversal | `visit [->:EdgeType:->]` / `visit [here->:Door:->]` (NOT `[->:T:]`). |
 | Node-type filter | `visit [-->[?:Foo]]` (also `(-->(?:Foo))` forms). |
 | Attach / create | `root ++> (a := Node(...));` — grouped creation uses `:=`. Typed edge creation: `a +>:Link:+> b;`. Typed disconnect: `a del ->:Link:-> b;`. |
-| Node **deletion** | Not yet probed (C5 blocker §5.5). |
+| Node **deletion** | Verified: `a del --> b;` disconnect works; `del b;` destroys the node AND auto-purges its remaining edges. Probe: `data/osp_lifts/probe_deletion.jac`. |
+| Docstrings | Module-level and ability-body docstrings parse; a docstring as first statement of a plain `def` body fails (`Expected 'else', got '{'`) — use `#` comments inside `def`s. |
+| `pass` statement | **Does not exist** (NameError); empty except-blocks need a comment or real statement. |
+| Native test engine | `jac test` defaults to codespace `native`; records whose imports don't lower cleanly abort in `invoke_native_test`. Pin `[build] default_codespace = "server"` per record dir's `jac.toml` (NOT the legacy `[placement]` section) and clear stale `.jac/` build dirs after config changes. |
+| Optional narrowing at connections | Connection operands must be definite node instances: narrow `x = resolve(...)` with `if x is None { continue; }` before `+>:E:+> x`. |
 
 **Consequences:** every lift must carry an explicit cycle policy (guard set /
 depth cap / error — `visit ... else { disengage; }` is **dead-end** handling,

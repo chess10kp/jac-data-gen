@@ -1,0 +1,136 @@
+{
+  "manifest": "issues_64.jsonl",
+  "records": [
+    {
+      "repo": "python/cpython",
+      "issue": 63061,
+      "url": "https://github.com/python/cpython/issues/63061",
+      "title": "Problems with recursive automatic exception chaining",
+      "score": 9,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "activity.discussion": 2
+      },
+      "body": "BPO | [18861](https://bugs.python.org/issue18861)\n--- | :---\nNosy | @ncoghlan, @hniksic, @benjaminp, @njsmith, @cjerdonek, @vadmium, @iritkatriel\n\n<sup>*Note: these values reflect the state of the issue at the time it was migrated and might not reflect the current state.*</sup>\n\n<details><summary>Show more details</summary><p>\n\nGitHub fields:\n```python\nassignee = None\nclosed_at = None\ncreated_at = <Date 2013-08-28.02:42:07.875>\nlabels = ['interpreter-core', 'type-bug', '3.11']\ntitle = 'Problems with recursive automatic exception chaining'\nupdated_at = <Date 2021-12-11.15:36:50.787>\nuser = 'https://bugs.python.org/nikratio'\n```\n\nbugs.python.org fields:\n```python\nactivity = <Date 2021-12-11.15:36:50.787>\nactor = 'iritkatriel'\nassignee = 'none'\nclosed = False\nclosed_date = None\ncloser = None\ncomponents = ['Interpreter Core']\ncreation = <Date 2013-08-28.02:42:07.875>\ncreator = 'nikratio'\ndependencies = []\nfiles = []\nhgrepos = []\nissue_num = 18861\nkeywords = []\nmessage_count = 19.0\nmessages = ['196344', '196345', '201410', '201417', '201460', '201482', '202421', '202523', '202525', '202562', '202564', '202579', '202754', '202759', '203015', '203017', '203370', '390455', '408310']\nnosy_count = 9.0\nnosy_names = ['ncoghlan', 'hniksic', 'benjamin.peterson', 'njs', 'nikratio', 'chris.jerdonek', 'alonho', 'martin.panter', 'iritkatriel']\npr_nums = []\npriority = 'normal'\nresolution = None\nstage = None\nstatus = 'open'\nsuperseder = None\ntype = 'behavior'\nurl = 'https://bugs.python.org/issue18861'\nversions = ['Python 3.11']\n```\n\n</p></details>\n"
+    },
+    {
+      "repo": "r1chardj0n3s/parse",
+      "issue": 206,
+      "url": "https://github.com/r1chardj0n3s/parse/issues/206",
+      "title": "Nested Format String Support with Recursive Parsing",
+      "score": 9,
+      "signals": {
+        "traversal.recursive": 3,
+        "traversal.cycle": 2,
+        "manual_impl.recursive_cte": 4
+      },
+      "body": "Cannot parse nested structures like `\"outer: {inner: {value:d}}\"\n\n> Feature Request\n\nSupport nested format strings: `parse(\"{level1: {level2: {level3:d}}}\", string)`\nImplement recursive parser that tracks nesting depth\nHandle escaped braces at any nesting level\nSupport mixing named and positional args in nested structures\nAdd `max_nesting_depth` parameter (default 10) to prevent stack overflow\n\nTest Complexity\n5+ levels of nesting\nMixed named/positional at different levels\nEscaped braces within nested structures\nMalformed nesting (unclosed braces at various depths)\nCircular reference detection\n\nWhy Complex\nRecursive regex generation\nState tracking for multiple nesting levels\nAmbiguity resolution (which closing brace matches which opening)\nMemory management for deep recursion"
+    },
+    {
+      "repo": "raml-org/datatype-expansion",
+      "issue": 111,
+      "url": "https://github.com/raml-org/datatype-expansion/issues/111",
+      "title": "incompatible types error with recursive types",
+      "score": 9,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "activity.reactions": 2
+      },
+      "body": "Apologies if I am not understanding this correctly, but I am getting the following error when passing in a type that is recursive:\r\n\r\n`Error: incompatible types: [$recur, $recur]`\r\n\r\nThis error is coming from `minType.js`.\r\n\r\nRepro steps:\r\n\r\n```js\r\nconst fooSchema = {\r\n  type: \"object\",\r\n  properties: {\r\n    bar: {\r\n      type: \"Foo\"\r\n    }\r\n  }\r\n};\r\n\r\nconst expanded = expandedForm(schema, {\r\n    Foo: fooSchema\r\n})\r\ncanonicalForm(expanded)\r\n```\r\n\r\nExpected: Able to handle recursive references.\r\n\r\nActual: Error above\r\n\r\n\r\nFor reference, this is what my RAML representation looks like:\r\n```\r\ntypes:\r\n  Foo:\r\n    type: object\r\n    properties:\r\n      bar:\r\n        type: Foo\r\n```\r\n\r\nI should also note that I am not using `datatype-expansion` directly, but am seeing this error through usage of `https://github.com/raml-org/ramldt2jsonschema`\r\n\r\nFull stack trace\r\n```\r\nError: incompatible types: [$recur, $recur]\r\n    at minType (/datatype-expansion/src/minType.js:323:9)\r\n    at toCanonical (/datatype-expansion/src/canonical.js:151:19)\r\n    at _.each (/datatype-expansion/src/canonical.js:67:19)\r\n    at /datatype-expansion/node_modules/lodash/lodash.js:4911:15\r\n    at baseForOwn (/datatype-expansion/node_modules/lodash/lodash.js:2996:24)\r\n    at /datatype-expansion/node_modules/lodash/lodash.js:4880:18\r\n    at Function.forEach (/datatype-expansion/node_modules/lodash/lodash.js:9344:14)\r\n    at toCanonical (/datatype-expansion/src/canonical.js:65:7)\r\n    at toCanonical (/datatype-expansion/src/canonical.js:150:25)\r\n    at _.each (/datatype-expansion/src/canonical.js:67:19)\r\n```\r\n\r\n_Edited to include full stack trace_"
+    },
+    {
+      "repo": "restsql/restsql",
+      "issue": 79,
+      "url": "https://github.com/restsql/restsql/issues/79",
+      "title": "Possibility to use Recursive function?",
+      "score": 9,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "activity.discussion": 2
+      },
+      "body": "Hello,\r\nI am currently evaluating APIs to use with our setup and yours really comes close.\r\nHowever, I am using a few recursive functions in postgreSQL, a function looks like this:\r\n\r\n```\r\nCREATE FUNCTION recursive_geo(integer[]) RETURNS TABLE(id integer, parent_id integer)\r\n    LANGUAGE sql\r\n    AS $_$\r\nWITH RECURSIVE included_geo(iid, iparent) AS (\r\n    SELECT id, parent FROM geo WHERE id = ANY($1)\r\n  UNION ALL\r\n    SELECT p.id, p.parent\r\n    FROM included_geo pr, geo p\r\n    WHERE p.parent = pr.iid\r\n  )\r\nSELECT iid, iparent\r\nFROM included_geo;\r\n$_$;\r\n\r\n```\r\nWhich I then call like this:\r\n`select id as hasid from recursive_geo(${data.all.geo})\r\n`\r\nwhere _data.all.geo_ is the parameter passed to the query\r\nis it possible to do this with RestSQL?\r\nCould I f.e. just declare \"recursive_geo\" as a table? (It is actually a temporary table after all)\r\n\r\nThanks a lot in advance for any help!"
+    },
+    {
+      "repo": "rollup/rollup",
+      "issue": 3888,
+      "url": "https://github.com/rollup/rollup/issues/3888",
+      "title": "Module execution order can be incorrect",
+      "score": 9,
+      "signals": {
+        "traversal.ordering": 3,
+        "refactor.refactor": 2,
+        "activity.discussion": 2,
+        "activity.reactions": 2
+      },
+      "body": "<!--\r\n  \u26a1\ufe0f katchow! We \ud83d\udc9b issues.\r\n\r\n  Please - do not - remove this template.\r\n  Please - do not - skip or remove parts of this template.\r\n  Or your issue may be closed.\r\n\r\n  \ud83d\udc49\ud83c\udffd Need help or tech support? Please don't open an issue!\r\n  Head to https://is.gd/rollup_chat or https://stackoverflow.com/questions/tagged/rollupjs\r\n  \r\n  \ud83d\udc49\ud83c\udffd Is this issue related to an official plugin? Please do not open an issue here, go to the plugins repository instead: https://github.com/rollup/plugins/issues\r\n\r\n  \u2764\ufe0f Rollup? Please consider supporting our collective:\r\n  \ud83d\udc49 https://opencollective.com/rollup/donate\r\n-->\r\n\r\n- Rollup Version: 2.34.0\r\n- Operating System (or Browser): Chrome 86\r\n- Node Version (if applicable): N/A\r\n- Link to reproduction (IMPORTANT, read below): [link](http://rollupjs.org/repl/?version=2.34.0&shareable=JTdCJTIybW9kdWxlcyUyMiUzQSU1QiU3QiUyMm5hbWUlMjIlM0ElMjJtYWluLmpzJTIyJTJDJTIyY29kZSUyMiUzQSUyMmltcG9ydCUyMCcuJTJGbGliMiclNUNuaW1wb3J0JTIwJy4lMkZsaWIxJyU1Q25pZiUyMCh3aW5kb3cubGliJTIwISUzRCUzRCUyMCdsaWIxJyklMjB0aHJvdyUyMCdmYWlsJyUyMiUyQyUyMmlzRW50cnklMjIlM0F0cnVlJTdEJTJDJTdCJTIybmFtZSUyMiUzQSUyMm1haW4yLmpzJTIyJTJDJTIyY29kZSUyMiUzQSUyMmltcG9ydCUyMCcuJTJGbGliMSclNUNuaW1wb3J0JTIwJy4lMkZsaWIyJyU1Q25pZiUyMCh3aW5kb3cubGliJTIwISUzRCUzRCUyMCdsaWIyJyklMjB0aHJvdyUyMCdmYWlsJyUyMiUyQyUyMmlzRW50cnklMjIlM0F0cnVlJTdEJTJDJTdCJTIybmFtZSUyMiUzQSUyMmxpYjEuanMlMjIlMkMlMjJjb2RlJTIyJTNBJTIyd2luZG93LmxpYiUyMCUzRCUyMCdsaWIxJyUyMiUyQyUyMmlzRW50cnklMjIlM0FmYWxzZSU3RCUyQyU3QiUyMm5hbWUlMjIlM0ElMjJsaWIyLmpzJTIyJTJDJTIyY29kZSUyMiUzQSUyMndpbmRvdy5saWIlMjAlM0QlMjAnbGliMiclMjIlN0QlNUQlMkMlMjJvcHRpb25zJTIyJTNBJTdCJTIyZm9ybWF0JTIyJTNBJTIyZXMlMjIlMkMlMjJuYW1lJTIyJTNBJTIybXlCdW5kbGUlMjIlMkMlMjJhbWQlMjIlM0ElN0IlMjJpZCUyMiUzQSUyMiUyMiU3RCUyQyUyMmdsb2JhbHMlMjIlM0ElN0IlN0QlN0QlMkMlMjJleGFtcGxlJTIyJTNBbnVsbCU3RA==)\r\n\r\n<!--\r\n  Issues without minimal reproductions will be closed! Please provide a link to one by:\r\n  1. Using the REPL at https://rollupjs.org/repl/, or\r\n  2. Using the REPL.it reproduction template at https://repl.it/@rollup/rollup-repro\r\n     (allows full use of all rollup options and plugins), or\r\n  3. Provide a minimal repository link (Read https://git.io/fNzHA for instructions).\r\n     These may take more time to triage than the other options.\r\n     \r\n  For some bugs it this may seem like overkill but believe us, very often what seems like a\r\n  \"clear issue\" is actually specific to some details of your setup. Having a runnable\r\n  reproduction not only \"proves\" your bug to us but also allows us to spend all our effort\r\n  fixing the bug instead of struggling to understand your issue.\r\n-->\r\n\r\nI'm currently working on fixing some code splitting ordering issues in esbuild (https://github.com/evanw/esbuild/issues/399) and I noticed that Rollup has a similar problem. Here's an example problem case:\r\n\r\n```js\r\n// main.js\r\nimport './lib2'\r\nimport './lib1'\r\nif (window.lib !== 'lib1') throw 'fail'\r\n```\r\n\r\n```js\r\n// main2.js\r\nimport './lib1'\r\nimport './lib2'\r\nif (window.lib !== 'lib2') throw 'fail'\r\n```\r\n\r\n```js\r\n// lib1.js\r\nwindow.lib = 'lib1'\r\n```\r\n\r\n```js\r\n// lib2.js\r\nwindow.lib = 'lib2'\r\n```\r\n\r\nI have a way to solve this in esbuild but it's a pretty big rewrite. Solving this is potentially a step up in complexity, so it's understandable why Rollup hasn't tackled this yet.\r\n\r\nI figured I should log this in case it's not already a known issue. I did a quick search and the best I found was https://github.com/rollup/rollup/issues/3356, but it doesn't seem like this exact issue is covered by that one. My apologies if this issue is already known. If that's the case, feel free to close this.\r\n\r\n### Expected Behavior\r\n\r\nBoth generated entry point chunks respect the correct module execution order and don't throw.\r\n\r\n### Actual Behavior\r\n\r\nOne of the generated entry point chunks that Rollup generates will throw because common code that is shared between both of the entry points is evaluated in the wrong order. It's easy to see why this happens from the generated code:\r\n\r\n```js\r\n// output/main.js\r\nimport './lib1-4ba6e17e.js';\r\nif (window.lib !== 'lib1') throw 'fail'\r\n```\r\n\r\n```js\r\n// output/main2.js\r\nimport './lib1-4ba6e17e.js';\r\nif (window.lib !== 'lib2') throw 'fail'\r\n```\r\n\r\n```js\r\n// output/lib1-4ba6e17e.js\r\nwindow.lib = 'lib2';\r\nwindow.lib = 'lib1';\r\n```\r\n\r\n<!--\r\n  Most issues can be expressed or demonstrated through the REPL or a repository.\r\n  However, the situation may arise where some small code snippets also need to\r\n  be provided. In that situation, please add your code below using\r\n  Fenced Code Blocks (https://help.github.com/articles/creating-and-highlighting-code-blocks/)\r\n-->\r\n"
+    },
+    {
+      "repo": "rust-lang/rust",
+      "issue": 102910,
+      "url": "https://github.com/rust-lang/rust/issues/102910",
+      "title": "rustdoc: hang/OOM with recursive type ",
+      "score": 9,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "activity.discussion": 2
+      },
+      "body": "\r\n\r\nI tried this code from `tests/ui/recursion/issue-38591-non-regular-dropck-recursion.rs`\r\n\r\n```rust\r\nstruct S<T> {\r\n    t: T,\r\n    s: Box<S<fn(u: T)>>,\r\n}\r\n\r\nfn f(x: S<u32>) {}\r\n\r\nfn main() {\r\n    // Force instantiation.\r\n    f as fn(_);\r\n}\r\n```\r\n"
+    },
+    {
+      "repo": "s3tools/s3cmd",
+      "issue": 624,
+      "url": "https://github.com/s3tools/s3cmd/issues/624",
+      "title": "Memory usage with recursive file list",
+      "score": 9,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "activity.reactions": 2
+      },
+      "body": "When using \"s3cmd ls --recursive\" on a path with a huge number of files (for example, 1 million files), the process seems to fetch all the data into memory before writing to stdout. This is works well until the oom-killer kills the process due to excessive memory consumption.\n\nWould it be possible to add a new option to write the list directly stdout after each API request is completed?\n"
+    },
+    {
+      "repo": "sicara/tf-explain",
+      "issue": 63,
+      "url": "https://github.com/sicara/tf-explain/issues/63",
+      "title": "Compatibility with recursive models",
+      "score": 9,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "activity.discussion": 2
+      },
+      "body": "Hi. First of all, kudos for the amazing initiative. Having something like as a Callback option in `tf.keras` is just amazing. However, as there are not any demo notebooks available currently to enable an interested developer to try out `tf-explain`, I was preparing one with a fine-tuned model using the CIFAR10 dataset. However, due to the lack of clarity on what to exactly specify in the `layers_name` argument while defining a callback, maybe I am getting an error after one epoch (error trace is attached\r\n[error_trace.txt](https://github.com/sicara/tf-explain/files/3454830/error_trace.txt)\r\n).\r\n```\r\ncallbacks = [\r\n    ActivationsVisualizationCallback(\r\n        validation_data=(X_val, y_val),\r\n        layers_name=[\"block5_conv1\"],\r\n        output_dir=\"logs\",\r\n    ),\r\n] \r\n```\r\n\r\n[My notebook is available via Colab](https://colab.research.google.com/drive/1WthXXc-rotUj32anKul_pBIl-cQPJFnB) if you want to see. Let me know why is this happening if possible and I shall be able to prepare the notebook. "
+    },
+    {
+      "repo": "sqlc-dev/sqlc",
+      "issue": 3730,
+      "url": "https://github.com/sqlc-dev/sqlc/issues/3730",
+      "title": "With Recursive query results in \"no relation\" error with SQLite ",
+      "score": 9,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "activity.reactions": 2
+      },
+      "body": "### Version\n\n1.27.0\n\n### What happened?\n\nWIth Recursive query fails to recognize the relation in SQLite when I run `sqlc generate`. \r\n\r\nnot sure if this works with SQLite, but I tried adding this to config, but it didn't work.\r\n```yaml\r\ndatebase:\r\n    managed: true\r\n```\r\nI'm aware of #723 and #896, and it seems the fix only applies to PostgreSQL + MySQL. But perhaps this bug is more relevant with #2990 even though it happens with MySQL instead.\n\n### Relevant log output\n\n```shell\n# package db\r\nquery.sql:1:1: relation \"TagWithParents\" does not exist\n```\n\n\n### Database schema\n\n```sql\nCREATE TABLE tags (\r\n    id INTEGER PRIMARY KEY,\r\n    name TEXT NOT NULL,\r\n    parent INTEGER NOT NULL\r\n);\n```\n\n\n### SQL queries\n\n```sql\n-- name: GetTagRecursive :many\r\nWITH RECURSIVE TagWithParents AS (\r\n    SELECT id, name, parent\r\n    FROM tags\r\n    WHERE id = ?\r\n\r\n    UNION ALL\r\n\r\n    SELECT t.id, t.name, t.parent\r\n    FROM tags t\r\n    INNER JOIN TagWithParents twp\r\n    ON t.id = twp.parent\r\n) SELECT * FROM TagWithParents;\n```\n\n\n### Configuration\n\n```yaml\nversion: \"2\" \r\n\r\nsql: \r\n  - engine: \"sqlite\" \r\n    queries: \"query.sql\" \r\n    schema: \"schema.sql\" \r\n    gen: \r\n      go: \r\n        package: \"db\" \r\n        out: \"db\"\n```\n\n\n### Playground URL\n\nhttps://play.sqlc.dev/p/bebb509cacaeae9488c4c5c08f9f554d35375fe581dc0c477286ac2bb87a4bcc\n\n### What operating system are you using?\n\nLinux\n\n### What database engines are you using?\n\nSQLite\n\n### What type of code are you generating?\n\nGo"
+    },
+    {
+      "repo": "tristanpenman/valijson",
+      "issue": 200,
+      "url": "https://github.com/tristanpenman/valijson/issues/200",
+      "title": "Stack overflow with recursive refs",
+      "score": 9,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "activity.discussion": 2
+      },
+      "body": "Example:\r\n\r\n```\r\n[\r\n    {\r\n        \"description\": \"recursive ref\",\r\n        \"schema\": {\r\n            \"items\": [\r\n                {\"$ref\": \"#/items/0\"}\r\n            ]\r\n        },\r\n        \"tests\": [ ]\r\n    }\r\n]\r\n```\r\n\r\nAddress sanitizer report:\r\n\r\n```\r\nAddressSanitizer:DEADLYSIGNAL\r\n=================================================================\r\n==1872324==ERROR: AddressSanitizer: stack-overflow on address 0x7ffe150bea88 (pc 0x55dfc89a4c0f bp 0x7ffe150bf2d0 sp 0x7ffe150bea90 T0)\r\n    #0 0x55dfc89a4c0f in __asan_memcpy (valijson/myfuzzing/prefix/bin/fuzzer+0x16ec0f) (BuildId: fb50edf90e4b5e099f651da860e13ff632c933ef)\r\n    #1 0x55dfc8aaec60 in valijson::adapters::BasicAdapter<valijson::adapters::GenericRapidJsonAdapter<rapidjson::GenericValue<rapidjson::UTF8<char>, rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator>>>, valijson::adapters::GenericRapidJsonArray<rapidjson::GenericValue<rapidjson::UTF8<char>, rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator>>>, valijson::adapters::GenericRapidJsonObjectMember<rapidjson::GenericValue<rapidjson::UTF8<char>, rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator>>>, valijson::adapters::GenericRapidJsonObject<rapidjson::GenericValue<rapidjson::UTF8<char>, rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator>>>, valijson::adapters::GenericRapidJsonValue<rapidjson::GenericValue<rapidjson::UTF8<char>, rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator>>>>::BasicAdapter(valijson::adapters::BasicAdapter<valijson::adapters::GenericRapidJsonAdapter<rapidjson::GenericValue<rapidjson::UTF8<char>, rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator>>>, valijson::adapters::GenericRapidJsonArray<rapidjson::GenericValue<rapidjson::UTF8<char>, rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator>>>, valijson::adapters::GenericRapidJsonObjectMember<rapidjson::GenericValue<rapidjson::UTF8<char>, rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator>>>, valijson::adapters::GenericRapidJsonObject<rapidjson::GenericValue<rapidjson::UTF8<char>, rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator>>>, valijson::adapters::GenericRapidJsonValue<rapidjson::GenericValue<rapidjson::UTF8<char>, rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator>>>> const&) valijson/myfuzzing/cmake-build/../../include/valijson/internal/basic_adapter.hpp:83:7\r\n    #2 0x55dfc8aaeb5a in valijson::adapters::GenericRapidJsonAdapter<rapidjson::GenericValue<rapidjson::UTF8<char>, rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator>>>::GenericRapidJsonAdapter(valijson::adapters::GenericRapidJsonAdapter<rapidjson::GenericValue<rapidjson::UTF8<char>, rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator>>> const&) valijson/myfuzzing/cmake-build/../../include/valijson/adapters/rapidjson_adapter.hpp:611:7\r\n    #3 0x55dfc8bc2c1c in valijson::adapters::GenericRapidJsonAdapter<rapidjson::GenericValue<rapidjson::UTF8<char>, rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator>>> valijson::internal::json_pointer::resolveJsonPointer<valijson::adapters::GenericRapidJsonAdapter<rapidjson::GenericValue<rapidjson::UTF8<char>, rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator>>>>(valijson::adapters::GenericRapidJsonAdapter<rapidjson::GenericValue<rapidjson::UTF8<char>, rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator>>> const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const&, __gnu_cxx::__normal_iterator<char const*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>>) valijson/myfuzzing/cmake-build/../../include/valijson/internal/json_pointer.hpp:166:16\r\n    #4 0x55dfc8bc3a83 in valijson::adapters::GenericRapidJsonAdapter<rapidjson::GenericValue<rapidjson::UTF8<char>, rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator>>> valijson::internal::json_pointer::resolveJsonPointer<valijson::adapters::GenericRapidJsonAdapter<rapidjson::GenericValue<rapidjson::UTF8<char>, rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator>>>>(valijson::adapters::GenericRapidJsonAdapter<rapidjson::GenericValue<rapidjson::UTF8<char>, rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator>>> const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const&, __gnu_cxx::__normal_iterator<char const*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>>) valijson/myfuzzing/cmake-build/../../include/valijson/internal/json_pointer.hpp:220:20\r\n    #5 0x55dfc8bc4110 in valijson::adapters::GenericRapidJsonAdapter<rapidjson::GenericValue<rapidjson::UTF8<char>, rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator>>> valijson::internal::json_pointer::resolveJsonPointer<valijson::adapters::GenericRapidJsonAdapter<rapidjson::GenericValue<rapidjson::UTF8<char>, rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator>>>>(valijson::adapters::GenericRapidJsonAdapter<rapidjson::GenericValue<rapidjson::UTF8<char>, rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator>>> const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const&, __gnu_cxx::__normal_iterator<char const*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>>) valijson/myfuzzing/cmake-build/../../include/valijson/internal/json_pointer.hpp:244:16\r\n    #6 0x55dfc8b5a28a in valijson::adapters::GenericRapidJsonAdapter<rapidjson::GenericValue<rapidjson::UTF8<char>, rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator>>> valijson::internal::json_pointer::resolveJsonPointer<valijson::adapters::GenericRapidJsonAdapter<rapidjson::GenericValue<rapidjson::UTF8<char>, rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator>>>>(valijson::adapters::GenericRapidJsonAdapter<rapidjson::GenericValue<rapidjson::UTF8<char>, rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator>>> const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const&) valijson/myfuzzing/cmake-build/../../include/valijson/internal/json_pointer.hpp:266:12\r\n    #7 0x55dfc8b8050"
+    }
+  ]
+}

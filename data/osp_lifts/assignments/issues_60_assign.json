@@ -1,0 +1,135 @@
+{
+  "manifest": "issues_60.jsonl",
+  "records": [
+    {
+      "repo": "TanStack/form",
+      "issue": 1484,
+      "url": "https://github.com/TanStack/form/issues/1484",
+      "title": "Type instantiation is excessively deep and possibly infinite with recursive field value structure",
+      "score": 9,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "activity.reactions": 2
+      },
+      "body": "### Describe the bug\n\nWe are trying to adopt tanstack form in our CMS, where we have complex and recursive content structure, and in the form types we represent the field values as:\n\n```ts\nexport type FieldValues = {\n  [key: string]: string | string[] | number | boolean | null | FieldValues | FieldValues[];\n};\n```\n\nAlso, we are passing down the `form` instance via a provider as our codebase is huge and we need a context to share the form instance deep down the tree.\n\n```ts\ntype FormContextType = ReactFormExtendedApi<\n  FieldValues,\n  FormValidateOrFn<FieldValues> | undefined,\n  ZodType<FieldValues, ZodTypeDef, FieldValues>,\n  FormAsyncValidateOrFn<FieldValues> | undefined,\n  FormValidateOrFn<FieldValues> | undefined,\n  FormAsyncValidateOrFn<FieldValues> | undefined,\n  FormValidateOrFn<FieldValues> | undefined,\n  FormAsyncValidateOrFn<FieldValues> | undefined,\n  FormAsyncValidateOrFn<FieldValues> | undefined,\n  {}\n> | null;\n\nexport const FormContext = React.createContext<FormContextType>(null);\n\nexport const FormProvider = ({\n  children,\n  value,\n}: {\n  children: React.ReactNode;\n  value: FormContextType;\n}) => {\n  return <FormContext.Provider value={value}>{children}</FormContext.Provider>;\n};\n\nfunction App() {\n  const form = useForm({\n    defaultValues: defaultPeople,\n    onSubmit({ value }) {\n      alert(JSON.stringify(value));\n    },\n  });\n\n  return (\n    <FormProvider value={form}>\n      <form\n        onSubmit={(e) => {\n          e.preventDefault();\n          e.stopPropagation();\n          form.handleSubmit();\n        }}\n      ></form>\n    </FormProvider>\n  );\n}\n```\n\nBut we are running into TS issue - \"Type instantiation is excessively deep and possibly infinite\" when trying to do this. I believe these kind of recursive field types are common and it should not cause issues. Maybe I am doing something wrong here? The issue is on this line\n\n```ts\nreturn (\n    <FormProvider value={form}>\n```\n\n### Your minimal, reproducible example\n\nhttps://stackblitz.com/edit/tanstack-form-bsyh9m5c?file=src%2Findex.tsx\n\n### Steps to reproduce\n\nSee the reproduction here\n\nhttps://stackblitz.com/edit/tanstack-form-bsyh9m5c?file=src%2Findex.tsx\n\n### Expected behavior\n\nThe type error should not be there\n\n### How often does this bug happen?\n\nEvery time\n\n### Screenshots or Videos\n\n_No response_\n\n### Platform\n\nN/A\n\n### TanStack Form adapter\n\nreact-form\n\n### TanStack Form version\n\n1.9.1\n\n### TypeScript version\n\n_No response_\n\n### Additional context\n\n_No response_"
+    },
+    {
+      "repo": "TechnicallyJoe/terraform-motf",
+      "issue": 54,
+      "url": "https://github.com/TechnicallyJoe/terraform-motf/issues/54",
+      "title": "Add module extraction functionality with recursive module reference support",
+      "score": 9,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "refactor.refactor": 2
+      },
+      "body": "## Problem Statement\nCurrently, there is no built-in functionality to extract a Terraform module and all its references (including nested/child modules) from the codebase.\n\n## Desired Functionality\n- Add a feature that allows users to extract a specified module from the repository.\n- The extraction should include all related module references (local and potentially remote modules).\n- Module references should be identified recursively, so if a module calls other modules, those are also included in the extraction process.\n- Provide CLI support to invoke this functionality.\n- Ensure it is robust for complex module hierarchies.\n\n## Potential Benefits\n- Easier refactoring and migration to different repositories or environments\n- Improved module maintainability and dependency clarity\n\n## Acceptance Criteria\n- CLI command exists to extract a module and its references\n- Extracted content includes all nested module dependencies\n- Documentation is updated to describe its usage\n- Unit/integration tests included for key functionality\n\n## Additional context\nPlease consider edge cases such as remote and deeply-nested modules."
+    },
+    {
+      "repo": "adrianbrowning/prisma-ts-select",
+      "issue": 162,
+      "url": "https://github.com/adrianbrowning/prisma-ts-select/issues/162",
+      "title": "Add typed recursive CTE support",
+      "score": 9,
+      "signals": {
+        "traversal.recursive": 3,
+        "traversal.cycle": 2,
+        "manual_impl.recursive_cte": 4
+      },
+      "body": "## Goal\n\nExtend the existing CTE builder with recursive CTEs for hierarchy and graph-style queries.\n\n## Scope\n\nAdd `withRecursive` to compose an anchor query with a recursive member using UNION ALL semantics and expose the resulting CTE columns.\n\n## Acceptance criteria\n\n- [ ] Valid WITH RECURSIVE SQL is produced for SQLite, MySQL 8+, and PostgreSQL.\n- [ ] Anchor and recursive members require compatible projection columns/types.\n- [ ] Resulting CTEs work with existing typed select and join support.\n- [ ] Tests include a representative hierarchy traversal across all three dialects.\n- [ ] Docs state version requirements, recursion limits, and a cycle-safety note.\n\n## Out of scope\n\nAutomatic cycle detection and SEARCH/CYCLE clauses."
+    },
+    {
+      "repo": "agentm/project-m36",
+      "issue": 348,
+      "url": "https://github.com/agentm/project-m36/issues/348",
+      "title": "Recursive relationships",
+      "score": 9,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "activity.discussion": 2
+      },
+      "body": "Hi there \ud83d\udc4b \r\n\r\nI'm trying to work with recursive relationships.\r\n\r\n```\r\nTutorialD (master/main): rec := relation{tuple{src 0, tgt 1}, tuple{src 1, tgt 2}, tuple{src 2, tgt 3}}\r\nTutorialD (master/main): :showexpr rec\r\n\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\r\n\u2502src::Integer\u2502tgt::Integer\u2502\r\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\r\n\u25020           \u25021           \u2502\r\n\u25021           \u25022           \u2502\r\n\u25022           \u25023           \u2502\r\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\r\n```\r\n\r\nIt seems to work ok for a depth 1 traversal:\r\n```\r\nTutorialD (master/main): :showexpr ((rec where src=0) join (rec rename {tgt as tgt2, src as tgt}))\r\n\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\r\n\u2502src::Integer\u2502tgt::Integer\u2502tgt2::Integer\u2502\r\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\r\n\u25020           \u25021           \u25022            \u2502\r\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\r\n```\r\n\r\nAlso if I add an edge:\r\n```\r\nTutorialD (master/main): insert rec relation{tuple{src 1, tgt 4}}\r\nTutorialD (master/main): :showexpr rec\r\n\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\r\n\u2502src::Integer\u2502tgt::Integer\u2502\r\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\r\n\u25021           \u25024           \u2502\r\n\u25022           \u25023           \u2502\r\n\u25021           \u25022           \u2502\r\n\u25020           \u25021           \u2502\r\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\r\nTutorialD (master/main): :showexpr ((rec where src=0) join (rec rename {tgt as tgt2, src as tgt}))\r\n\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\r\n\u2502src::Integer\u2502tgt::Integer\u2502tgt2::Integer\u2502\r\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\r\n\u25020           \u25021           \u25022            \u2502\r\n\u25020           \u25021           \u25024            \u2502\r\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\r\n```\r\n\r\nI can work out a way to do a depth 2 traversal:\r\n```\r\nTutorialD (master/main): :showexpr ((rec where src=0) join (rec rename {tgt as tgt2, src as tgt}) join (rec rename {tgt as tgt3, src as tgt2}))\r\n\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\r\n\u2502src::Integer\u2502tgt::Integer\u2502tgt2::Integer\u2502tgt3::Integer\u2502\r\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\r\n\u25020           \u25021           \u25022            \u25023            \u2502\r\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\r\n```\r\n\r\nCan this be generalised to a depth `n` traversal? Also would it be possible to group the result by depth? \r\n\r\nThanks for your time!\r\n\r\nJun "
+    },
+    {
+      "repo": "back2dos/tinkerbell",
+      "issue": 55,
+      "url": "https://github.com/back2dos/tinkerbell/issues/55",
+      "title": "toComplex infinite recursion with recursive constraints?",
+      "score": 9,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "activity.discussion": 2
+      },
+      "body": "It would appear that toComplex falls into infinite recursion with the following patterns:\n\ns:/_flash/shared_haxe/tinkerbell_h3/src/tink/macro/tools/TypeTools.hx:224: characters 63-91 : Called from\ns:/_flash/shared_haxe/tinkerbell_h3/src/tink/macro/tools/TypeTools.hx:203: characters 19-37 : Called from\ns:/_flash/shared_haxe/tinkerbell_h3/src/tink/macro/tools/TypeTools.hx:207: characters 48-71 : Called from\ns:/_flash/shared_haxe/tinkerbell_h3/src/tink/macro/tools/TypeTools.hx:228: characters 16-40 : Called from\ns:/_flash/shared_haxe/tinkerbell_h3/src/tink/macro/tools/TypeTools.hx:203: characters 19-37 : Called from\ns:/_flash/shared_haxe/tinkerbell_h3/src/tink/macro/tools/TypeTools.hx:224: characters 63-91 : Called from\ns:/_flash/shared_haxe/tinkerbell_h3/src/tink/macro/tools/TypeTools.hx:203: characters 19-37 : Called from\n\nI am identifying atm what is happening but I think I can imagine what example would cause this. I think this can be fixed by passing a cache array of complex types around these functions. \n"
+    },
+    {
+      "repo": "bem/bh-php",
+      "issue": 12,
+      "url": "https://github.com/bem/bh-php/issues/12",
+      "title": "WeakJSONParser: bug with recursive comments parsing",
+      "score": 9,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "activity.discussion": 2
+      },
+      "body": "Need to add an ability to fail on js code and skip comments parsing\n"
+    },
+    {
+      "repo": "cartazio/omega",
+      "issue": 48,
+      "url": "https://github.com/cartazio/omega/issues/48",
+      "title": "refinement failure with recursive Equal",
+      "score": 9,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "activity.discussion": 2
+      },
+      "body": "```\nWhat steps will reproduce the problem?\n1. load <http://svn.berlios.de/svnroot/repos/al4nin/trunk/found-bugs/issue48-\nSetEmulation.omg>\n2. observe error\n**** Near line: 53 column: 1\n\nWhile infering the type of the pattern: Eq\nwe expected it to have type: Equal {exclude _b _c} _c\nbut, the current refinement fails because _c != {exclude _b _c}.\nSometimes reordering the patterns can fix this.\n\nWhat is the expected output? What do you see instead?\n\nI would expect that refinement is possible for self-referential Equal types. \nWhen functions can \nreturn values of such types (see issue46) they should also accept them.\n\nYou probably need a fix to issue43 to see this specific error.\n\n```\n\nOriginal issue reported on code.google.com by `ggr...@gmail.com` on 13 Dec 2007 at 11:24\n"
+    },
+    {
+      "repo": "casehubio/casehub-pages",
+      "issue": 369,
+      "url": "https://github.com/casehubio/casehub-pages/issues/369",
+      "title": "Workspace centre as a root Container \u2014 unify with recursive container model",
+      "score": 9,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "refactor.refactor": 2
+      },
+      "body": "The floating workspace centre currently renders frames via `FloatingFrameBackend` directly \u2014 it's not wrapped in a Container. Making the workspace centre a root Container with `layout: 'free'` would unify everything:\n\n- Frames become entries in a Container\n- Toolbar is the standard container toolbar (no special workspace toolbar)\n- Workspace mode switching is just `container.setLayout()`\n- Z-order, DnD, snap zones move into the free-layout strategy\n- The recursive container model applies root to leaf with no special cases\n\nThis is a significant refactor \u2014 the backend orchestrates frame lifecycle (z-order, DnD, snap zones) which doesn't map cleanly to the Container model yet. Design discussion needed before implementation.\n\nBuilds on #345 (recursive container model), #367 (arrange button), #368 (toolbar position)."
+    },
+    {
+      "repo": "crate/crate-clients-tools",
+      "issue": 52,
+      "url": "https://github.com/crate/crate-clients-tools/issues/52",
+      "title": "asyncpg issues a `WITH RECURSIVE` query when using `float[]`",
+      "score": 9,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "activity.discussion": 2
+      },
+      "body": "I've tried to introduce a `float[]` test: https://gist.github.com/matriv/05bec849ff166789d0378625e43c06b0 in: https://github.com/crate/crate-qa/blob/master/tests/client_tests/python/asyncpg/test_asyncpg.py\r\n(method in question: `float_vector_can_be_inserted_and_selected`)\r\nand the driver issues the following query which currently CrateDB doesn't support (`WITH RECURSIVE`)\r\n\r\nMaybe there is a way to avoid this query by tweaking asyncpg?\r\n\r\n```\r\nWITH RECURSIVE typeinfo_tree(\r\n    oid, ns, name, kind, basetype, elemtype, elemdelim,\r\n    range_subtype, attrtypoids, attrnames, depth)\r\nAS (\r\n    SELECT\r\n        ti.oid, ti.ns, ti.name, ti.kind, ti.basetype,\r\n        ti.elemtype, ti.elemdelim, ti.range_subtype,\r\n        ti.attrtypoids, ti.attrnames, 0\r\n    FROM\r\n            (\r\n        SELECT\r\n            t.oid                           AS oid,\r\n            ns.nspname                      AS ns,\r\n            t.typname                       AS name,\r\n            t.typtype                       AS kind,\r\n            (CASE WHEN t.typtype = 'd' THEN\r\n                (WITH RECURSIVE typebases(oid, depth) AS (\r\n                    SELECT\r\n                        t2.typbasetype      AS oid,\r\n                        0                   AS depth\r\n                    FROM\r\n                        pg_type t2\r\n                    WHERE\r\n                        t2.oid = t.oid\r\n\r\n                    UNION ALL\r\n\r\n                    SELECT\r\n                        t2.typbasetype      AS oid,\r\n                        tb.depth + 1        AS depth\r\n                    FROM\r\n                        pg_type t2,\r\n                        typebases tb\r\n                    WHERE\r\n                       tb.oid = t2.oid\r\n                       AND t2.typbasetype != 0\r\n               ) SELECT oid FROM typebases ORDER BY depth DESC LIMIT 1)\r\n\r\n               ELSE NULL\r\n            END)                            AS basetype,\r\n            t.typelem                       AS elemtype,\r\n            elem_t.typdelim                 AS elemdelim,\r\n            COALESCE(\r\n                range_t.rngsubtype,\r\n                multirange_t.rngsubtype)    AS range_subtype,\r\n            (CASE WHEN t.typtype = 'c' THEN\r\n                (SELECT\r\n                    array_agg(ia.atttypid ORDER BY ia.attnum)\r\n                FROM\r\n                    pg_attribute ia\r\n                    INNER JOIN pg_class c\r\n                        ON (ia.attrelid = c.oid)\r\n                WHERE\r\n                    ia.attnum > 0 AND NOT ia.attisdropped\r\n                    AND c.reltype = t.oid)\r\n\r\n                ELSE NULL\r\n            END)                            AS attrtypoids,\r\n            (CASE WHEN t.typtype = 'c' THEN\r\n                (SELECT\r\n                    array_agg(ia.attname::text ORDER BY ia.attnum)\r\n                FROM\r\n                    pg_attribute ia\r\n                    INNER JOIN pg_class c\r\n                        ON (ia.attrelid = c.oid)\r\n                WHERE\r\n                    ia.attnum > 0 AND NOT ia.attisdropped\r\n                    AND c.reltype = t.oid)\r\n\r\n                ELSE NULL\r\n            END)                            AS attrnames\r\n        FROM\r\n            pg_catalog.pg_type AS t\r\n            INNER JOIN pg_catalog.pg_namespace ns ON (\r\n                ns.oid = t.typnamespace)\r\n            LEFT JOIN pg_type elem_t ON (\r\n                t.typlen = -1 AND\r\n                t.typelem != 0 AND\r\n                t.typelem = elem_t.oid\r\n            )\r\n            LEFT JOIN pg_range range_t ON (\r\n                t.oid = range_t.rngtypid\r\n            )\r\n            LEFT JOIN pg_range multirange_t ON (\r\n                t.oid = multirange_t.rngmultitypid\r\n            )\r\n    )\r\n AS ti\r\n    WHERE\r\n        ti.oid = any($1::oid[])\r\n\r\n    UNION ALL\r\n\r\n    SELECT\r\n        ti.oid, ti.ns, ti.name, ti.kind, ti.basetype,\r\n        ti.elemtype, ti.elemdelim, ti.range_subtype,\r\n        ti.attrtypoids, ti.attrnames, tt.depth + 1\r\n    FROM\r\n            (\r\n        SELECT\r\n            t.oid                           AS oid,\r\n            ns.nspname                      AS ns,\r\n            t.typname                       AS name,\r\n            t.typtype                       AS kind,\r\n            (CASE WHEN t.typtype = 'd' THEN\r\n                (WITH RECURSIVE typebases(oid, depth) AS (\r\n                    SELECT\r\n                        t2.typbasetype      AS oid,\r\n                        0                   AS depth\r\n                    FROM\r\n                        pg_type t2\r\n                    WHERE\r\n                        t2.oid = t.oid\r\n\r\n                    UNION ALL\r\n\r\n                    SELECT\r\n                        t2.typbasetype      AS oid,\r\n                        tb.depth + 1        AS depth\r\n                    FROM\r\n                        pg_type t2,\r\n                        typebases tb\r\n                    WHERE\r\n                       tb.oid = t2.oid\r\n                       AND t2.typbasetype != 0\r\n               ) SELECT oid FROM typebases ORDER BY depth DESC LIMIT 1)\r\n\r\n               ELSE NULL\r\n            END)                            AS basetype,\r\n            t.typelem                       AS elemtype,\r\n            elem_t.typdelim                 AS elemdelim,\r\n            COALESCE(\r\n                range_t.rngsubtype,\r\n                multirange_t.rngsubtype)    AS range_subtype,\r\n            (CASE WHEN t.typtype = 'c' THEN\r\n                (SELECT\r\n                    array_agg(ia.atttypid ORDER BY ia.attnum)\r\n                FROM\r\n                    pg_attribute ia\r\n                    INNER JOIN pg_class c\r\n                        ON (ia.attrelid = c.oid)\r\n                WHERE\r\n                    ia.attnum > 0 AND NOT ia.attisdropped\r\n                    AND c.reltype = t.oid)\r\n\r\n                ELSE NULL\r\n            END)                            AS attrtypoids,\r\n            (CASE WHEN t.typtype = 'c' THEN\r\n                (SELECT\r\n                    array_agg(ia.attname::text ORDER BY ia.attnum)"
+    },
+    {
+      "repo": "dbeaver/dbeaver",
+      "issue": 38286,
+      "url": "https://github.com/dbeaver/dbeaver/issues/38286",
+      "title": "Blank lines in the middle of the query prevents from correct execution",
+      "score": 9,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "activity.discussion": 2
+      },
+      "body": "### Description\n\nThis is valid SQLite query which works through other SQLIte GUI:\n\n```\nDROP TABLE IF EXISTS nodes;\n\nCREATE TABLE nodes (\n    id INTEGER PRIMARY KEY,\n    parent_id INTEGER,\n    name TEXT\n);\n\n-- 2. Insert sample data (a simple tree structure)\nINSERT INTO nodes (id, parent_id, name) VALUES\n(1, NULL, 'Root'),\n(2, 1, 'Child 1'),\n(3, 1, 'Child 2'),\n(4, 2, 'Grandchild 1'),\n(5, 2, 'Grandchild 2'),\n(6, 3, 'Grandchild 3'),\n(7, 4, 'Great-Grandchild 1');\n\n-- 3. Recursive CTE to get all descendants of node with id = 2\nWITH RECURSIVE subtree AS (\n    -- Anchor member: start from the given node\n    SELECT id, parent_id, name, 0 as depth\n    FROM nodes\n    WHERE id = 2  -- Change this ID to get a different subtree\n\n    UNION ALL\n\n    -- Recursive member: get children of the current subtree\n    SELECT n.id, n.parent_id, n.name, s.depth + 1\n    FROM nodes n\n    INNER JOIN subtree s ON n.parent_id = s.id\n)\nSELECT * FROM subtree;\n```\n\nDBeaver displays errors for this query:\nSQL Error [1]: [SQLITE_ERROR] SQL error or missing database (near \")\": syntax error)\n\nDBeaver Version 25.1.0.202506011722\n \n\n### DBeaver Version\n\n25.1.0.202506011722\n\n### Operating System\n\nWindows 11\n\n### Database and driver\n\nSQLite\n\n### Steps to reproduce\n\n1. Create an SQLite database using DBeaver\n2. Open the SQL editor and paste the SQL code shown above\n\n### Additional context\n\n_No response_"
+    }
+  ]
+}

@@ -1,0 +1,136 @@
+{
+  "manifest": "issues_59.jsonl",
+  "records": [
+    {
+      "repo": "FreekingDean/gojellyfin",
+      "issue": 598,
+      "url": "https://github.com/FreekingDean/gojellyfin/issues/598",
+      "title": "items.Ancestors walks the parent chain one query at a time",
+      "score": 9,
+      "signals": {
+        "traversal.recursive": 3,
+        "traversal.cycle": 2,
+        "manual_impl.recursive_cte": 4
+      },
+      "body": "`internal/items/items.go:122-144`. `Ancestors` fetches the item, then loops `for item.ParentID != nil`, calling `s.ItemByID(ctx, *item.ParentID)` once per level. One round trip per ancestor, plus the initial `Get`.\n\n**This is not urgent and nobody should panic about it.** The chain is bounded at three by the scanner's own key scheme (`episode` \u2192 `season` \u2192 `series`; a movie has none), so it is at most four queries, and `Ancestors` has two callers \u2014 `internal/server/library/ancestors.go:13` on `GetAncestors`, and `internal/metadata/metadata.go:96` once per item in an identify batch. Neither is hot.\n\nWorth recording rather than fixing now because the bound is incidental. The loop is written to handle arbitrary depth \u2014 it even carries a `seen` map to survive a cycle \u2014 so it will keep working, quietly, if a collection or box-set hierarchy ever nests deeper than the three levels the scanner writes today. The metadata batch is where that would first be felt: `batchSize` items \u00d7 depth round trips inside a step that is already rate-limited against a provider.\n\nIf it does need fixing, the shape is one recursive CTE up `parent_id` in the way `internal/items/nextup.go` already drops to raw SQL for `DISTINCT ON`, rather than an eager load \u2014 `WithParent` only reaches one level and would have to be nested to the depth in advance."
+    },
+    {
+      "repo": "HaxeFoundation/haxe",
+      "issue": 11233,
+      "url": "https://github.com/HaxeFoundation/haxe/issues/11233",
+      "title": "Inline overload kills server with recursive call",
+      "score": 9,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "activity.discussion": 2
+      },
+      "body": "```haxe\r\nclass Main {\r\n\tstatic function main() {}\r\n\tpublic function new() {\r\n\t\tthis.add({id: 0});\r\n\t}\r\n\r\n\textern inline overload function add(s:{id:Int}):Void {\r\n\t\t// `s` argument kills server\r\n\t\tadd(s);\r\n\t}\r\n}\r\n```"
+    },
+    {
+      "repo": "Hopac/Hopac",
+      "issue": 201,
+      "url": "https://github.com/Hopac/Hopac/issues/201",
+      "title": "Stack overflow with recursive job",
+      "score": 9,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "activity.discussion": 2
+      },
+      "body": "I got stack overflow exception with this code:\r\n\r\n```fsharp\r\n  let tcs = TaskCompletionSource()\r\n  let rec loop i =\r\n    job {\r\n      if i < 1_000_000 then\r\n        return! loop (i + 1)\r\n      else\r\n        tcs.SetResult()\r\n    }\r\n    \r\n  loop 0 |> start\r\n  tcs.Task.Wait()\r\n```\r\n\r\nThis code works fine with 100k iterations but fails on 1kk iterations.\r\n\r\nI tried replacing recursion with a loop:\r\n```fsharp\r\n\r\n    let tcs = TaskCompletionSource()\r\n    let loop i =\r\n      job {\r\n        let mutable i = 0\r\n        while true do\r\n          if i >= 100_000 then\r\n            tcs.SetResult()\r\n          i <- i + 1\r\n      }\r\n    \r\n    loop 0 |> start\r\n    tcs.Task.Wait()\r\n```\r\nBut got exception on 100k iterations. Same code works fine wtih 10k iterations."
+    },
+    {
+      "repo": "Infisical/cli",
+      "issue": 193,
+      "url": "https://github.com/Infisical/cli/issues/193",
+      "title": "Cannot export envs with recursive flag",
+      "score": 9,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "activity.reactions": 2
+      },
+      "body": "I need to export all envs from all folders as a single list with the `infisical export` command but there is no way of doing so \ud83d\ude15 \n\nA `--recursive` flag would be awesome, just like the SDK can do it"
+    },
+    {
+      "repo": "JSMonk/hegel",
+      "issue": 232,
+      "url": "https://github.com/JSMonk/hegel/issues/232",
+      "title": "Inference doesn't work with recursive functions",
+      "score": 9,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "activity.reactions": 2
+      },
+      "body": "```js\r\nfunction factorial(a) {\r\n  if (a === 1) {\r\n    return 1;\r\n  }\r\n\r\n  return a * factorial(a - 1);\r\n}\r\n```"
+    },
+    {
+      "repo": "LibreCat/Catmandu",
+      "issue": 34,
+      "url": "https://github.com/LibreCat/Catmandu/issues/34",
+      "title": "Field selection with recursive path operator \"...\"",
+      "score": 9,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "activity.discussion": 2
+      },
+      "body": "How about a path operator `...` that selects of fields and subfields?:\n\n```\n# { foo => \"  x \", bar => { foo = \"  y \"} }\ntrim(\"...foo\") # { foo => \"x\", bar => { foo = \"y\"} }\n```\n"
+    },
+    {
+      "repo": "LopyMine/BetterAnvil",
+      "issue": 1,
+      "url": "https://github.com/LopyMine/BetterAnvil/issues/1",
+      "title": "Conflict with Recursive Resources",
+      "score": 9,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "activity.reactions": 2
+      },
+      "body": "![image](https://github.com/LopyMine/BetterAnvil/assets/46609661/48396088-57f6-4f86-8896-b4c9ed07a8d1)\r\nThe checkbox on PackScreen overlaps with Recursive Resources button. It still pressable, but only in a few pixels range\r\n\r\nMinecraft 1.20.1\r\n    |- BetterAnvil 1.2.7\r\n    \\\\-Recursive Resources 2.5.2\r\n\r\nThe same as https://github.com/HiWord9/RPRenames-fabric/issues/17\r\n"
+    },
+    {
+      "repo": "Mrtenz/eip-712",
+      "issue": 34,
+      "url": "https://github.com/Mrtenz/eip-712/issues/34",
+      "title": "Failed with recursive data ",
+      "score": 9,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "activity.discussion": 2
+      },
+      "body": "For example \r\n\r\n```js\r\n{\r\n        CIP23Domain: [\r\n          { name: 'name', type: 'string' },\r\n          { name: 'version', type: 'string' },\r\n          { name: 'chainId', type: 'uint256' },\r\n          { name: 'verifyingContract', type: 'address' }\r\n        ],\r\n        Person: [\r\n          { name: 'name', type: 'string' },\r\n          { name: 'mother', type: 'Person' },\r\n          { name: 'father', type: 'Person' }\r\n        ]\r\n}\r\n```"
+    },
+    {
+      "repo": "SkepticMystic/graph-analysis",
+      "issue": 42,
+      "url": "https://github.com/SkepticMystic/graph-analysis/issues/42",
+      "title": "[FR] Graph export",
+      "score": 9,
+      "signals": {
+        "traversal.bfs_dfs": 3,
+        "manual_impl.adjacency": 2,
+        "activity.discussion": 2,
+        "activity.reactions": 2
+      },
+      "body": "Hi Skeptic, thanks for the great plugin. Usability wise, it would be really helpful to able to export the co-citations table as a plain node/edge list or adjacency matrix (either for the local note or the global graph). This way, external graphing becomes possible im GraphViz, yEd, d3.force etc. using simple copy-paste.\r\n\r\n(Or maybe even cooler, extracting hierarchies from flat notes by applying breadth first search or other spanning tree algorithms to the edge list)"
+    },
+    {
+      "repo": "Storyyeller/Krakatau",
+      "issue": 85,
+      "url": "https://github.com/Storyyeller/Krakatau/issues/85",
+      "title": "Infinite loop with recursive JSR",
+      "score": 9,
+      "signals": {
+        "traversal.recursive": 3,
+        "manual_impl.recursive_cte": 4,
+        "activity.discussion": 2
+      },
+      "body": "Yes, I realize that the bytecode is technically illegal because of the recursive JSR, but when decompiling a JAR if an unused class contains this sequence then the entire decompilation will halt.\n\nIf you decide that this is out of scope I respect that decision. However, I do feel that this should be fixed\n\n``` java\n.method public static main : ([Ljava/lang/String;)V \n    .code stack 1024 locals 10\n    jsr L1\nL1:\n    jsr L2\n    jsr L1\n    return\nL2:\n    astore_1\n    pop\n    ret 1\n    .end code \n.end method \n```\n"
+    }
+  ]
+}
