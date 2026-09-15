@@ -145,6 +145,18 @@ QUERIES: list[tuple[str, str]] = [
     ("domain", '"bill of materials" explosion'),
     ("hidden", '"threaded comments" recursive'),
     ("hidden", '"infinite recursion" "stack overflow"'),
+    # v3-refit intake (2026-09-15): cascade/adjacency/n+1 mechanism language —
+    # the families the v3 refit up-weighted. Deliberately NO cycle-speak:
+    # "cycle detection" was the worst repair-conversion signal in 56-74
+    # (~/notes/osp_signal_refit_v3.md)
+    ("domain", '"cascade delete" hierarchy'),
+    ("hidden", '"on delete cascade"'),
+    ("shape", '"cache invalidation" tree'),
+    ("hidden", '"adjacency list" recursion'),
+    ("shape", '"N+1" "parent"'),
+    ("hidden", '"nested set" "adjacency list"'),
+    ("explicit", '"hierarchical data" "N+1"'),
+    ("hidden", '"descendants" "recursive query"'),
 ]
 
 BASE_QUALIFIERS = "is:issue is:open"
