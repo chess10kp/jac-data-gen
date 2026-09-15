@@ -254,24 +254,32 @@ def enrich(hit: dict) -> dict:
 
 # ---- 3. scoring rubric ------------------------------------------------------- #
 # Each family scores once (distinct-signal counting, not raw regex hits).
-# Weights refit against luna-wave outcomes (batches 38-55: 180 assigned
-# issues, 100 landed, base rate 56%) — kept only families whose firing
-# beats base landing rate. Killed as noise (delta ~0 or negative at n>=20):
-# relationship.*, traversal.path_reach, traversal.walk, domain.* (build_pkg,
-# lineage, workflow_dag, authz), manual_impl.visited_set, perf.pain, and
-# activity.recent_update (fires on 90% of issues). Refit details:
-# ~/notes/osp_signal_refit.md
+# Weights refit TWICE: v2 against luna-wave first-pass landing (batches 38-55,
+# ~/notes/osp_signal_refit.md); v3 against POST-REPAIR gate passage on batches
+# 56-74 (~/notes/osp_signal_refit_v3.md) — first-pass landing is gate-dominated
+# (head 10% <= tail 19%); selection shows up in repairability (refit-pool
+# failures converted 41.3% vs 18.2% fresh), so the target label is final
+# manifest membership.
+#
+# v3 deltas vs final passage, 56-74 (n=181, base 40.3%):
+#   KEPT/UP: adjacency +19.7 (n=10), n_plus_one +15.2 (n=9), recursive_cte
+#   +5.1 (n=110), discussion +11.1 (n=72, bumped 2->3). cascade|invalidat
+#   added @2 PROVISIONAL (n=8 current regime, +16 on era-mixed all-cohort).
+#   DOWN/KILLED: cycle −13.5 final / −12.0 conversion at n≈65 → dropped;
+#   ordering −13.7 (n=45) 3->1; bfs_dfs −4.6 (n=56) 3->2; queue_walk 0/6
+#   final 2->1. Structural-vocabulary prose (cycle/ordering/DFS-speak) lifts
+#   WORSE in the jac-only regime; concrete manual-impl evidence predicts.
 _SIGNALS: list[tuple[str, str, int, int]] = [
     # (bucket, family, weight, cap, pattern) — title+body+labels+comments
     ("traversal", "recursive", 3, 8, r"\brecursi(?:ve|on|vely)\b|WITH RECURSIVE|recursive CTE"),
-    ("traversal", "cycle", 2, 0, r"\bcycle|circular\b"),
-    ("traversal", "ordering", 3, 0, r"\btopolog(?:ical|y)|execution order|resolve order"),
-    ("traversal", "bfs_dfs", 3, 0, r"\b(BFS|DFS|breadth[- ]first|depth[- ]first)\b"),
+    ("traversal", "ordering", 1, 0, r"\btopolog(?:ical|y)|execution order|resolve order"),
+    ("traversal", "bfs_dfs", 2, 0, r"\b(BFS|DFS|breadth[- ]first|depth[- ]first)\b"),
     ("manual_impl", "recursive_cte", 4, 8, r"WITH RECURSIVE|recursive CTE|connect by"),
-    ("manual_impl", "adjacency", 2, 0, r"\badjacency (list|dict|matrix)|adj[_a-z]*\s*[:=]\s*[\[{]"),
-    ("manual_impl", "queue_walk", 2, 0, r"\b(deque|popleft|pop\(0\)|queue\.(get|put))\b"),
+    ("manual_impl", "adjacency", 3, 0, r"\badjacency (list|dict|matrix)|adj[_a-z]*\s*[:=]\s*[\[{]"),
+    ("manual_impl", "queue_walk", 1, 0, r"\b(deque|popleft|pop\(0\)|queue\.(get|put))\b"),
     ("manual_impl", "memo_ancestors", 2, 0, r"\b(memoiz|cache).{0,40}(parent|ancestor|dependenc)"),
     ("manual_impl", "n_plus_one", 4, 0, r"N\+1|too many (quer|request)|query per (node|parent|item)"),
+    ("manual_impl", "cascade", 2, 2, r"\bcascade\w*\b|on delete|invalidat\w*\b"),
     ("refactor", "refactor", 2, 2, r"\brefactor\w*\b|\brewrite\b|\brestructur\w*\b"),
 ]
 NEG_LABELS = re.compile(r"wontfix|not planned|duplicate|out of scope|invalid", re.I)
@@ -300,10 +308,12 @@ def score(hit: dict) -> dict:
         matched[f"{bucket}.{family}"] = weight
         total += weight
     # activity: discussion heat / reactions — both predict lift landing
-    # (+21% / +32% on luna outcomes). recent_update dropped: 90% fire rate.
+    # (+21% / +32% on luna outcomes) and survive the jac-only regime
+    # (discussion +11.1% final passage, n=72, wave 56-74). recent_update
+    # dropped: 90% fire rate.
     if (hit.get("comments") or 0) > 2:
-        total += 2
-        matched["activity.discussion"] = 2
+        total += 3
+        matched["activity.discussion"] = 3
     if (hit.get("reactions") or 0) > 0:
         total += 2
         matched["activity.reactions"] = 2
