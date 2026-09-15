@@ -79,8 +79,8 @@ def _ensure_iso_home() -> None:
 
 
 def strip_prefix(model: str) -> str:
-    """Strip pi:/cursor:/zen:/openrouter: prefix for the underlying transport."""
-    for p in ("pi:", "cursor:", "zen:", "openrouter:"):
+    """Strip pi:/cursor:/zen:/openrouter:/zai: prefix for the underlying transport."""
+    for p in ("pi:", "cursor:", "zen:", "openrouter:", "zai:"):
         if model.startswith(p):
             return model[len(p):]
     return model
@@ -494,12 +494,101 @@ class OpenRouterBackend:
 # factory
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# z.ai (coding-plan endpoint — glm-5.3-flash; same quota osp_glm_generate uses)
+# ---------------------------------------------------------------------------
+
+ZAI_BASE = "https://api.z.ai/api/coding/paas/v4"
+
+
+def _glm_key() -> str:
+    k = os.environ.get("GLM_KEY")
+    if k:
+        return k
+    for rc in (Path.home() / ".secrets", Path.home() / ".secrets.env"):
+        if rc.exists():
+            for ln in rc.read_text().splitlines():
+                if ln.startswith("GLM_API_KEY="):
+                    return ln.split("=", 1)[1].strip().strip('"').strip("'")
+    raise RuntimeError("GLM_API_KEY not found (env GLM_KEY or ~/.secrets)")
+
+
+class ZaiBackend:
+    """z.ai coding-plan chat/completions — glm-5.3-flash etc.
+
+    Reasoning model: `thinking` disabled by default for speed/quota
+    (GLM_THINKING=1 enables); reasoning tokens count against max_tokens, so
+    the cap defaults high like the zen backend (16384).
+    """
+
+    name = "zai"
+
+    def call(self, system: str, user: str, model: str, timeout: int, tries: int = 3
+             ) -> tuple[str | None, str | None, dict]:
+        zero = {"inputTokens": 0, "outputTokens": 0, "cacheReadTokens": 0, "ms": 0}
+        try:
+            key = _glm_key()
+        except Exception as e:
+            return None, f"zai auth: {e}", zero
+        body: dict = {
+            "model": model,
+            "messages": [{"role": "system", "content": system},
+                         {"role": "user", "content": user}],
+            "max_tokens": int(os.environ.get("GLM_MAXTOK", "16384")),
+            "temperature": float(os.environ.get("GLM_TEMP", "0.7")),
+        }
+        if os.environ.get("GLM_THINKING", "0") != "1":
+            body["thinking"] = {"type": "disabled"}
+        t0 = time.perf_counter()
+        last = "not attempted"
+        for attempt in range(tries):
+            try:
+                r = httpx.post(f"{ZAI_BASE}/chat/completions", headers={
+                    "Authorization": f"Bearer {key}",
+                    "Content-Type": "application/json",
+                }, json=body, timeout=timeout)
+            except Exception as e:
+                last = f"zai {type(e).__name__}: {str(e)[:160]}"
+                if attempt == tries - 1:
+                    break
+                time.sleep(2 ** attempt)
+                continue
+            if r.status_code in (429, 500, 502, 503, 504):
+                last = f"zai {r.status_code}: {r.text[:120]}"
+                if attempt == tries - 1:
+                    break
+                # quota exhaustion: back off harder before the next try
+                time.sleep(min(60, 2 ** attempt * 5))
+                continue
+            if 400 <= r.status_code < 500:
+                return None, f"zai client {r.status_code}: {r.text[:200]}", zero
+            try:
+                p = r.json()
+                content = ((p.get("choices") or [{}])[0].get("message") or {}).get("content") or ""
+            except Exception as e:
+                return None, f"zai malformed payload: {e}", zero
+            if not content.strip():
+                last = "zai empty content"
+                if attempt == tries - 1:
+                    break
+                time.sleep(2 ** attempt)
+                continue
+            u = p.get("usage") or {}
+            usage = {"inputTokens": int(u.get("prompt_tokens") or 0),
+                     "outputTokens": int(u.get("completion_tokens") or 0),
+                     "cacheReadTokens": 0,
+                     "ms": int((time.perf_counter() - t0) * 1000)}
+            return content, None, usage
+        return None, last, {**zero, "ms": int((time.perf_counter() - t0) * 1000)}
+
+
 _BACKENDS: dict[str, type[Backend]] = {
     "pi": PiBackend, "cursor": CursorBackend, "zen": ZenBackend, "openrouter": OpenRouterBackend,
+    "zai": ZaiBackend,
 }
 
 def get_backend(backend: str, model: str) -> Backend:
-    """Resolve a backend instance. backend is pi|cursor|zen|openrouter|auto."""
+    """Resolve a backend instance. backend is pi|cursor|zen|openrouter|zai|auto."""
     b = (backend or "auto").lower().strip()
     # explicit prefix always wins — pi:foo -> PiBackend regardless of auto logic
     if model.startswith("pi:"):
@@ -510,14 +599,18 @@ def get_backend(backend: str, model: str) -> Backend:
         return ZenBackend()
     if model.startswith("openrouter:"):
         return OpenRouterBackend()
+    if model.startswith("zai:"):
+        return ZaiBackend()
     if b != "auto":
         if b not in _BACKENDS:
-            raise ValueError(f"unknown backend {b!r} (pi|cursor|zen|openrouter|auto)")
+            raise ValueError(f"unknown backend {b!r} (pi|cursor|zen|openrouter|zai|auto)")
         return _BACKENDS[b]()
     # auto
     m = model.lower()
     if "luna" in m or "muse" in m:
         return PiBackend()
+    if m.startswith("zai/") or m.startswith("glm"):
+        return ZaiBackend()
     if m.endswith("-free") or m.endswith(":free"):
         if "minimax" in m or "nemotron" in m:
             return OpenRouterBackend()
