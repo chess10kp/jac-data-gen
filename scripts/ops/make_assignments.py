@@ -13,7 +13,8 @@ import re
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
-MINED = REPO / "data" / "graph_targets" / "issues.jsonl"
+RESCORED = REPO / "data" / "graph_targets" / "issues_rescored.jsonl"
+MINED = RESCORED if RESCORED.exists() else REPO / "data" / "graph_targets" / "issues.jsonl"
 ASSIGN_DIR = REPO / "data" / "osp_lifts" / "assignments"
 
 
@@ -45,9 +46,16 @@ def stem_exists(repo: str, issue: int) -> bool:
     )
 
 
+def pool_path() -> Path:
+    return RESCORED if RESCORED.exists() else MINED
+
+
 def load_pool(min_score: int, used: set[tuple[str, int]]) -> list[dict]:
     pool: list[dict] = []
-    for line in MINED.read_text().splitlines():
+    src = pool_path()
+    # owner+number set for rename detection (prisma/prisma -> prisma/orm #3725)
+    used_owner_num = { (r.split("/")[0], n) for r, n in used if "/" in r }
+    for line in src.read_text().splitlines():
         if not line.strip():
             continue
         m = json.loads(line)
@@ -58,11 +66,26 @@ def load_pool(min_score: int, used: set[tuple[str, int]]) -> list[dict]:
             continue
         if (repo, num) in used:
             continue
+        owner = repo.split("/")[0] if "/" in repo else repo
+        if (owner, num) in used_owner_num:
+            continue
         if stem_exists(repo, num):
             continue
         pool.append(m)
     pool.sort(key=lambda x: (-int(x.get("score", 0)), x.get("html_url", "")))
-    return pool
+    # post-sort dedupe on (owner, number) — repo renames collapse to highest-ranked entry
+    deduped: list[dict] = []
+    seen: set[tuple[str, int]] = set()
+    for m in pool:
+        repo = norm_repo(m.get("repo", ""))
+        owner = repo.split("/")[0] if "/" in repo else repo
+        num = int(m.get("number", 0))
+        key = (owner, num)
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(m)
+    return deduped
 
 
 def to_record(m: dict) -> dict:
@@ -92,7 +115,12 @@ def main() -> int:
     ap.add_argument("--from", dest="from_batch", type=int, default=26)
     ap.add_argument("--count", type=int, default=0, help="number of batches from --from")
     ap.add_argument("--min-score", type=int, default=8)
+    ap.add_argument("--pool", type=str, default=None, help="override pool jsonl path")
     args = ap.parse_args()
+    if args.pool:
+        global MINED, RESCORED
+        MINED = Path(args.pool)
+        RESCORED = Path(args.pool)
 
     batches = args.batches
     if not batches and args.count:

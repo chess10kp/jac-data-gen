@@ -133,6 +133,18 @@ QUERIES: list[tuple[str, str]] = [
     ("shape", '"all descendants"'),
     ("shape", '"mutual recursion"'),
     ("shape", '"dirty" "propagate" recompute'),
+    # v2-refit intake (2026-09-14): query the families the refit kept —
+    # concrete algorithm names predict landing (~/notes/osp_signal_refit.md)
+    ("shape", '"transitive closure"'),
+    ("hidden", '"cycle detection" graph'),
+    ("explicit", '"graph traversal"'),
+    ("hidden", '"hierarchical data" recursive query'),
+    ("hidden", '"flatten" hierarchy'),
+    ("hidden", '"find all children"'),
+    ("hidden", '"walk the tree" recursively'),
+    ("domain", '"bill of materials" explosion'),
+    ("hidden", '"threaded comments" recursive'),
+    ("hidden", '"infinite recursion" "stack overflow"'),
 ]
 
 BASE_QUALIFIERS = "is:issue is:open"
