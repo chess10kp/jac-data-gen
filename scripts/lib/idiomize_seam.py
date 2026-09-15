@@ -1,9 +1,11 @@
-"""Shared idiomize seam: prompt + two callers — opencode CLI and direct zen API.
+"""Shared idiomize seam: prompt + callers — cursor-cli, opencode CLI and direct zen API.
 
+- cursor_idiomize: `cursor-agent --print` (agent-shaped, read-only, MCP-stripped).
+  PRIMARY generator — `cursor-cli` with `composer-2.5`.
 - opencode_idiomize: `opencode run --pure` (agent-shaped, ~40-90s/call; proofs only).
 - zen_idiomize: direct thin POST to https://opencode.ai/zen/v1 (the free opencode
   gateway), OpenAI-compatible. ~10-15s/call, fully parallelizable, $0 cost.
-  This is the path that scales the idiomize batch.
+  Legacy path — kept for fallback.
 
 The model is a reasoning model, so max_tokens must be large (reasoning eats ~1k
 tokens before the answer). zen_idiomize retries 429s with backoff.
@@ -27,6 +29,8 @@ import httpx
 
 FENCE = re.compile(r"```jac\s*\n(.*?)```", re.S)
 ZEN_BASE = "https://opencode.ai/zen/v1"
+CURSOR_WS = "/tmp/cursor_ws"
+CURSOR_TMP = "/tmp/cursor_tmp"
 
 # --------------------------------------------------------------------------- #
 # System prompt = compact HARD RULES (always inline) + Tier-A skill body loaded
@@ -156,7 +160,36 @@ def extract_jac(text: str) -> str | None:
 
 
 # --------------------------------------------------------------------------- #
-# Direct zen API (free opencode gateway) — the scalable path
+# cursor-cli (PRIMARY) — cursor-agent --print --mode ask
+# --------------------------------------------------------------------------- #
+def cursor_idiomize(floor_fn: str, py: str, entrypoint: str,
+                    model: str = "composer-2.5", timeout: int = 180
+                    ) -> tuple[str | None, float]:
+    """Call cursor-agent in ask mode (read-only, trusted). Returns (jac_or_None, elapsed_s)."""
+    import subprocess as _sp
+    prompt = build_prompt(floor_fn, py, entrypoint)
+    argv = ["cursor-agent", "--print", "--output-format", "json", "--mode", "ask",
+            "--trust", "--model", model, "--workspace", CURSOR_WS, prompt]
+    env = {**os.environ, "TMPDIR": CURSOR_TMP}
+    Path(CURSOR_WS).mkdir(parents=True, exist_ok=True)
+    Path(CURSOR_TMP).mkdir(parents=True, exist_ok=True)
+    t0 = time.perf_counter()
+    try:
+        p = _sp.run(argv, capture_output=True, text=True, timeout=timeout, env=env)
+    except _sp.TimeoutExpired:
+        return None, time.perf_counter() - t0
+    if p.returncode != 0 and not p.stdout.strip():
+        return None, time.perf_counter() - t0
+    try:
+        d = json.loads(p.stdout)
+        content = d.get("result") or ""
+    except Exception:  # noqa: BLE001
+        content = p.stdout
+    return extract_jac(content), time.perf_counter() - t0
+
+
+# --------------------------------------------------------------------------- #
+# Direct zen API (free opencode gateway) — legacy fallback
 # --------------------------------------------------------------------------- #
 def _opencode_key() -> str:
     k = os.environ.get("OPENCODE_KEY")

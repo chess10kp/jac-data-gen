@@ -49,7 +49,7 @@ sys.path.insert(0, str(_SP / "lib"))
 sys.path.insert(0, str(_SP / "gen"))
 from step2_translate_tests import normalize_python, with_entry_to_tests  # noqa: E402
 from idiomize_seam import (  # noqa: E402
-    opencode_idiomize, zen_idiomize, zen_idiomize_k, idiom_score,
+    cursor_idiomize, opencode_idiomize, zen_idiomize, zen_idiomize_k, idiom_score,
 )
 from step4_mutation import mutation_score  # noqa: E402
 
@@ -62,9 +62,9 @@ DATASET = "nuprl/stack-dedup-python-testgen-starcoder-filter-v2"
 _MUTATION_GATE = 0.80
 
 # idiomize mode config (set from CLI args in main)
-_IDIOMIZE_MODE = "mock"     # mock | opencode | zen
-_IDIOMIZE_MODEL = "deepseek-v4-flash-free"   # valid zen gateway id (see /models)
-_IDIOMIZE_K = 5             # candidates to over-generate per record (zen only)
+_IDIOMIZE_MODE = "mock"     # mock | opencode | zen | cursor
+_IDIOMIZE_MODEL = "composer-2.5"   # cursor-cli default
+_IDIOMIZE_K = 5             # candidates to over-generate per record (zen/cursor only)
 
 
 # --------------------------------------------------------------------------- #
@@ -83,6 +83,14 @@ def idiomize_candidates(floor_jac: str, python_src: str, entrypoint: str
     if _IDIOMIZE_MODE == "zen":
         return zen_idiomize_k(floor_jac, python_src, entrypoint,
                               k=_IDIOMIZE_K, model=_IDIOMIZE_MODEL)
+    if _IDIOMIZE_MODE == "cursor":
+        cands, total = [], 0.0
+        for _ in range(_IDIOMIZE_K):
+            jac, dt = cursor_idiomize(floor_jac, python_src, entrypoint, model=_IDIOMIZE_MODEL)
+            total += dt
+            if jac and jac not in cands:
+                cands.append(jac)
+        return cands, total
     if _IDIOMIZE_MODE == "opencode":
         jac, dt = opencode_idiomize(floor_jac, python_src, entrypoint, _IDIOMIZE_MODEL)
         return ([jac] if jac else []), dt
@@ -321,9 +329,9 @@ def main() -> int:
     ap.add_argument("--offset", type=int, default=0)
     ap.add_argument("--min-coverage", type=int, default=90)
     ap.add_argument("--workers", type=int, default=min(8, os.cpu_count() or 4))
-    ap.add_argument("--idiomize", choices=["mock", "opencode", "zen"], default="mock",
-                    help="zen = direct free opencode gateway (scalable); opencode = opencode run CLI (slow).")
-    ap.add_argument("--model", default="deepseek-v4-flash-free",
+    ap.add_argument("--idiomize", choices=["mock", "opencode", "zen", "cursor"], default="mock",
+                    help="cursor = cursor-cli (PRIMARY, composer-2.5); zen = direct free opencode gateway (legacy); opencode = opencode run CLI (slow).")
+    ap.add_argument("--model", default="composer-2.5",
                     help="zen gateway model id (see /models); default is the free deepseek.")
     ap.add_argument("--k", type=int, default=5,
                     help="candidates to over-generate per record (zen); keep the most idiomatic test-passer.")
