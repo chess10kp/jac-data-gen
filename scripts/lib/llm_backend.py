@@ -79,8 +79,8 @@ def _ensure_iso_home() -> None:
 
 
 def strip_prefix(model: str) -> str:
-    """Strip pi:/cursor:/zen:/openrouter:/zai: prefix for the underlying transport."""
-    for p in ("pi:", "cursor:", "zen:", "openrouter:", "zai:"):
+    """Strip backend prefixes (pi:/cursor:/zen:/openrouter:/zai:, zai/) for transport."""
+    for p in ("pi:", "cursor:", "zen:", "openrouter:", "zai:", "zai/"):
         if model.startswith(p):
             return model[len(p):]
     return model
