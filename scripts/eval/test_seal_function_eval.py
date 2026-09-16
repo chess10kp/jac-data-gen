@@ -8,8 +8,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts import build_function_eval as builder
-from scripts import seal_function_eval as sealer
+from scripts.eval import build_function_eval as builder
+from scripts.eval import seal_function_eval as sealer
 
 
 class SealIntegrityTests(unittest.TestCase):

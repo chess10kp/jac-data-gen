@@ -38,8 +38,8 @@ REPO = Path(__file__).resolve().parents[2]
 if str(REPO) not in sys.path:
     sys.path.insert(0, str(REPO))
 
-from scripts import build_function_eval as builder  # noqa: E402
-from scripts import eval_jac  # noqa: E402
+from scripts.eval import build_function_eval as builder  # noqa: E402
+from scripts.eval import eval_jac  # noqa: E402
 
 
 def read_jsonl(path: Path) -> list[dict[str, Any]]:

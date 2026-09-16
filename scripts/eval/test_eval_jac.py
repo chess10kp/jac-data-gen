@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Focused unit tests for scripts/eval_jac.py."""
+"""Focused unit tests for scripts/eval/eval_jac.py."""
 from __future__ import annotations
 
+import shutil
 import unittest
 
-from scripts import eval_jac
+from scripts.eval import eval_jac
 
 
 class ExtractionTests(unittest.TestCase):
@@ -145,6 +146,77 @@ class MetricsTests(unittest.TestCase):
         self.assertIsNone(summary["task_success_rate"])
         self.assertIsNone(summary["pass_at_k"]["1"]["value"])
         self.assertEqual(summary["compile_only_samples"], 1)
+
+
+class EntrypointTests(unittest.TestCase):
+    def test_entrypoints_from_string(self) -> None:
+        self.assertEqual(eval_jac.entrypoints({"entrypoint": "xgcd"}), ["xgcd"])
+
+    def test_entrypoints_from_list(self) -> None:
+        self.assertEqual(eval_jac.entrypoints({"entrypoint": ["a", " b "]}), ["a", "b"])
+
+    def test_entrypoints_missing(self) -> None:
+        self.assertEqual(eval_jac.entrypoints({}), [])
+
+
+JAC_DEMOTED_SRC = (
+    "def color_spot(htmlcolorcode: str) -> str {\n"
+    "    return 'spot:%s:end' % htmlcolorcode;\n"
+    "}\n"
+)
+
+
+class AnnexGradingTests(unittest.TestCase):
+    """Integration: annex mode + server codespace under the real toolchain."""
+
+    JAC = shutil.which("jac")
+
+    @unittest.skipIf(JAC is None, "jac binary not available")
+    def test_annex_mode_executes_demoted_function(self) -> None:
+        # '%'-formatting is demoted to Python-only under the native codespace;
+        # the old guard-concat layout reported "no tests ran" for this shape.
+        problem = {
+            "id": "annex-ok",
+            "track": "function",
+            "entrypoint": "color_spot",
+            "test_blocks": (
+                'test "t0" { assert (color_spot("#fff") == '
+                '"spot:#fff:end");; }\n'
+            ),
+        }
+        sample = {"problem_id": "annex-ok", "sample_id": 0, "jac": JAC_DEMOTED_SRC}
+        _, row = eval_jac.grade_one(
+            0,
+            problem,
+            sample,
+            jac_bin=self.JAC,
+            timeout_s=60.0,
+            tmp_root=None,
+            jac_tmp=None,
+        )
+        self.assertEqual(row["status"], "pass")
+        self.assertTrue(row["test_executed"])
+
+    @unittest.skipIf(JAC is None, "jac binary not available")
+    def test_annex_mode_reports_test_fail_on_wrong_behavior(self) -> None:
+        problem = {
+            "id": "annex-bad",
+            "track": "function",
+            "entrypoint": "color_spot",
+            "test_blocks": 'test "t0" { assert (color_spot("#fff") == "nope");; }\n',
+        }
+        sample = {"problem_id": "annex-bad", "sample_id": 0, "jac": JAC_DEMOTED_SRC}
+        _, row = eval_jac.grade_one(
+            0,
+            problem,
+            sample,
+            jac_bin=self.JAC,
+            timeout_s=60.0,
+            tmp_root=None,
+            jac_tmp=None,
+        )
+        self.assertEqual(row["status"], "test_fail")
+        self.assertTrue(row["test_executed"])
 
 
 if __name__ == "__main__":

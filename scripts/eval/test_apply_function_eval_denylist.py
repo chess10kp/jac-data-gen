@@ -7,7 +7,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts import apply_function_eval_denylist as guard
+from scripts.eval import apply_function_eval_denylist as guard
 
 
 class DenylistTests(unittest.TestCase):

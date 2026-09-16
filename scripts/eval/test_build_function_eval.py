@@ -7,7 +7,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts import build_function_eval as builder
+from scripts.eval import build_function_eval as builder
 
 
 class AstClusterTests(unittest.TestCase):

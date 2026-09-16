@@ -17,6 +17,16 @@ test "exact capacity accepted in input order" {
     assert res.used == 5;
 }
 
+# R6 (kills sort mutants): input order must win even when it differs from
+# lexicographic order -- every earlier order test used alphabetical ids.
+test "input order wins over lexicographic order" {
+    reqs = [Request(id="b", count=1), Request(id="a", count=1), Request(id="c", count=1)];
+    res = allocate_requests(reqs, 5);
+    assert res.accepted == ["b", "a", "c"];
+    assert len(res.rejected) == 0;
+    assert res.used == 3;
+}
+
 # R2: zero and negative counts are invalid; valid ones still accepted.
 test "invalid counts rejected, valid still accepted" {
     reqs = [Request(id="a", count=0), Request(id="b", count=-1), Request(id="c", count=2)];

@@ -12,13 +12,21 @@
     "cluster_size_min": 1,
     "denied_current_composer_ids": 765,
     "denied_full_source_ids": 1404,
+    "dev_rows_repaired": {
+      "private": 394,
+      "public": 394
+    },
     "duplicate_source_rows": 7,
     "private_dev_tasks": 400,
     "private_test_tasks": 1000,
     "public_dev_tasks": 400,
     "public_test_tasks": 1000,
     "reserved_clusters": 700,
-    "source_parse_fallbacks": 0
+    "source_parse_fallbacks": 0,
+    "test_rows_repaired": {
+      "private": 972,
+      "public": 972
+    }
   },
   "created_at": "2026-08-17T16:25:14.382331+00:00",
   "dataset": {
@@ -40,8 +48,8 @@
   },
   "files": {
     "README.md": {
-      "bytes": 620,
-      "sha256": "170f26965d1c7c54b4d68a935bba4a1f0630b59d6638b172e4af1e71c893154b"
+      "bytes": 1056,
+      "sha256": "1e86f2761c0bd544ec48e7fcf5826d0ce3722ce1d564970c5f87c75750482111"
     },
     "clusters.jsonl": {
       "bytes": 175271,
@@ -56,21 +64,44 @@
       "sha256": "047ebc719270fdece73e77d7f545433d36099ee9c457597e57bc80f70fbc2e23"
     },
     "private/dev.jsonl": {
-      "bytes": 1636942,
-      "sha256": "3ae11bde55cb20bf75664a7070f60cd6ff8f2bec5767a7cdee5841ebe0d87aa3"
+      "bytes": 1501771,
+      "sha256": "7b9f4afd0681811af58ef5153eb832b7bde542d2037d91a536b69a3be470b942"
     },
     "private/test.jsonl": {
-      "bytes": 4451920,
-      "sha256": "5170c9c08e0b973baf07f1400928eea322d377fad6786c09ce882cda5c3c5576"
+      "bytes": 4087328,
+      "sha256": "357ccd1c7d41b231f275bfd2b4c91c35403abfdd28bf67c32b27daea851a45c3"
     },
     "public/dev.jsonl": {
-      "bytes": 460937,
-      "sha256": "7ec9a28bc7e42d987c8c5bd25a1c6971f8dced2b646870d874f00d45730088ca"
+      "bytes": 451861,
+      "sha256": "95ea0e5ac424258fb580483d6d36f7bf3914270ab51486a2ad34585c16bb02fe"
     },
     "public/test.jsonl": {
-      "bytes": 1102119,
-      "sha256": "d1438eb0da79d8e5c6575732d6053938253d6386d839de9e094a2b0dcd31771c"
+      "bytes": 1070068,
+      "sha256": "a4ea59d9deb1bef4d53e40ba6667c13dcba30778dfc21a7718c5520e87e180ce"
+    },
+    "repair_report.jsonl": {
+      "bytes": 448758,
+      "sha256": "d7d1959cceef0f97a4028c3665a97f533a02884fd52f36cd62b41a23561b0f36"
+    },
+    "validation_summary.json": {
+      "bytes": 4286,
+      "sha256": "f34f1ad130f15564c68c79f3ada5d84daaf082929dd88f1c06243c1fdc708419"
     }
+  },
+  "notes": [
+    "2026-09-16: repaired for jac 0.36.1 (test literals + annex grader + server codespace); 34 task variants dropped, see repair_report.jsonl"
+  ],
+  "repair": {
+    "created_at": "2026-09-16T16:43:21.220966+00:00",
+    "drop_policy": "drop only when no value-preserving repair exists (wrong-type probes inexpressible under strict typing, unfixable candidate check errors, all-behavior-failing)",
+    "grader_change": "scripts/eval/eval_jac.py now grades via annex (candidate.jac + tests.jac import) and pins [build] default_codespace = \"server\"",
+    "jac_version": "jac 0.36.1  (Linux x86_64)",
+    "reason": "suite generated against pre-0.36 Jac; E1053 strict-type test literals, native-codespace no_tests/segfault classes",
+    "revalidation": "1366/1366 pass@1 (scripts/eval/eval_jac.py, annex+server codespace, workers=6)",
+    "tasks_dropped": 34,
+    "tasks_processed": 1400,
+    "tasks_repaired": 480,
+    "tool": "scripts/eval/repair_function_eval_tests.py"
   },
   "schema_version": 1,
   "selection": {

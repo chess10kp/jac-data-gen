@@ -77,6 +77,12 @@ FENCED_JAC_RE = re.compile(r"```jac\s*\n?(.*?)```", re.IGNORECASE | re.DOTALL)
 ANY_FENCE_RE = re.compile(r"```")
 TOKEN_RE = re.compile(r"\w+|[^\w\s]", re.UNICODE)
 
+# The 0.36 native test runner mishandles modules whose functions are demoted
+# to Python-only ("no tests ran") and can segfault on demoted annexes. Server
+# codespace keeps CPython semantics for graded tests; see
+# scripts/eval/repair_function_eval_tests.py for the suite-repair counterpart.
+JAC_TOML_SERVER = '[build]\ndefault_codespace = "server"\n'
+
 FEATURE_PATTERNS: dict[str, re.Pattern[str]] = {
     "node": re.compile(r"(?m)^\s*node(?::\w+)?\s+\w+\s*\{"),
     "edge": re.compile(r"(?m)^\s*edge(?::\w+)?\s+\w+\s*\{"),
@@ -348,6 +354,16 @@ def set_infra_error(
     )
 
 
+def entrypoints(problem: dict[str, Any]) -> list[str]:
+    """Entrypoint names for the annex import header (empty if unknown)."""
+    value = problem.get("entrypoint")
+    if value is None:
+        return []
+    if isinstance(value, str):
+        value = [value]
+    return [str(item).strip() for item in value if str(item).strip()]
+
+
 def grade_one(
     index: int,
     problem: dict[str, Any],
@@ -357,6 +373,7 @@ def grade_one(
     timeout_s: float,
     tmp_root: Path | None,
     jac_tmp: Path | None,
+    server_codespace: bool = True,
 ) -> tuple[int, dict[str, Any]]:
     problem_id = str(problem["id"])
     sample_id = sample.get("sample_id", index)
@@ -440,11 +457,23 @@ def grade_one(
             row["status"] = "check_pass"
             return index, row
 
-        guard_file = cwd / "guard.jac"
-        guard_file.write_text(
-            source.rstrip() + "\n\n" + hidden_tests.rstrip() + "\n", encoding="utf-8"
-        )
-        tested = run_process([jac_bin, "test", str(guard_file)], cwd, timeout_s, env)
+        names = entrypoints(problem)
+        if names:
+            # Annex mode: hidden tests import the candidate as a separate
+            # module. This is the layout the 0.36 test runner supports and the
+            # one scripts/eval/validate_task.py uses for jac_native tasks.
+            header = f"import from candidate {{ {', '.join(names)} }}\n"
+            test_file = cwd / "tests.jac"
+            test_file.write_text(header + hidden_tests.rstrip() + "\n", encoding="utf-8")
+        else:
+            # Legacy fallback when no entrypoint is declared.
+            test_file = cwd / "guard.jac"
+            test_file.write_text(
+                source.rstrip() + "\n\n" + hidden_tests.rstrip() + "\n", encoding="utf-8"
+            )
+        if server_codespace:
+            (cwd / "jac.toml").write_text(JAC_TOML_SERVER, encoding="utf-8")
+        tested = run_process([jac_bin, "test", str(test_file)], cwd, timeout_s, env)
         row["test_executed"] = True
         row["test_ms"] = round(tested.elapsed_ms, 1)
         if tested.launch_error:
@@ -660,6 +689,11 @@ def main() -> int:
         type=Path,
         help="optional shared Jac runtime TMPDIR; default inherits the environment",
     )
+    parser.add_argument(
+        "--native-codespace",
+        action="store_true",
+        help="keep the default native codespace instead of pinning server for tests",
+    )
     args = parser.parse_args()
 
     if args.timeout <= 0:
@@ -690,6 +724,7 @@ def main() -> int:
                 timeout_s=args.timeout,
                 tmp_root=args.tmp_root,
                 jac_tmp=jac_tmp,
+                server_codespace=not args.native_codespace,
             ): index
             for index, sample in enumerate(samples)
         }
