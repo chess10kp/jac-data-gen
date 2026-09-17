@@ -10,18 +10,23 @@ cd "$REPO"
 echo "=== OSP status — $(date '+%F %T') ==="
 
 # ---- active run ------------------------------------------------------------ #
-GEN=$(pgrep -f "osp_agent_generate\.py" | head -1)
-if [ -n "$GEN" ]; then
-  BATCH=$(ps -o cmd= -p "$GEN" | sed -n 's/.*--batch \([0-9]*\).*/\1/p')
-  ELAPSED=$(ps -o etime= -p "$GEN" | tr -d ' ')
-  LOG=$(ls -t "runs/lift_${BATCH}.log" "runs/lift_${BATCH}_glm.log" \
-             "runs/repair2_${BATCH}.log" 2>/dev/null | head -1)
-  MODEL="cursor composer-2.5"
-  if tr '\0' '\n' < "/proc/$GEN/environ" 2>/dev/null | grep -q "^CURSOR_OSP_MODEL=zai/"; then
-    MODEL="zai/glm-5.3-flash"
-  fi
-  echo "ACTIVE: batch $BATCH on $MODEL (pid $GEN, up ${ELAPSED}) — ${LOG:-no log}"
-  [ -n "$LOG" ] && tail -1 "$LOG" | cut -c1-150
+GENS=$(pgrep -f "osp_agent_generate\.py" || true)
+if [ -n "$GENS" ]; then
+  while read -r GEN; do
+    [ -n "$GEN" ] || continue
+    CMD=$(ps -o cmd= -p "$GEN" 2>/dev/null || true)
+    BATCH=$(printf '%s\n' "$CMD" | sed -n 's/.*--batch \([0-9]*\).*/\1/p')
+    [ -n "$BATCH" ] || continue
+    ELAPSED=$(ps -o etime= -p "$GEN" | tr -d ' ')
+    LOG=$(ls -t "runs/lift_${BATCH}.log" "runs/lift_${BATCH}_glm.log" \
+               "runs/glm_${BATCH}.log" "runs/repair2_${BATCH}.log" 2>/dev/null | head -1)
+    MODEL="cursor composer-2.5"
+    if tr '\0' '\n' < "/proc/$GEN/environ" 2>/dev/null | grep -q "^CURSOR_OSP_MODEL=zai/"; then
+      MODEL="zai/glm-5.3-flash"
+    fi
+    echo "ACTIVE: batch $BATCH on $MODEL (pid $GEN, up ${ELAPSED}) — ${LOG:-no log}"
+    [ -n "$LOG" ] && tail -1 "$LOG" | cut -c1-150
+  done <<< "$GENS"
 else
   echo "ACTIVE: no generation running"
 fi
