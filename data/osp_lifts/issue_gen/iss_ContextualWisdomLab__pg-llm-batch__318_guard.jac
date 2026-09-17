@@ -1,524 +1,403 @@
-"""ContextualWisdomLab/pg-llm-batch#318 — bind batch lifecycle evidence to released Context Assertion contract."""
+"""Bind batch lifecycle evidence to a released Context Assertion contract.
+ContextualWisdomLab/pg-llm-batch#318
+"""
 
-CATALOG_COLUMN_COUNT = 14;
-
-node Evidence {
-    has evidence_id: str;
-    has column_count: int = 0;
-    has catalog_ok: bool = False;
-    has bound_contract: str = "";
+node CatalogTable {
+    has cid: str;
+    has name: str;
+    has admitted: bool = False;
 }
 
-node Contract {
-    has contract_id: str;
-    has version: str;
-    has released: bool = False;
-}
-
-node ColumnSpec {
+node Column {
+    has cid: str;
     has name: str;
     has atttypmod: int = -1;
 }
 
-edge BindsTo {}
-edge Requires {}
-edge Lineage {}
-
-walker FindEvidence {
-    has claimed: dict[str, bool] = {};
-    has target: str;
-    has hit: Evidence | None = None;
-
-    can begin with entry {
-        kids: list[object] = [];
-        for ch in [here ->] { kids.append(ch); }
-        visit kids;
-    }
-
-    can step with Evidence entry {
-        if here.evidence_id in self.claimed { skip; }
-        self.claimed[here.evidence_id] = True;
-        if here.evidence_id == self.target { self.hit = here; }
-        kids: list[Evidence] = [];
-        for ch in [here ->:Lineage:->][?:Evidence] { kids.append(ch); }
-        visit :0: kids;
-    }
+node BatchEvidence {
+    has cid: str;
+    has batch_id: str;
+    has evidence_id: str = "";
+    has bound: bool = False;
 }
 
-walker FindContract {
-    has claimed: dict[str, bool] = {};
-    has target: str;
-    has hit: Contract | None = None;
-
-    can begin with entry {
-        kids: list[object] = [];
-        for ch in [here ->] { kids.append(ch); }
-        visit kids;
-    }
-
-    can step with Contract entry {
-        if here.contract_id in self.claimed { skip; }
-        self.claimed[here.contract_id] = True;
-        if here.contract_id == self.target { self.hit = here; }
-        kids: list[Contract] = [];
-        for ch in [here ->:Lineage:->][?:Contract] { kids.append(ch); }
-        visit :0: kids;
-    }
-}
-
-walker ValidateCatalog {
-    has claimed: dict[str, bool] = {};
-    has target_id: str;
-    has ok: bool = False;
-
-    can begin with entry {
-        kids: list[object] = [];
-        for ch in [here ->] { kids.append(ch); }
-        visit kids;
-    }
-
-    can step with Evidence entry {
-        if here.evidence_id in self.claimed { skip; }
-        self.claimed[here.evidence_id] = True;
-        if here.evidence_id == self.target_id {
-            if here.column_count == CATALOG_COLUMN_COUNT {
-                cols: list[ColumnSpec] = [];
-                for col in [here <-:Requires:<-][?:ColumnSpec] { cols.append(col); }
-                drift: bool = False;
-                for col in cols {
-                    if col.atttypmod != -1 { drift = True; }
-                }
-                if len(cols) == CATALOG_COLUMN_COUNT and not drift {
-                    self.ok = True;
-                }
-            }
-        }
-        kids: list[Evidence] = [];
-        for ch in [here ->:Lineage:->][?:Evidence] { kids.append(ch); }
-        visit :0: kids;
-    }
-}
-
-walker CollectBindings {
-    has claimed: dict[str, bool] = {};
-    has contract_id: str;
-    has found: list[str] = [];
-
-    can step_contract with Contract entry {
-        if here.contract_id in self.claimed { skip; }
-        self.claimed[here.contract_id] = True;
-        bound: list[Evidence] = [];
-        for ev in [here <-:BindsTo:<-][?:Evidence] { bound.append(ev); }
-        for ev in bound {
-            if ev.bound_contract == self.contract_id and ev.catalog_ok {
-                self.found.append(ev.evidence_id);
-            }
-        }
-        kids: list[Contract] = [];
-        for ch in [here ->:Lineage:->][?:Contract] { kids.append(ch); }
-        visit :0: kids;
-    }
-
-    can step_evidence with Evidence entry {
-        if here.evidence_id in self.claimed { skip; }
-        self.claimed[here.evidence_id] = True;
-        if here.bound_contract == self.contract_id and here.catalog_ok {
-            self.found.append(here.evidence_id);
-        }
-        kids: list[Evidence] = [];
-        for ch in [here ->:Lineage:->][?:Evidence] { kids.append(ch); }
-        visit :0: kids;
-    }
-}
-
-walker ReconcileLifecycle {
-    has claimed: dict[str, bool] = {};
-    has contract_id: str;
-    has reconciled: list[str] = [];
-
-    can step_contract with Contract entry {
-        if here.contract_id in self.claimed { skip; }
-        self.claimed[here.contract_id] = True;
-        if here.contract_id == self.contract_id and here.released {
-            bound: list[Evidence] = [];
-            for ev in [here <-:BindsTo:<-][?:Evidence] { bound.append(ev); }
-            for ev in bound {
-                if ev.catalog_ok {
-                    self.reconciled.append(ev.evidence_id);
-                }
-            }
-        }
-        kids: list[Contract] = [];
-        for ch in [here ->:Lineage:->][?:Contract] { kids.append(ch); }
-        visit :0: kids;
-    }
-
-    can step_evidence with Evidence entry {
-        if here.evidence_id in self.claimed { skip; }
-        self.claimed[here.evidence_id] = True;
-        kids: list[Evidence] = [];
-        for ch in [here ->:Lineage:->][?:Evidence] { kids.append(ch); }
-        visit :0: kids;
-    }
-}
-
-def bind_batch_evidence(graph_root: object, evidence_id: str, contract_id: str) -> dict[str, str] {
-    _ = graph_root;
-    ew = root spawn FindEvidence(claimed={}, target=evidence_id);
-    cw = root spawn FindContract(claimed={}, target=contract_id);
-    ev = ew.hit;
-    ct = cw.hit;
-    if ev is None or ct is None {
-        return {"status": "unknown", "evidence_id": evidence_id, "contract_id": contract_id};
-    }
-    if not ct.released {
-        return {"status": "not_released", "evidence_id": evidence_id, "contract_id": contract_id};
-    }
-    ev.bound_contract = contract_id;
-    ev.catalog_ok = ev.column_count == CATALOG_COLUMN_COUNT;
-    ct +>:BindsTo:+> ev;
-    return {"status": "bound", "evidence_id": evidence_id, "contract_id": contract_id};
-}
-
-def validate_catalog(graph_root: object, evidence_id: str) -> bool {
-    _ = graph_root;
-    w = root spawn ValidateCatalog(claimed={}, target_id=evidence_id);
-    print(w.ok);
-    return w.ok;
-}
-
-def collect_bindings(graph_root: object, contract_id: str) -> list[str] {
-    _ = graph_root;
-    cw = root spawn FindContract(claimed={}, target=contract_id);
-    ct = cw.hit;
-    if ct is None {
-        print([]);
-        return [];
-    }
-    w = ct spawn CollectBindings(claimed={}, contract_id=contract_id);
-    out: list[str] = w.found;
-    out.sort();
-    print(out);
-    return out;
-}
-
-def reconcile_lifecycle(graph_root: object, contract_id: str) -> list[str] {
-    _ = graph_root;
-    cw = root spawn FindContract(claimed={}, target=contract_id);
-    ct = cw.hit;
-    if ct is None {
-        print([]);
-        return [];
-    }
-    w = ct spawn ReconcileLifecycle(claimed={}, contract_id=contract_id);
-    out: list[str] = w.reconciled;
-    out.sort();
-    print(out);
-    return out;
-}
-
-with entry {
-    ct0 = Contract(contract_id="demo-c", version="1", released=True);
-    ev0 = Evidence(evidence_id="demo-e", column_count=14);
-    root ++> ct0;
-    root ++> ev0;
-    bind_batch_evidence(root, "demo-e", "demo-c");
-    validate_catalog(root, "demo-e");
-    collect_bindings(root, "demo-c");
-    reconcile_lifecycle(root, "demo-c");
-}
-
-"""ContextualWisdomLab/pg-llm-batch#318 — bind batch lifecycle evidence to released Context Assertion contract."""
-
-CATALOG_COLUMN_COUNT = 14;
-
-node Evidence {
-    has evidence_id: str;
-    has column_count: int = 0;
-    has catalog_ok: bool = False;
-    has bound_contract: str = "";
-}
-
-node Contract {
-    has contract_id: str;
+node ContractAssertion {
+    has cid: str;
+    has ref: str;
     has version: str;
     has released: bool = False;
 }
 
-node ColumnSpec {
+edge Cascade {}
+edge Catalog {}
+edge EvidenceBind {}
+
+walker AuthorityWalker {
+    has table_cid: str = "";
+    has claimed: dict[str, bool] = {};
+    has rejected: list[str] = [];
+
+    can probe_table with CatalogTable entry {
+        if here.cid != self.table_cid {
+            skip;
+        }
+        print ["authority_probe", here.name];
+        cols: list[Column] = [here ->:Catalog:->][?:Column];
+        for col in cols {
+            visit :0: [col];
+        }
+        disengage;
+    }
+
+    can probe_column with Column entry {
+        if here.cid in self.claimed {
+            skip;
+        }
+        self.claimed[here.cid] = True;
+        print ["column_probe", here.name, here.atttypmod];
+        if here.atttypmod != -1 {
+            self.rejected.append(here.name);
+        }
+        kids: list[Column] = [here ->:Cascade:->][?:Column];
+        for kid in kids {
+            visit :0: [kid];
+        }
+        disengage;
+    }
+}
+
+walker CollectBindWalker {
+    has batch_id: str = "";
+    has evidence_id: str = "";
+    has contract_ref: str = "";
+    has claimed: dict[str, bool] = {};
+    has evidence: BatchEvidence | None = None;
+    has contract: ContractAssertion | None = None;
+
+    can probe_root with CatalogTable entry {
+        print ["bind_collect", here.cid];
+        evs: list[BatchEvidence] = [here -->][?:BatchEvidence];
+        for ev in evs {
+            visit [ev];
+        }
+        cts: list[ContractAssertion] = [here -->][?:ContractAssertion];
+        for ct in cts {
+            visit [ct];
+        }
+        disengage;
+    }
+
+    can probe_evidence with BatchEvidence entry {
+        if here.cid in self.claimed {
+            skip;
+        }
+        self.claimed[here.cid] = True;
+        print ["bind_evidence", here.batch_id, here.evidence_id];
+        if here.batch_id == self.batch_id {
+            if self.evidence_id == "" or here.evidence_id == "" or here.evidence_id == self.evidence_id {
+                self.evidence = here;
+            }
+        }
+        disengage;
+    }
+
+    can probe_contract with ContractAssertion entry {
+        if here.cid in self.claimed {
+            skip;
+        }
+        self.claimed[here.cid] = True;
+        print ["bind_contract", here.ref, here.released];
+        if here.ref == self.contract_ref and here.released {
+            self.contract = here;
+        }
+        disengage;
+    }
+}
+
+def _resolve_table(graph_root: CatalogTable, table_cid: str) -> CatalogTable | None {
+    if graph_root.cid == table_cid {
+        return graph_root;
+    }
+    return None;
+}
+
+def verify_column_cascade(graph_root: CatalogTable, table_cid: str) -> list[str] {
+    w = graph_root spawn AuthorityWalker(table_cid=table_cid);
+    out: list[str] = w.rejected;
+    return sorted(out);
+}
+
+def bind_evidence_to_contract(
+    graph_root: CatalogTable,
+    batch_id: str,
+    evidence_id: str,
+    contract_ref: str
+) -> dict[str, object] {
+    w = graph_root spawn CollectBindWalker(
+        batch_id=batch_id,
+        evidence_id=evidence_id,
+        contract_ref=contract_ref
+    );
+    result: dict[str, object] = {};
+    result["batch_id"] = batch_id;
+    result["evidence_id"] = evidence_id;
+    result["contract_ref"] = contract_ref;
+    if w.evidence is None or w.contract is None {
+        result["bound"] = False;
+        return result;
+    }
+    w.evidence.bound = True;
+    w.evidence +>:EvidenceBind:+> w.contract;
+    result["bound"] = True;
+    return result;
+}
+
+def admit_runtime_outbox(graph_root: CatalogTable, table_cid: str) -> bool {
+    bad: list[str] = verify_column_cascade(graph_root, table_cid);
+    if len(bad) > 0 {
+        return False;
+    }
+    tbl = _resolve_table(graph_root, table_cid);
+    if tbl is None {
+        return False;
+    }
+    tbl.admitted = True;
+    return True;
+}
+
+"""Bind batch lifecycle evidence to a released Context Assertion contract.
+ContextualWisdomLab/pg-llm-batch#318
+"""
+
+node CatalogTable {
+    has cid: str;
+    has name: str;
+    has admitted: bool = False;
+}
+
+node Column {
+    has cid: str;
     has name: str;
     has atttypmod: int = -1;
 }
 
-edge BindsTo {}
-edge Requires {}
-edge Lineage {}
+node BatchEvidence {
+    has cid: str;
+    has batch_id: str;
+    has evidence_id: str = "";
+    has bound: bool = False;
+}
 
-walker FindEvidence {
+node ContractAssertion {
+    has cid: str;
+    has ref: str;
+    has version: str;
+    has released: bool = False;
+}
+
+edge Cascade {}
+edge Catalog {}
+edge EvidenceBind {}
+
+walker AuthorityWalker {
+    has table_cid: str = "";
     has claimed: dict[str, bool] = {};
-    has target: str;
-    has hit: Evidence | None = None;
+    has rejected: list[str] = [];
 
-    can begin with entry {
-        kids: list[object] = [];
-        for ch in [here ->] { kids.append(ch); }
-        visit kids;
+    can probe_table with CatalogTable entry {
+        if here.cid != self.table_cid {
+            skip;
+        }
+        print ["authority_probe", here.name];
+        cols: list[Column] = [here ->:Catalog:->][?:Column];
+        for col in cols {
+            visit :0: [col];
+        }
+        disengage;
     }
 
-    can step with Evidence entry {
-        if here.evidence_id in self.claimed { skip; }
-        self.claimed[here.evidence_id] = True;
-        if here.evidence_id == self.target { self.hit = here; }
-        kids: list[Evidence] = [];
-        for ch in [here ->:Lineage:->][?:Evidence] { kids.append(ch); }
-        visit :0: kids;
+    can probe_column with Column entry {
+        if here.cid in self.claimed {
+            skip;
+        }
+        self.claimed[here.cid] = True;
+        print ["column_probe", here.name, here.atttypmod];
+        if here.atttypmod != -1 {
+            self.rejected.append(here.name);
+        }
+        kids: list[Column] = [here ->:Cascade:->][?:Column];
+        for kid in kids {
+            visit :0: [kid];
+        }
+        disengage;
     }
 }
 
-walker FindContract {
+walker CollectBindWalker {
+    has batch_id: str = "";
+    has evidence_id: str = "";
+    has contract_ref: str = "";
     has claimed: dict[str, bool] = {};
-    has target: str;
-    has hit: Contract | None = None;
+    has evidence: BatchEvidence | None = None;
+    has contract: ContractAssertion | None = None;
 
-    can begin with entry {
-        kids: list[object] = [];
-        for ch in [here ->] { kids.append(ch); }
-        visit kids;
+    can probe_root with CatalogTable entry {
+        print ["bind_collect", here.cid];
+        evs: list[BatchEvidence] = [here -->][?:BatchEvidence];
+        for ev in evs {
+            visit [ev];
+        }
+        cts: list[ContractAssertion] = [here -->][?:ContractAssertion];
+        for ct in cts {
+            visit [ct];
+        }
+        disengage;
     }
 
-    can step with Contract entry {
-        if here.contract_id in self.claimed { skip; }
-        self.claimed[here.contract_id] = True;
-        if here.contract_id == self.target { self.hit = here; }
-        kids: list[Contract] = [];
-        for ch in [here ->:Lineage:->][?:Contract] { kids.append(ch); }
-        visit :0: kids;
-    }
-}
-
-walker ValidateCatalog {
-    has claimed: dict[str, bool] = {};
-    has target_id: str;
-    has ok: bool = False;
-
-    can begin with entry {
-        kids: list[object] = [];
-        for ch in [here ->] { kids.append(ch); }
-        visit kids;
-    }
-
-    can step with Evidence entry {
-        if here.evidence_id in self.claimed { skip; }
-        self.claimed[here.evidence_id] = True;
-        if here.evidence_id == self.target_id {
-            if here.column_count == CATALOG_COLUMN_COUNT {
-                cols: list[ColumnSpec] = [];
-                for col in [here <-:Requires:<-][?:ColumnSpec] { cols.append(col); }
-                drift: bool = False;
-                for col in cols {
-                    if col.atttypmod != -1 { drift = True; }
-                }
-                if len(cols) == CATALOG_COLUMN_COUNT and not drift {
-                    self.ok = True;
-                }
+    can probe_evidence with BatchEvidence entry {
+        if here.cid in self.claimed {
+            skip;
+        }
+        self.claimed[here.cid] = True;
+        print ["bind_evidence", here.batch_id, here.evidence_id];
+        if here.batch_id == self.batch_id {
+            if self.evidence_id == "" or here.evidence_id == "" or here.evidence_id == self.evidence_id {
+                self.evidence = here;
             }
         }
-        kids: list[Evidence] = [];
-        for ch in [here ->:Lineage:->][?:Evidence] { kids.append(ch); }
-        visit :0: kids;
+        disengage;
     }
-}
 
-walker CollectBindings {
-    has claimed: dict[str, bool] = {};
-    has contract_id: str;
-    has found: list[str] = [];
-
-    can step_contract with Contract entry {
-        if here.contract_id in self.claimed { skip; }
-        self.claimed[here.contract_id] = True;
-        bound: list[Evidence] = [];
-        for ev in [here <-:BindsTo:<-][?:Evidence] { bound.append(ev); }
-        for ev in bound {
-            if ev.bound_contract == self.contract_id and ev.catalog_ok {
-                self.found.append(ev.evidence_id);
-            }
+    can probe_contract with ContractAssertion entry {
+        if here.cid in self.claimed {
+            skip;
         }
-        kids: list[Contract] = [];
-        for ch in [here ->:Lineage:->][?:Contract] { kids.append(ch); }
-        visit :0: kids;
-    }
-
-    can step_evidence with Evidence entry {
-        if here.evidence_id in self.claimed { skip; }
-        self.claimed[here.evidence_id] = True;
-        if here.bound_contract == self.contract_id and here.catalog_ok {
-            self.found.append(here.evidence_id);
+        self.claimed[here.cid] = True;
+        print ["bind_contract", here.ref, here.released];
+        if here.ref == self.contract_ref and here.released {
+            self.contract = here;
         }
-        kids: list[Evidence] = [];
-        for ch in [here ->:Lineage:->][?:Evidence] { kids.append(ch); }
-        visit :0: kids;
+        disengage;
     }
 }
 
-walker ReconcileLifecycle {
-    has claimed: dict[str, bool] = {};
-    has contract_id: str;
-    has reconciled: list[str] = [];
-
-    can step_contract with Contract entry {
-        if here.contract_id in self.claimed { skip; }
-        self.claimed[here.contract_id] = True;
-        if here.contract_id == self.contract_id and here.released {
-            bound: list[Evidence] = [];
-            for ev in [here <-:BindsTo:<-][?:Evidence] { bound.append(ev); }
-            for ev in bound {
-                if ev.catalog_ok {
-                    self.reconciled.append(ev.evidence_id);
-                }
-            }
-        }
-        kids: list[Contract] = [];
-        for ch in [here ->:Lineage:->][?:Contract] { kids.append(ch); }
-        visit :0: kids;
+def _resolve_table(graph_root: CatalogTable, table_cid: str) -> CatalogTable | None {
+    if graph_root.cid == table_cid {
+        return graph_root;
     }
+    return None;
+}
 
-    can step_evidence with Evidence entry {
-        if here.evidence_id in self.claimed { skip; }
-        self.claimed[here.evidence_id] = True;
-        kids: list[Evidence] = [];
-        for ch in [here ->:Lineage:->][?:Evidence] { kids.append(ch); }
-        visit :0: kids;
+def verify_column_cascade(graph_root: CatalogTable, table_cid: str) -> list[str] {
+    w = graph_root spawn AuthorityWalker(table_cid=table_cid);
+    out: list[str] = w.rejected;
+    return sorted(out);
+}
+
+def bind_evidence_to_contract(
+    graph_root: CatalogTable,
+    batch_id: str,
+    evidence_id: str,
+    contract_ref: str
+) -> dict[str, object] {
+    w = graph_root spawn CollectBindWalker(
+        batch_id=batch_id,
+        evidence_id=evidence_id,
+        contract_ref=contract_ref
+    );
+    result: dict[str, object] = {};
+    result["batch_id"] = batch_id;
+    result["evidence_id"] = evidence_id;
+    result["contract_ref"] = contract_ref;
+    if w.evidence is None or w.contract is None {
+        result["bound"] = False;
+        return result;
     }
+    w.evidence.bound = True;
+    w.evidence +>:EvidenceBind:+> w.contract;
+    result["bound"] = True;
+    return result;
 }
 
-def bind_batch_evidence(graph_root: object, evidence_id: str, contract_id: str) -> dict[str, str] {
-    _ = graph_root;
-    ew = root spawn FindEvidence(claimed={}, target=evidence_id);
-    cw = root spawn FindContract(claimed={}, target=contract_id);
-    ev = ew.hit;
-    ct = cw.hit;
-    if ev is None or ct is None {
-        return {"status": "unknown", "evidence_id": evidence_id, "contract_id": contract_id};
+def admit_runtime_outbox(graph_root: CatalogTable, table_cid: str) -> bool {
+    bad: list[str] = verify_column_cascade(graph_root, table_cid);
+    if len(bad) > 0 {
+        return False;
     }
-    if not ct.released {
-        return {"status": "not_released", "evidence_id": evidence_id, "contract_id": contract_id};
+    tbl = _resolve_table(graph_root, table_cid);
+    if tbl is None {
+        return False;
     }
-    ev.bound_contract = contract_id;
-    ev.catalog_ok = ev.column_count == CATALOG_COLUMN_COUNT;
-    ct +>:BindsTo:+> ev;
-    return {"status": "bound", "evidence_id": evidence_id, "contract_id": contract_id};
+    tbl.admitted = True;
+    return True;
 }
 
-def validate_catalog(graph_root: object, evidence_id: str) -> bool {
-    _ = graph_root;
-    w = root spawn ValidateCatalog(claimed={}, target_id=evidence_id);
-    print(w.ok);
-    return w.ok;
+def _mk_cascade_table() -> CatalogTable {
+    tbl = CatalogTable(cid="t1", name="outbox");
+    c1 = Column(cid="c1", name="ok_col", atttypmod=-1);
+    c2 = Column(cid="c2", name="bad_col", atttypmod=4);
+    c3 = Column(cid="c3", name="deep_bad", atttypmod=8);
+    root ++> tbl;
+    tbl +>:Catalog:+> c1;
+    tbl +>:Catalog:+> c2;
+    c2 +>:Cascade:+> c3;
+    return tbl;
 }
 
-def collect_bindings(graph_root: object, contract_id: str) -> list[str] {
-    _ = graph_root;
-    cw = root spawn FindContract(claimed={}, target=contract_id);
-    ct = cw.hit;
-    if ct is None {
-        print([]);
-        return [];
-    }
-    w = ct spawn CollectBindings(claimed={}, contract_id=contract_id);
-    out: list[str] = w.found;
-    out.sort();
-    print(out);
-    return out;
+def _mk_bind_graph() -> CatalogTable {
+    tbl = CatalogTable(cid="t2", name="bind_tbl");
+    ev = BatchEvidence(cid="e1", batch_id="b1", evidence_id="ev1");
+    ct = ContractAssertion(cid="a1", ref="ctx/v1", version="1.0.0", released=True);
+    root ++> tbl;
+    tbl ++> ev;
+    tbl ++> ct;
+    return tbl;
 }
 
-def reconcile_lifecycle(graph_root: object, contract_id: str) -> list[str] {
-    _ = graph_root;
-    cw = root spawn FindContract(claimed={}, target=contract_id);
-    ct = cw.hit;
-    if ct is None {
-        print([]);
-        return [];
-    }
-    w = ct spawn ReconcileLifecycle(claimed={}, contract_id=contract_id);
-    out: list[str] = w.reconciled;
-    out.sort();
-    print(out);
-    return out;
+test "verify_column_cascade_rejects_non_default" {
+    tbl = _mk_cascade_table();
+    bad = verify_column_cascade(tbl, "t1");
+    assert bad == ["bad_col", "deep_bad"];
 }
 
-with entry {
-    ct0 = Contract(contract_id="demo-c", version="1", released=True);
-    ev0 = Evidence(evidence_id="demo-e", column_count=14);
-    root ++> ct0;
-    root ++> ev0;
-    bind_batch_evidence(root, "demo-e", "demo-c");
-    validate_catalog(root, "demo-e");
-    collect_bindings(root, "demo-c");
-    reconcile_lifecycle(root, "demo-c");
+test "verify_column_cascade_wrong_table_empty" {
+    tbl = _mk_cascade_table();
+    bad = verify_column_cascade(tbl, "missing");
+    assert bad == [];
 }
 
-test "bind_unknown_ids" {
-    ct = Contract(contract_id="c1", version="1", released=True);
-    root ++> ct;
-    res = bind_batch_evidence(root, "missing-e", "c1");
-    assert res["status"] == "unknown";
+test "bind_evidence_to_contract_success" {
+    tbl = _mk_bind_graph();
+    res = bind_evidence_to_contract(tbl, "b1", "ev1", "ctx/v1");
+    assert res["bound"] == True;
+    assert res["batch_id"] == "b1";
+    assert res["evidence_id"] == "ev1";
+    assert res["contract_ref"] == "ctx/v1";
+    evs: list[BatchEvidence] = [tbl -->][?:BatchEvidence];
+    assert evs[0].bound == True;
 }
 
-test "bind_not_released" {
-    ct = Contract(contract_id="c2", version="1", released=False);
-    ev = Evidence(evidence_id="e2", column_count=14);
-    root ++> ct;
-    root ++> ev;
-    res = bind_batch_evidence(root, "e2", "c2");
-    assert res["status"] == "not_released";
+test "bind_evidence_to_contract_unreleased_contract" {
+    tbl = _mk_bind_graph();
+    cts: list[ContractAssertion] = [tbl -->][?:ContractAssertion];
+    cts[0].released = False;
+    res = bind_evidence_to_contract(tbl, "b1", "ev1", "ctx/v1");
+    assert res["bound"] == False;
 }
 
-test "bind_and_collect" {
-    ct = Contract(contract_id="c3", version="1", released=True);
-    ev = Evidence(evidence_id="e3", column_count=14);
-    root ++> ct;
-    root ++> ev;
-    res = bind_batch_evidence(root, "e3", "c3");
-    assert res["status"] == "bound";
-    got = collect_bindings(root, "c3");
-    assert got == ["e3"];
-}
-
-test "validate_catalog_ok" {
-    ev = Evidence(evidence_id="e4", column_count=14);
-    root ++> ev;
-    i: int = 0;
-    while i < CATALOG_COLUMN_COUNT {
-        col = ColumnSpec(name="col" + str(i), atttypmod=-1);
-        ev +>:Requires:+> col;
-        i += 1;
-    }
-    ok = validate_catalog(root, "e4");
-    assert ok == True;
-}
-
-test "validate_catalog_drift" {
-    ev = Evidence(evidence_id="e5", column_count=14);
-    root ++> ev;
-    i: int = 0;
-    while i < CATALOG_COLUMN_COUNT {
-        mod: int = -1;
-        if i == 0 { mod = 4; }
-        col = ColumnSpec(name="dcol" + str(i), atttypmod=mod);
-        ev +>:Requires:+> col;
-        i += 1;
-    }
-    ok = validate_catalog(root, "e5");
+test "admit_runtime_outbox_rejects_bad_columns" {
+    tbl = _mk_cascade_table();
+    ok = admit_runtime_outbox(tbl, "t1");
     assert ok == False;
+    assert tbl.admitted == False;
 }
 
-test "reconcile_lifecycle_released" {
-    ct = Contract(contract_id="c6", version="1", released=True);
-    ev = Evidence(evidence_id="e6", column_count=14);
-    root ++> ct;
-    root ++> ev;
-    bind_batch_evidence(root, "e6", "c6");
-    got = reconcile_lifecycle(root, "c6");
-    assert got == ["e6"];
+test "admit_runtime_outbox_admits_clean_table" {
+    tbl = CatalogTable(cid="t3", name="clean");
+    col = Column(cid="c9", name="only", atttypmod=-1);
+    root ++> tbl;
+    tbl +>:Catalog:+> col;
+    ok = admit_runtime_outbox(tbl, "t3");
+    assert ok == True;
+    assert tbl.admitted == True;
 }

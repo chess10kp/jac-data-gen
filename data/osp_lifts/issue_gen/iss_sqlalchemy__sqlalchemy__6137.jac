@@ -1,118 +1,119 @@
-"""Self-referential M2M back-populate — sqlalchemy/sqlalchemy#6137."""
-
-node GraphRoot {}
+"""sqlalchemy/sqlalchemy#6137"""
 
 node Entity {
     has cid: str;
-    has kind: str;
+    has polymorph: str;
 }
-
-edge Membership {}
 
 edge Neighbor {}
 
-walker NeighborClosure {
+def _nodes(st: dict[str, object]) -> dict[str, object] {
+    return st["nodes"] as dict[str, object];
+}
+
+def new_store() -> dict[str, object] {
+    st: dict[str, object] = {};
+    st["nodes"] = {};
+    return st;
+}
+
+def create_entity(st: dict[str, object], polymorph: str) -> str {
+    nodes = _nodes(st);
+    cid = "e" + str(len(nodes));
+    nd = Entity(cid=cid, polymorph=polymorph);
+    root ++> nd;
+    nodes[cid] = nd;
+    return cid;
+}
+
+def _get(st: dict[str, object], node_id: str) -> object {
+    nodes = _nodes(st);
+    if node_id not in nodes {
+        return None;
+    }
+    return nodes[node_id];
+}
+
+def _has_neighbor(a: Entity, b_id: str) -> bool {
+    for ch in [a ->:Neighbor:->][?:Entity] {
+        if ch.cid == b_id {
+            return True;
+        }
+    }
+    return False;
+}
+
+def link_neighbors(st: dict[str, object], left_id: str, right_id: str) -> None {
+    left_obj = _get(st, left_id);
+    right_obj = _get(st, right_id);
+    if left_obj is None or right_obj is None {
+        return;
+    }
+    left = left_obj as Entity;
+    right = right_obj as Entity;
+    if not _has_neighbor(left, right.cid) {
+        left +>:Neighbor:+> right;
+    }
+    if not _has_neighbor(right, left.cid) {
+        right +>:Neighbor:+> left;
+    }
+}
+
+def neighbor_ids(st: dict[str, object], node_id: str) -> list[str] {
+    nd_obj = _get(st, node_id);
+    if nd_obj is None {
+        return [];
+    }
+    nd = nd_obj as Entity;
+    out: list[str] = [];
+    for ch in [nd ->:Neighbor:->][?:Entity] {
+        out.append(ch.cid);
+    }
+    return sorted(out);
+}
+
+def back_populated(st: dict[str, object], left_id: str, right_id: str) -> bool {
+    left_obj = _get(st, left_id);
+    right_obj = _get(st, right_id);
+    if left_obj is None or right_obj is None {
+        return False;
+    }
+    left = left_obj as Entity;
+    right = right_obj as Entity;
+    return _has_neighbor(left, right.cid) and _has_neighbor(right, left.cid);
+}
+
+walker CompWalker {
     has claimed: dict[str, bool] = {};
-    has start_id: str = "";
     has found: list[str] = [];
 
-    can begin with GraphRoot entry {
-        for ent in [here ->:Membership:->][?:Entity] {
-            if ent.cid == self.start_id {
-                visit ent;
-            }
-        }
-        print {"walker": "NeighborClosure", "start": self.start_id, "found": len(self.found)};
-    }
-
-    can walk with Entity entry {
+    can step_entity with Entity entry {
         if here.cid in self.claimed {
             skip;
         }
         self.claimed[here.cid] = True;
-        if here.cid != self.start_id {
-            self.found.append(here.cid);
+        self.found.append(here.cid);
+        print({"comp": here.cid});
+        kids: list[Entity] = [];
+        for ch in [here ->:Neighbor:->][?:Entity] {
+            kids.append(ch);
         }
-        kids: list[Entity] = [here ->:Neighbor:->][?:Entity];
-        visit :0: kids;
-    }
-}
-
-def new_graph -> GraphRoot {
-    gr = GraphRoot();
-    return gr;
-}
-
-def _find_entity(graph_root: GraphRoot, node_id: str) -> Entity | None {
-    for ent in [graph_root ->:Membership:->][?:Entity] {
-        if ent.cid == node_id {
-            return ent;
+        visit :0: kids else {
+            disengage;
         }
     }
-    return None;
 }
 
-def create_entity(graph_root: GraphRoot, kind: str) -> str {
-    count: int = 0;
-    for ent in [graph_root ->:Membership:->][?:Entity] {
-        count = count + 1;
-    }
-    cid: str = "e" + str(count);
-    ent = Entity(cid=cid, kind=kind);
-    graph_root +>:Membership:+> ent;
-    return cid;
-}
-
-def connect_neighbors(graph_root: GraphRoot, a_id: str, b_id: str) -> bool {
-    if a_id == b_id {
-        return False;
-    }
-    a = _find_entity(graph_root, a_id);
-    b = _find_entity(graph_root, b_id);
-    if a is None or b is None {
-        return False;
-    }
-    a +>:Neighbor:+> b;
-    b +>:Neighbor:+> a;
-    return True;
-}
-
-def get_neighbors(graph_root: GraphRoot, node_id: str) -> list[str] {
-    target = _find_entity(graph_root, node_id);
-    if target is None {
+def connected_component(st: dict[str, object], start_id: str) -> list[str] {
+    start_obj = _get(st, start_id);
+    if start_obj is None {
         return [];
     }
-    ids: list[str] = [];
-    for n in [target ->:Neighbor:->][?:Entity] {
-        ids.append(n.cid);
-    }
-    return sorted(ids);
-}
-
-def disconnect_neighbors(graph_root: GraphRoot, a_id: str, b_id: str) -> bool {
-    a = _find_entity(graph_root, a_id);
-    b = _find_entity(graph_root, b_id);
-    if a is None or b is None {
-        return False;
-    }
-    for peer in [a ->:Neighbor:->][?:Entity] {
-        if peer.cid == b_id {
-            peer disconnect from a;
-        }
-    }
-    for peer in [b ->:Neighbor:->][?:Entity] {
-        if peer.cid == a_id {
-            peer disconnect from b;
-        }
-    }
-    return True;
-}
-
-def neighbor_closure(graph_root: GraphRoot, start_id: str) -> list[str] {
-    w = graph_root spawn NeighborClosure(claimed={}, start_id=start_id, found=[]);
+    start = start_obj as Entity;
+    w = start spawn CompWalker(claimed={});
     out: list[str] = [];
-    for x in w.found {
-        out.append(x);
+    for cid in w.found {
+        out.append(cid);
     }
     return sorted(out);
 }

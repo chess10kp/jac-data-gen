@@ -1,307 +1,212 @@
-"""CherryHQ/cherry-studio#16994 — Topic/Session pagination, grouping, and refresh."""
+# Topic/Session pagination, grouping, and refresh semantics.
+# CherryHQ/cherry-studio#16994
 
-node Record {
-    has id: str;
+node Topic {
+    has tid: str;
     has title: str;
     has owner_id: str;
-    has seq: int;
+    has pinned: bool = False;
+    has seq: int = 0;
 }
 
-node CursorPage {
-    has key: str;
+node Session {
+    has sid: str;
+    has topic_id: str;
+    has agent_id: str;
+    has updated_at: int = 0;
+}
+
+node Cursor {
+    has cid: str;
+    has topic_tid: str;
     has stale: bool = False;
 }
 
-edge NextPage {}
-edge PageItem {}
+edge CursorNext {}
+edge TopicSession {}
 
-walker PaginateWalker {
-    has claimed: dict[str, bool] = {};
-    has limit: int = 20;
-    has start_key: str = "";
-    has collected: list[str] = [];
-    has next_cursor: str = "";
-    has has_next: bool = False;
-    has armed: bool = False;
-
-    can step_page with CursorPage entry {
-        if here.key in self.claimed {
-            skip;
+def find_topic(graph_root: Topic, tid: str) -> Topic | None {
+    for nd in [graph_root-->] {
+        if nd is Topic and nd.tid == tid {
+            return nd;
         }
-        self.claimed[here.key] = True;
-        if self.start_key != "" and here.key != self.start_key and not self.armed {
-            nxt_skip: list[CursorPage] = [here ->:NextPage:->][?:CursorPage];
-            if len(nxt_skip) > 0 {
-                visit :0: nxt_skip;
-            } else {
-                disengage;
-            }
-        } else {
-            self.armed = True;
-            items: list[Record] = [here ->:PageItem:->][?:Record];
-            for it in items {
-                if len(self.collected) < self.limit {
-                    self.collected.append(it.id);
+    }
+    return None;
+}
+
+def find_cursor(graph_root: Cursor, cid: str) -> Cursor | None {
+    for nd in [graph_root-->] {
+        if nd is Cursor and nd.cid == cid {
+            return nd;
+        }
+    }
+    return None;
+}
+
+def topic_page(cursor_after: str | None, limit: int, graph_root: Topic) -> list[str] {
+    rows: list[str] = [];
+    start: bool = False;
+    if cursor_after is None {
+        start = True;
+    }
+    for nd in [graph_root-->] {
+        if nd is Topic {
+            if not start {
+                if nd.tid == cursor_after {
+                    start = True;
                 }
+                continue;
             }
-            if len(self.collected) >= self.limit {
-                nxt_cap: list[CursorPage] = [here ->:NextPage:->][?:CursorPage];
-                if len(nxt_cap) > 0 {
-                    self.next_cursor = nxt_cap[0].key;
-                    self.has_next = True;
-                }
-                print ["paginate_cap", here.key, len(self.collected)];
-                disengage;
+            if len(rows) >= limit {
+                break;
             }
-            nxt_walk: list[CursorPage] = [here ->:NextPage:->][?:CursorPage];
-            if len(nxt_walk) > 0 {
-                visit :0: nxt_walk;
-            } else {
-                print ["paginate_done", here.key, len(self.collected)];
-                disengage;
-            }
+            rows.append(nd.tid);
         }
     }
+    return rows;
 }
 
-walker GroupWalker {
-    has claimed: dict[str, bool] = {};
-    has want_ids: list[str] | None = None;
-    has want_set: dict[str, bool] = {};
-    has buckets: dict[str, list[str]] = {};
-
-    can bucket_record with Record entry {
-        if here.id in self.claimed {
-            skip;
+def group_by_owner(topic_ids: list[str], graph_root: Topic) -> dict[str, list[str]] {
+    grouped: dict[str, list[str]] = {};
+    for tid in topic_ids {
+        t = find_topic(graph_root, tid);
+        if t is None {
+            continue;
         }
-        self.claimed[here.id] = True;
-        if self.want_ids is not None {
-            for wid in self.want_ids {
-                self.want_set[wid] = True;
-            }
+        oid = t.owner_id;
+        if oid not in grouped {
+            grouped[oid] = [];
         }
-        if here.id in self.want_set {
-            if here.owner_id not in self.buckets {
-                empty_bucket: list[str] = [];
-                self.buckets[here.owner_id] = empty_bucket;
-            }
-            self.buckets[here.owner_id].append(here.id);
-        }
-        print ["group_scan", here.id, here.owner_id];
+        grouped[oid].append(tid);
     }
+    return grouped;
 }
 
-walker InvalidateCollectWalker {
-    has claimed: dict[str, bool] = {};
-    has written_id: str = "";
-    has stale_keys: list[str] = [];
-    has cascade: bool = False;
-
-    can collect_page with CursorPage entry {
-        if here.key in self.claimed {
-            skip;
-        }
-        self.claimed[here.key] = True;
-        page_items: list[Record] = [here ->:PageItem:->][?:Record];
-        for it in page_items {
-            if it.id == self.written_id {
-                self.cascade = True;
-            }
-        }
-        if self.cascade {
-            self.stale_keys.append(here.key);
-        }
-        nxt_inv: list[CursorPage] = [here ->:NextPage:->][?:CursorPage];
-        if len(nxt_inv) > 0 {
-            visit :0: nxt_inv;
-        } else {
-            print ["invalidate_collect_done", len(self.stale_keys)];
-            disengage;
-        }
+def sessions_for_topic(topic_id: str, graph_root: Topic) -> list[str] {
+    out: list[str] = [];
+    t = find_topic(graph_root, topic_id);
+    if t is None {
+        return out;
     }
-}
-
-walker MarkStaleWalker {
-    has claimed: dict[str, bool] = {};
-    has target_key: str = "";
-
-    can mark_page with CursorPage entry {
-        if here.key in self.claimed {
-            skip;
-        }
-        self.claimed[here.key] = True;
-        if here.key == self.target_key {
-            here.stale = True;
-            print ["mark_stale", here.key];
-            disengage;
-        }
-        nxt_mark: list[CursorPage] = [here ->:NextPage:->][?:CursorPage];
-        if len(nxt_mark) > 0 {
-            visit :0: nxt_mark;
-        } else {
-            disengage;
-        }
+    for ch in [t ->:TopicSession:->][?:Session] {
+        out.append(ch.sid);
     }
-}
-
-walker FilterWalker {
-    has claimed: dict[str, bool] = {};
-    has ids: list[str] | None = None;
-    has query: str = "";
-    has pinned: list[str] | None = None;
-    has id_set: dict[str, bool] = {};
-    has pinned_set: dict[str, bool] = {};
-    has out_ids: list[str] = [];
-
-    can filter_record with Record entry {
-        if here.id in self.claimed {
-            skip;
-        }
-        self.claimed[here.id] = True;
-        if self.ids is not None {
-            for iid in self.ids {
-                self.id_set[iid] = True;
-            }
-        }
-        if self.pinned is not None {
-            for pid in self.pinned {
-                self.pinned_set[pid] = True;
-            }
-        }
-        if here.id in self.id_set {
-            keep: bool = False;
-            if self.query == "" {
-                keep = True;
-            } else if here.title.find(self.query) >= 0 {
-                keep = True;
-            }
-            if keep {
-                self.out_ids.append(here.id);
-            }
-        }
-        print ["filter_scan", here.id, len(self.out_ids)];
-    }
-}
-
-def paginate_topics(graph_root: node, cursor: str | None, limit: int) -> tuple[list[str], str | None, bool] {
-    sk: str = "";
-    if cursor is not None {
-        sk = cursor;
-    }
-    w = graph_root spawn PaginateWalker(limit=limit, start_key=sk);
-    nc: str | None = None;
-    if w.next_cursor != "" {
-        nc = w.next_cursor;
-    }
-    return (w.collected, nc, w.has_next);
-}
-
-def group_by_owner(graph_root: node, ids: list[str]) -> dict[str, list[str]] {
-    g = graph_root spawn GroupWalker(want_ids=ids);
-    out: dict[str, list[str]] = {};
-    for owner_key in g.buckets {
-        rows: list[str] = g.buckets[owner_key];
-        sorted_rows: list[str] = sorted(rows);
-        out[owner_key] = sorted_rows;
-    }
+    out = sorted(out);
     return out;
 }
 
-def filter_topics(
-    graph_root: node,
-    ids: list[str],
-    query: str = "",
-    pinned: list[str] | None = None
-) -> list[str] {
-    w = graph_root spawn FilterWalker(ids=ids, query=query, pinned=pinned);
-    out_sorted: list[str] = sorted(w.out_ids);
-    return out_sorted;
+walker StaleWalker {
+    has written_tid: str;
+    has claimed: dict[str, bool] = {};
+    has stale_ids: list[str] = [];
+
+    can step with Cursor entry {
+        if here.cid in self.claimed {
+            skip;
+        }
+        self.claimed[here.cid] = True;
+        if here.topic_tid == self.written_tid {
+            here.stale = True;
+            self.stale_ids.append(here.cid);
+        }
+        kids: list[Cursor] = [here ->:CursorNext:->][?:Cursor];
+        if kids {
+            visit :0: kids;
+        } else {
+            disengage;
+        }
+    }
 }
 
-def pages_stale_after_write(graph_root: node, written_id: str) -> list[str] {
-    w = graph_root spawn InvalidateCollectWalker(written_id=written_id);
-    stale_sorted: list[str] = sorted(w.stale_keys);
-    return stale_sorted;
+def cascade_invalidate(written_topic_id: str, cursor_root: Cursor) -> list[str] {
+    w = cursor_root spawn StaleWalker(
+        written_tid=written_topic_id,
+        claimed={},
+        stale_ids=[]
+    );
+    out: list[str] = w.stale_ids;
+    out = sorted(out);
+    print out;
+    return out;
 }
 
-def mark_page_stale(graph_root: node, page_key: str) -> bool {
-    graph_root spawn MarkStaleWalker(target_key=page_key);
-    return True;
+def build_fixture -> Topic {
+    graph_root = Topic(tid="__root__", title="", owner_id="", seq=-1);
+    t_a = Topic(tid="t_a", title="Alpha", owner_id="owner_1", seq=30);
+    t_b = Topic(tid="t_b", title="Beta", owner_id="owner_2", seq=20);
+    t_c = Topic(tid="t_c", title="Gamma", owner_id="owner_1", seq=10);
+    graph_root ++> t_a;
+    graph_root ++> t_b;
+    graph_root ++> t_c;
+    s1 = Session(sid="s1", topic_id="t_a", agent_id="ag1", updated_at=5);
+    s2 = Session(sid="s2", topic_id="t_a", agent_id="ag2", updated_at=3);
+    t_a +>:TopicSession:+> s1;
+    t_a +>:TopicSession:+> s2;
+    return graph_root;
 }
 
-test "paginate_topics_first_page" {
-    p1 = CursorPage(key="p1");
-    p2 = CursorPage(key="p2");
-    r1 = Record(id="t1", title="Alpha", owner_id="o1", seq=1);
-    r2 = Record(id="t2", title="Beta", owner_id="o1", seq=2);
-    r3 = Record(id="t3", title="Gamma", owner_id="o2", seq=3);
-    root ++> p1;
-    p1 +>:NextPage:+> p2;
-    p1 +>:PageItem:+> r1;
-    p1 +>:PageItem:+> r2;
-    p2 +>:PageItem:+> r3;
-    (ids, nc, hn) = paginate_topics(p1, None, 2);
-    assert len(ids) == 2;
-    assert ids[0] == "t1";
-    assert ids[1] == "t2";
-    assert hn == True;
-    assert nc == "p2";
+def build_cursor_fixture -> Cursor {
+    cursor_root = Cursor(cid="__croot__", topic_tid="__none__");
+    c1 = Cursor(cid="c1", topic_tid="t_a");
+    c2 = Cursor(cid="c2", topic_tid="t_b");
+    c3 = Cursor(cid="c3", topic_tid="t_c");
+    cursor_root ++> c1;
+    c1 +>:CursorNext:+> c2;
+    c1 +>:CursorNext:+> c3;
+    c3 +>:CursorNext:+> c2;
+    return cursor_root;
 }
 
-test "paginate_topics_with_cursor" {
-    p1 = CursorPage(key="p1");
-    p2 = CursorPage(key="p2");
-    r1 = Record(id="t1", title="Alpha", owner_id="o1", seq=1);
-    r2 = Record(id="t2", title="Beta", owner_id="o1", seq=2);
-    r3 = Record(id="t3", title="Gamma", owner_id="o2", seq=3);
-    root ++> p1;
-    p1 +>:NextPage:+> p2;
-    p1 +>:PageItem:+> r1;
-    p1 +>:PageItem:+> r2;
-    p2 +>:PageItem:+> r3;
-    (ids, nc, hn) = paginate_topics(p1, "p2", 5);
-    assert ids == ["t3"];
-    assert nc is None;
-    assert hn == False;
+with entry {
+    graph_root = build_fixture();
+    cursor_root = build_cursor_fixture();
+    root spawn StaleWalker(written_tid="t_b", claimed={}, stale_ids=[]);
+    page = topic_page(None, 2, graph_root);
+    print page;
+    grouped = group_by_owner(["t_c", "t_a", "t_b", "missing"], graph_root);
+    print grouped;
+    stale = cascade_invalidate("t_b", cursor_root);
+    print stale;
+    sess = sessions_for_topic("t_a", graph_root);
+    print sess;
 }
 
-test "group_by_owner_single_record" {
-    rec = Record(id="t1", title="Alpha", owner_id="owner_a", seq=1);
-    root ++> rec;
-    grouped = group_by_owner(rec, ["t1"]);
-    assert "owner_a" in grouped;
-    assert grouped["owner_a"] == ["t1"];
+test "topic_page_first_page" {
+    graph_root = build_fixture();
+    page = topic_page(None, 2, graph_root);
+    assert page == ["t_a", "t_b"];
 }
 
-test "filter_topics_query_match" {
-    rec = Record(id="t1", title="Hello World", owner_id="o1", seq=1);
-    root ++> rec;
-    out = filter_topics(rec, ["t1"], "World", None);
-    assert out == ["t1"];
+test "topic_page_after_cursor" {
+    graph_root = build_fixture();
+    page = topic_page("t_a", 10, graph_root);
+    assert page == ["t_b", "t_c"];
 }
 
-test "pages_stale_after_write_cascade" {
-    p1 = CursorPage(key="p1");
-    p2 = CursorPage(key="p2");
-    p3 = CursorPage(key="p3");
-    r1 = Record(id="hit", title="Hit", owner_id="o1", seq=1);
-    r2 = Record(id="tail", title="Tail", owner_id="o1", seq=2);
-    root ++> p1;
-    p1 +>:NextPage:+> p2;
-    p2 +>:NextPage:+> p3;
-    p1 +>:PageItem:+> r1;
-    p2 +>:PageItem:+> r2;
-    stale = pages_stale_after_write(p1, "hit");
-    assert stale == ["p2", "p3"];
+test "group_by_owner_preserves_input_order" {
+    graph_root = build_fixture();
+    grouped = group_by_owner(["t_c", "t_a", "t_b", "missing"], graph_root);
+    assert grouped["owner_1"] == ["t_c", "t_a"];
+    assert grouped["owner_2"] == ["t_b"];
 }
 
-test "mark_page_stale_sets_flag" {
-    p1 = CursorPage(key="p1", stale=False);
-    p2 = CursorPage(key="p2", stale=False);
-    root ++> p1;
-    p1 +>:NextPage:+> p2;
-    ok = mark_page_stale(p1, "p2");
-    assert ok == True;
-    assert p2.stale == True;
-    assert p1.stale == False;
+test "sessions_for_topic_sorted" {
+    graph_root = build_fixture();
+    sess = sessions_for_topic("t_a", graph_root);
+    assert sess == ["s1", "s2"];
+}
+
+test "sessions_for_unknown_topic_empty" {
+    graph_root = build_fixture();
+    sess = sessions_for_topic("missing", graph_root);
+    assert sess == [];
+}
+
+test "cascade_invalidate_marks_matching_cursors" {
+    cursor_root = build_cursor_fixture();
+    stale = cascade_invalidate("t_b", cursor_root);
+    assert stale == ["c2"];
+    c2 = find_cursor(cursor_root, "c2");
+    assert c2 is not None;
+    assert c2.stale is True;
 }

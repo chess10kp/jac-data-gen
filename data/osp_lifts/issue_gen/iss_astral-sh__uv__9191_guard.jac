@@ -1,126 +1,142 @@
-# Lift of astral-sh/uv#9191: cache invalidation on local dependencies in docker.
-# Python original hand-rolled adjacency dicts + memoized ancestor closure +
-# cascade invalidation sweep. Here: native OSP graph with node Pkg, edge Dep.
+# astral-sh/uv#9191 — cache invalidation on local deps (docker ctime drift)
+# Use checksums (not inode/ctime) for freshness of local dependency graph.
 
-node Pkg {
-    has pid: str;
-    has ctime: int = 0;
-    has inode: int = 0;
-    has checksum: str = "";
+node Package {
+    has name: str;
+    has checksum: str;
+    has installed_checksum: str = "";
 }
 
-edge Dep {
-    has requires_editable: bool = True;
+edge DependsOn {}
+
+# build dependency graph: parent depends on children
+def add_dep(parent: Package, child: Package) {
+    parent +>:DependsOn:+> child;
 }
 
-walker AncestorWalk {
+# checksum-based freshness: fresh iff installed checksum matches current
+def is_fresh(pkg: Package) -> bool {
+    return pkg.installed_checksum == pkg.checksum and pkg.installed_checksum != "";
+}
+
+def install(pkg: Package) {
+    pkg.installed_checksum = pkg.checksum;
+}
+
+# memoized stale-closure: mark pkg stale and cascade to all dependents
+walker Invalidate {
     has claimed: dict[str, bool] = {};
-    has acc: list[str] = [];
-    has origin_pid: str = "";
+    has invalidated: list[str] = [];
 
-    can step with Pkg entry {
-        if here.pid in self.claimed { skip; }
-        self.claimed[here.pid] = True;
-        if here.pid != self.origin_pid { self.acc.append(here.pid); }
-        visit [here ->:Dep:->];
+    can sweep with Package entry {
+        if here.name in self.claimed { skip; }
+        self.claimed[here.name] = True;
+        self.invalidated.append(here.name);
+        here.installed_checksum = "";
+        # move up to dependents (parents that depend on here): incoming DependsOn
+        visit [here <-:DependsOn:-];
     }
 }
 
-obj PkgRegistry {
-    has nodes: dict[str, Pkg];
+def mark_stale(pkg: Package) -> list[str] {
+    wk = pkg spawn Invalidate(claimed={});
+    return sorted(wk.invalidated);
+}
 
-    def init {
-        self.nodes = {};
-    }
+# memoized fresh closure: all transitive local deps that are fresh
+walker FreshCheck {
+    has claimed: dict[str, bool] = {};
+    has stale: list[str] = [];
 
-    def add(pid: str, ctime: int, inode: int, checksum: str) -> Pkg {
-        p = Pkg(pid=pid, ctime=ctime, inode=inode, checksum=checksum);
-        self.nodes[pid] = p;
-        root ++> p;
-        return p;
-    }
-
-    def link(src: str, dst: str) -> bool {
-        if (src not in self.nodes) or (dst not in self.nodes) { return False; }
-        self.nodes[src] +>:Dep:+> self.nodes[dst];
-        return True;
-    }
-
-    def get(pid: str) -> Pkg | None {
-        if pid in self.nodes { return self.nodes[pid]; }
-        return None;
+    can check with Package entry {
+        if here.name in self.claimed { skip; }
+        self.claimed[here.name] = True;
+        if not is_fresh(here) {
+            self.stale.append(here.name);
+        }
+        visit [here ->:DependsOn:->];
     }
 }
 
-def build_index(specs: list[tuple[str, int, int, str]]) -> PkgRegistry {
-    reg = PkgRegistry();
-    for s in specs {
-        reg.add(s[0], s[1], s[2], s[3]);
+def stale_closure(pkg: Package) -> list[str] {
+    wk = pkg spawn FreshCheck(claimed={});
+    return sorted(wk.stale);
+}
+
+walker Demo {
+    can go with root entry {
+        api = Package(name="api", checksum="c1");
+        lib = Package(name="lib", checksum="c2");
+        core = Package(name="core", checksum="c3");
+        root ++> api; root ++> lib; root ++> core;
+        add_dep(api, lib);
+        add_dep(lib, core);
+        install(api); install(lib); install(core);
+        print(sorted(stale_closure(api)));
+        core.checksum = "c3b";
+        print(sorted(stale_closure(api)));
+        print(mark_stale(core));
+        print(sorted(stale_closure(api)));
     }
-    return reg;
 }
 
-def cascade_invalidate(reg: PkgRegistry, pid: str) -> list[str] {
-    # Collect first (claim-map walk), no mutation during walk.
-    start = reg.get(pid);
-    if start is None { return []; }
-    wk = start spawn AncestorWalk(claimed={}, acc=[], origin_pid=pid);
-    return sorted(wk.acc);
+with entry {
+    root spawn Demo();
 }
 
-# hidden tests for astral-sh/uv#9191 lift
-import from iss_astral-sh__uv__9191 {build_index, cascade_invalidate}
-
-test "memo_ancestors_sorted_closure" {
-    specs: list[tuple[str, int, int, str]] = [("app", 1, 1, "h1"), ("lib", 2, 2, "h2"), ("base", 3, 3, "h3")];
-    reg = build_index(specs);
-    reg.link("app", "lib");
-    reg.link("lib", "base");
-    c = FreshnessCache();
-    anc = c.memo_ancestors(reg.get("app"));
-    assert anc == ["base", "lib"];
+test "fresh_after_install" {
+    api = Package(name="api", checksum="c1");
+    lib = Package(name="lib", checksum="c2");
+    add_dep(api, lib);
+    install(api);
+    install(lib);
+    assert stale_closure(api) == [];
+    assert is_fresh(api);
+    assert is_fresh(lib);
 }
 
-test "memo_ancestors_unknown_root" {
-    specs: list[tuple[str, int, int, str]] = [("solo", 1, 1, "h")];
-    reg = build_index(specs);
-    c = FreshnessCache();
-    anc = c.memo_ancestors(reg.get("solo"));
-    assert anc == [];
+test "stale_closure_detects_mismatch" {
+    api = Package(name="api", checksum="c1");
+    lib = Package(name="lib", checksum="c2");
+    core = Package(name="core", checksum="c3");
+    add_dep(api, lib);
+    add_dep(lib, core);
+    install(api);
+    install(lib);
+    install(core);
+    core.checksum = "c3b";
+    assert sorted(stale_closure(api)) == ["core"];
 }
 
-test "cycle_diamond_closure" {
-    specs: list[tuple[str, int, int, str]] = [("a", 1, 1, "ha"), ("b", 2, 2, "hb"), ("c", 3, 3, "hc"), ("d", 4, 4, "hd")];
-    reg = build_index(specs);
-    reg.link("a", "b");
-    reg.link("b", "d");
-    reg.link("a", "c");
-    reg.link("c", "d");
-    reg.link("d", "a");
-    r = cascade_invalidate(reg, "a");
-    assert r == ["a", "b", "c", "d"];
+test "mark_stale_cascades_to_dependents" {
+    api = Package(name="api", checksum="c1");
+    lib = Package(name="lib", checksum="c2");
+    core = Package(name="core", checksum="c3");
+    add_dep(api, lib);
+    add_dep(lib, core);
+    install(api);
+    install(lib);
+    install(core);
+    assert sorted(mark_stale(core)) == ["api", "core", "lib"];
+    assert not is_fresh(core);
+    assert not is_fresh(lib);
+    assert not is_fresh(api);
 }
 
-test "cascade_invalidate_unknown_pid" {
-    specs: list[tuple[str, int, int, str]] = [("x", 1, 1, "hx")];
-    reg = build_index(specs);
-    assert cascade_invalidate(reg, "missing") == [];
+test "cycle_terminates_via_claim_map" {
+    a = Package(name="a", checksum="ka");
+    b = Package(name="b", checksum="kb");
+    add_dep(a, b);
+    add_dep(b, a);
+    install(a);
+    install(b);
+    assert sorted(mark_stale(a)) == ["a", "b"];
+    assert stale_closure(a) == [];
 }
 
-test "freshness_inode_drift" {
-    specs: list[tuple[str, int, int, str]] = [("app", 1, 1, "h1"), ("lib", 2, 2, "h2")];
-    reg = build_index(specs);
-    reg.link("app", "lib");
-    c = FreshnessCache();
-    c.record(reg.get("app"));
-    assert c.is_fresh(reg.get("app")) == True;
-    rebuilt = Pkg(pid="app", ctime=999, inode=42, checksum="h1");
-    assert c.is_fresh(rebuilt) == False;
-}
-
-test "link_unknown_nodes_false" {
-    specs: list[tuple[str, int, int, str]] = [("x", 1, 1, "hx")];
-    reg = build_index(specs);
-    assert reg.link("x", "ghost") == False;
-    assert reg.get("ghost") is None;
+test "uninstalled_is_stale" {
+    solo = Package(name="solo", checksum="k1");
+    assert sorted(stale_closure(solo)) == ["solo"];
+    install(solo);
+    assert stale_closure(solo) == [];
 }

@@ -1,207 +1,191 @@
-# pratamaWahyuadi/mokibox#24 — comments, replies, cascade delete via OSP walkers
-
-node Video { has ready: bool = True; }
-node Comment {
-  has cid: str;
-  has author: str;
-  has content: str;
-  has created_at: int;
+# pratamaWahyuadi/mokibox#24 — comments with replies and cascade delete
+node Video {
+    has vid: str;
+    has status: str = "READY";
+    has comments_count: int = 0;
 }
-edge reply_to {}
-edge posted_on {}
-edge owns {}
+node Comment {
+    has cid: str;
+    has vid: str;
+    has content: str;
+    has author: str;
+    has created_at: int;
+    has deleted: bool = False;
+}
+node Clock { has n: int = 1; }
+edge REPLY_TO {}
 
-def _check_content(content: str) -> bool {
-    return len(content) >= 1 and len(content) <= 1000;
+# clock lives on a fresh-per-graph node, not a mutable glob
+def clock_node() -> Clock {
+    for ck in [root ->][?:Clock] {
+        return ck;
+    }
+    nd = Clock();
+    root ++> nd;
+    return nd;
+}
+
+def now() -> int {
+    ck = clock_node();
+    ck.n += 1;
+    return ck.n - 1;
+}
+
+def find_video(vid: str) -> Video | None {
+    for v in [root ->][?:Video] {
+        if v.vid == vid { return v; }
+    }
+    return None;
+}
+
+def find_comment(cid: str) -> Comment | None {
+    for c in [root ->][?:Comment] {
+        if c.cid == cid { return c; }
+    }
+    return None;
 }
 
 walker InsertComment {
-  has video_id: str;
-  has cid: str;
-  has author: str;
-  has content: str;
-  has ts: int;
-  has ok: bool = False;
-  can go with root entry {
-    v: Video | None = None;
-    for vv in [root ->:owns:->][?:Video] {
-      if vv.cid == self.video_id { v = vv; }
-    }
-    if v is None or not v.ready or not _check_content(self.content) {
-      disengage;
-    }
-    c = Comment(cid=self.cid, author=self.author, content=self.content, created_at=self.ts);
-    here ++> c;
-    c +>:posted_on:+> v;
-    self.ok = True;
-    print("inserted " + self.cid);
-    visit [v];
-  }
-  can notify with Video entry {
-    print("notify video owner type=comment");
-    disengage;
-  }
-}
+    has vid: str;
+    has content: str;
+    has parent_id: str | None = None;
+    has author: str;
+    has out: Comment | None = None;
+    has ok: bool = False;
 
-walker ReplyComment {
-  has parent_id: str;
-  has cid: str;
-  has author: str;
-  has content: str;
-  has ts: int;
-  has ok: bool = False;
-  claimed: dict[str, bool] = {};
-  can go with root entry {
-    par: Comment | None = None;
-    for c in [root ->:owns:->][?:Comment] {
-      if c.cid == self.parent_id { par = c; }
+    can start with root entry {
+        v: Video | None = find_video(self.vid);
+        if v is None or v.status != "READY" { disengage; }
+        if len(self.content) < 1 or len(self.content) > 1000 { disengage; }
+        parent: Comment | None = None;
+        if self.parent_id is not None {
+            parent = find_comment(self.parent_id);
+            if parent is None { disengage; }
+        }
+        c = Comment(cid="c" + str(now()), vid=self.vid, content=self.content,
+                    author=self.author, created_at=now());
+        root ++> c;
+        if parent is not None {
+            parent +>:REPLY_TO:+> c;
+        } else {
+            root +>:REPLY_TO:+> c;
+        }
+        v.comments_count += 1;
+        self.out = c;
+        self.ok = True;
     }
-    if par is None or not _check_content(self.content) { disengage; }
-    c = Comment(cid=self.cid, author=self.author, content=self.content, created_at=self.ts);
-    here ++> c;
-    par +>:reply_to:+> c;
-    self.ok = True;
-    print("reply " + self.cid);
-    visit [par] else { disengage; }
-  }
-  can walk_up with Comment entry {
-    if here.cid in self.claimed { skip; }
-    self.claimed[here.cid] = True;
-    print("notify parent author " + here.author);
-    visit [here ->:reply_to:->][?:Comment] else { disengage; }
-  }
 }
 
 walker CountSubtree {
-  has target: str;
-  has count: int = 0;
-  claimed: dict[str, bool] = {};
-  can go with root entry {
-    found: list[Comment] = [];
-    for c in [root ->:owns:->][?:Comment] {
-      if c.cid == self.target { found.append(c); }
+    has claimed: dict[str, bool] = {};
+    has total: int = 0;
+
+    can step with Comment entry {
+        if here.cid in self.claimed { skip; }
+        self.claimed[here.cid] = True;
+        self.total += 1;
+        visit [here ->:REPLY_TO:->];
     }
-    if len(found) == 0 { disengage; }
-    visit [found[0]];
-  }
-  can collect with Comment entry {
-    if here.cid in self.claimed { skip; }
-    self.claimed[here.cid] = True;
-    self.count = self.count + 1;
-    visit [here ->:reply_to:->][?:Comment];
-  }
 }
 
-walker ListComments {
-  has video_id: str;
-  has cursor: int = 0;
-  has out: list[tuple[int, str]] = [];
-  can go with root entry {
-    for c in [root <-:posted_on:-][?:Comment] {
-      if self.cursor > 0 and c.created_at >= self.cursor { skip; }
-      self.out.append((c.created_at, c.cid));
+walker CascadeDelete {
+    has claimed: dict[str, bool] = {};
+    has removed: list[str] = [];
+
+    can step with Comment entry {
+        if here.cid in self.claimed { skip; }
+        self.claimed[here.cid] = True;
+        here.deleted = True;
+        self.removed.append(here.cid);
+        visit [here ->:REPLY_TO:->];
     }
-    self.out = sorted(self.out);
-    for item in self.out { print(item[1]); }
-    disengage;
-  }
 }
 
-walker DeleteComment {
-  has target: str;
-  has ok: bool = False;
-  claimed: dict[str, bool] = {};
-  can go with root entry {
-    found: list[Comment] = [];
-    for c in [root ->:owns:->][?:Comment] {
-      if c.cid == self.target { found.append(c); }
+def insert_comment(vid: str, content: str, author: str,
+                   parent_id: str | None = None) -> Comment | None {
+    w = root spawn InsertComment(vid=vid, content=content,
+                                 parent_id=parent_id, author=author, claimed={});
+    if w.ok { return w.out; }
+    return None;
+}
+
+def list_comments(vid: str) -> list[Comment] {
+    res: list[Comment] = [];
+    for c in [root ->][?:Comment] {
+        if c.vid == vid and not c.deleted {
+            res.append(c);
+        }
     }
-    if len(found) == 0 { disengage; }
-    self.ok = True;
-    print("deleting subtree of " + self.target);
-    visit [found[0]];
-  }
-  can sweep with Comment entry {
-    if here.cid in self.claimed { skip; }
-    self.claimed[here.cid] = True;
-    print("delete " + here.cid);
-    visit [here ->:reply_to:->][?:Comment];
-  }
+    # insertion sort, newest first
+    out: list[Comment] = [];
+    for c in res {
+        idx: int = 0;
+        for i in range(len(out)) {
+            if out[i].created_at >= c.created_at {
+                idx = i + 1;
+            }
+        }
+        out.insert(idx, c);
+    }
+    return out;
 }
 
-def insert_comment(root_node: root, video_id: str, cid: str, author: str, content: str, ts: int) -> bool {
-    w = root_node spawn InsertComment(video_id=video_id, cid=cid, author=author, content=content, ts=ts);
-    return w.ok;
+def delete_comment(cid: str) -> int {
+    target: Comment | None = find_comment(cid);
+    if target is None or target.deleted { return -1; }
+    cw = target spawn CountSubtree(claimed={});
+    target spawn CascadeDelete(claimed={});
+    v: Video | None = find_video(target.vid);
+    if v is not None {
+        v.comments_count -= cw.total;
+    }
+    return cw.total;
 }
 
-def reply_comment(root_node: root, parent_id: str, cid: str, author: str, content: str, ts: int) -> bool {
-    w = root_node spawn ReplyComment(parent_id=parent_id, cid=cid, author=author, content=content, ts=ts);
-    return w.ok;
+test "insert_and_list" {
+    v = Video(vid="v1");
+    root ++> v;
+    a = insert_comment("v1", "hello", "ann");
+    assert a is not None;
+    b = insert_comment("v1", "hi again", "bob", parent_id=a.cid);
+    assert b is not None;
+    c = insert_comment("v1", "another", "cat");
+    assert c is not None;
+    ls = list_comments("v1");
+    assert len(ls) == 3;
+    assert ls[0].cid == c.cid;
+    assert ls[1].cid == a.cid;
+    assert ls[2].cid == b.cid;
+    vv = find_video("v1");
+    assert vv.comments_count == 3;
 }
 
-def count_subtree(root_node: root, target: str) -> int {
-    w = root_node spawn CountSubtree(target=target);
-    return w.count;
+test "insert_unknown_video" {
+    assert insert_comment("nope", "x", "y") is None;
 }
 
-def list_comments(root_node: root, video_id: str, cursor: int = 0) -> list[tuple[int, str]] {
-    w = root_node spawn ListComments(video_id=video_id, cursor=cursor);
-    return w.out;
+test "cascade_delete" {
+    v = Video(vid="v2");
+    root ++> v;
+    a = insert_comment("v2", "root", "u1");
+    r1 = insert_comment("v2", "r1", "u2", parent_id=a.cid);
+    r2 = insert_comment("v2", "r2", "u3", parent_id=a.cid);
+    assert r1 is not None and r2 is not None;
+    n = delete_comment(a.cid);
+    assert n == 3;
+    assert len(list_comments("v2")) == 0;
+    vv = find_video("v2");
+    assert vv.comments_count == 0;
 }
 
-def delete_comment(root_node: root, target: str) -> bool {
-    w = root_node spawn DeleteComment(target=target);
-    return w.ok;
+test "delete_twice_returns_minus_one" {
+    v = Video(vid="v3");
+    root ++> v;
+    a = insert_comment("v3", "x", "u");
+    assert delete_comment(a.cid) == 1;
+    assert delete_comment(a.cid) == -1;
 }
 
-test "insert and count replies" {
-  root ++> MockRoot();
-  assert insert_comment(root, "v1", "c1", "alice", "hello", 10);
-  assert reply_comment(root, "c1", "c2", "bob", "hi back", 11);
-  assert reply_comment(root, "c2", "c3", "carol", "nested", 12);
-  assert count_subtree(root, "c1") == 3;
-  assert count_subtree(root, "c2") == 2;
-  assert count_subtree(root, "c3") == 1;
-  assert count_subtree(root, "missing") == 0;
+test "delete_unknown_returns_minus_one" {
+    assert delete_comment("ghost") == -1;
 }
-
-test "insert validation" {
-  assert insert_comment(root, "nonesuch", "cx", "a", "body", 1) == False;
-  assert insert_comment(root, "v1", "cy", "a", "", 1) == False;
-}
-
-test "list comments sorted with cursor" {
-  root ++> MockRoot();
-  insert_comment(root, "v1", "l3", "a", "c", 30);
-  insert_comment(root, "v1", "l1", "a", "c", 10);
-  insert_comment(root, "v1", "l2", "a", "c", 20);
-  assert list_comments(root, "v1") == [(10, "l1"), (20, "l2"), (30, "l3")];
-  assert list_comments(root, "v1", cursor=20) == [(10, "l1")];
-  assert list_comments(root, "ghost") == [];
-}
-
-test "diamond replies count once" {
-  root ++> MockRoot();
-  insert_comment(root, "v1", "d1", "a", "c", 1);
-  reply_comment(root, "d1", "d2", "b", "c", 2);
-  reply_comment(root, "d1", "d3", "c", "c", 3);
-  # adversarial order: revisit d1 before deeper first-visits
-  reply_comment(root, "d3", "d4", "d", "c", 4);
-  assert count_subtree(root, "d1") == 4;
-}
-
-test "delete returns ok for unknown" {
-  root ++> MockRoot();
-  assert delete_comment(root, "nope") == False;
-}
-
-test "delete subtree root found" {
-  root ++> MockRoot();
-  insert_comment(root, "v1", "z1", "a", "c", 5);
-  reply_comment(root, "z1", "z2", "b", "c", 6);
-  assert delete_comment(root, "z1");
-  assert delete_comment(root, "z1") == False;
-}
-
-# appended fixture seed used by the tests above
-node MockRoot {}

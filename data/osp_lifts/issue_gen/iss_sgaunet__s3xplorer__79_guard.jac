@@ -1,455 +1,381 @@
-"""sgaunet/s3xplorer#79 — ensureParentFolders N+1 vs batch parent creation."""
+"""sgaunet/s3xplorer#79 - Fix N+1 query pattern in ensureParentFolders."""
 
-import from collections { defaultdict }
-
-node PathSeg {
+node Part {
     has name: str;
-    has depth: int = 0;
-    has prefix: str = "";
+    has depth: int;
     has cid: str;
-    has is_last: bool = False;
 }
 
-edge SegNext {}
-edge SegFork {}
-
-obj FolderStore {
-    has folders: dict[str, bool] = {};
+node BucketStore {
+    has bid: str;
+    has folder_keys: dict[str, bool] = {};
     has query_count: int = 0;
-    has bucket_id: str = "";
 }
 
-def split_path_parts(path: str) -> list[str] {
-    parts: list[str] = [];
-    raw: list[str] = path.split("/");
-    for p in raw {
-        if p {
-            parts.append(p);
-        }
-    }
-    return parts;
-}
+edge Step {}
 
-def parent_folder_keys(object_key: str) -> list[str] {
-    parts = split_path_parts(object_key);
-    keys: list[str] = [];
-    if len(parts) < 2 {
-        return keys;
-    }
-    prefix: str = "";
-    for i in range(len(parts) - 1) {
-        if prefix {
-            prefix = prefix + "/" + parts[i];
-        } else {
-            prefix = parts[i];
-        }
-        keys.append(prefix + "/");
-    }
-    return keys;
-}
-
-def _fid(bucket_id: str, key: str) -> str {
-    return bucket_id + "|" + key;
-}
-
-def folder_exists(store: FolderStore, bucket_id: str, key: str) -> bool {
-    fid = _fid(bucket_id, key);
-    if fid in store.folders {
-        return store.folders[fid];
-    }
-    return False;
-}
-
-def _insert_one(store: FolderStore, bucket_id: str, key: str) -> bool {
-    store.query_count = store.query_count + 1;
-    fid = _fid(bucket_id, key);
-    if fid in store.folders and store.folders[fid] {
-        return False;
-    }
-    store.folders[fid] = True;
-    return True;
-}
-
-def _insert_batch(store: FolderStore, bucket_id: str, keys: list[str]) -> list[str] {
-    store.query_count = store.query_count + 1;
-    created: list[str] = [];
-    for k in keys {
-        fid = _fid(bucket_id, k);
-        if fid in store.folders and store.folders[fid] {
-            continue;
-        }
-        store.folders[fid] = True;
-        created.append(k);
-    }
-    return created;
-}
-
-def build_path_graph(parts: list[str]) -> PathSeg {
-    head: PathSeg | None = None;
-    prev: PathSeg | None = None;
-    prefix: str = "";
-    last_idx = len(parts) - 1;
-    for i in range(len(parts)) {
-        if i > 0 {
-            prefix = prefix + "/" + parts[i];
-        } else {
-            prefix = parts[i];
-        }
-        is_last = False;
-        if i == last_idx {
-            is_last = True;
-        }
-        seg = PathSeg(
-            name=parts[i],
-            depth=i,
-            prefix=prefix,
-            cid="seg-" + str(i),
-            is_last=is_last
-        );
-        root ++> seg;
-        if prev {
-            prev +>:SegNext:+> seg;
-        } else {
-            head = seg;
-        }
-        prev = seg;
-    }
-    if head {
-        return head;
-    }
-    seg = PathSeg(name="", depth=0, prefix="", cid="seg-empty", is_last=True);
-    root ++> seg;
-    return seg;
-}
-
-def build_diamond_graph -> PathSeg {
-    a = PathSeg(name="a", depth=0, prefix="a", cid="dia-a", is_last=False);
-    b = PathSeg(name="b", depth=1, prefix="a/b", cid="dia-b", is_last=False);
-    c = PathSeg(name="c", depth=1, prefix="a/c", cid="dia-c", is_last=False);
-    d = PathSeg(name="d", depth=2, prefix="a/b/d", cid="dia-d", is_last=False);
-    root ++> a;
-    root ++> b;
-    root ++> c;
-    root ++> d;
-    a +>:SegNext:+> b;
-    a +>:SegFork:+> c;
-    b +>:SegNext:+> d;
-    c +>:SegNext:+> d;
-    return a;
-}
-
-walker CollectParents {
-    has parents: list[str] = [];
+walker CollectFolders {
     has claimed: dict[str, bool] = {};
-    has visit_count: int = 0;
-    can walk_seg with PathSeg entry {
+    has keys: list[str] = [];
+    has prefix: str = "";
+
+    can walk with Part entry {
         if here.cid in self.claimed {
             skip;
         }
         self.claimed[here.cid] = True;
-        self.visit_count = self.visit_count + 1;
-        if not here.is_last {
-            self.parents.append(here.prefix + "/");
-        }
-        kids: list[PathSeg] = [];
-        nxt: list[PathSeg] = [here ->:SegNext:->][?:PathSeg];
-        frk: list[PathSeg] = [here ->:SegFork:->][?:PathSeg];
-        for kn in nxt {
-            kids.append(kn);
-        }
-        for kf in frk {
-            kids.append(kf);
-        }
-        for ch in kids {
-            visit :0: ch;
-        }
-        print self.visit_count;
-    }
-}
-
-def collect_parents_walk(head: PathSeg) -> list[str] {
-    w = head spawn CollectParents(claimed={});
-    return w.parents;
-}
-
-def ensure_parent_folders(
-    store: FolderStore,
-    bucket_id: str,
-    object_key: str,
-    batch: bool = False
-) -> list[str] {
-    parts = split_path_parts(object_key);
-    if not batch {
-        keys = parent_folder_keys(object_key);
-        created: list[str] = [];
-        for pk in keys {
-            if _insert_one(store, bucket_id, pk) {
-                created.append(pk);
+        self.prefix = self.prefix + here.name + "/";
+        self.keys.append(self.prefix);
+        kids: list[Part] = [here ->:Step:->][?:Part];
+        i: int = 0;
+        while i < len(kids) {
+            j: int = i + 1;
+            while j < len(kids) {
+                if kids[j].cid < kids[i].cid {
+                    tmp = kids[i];
+                    kids[i] = kids[j];
+                    kids[j] = tmp;
+                }
+                j = j + 1;
             }
+            i = i + 1;
         }
-        return created;
+        if len(kids) > 0 {
+            for ch in kids {
+                visit [ch];
+            }
+        } else {
+            disengage;
+        }
     }
-    if not parts {
+}
+
+def split_key_parts(object_key: str) -> list[str] {
+    raw: list[str] = object_key.split("/");
+    parts: list[str] = [];
+    for seg in raw {
+        if seg != "" {
+            parts.append(seg);
+        }
+    }
+    if len(parts) == 0 {
         return [];
     }
-    head = build_path_graph(parts);
-    w = head spawn CollectParents(claimed={});
-    missing: list[str] = [];
-    for pk in w.parents {
-        if not folder_exists(store, bucket_id, pk) {
-            missing.append(pk);
+    if not object_key.endswith("/") {
+        trimmed: list[str] = [];
+        i: int = 0;
+        last: int = len(parts) - 1;
+        while i < last {
+            trimmed.append(parts[i]);
+            i = i + 1;
         }
-    }
-    return _insert_batch(store, bucket_id, missing);
-}
-
-def insert_query_count(store: FolderStore) -> int {
-    return store.query_count;
-}
-
-"""sgaunet/s3xplorer#79 — ensureParentFolders N+1 vs batch parent creation."""
-
-import from collections { defaultdict }
-
-node PathSeg {
-    has name: str;
-    has depth: int = 0;
-    has prefix: str = "";
-    has cid: str;
-    has is_last: bool = False;
-}
-
-edge SegNext {}
-edge SegFork {}
-
-obj FolderStore {
-    has folders: dict[str, bool] = {};
-    has query_count: int = 0;
-    has bucket_id: str = "";
-}
-
-def split_path_parts(path: str) -> list[str] {
-    parts: list[str] = [];
-    raw: list[str] = path.split("/");
-    for p in raw {
-        if p {
-            parts.append(p);
-        }
+        parts = trimmed;
     }
     return parts;
 }
 
-def parent_folder_keys(object_key: str) -> list[str] {
-    parts = split_path_parts(object_key);
+def parent_folder_keys(parts: list[str]) -> list[str] {
     keys: list[str] = [];
-    if len(parts) < 2 {
-        return keys;
-    }
     prefix: str = "";
-    for i in range(len(parts) - 1) {
-        if prefix {
-            prefix = prefix + "/" + parts[i];
-        } else {
-            prefix = parts[i];
-        }
-        keys.append(prefix + "/");
+    for part in parts {
+        prefix = prefix + part + "/";
+        keys.append(prefix);
     }
     return keys;
 }
 
-def _fid(bucket_id: str, key: str) -> str {
-    return bucket_id + "|" + key;
-}
-
-def folder_exists(store: FolderStore, bucket_id: str, key: str) -> bool {
-    fid = _fid(bucket_id, key);
-    if fid in store.folders {
-        return store.folders[fid];
+def build_part_chain(parts: list[str]) -> Part | None {
+    if len(parts) == 0 {
+        return None;
     }
-    return False;
-}
-
-def _insert_one(store: FolderStore, bucket_id: str, key: str) -> bool {
-    store.query_count = store.query_count + 1;
-    fid = _fid(bucket_id, key);
-    if fid in store.folders and store.folders[fid] {
-        return False;
-    }
-    store.folders[fid] = True;
-    return True;
-}
-
-def _insert_batch(store: FolderStore, bucket_id: str, keys: list[str]) -> list[str] {
-    store.query_count = store.query_count + 1;
-    created: list[str] = [];
-    for k in keys {
-        fid = _fid(bucket_id, k);
-        if fid in store.folders and store.folders[fid] {
-            continue;
+    head: Part | None = None;
+    prev: Part | None = None;
+    depth: int = 0;
+    for part in parts {
+        depth = depth + 1;
+        cid: str = str(depth) + ":" + part;
+        nd = Part(name=part, depth=depth, cid=cid);
+        if head is None {
+            head = nd;
         }
-        store.folders[fid] = True;
-        created.append(k);
+        if prev is not None {
+            prev +>:Step:+> nd;
+        }
+        prev = nd;
     }
-    return created;
+    return head;
 }
 
-def build_path_graph(parts: list[str]) -> PathSeg {
-    head: PathSeg | None = None;
-    prev: PathSeg | None = None;
-    prefix: str = "";
-    last_idx = len(parts) - 1;
-    for i in range(len(parts)) {
-        if i > 0 {
-            prefix = prefix + "/" + parts[i];
-        } else {
-            prefix = parts[i];
-        }
-        is_last = False;
-        if i == last_idx {
-            is_last = True;
-        }
-        seg = PathSeg(
-            name=parts[i],
-            depth=i,
-            prefix=prefix,
-            cid="seg-" + str(i),
-            is_last=is_last
-        );
-        root ++> seg;
-        if prev {
-            prev +>:SegNext:+> seg;
-        } else {
-            head = seg;
-        }
-        prev = seg;
-    }
-    if head {
-        return head;
-    }
-    seg = PathSeg(name="", depth=0, prefix="", cid="seg-empty", is_last=True);
-    root ++> seg;
-    return seg;
-}
-
-def build_diamond_graph -> PathSeg {
-    a = PathSeg(name="a", depth=0, prefix="a", cid="dia-a", is_last=False);
-    b = PathSeg(name="b", depth=1, prefix="a/b", cid="dia-b", is_last=False);
-    c = PathSeg(name="c", depth=1, prefix="a/c", cid="dia-c", is_last=False);
-    d = PathSeg(name="d", depth=2, prefix="a/b/d", cid="dia-d", is_last=False);
-    root ++> a;
-    root ++> b;
-    root ++> c;
-    root ++> d;
-    a +>:SegNext:+> b;
-    a +>:SegFork:+> c;
-    b +>:SegNext:+> d;
-    c +>:SegNext:+> d;
+def build_diamond_parts() -> Part {
+    a = Part(name="a", depth=1, cid="a");
+    b = Part(name="b", depth=2, cid="b");
+    c = Part(name="c", depth=2, cid="c_alt");
+    d = Part(name="d", depth=3, cid="d");
+    a +>:Step:+> b;
+    a +>:Step:+> c;
+    b +>:Step:+> d;
+    c +>:Step:+> d;
     return a;
 }
 
-walker CollectParents {
-    has parents: list[str] = [];
+def collect_folder_keys(graph_root: Part) -> list[str] {
+    w = graph_root spawn CollectFolders(claimed={}, keys=[], prefix="");
+    print("collect_folder_keys=" + str(w.keys));
+    return w.keys;
+}
+
+def ensure_parent_folders(store: BucketStore, bucket_id: str, object_key: str) -> list[str] {
+    if store.bid != bucket_id {
+        return [];
+    }
+    parts = split_key_parts(object_key);
+    if len(parts) == 0 {
+        return [];
+    }
+    graph_root = build_part_chain(parts);
+    if graph_root is None {
+        return [];
+    }
+    w = graph_root spawn CollectFolders(claimed={}, keys=[], prefix="");
+    print("ensure_parent_folders batch keys=" + str(w.keys));
+    created: list[str] = [];
+    store.query_count = store.query_count + 1;
+    for key in w.keys {
+        if key not in store.folder_keys {
+            store.folder_keys[key] = True;
+            created.append(key);
+        }
+    }
+    return sorted(created);
+}
+
+def ensure_parent_folders_n_plus_one(store: BucketStore, bucket_id: str, object_key: str) -> list[str] {
+    if store.bid != bucket_id {
+        return [];
+    }
+    parts = split_key_parts(object_key);
+    keys = parent_folder_keys(parts);
+    created: list[str] = [];
+    for key in keys {
+        store.query_count = store.query_count + 1;
+        if key not in store.folder_keys {
+            store.folder_keys[key] = True;
+            created.append(key);
+        }
+    }
+    return sorted(created);
+}
+
+"""sgaunet/s3xplorer#79 - Fix N+1 query pattern in ensureParentFolders."""
+
+node Part {
+    has name: str;
+    has depth: int;
+    has cid: str;
+}
+
+node BucketStore {
+    has bid: str;
+    has folder_keys: dict[str, bool] = {};
+    has query_count: int = 0;
+}
+
+edge Step {}
+
+walker CollectFolders {
     has claimed: dict[str, bool] = {};
-    has visit_count: int = 0;
-    can walk_seg with PathSeg entry {
+    has keys: list[str] = [];
+    has prefix: str = "";
+
+    can walk with Part entry {
         if here.cid in self.claimed {
             skip;
         }
         self.claimed[here.cid] = True;
-        self.visit_count = self.visit_count + 1;
-        if not here.is_last {
-            self.parents.append(here.prefix + "/");
-        }
-        kids: list[PathSeg] = [];
-        nxt: list[PathSeg] = [here ->:SegNext:->][?:PathSeg];
-        frk: list[PathSeg] = [here ->:SegFork:->][?:PathSeg];
-        for kn in nxt {
-            kids.append(kn);
-        }
-        for kf in frk {
-            kids.append(kf);
-        }
-        for ch in kids {
-            visit :0: ch;
-        }
-        print self.visit_count;
-    }
-}
-
-def collect_parents_walk(head: PathSeg) -> list[str] {
-    w = head spawn CollectParents(claimed={});
-    return w.parents;
-}
-
-def ensure_parent_folders(
-    store: FolderStore,
-    bucket_id: str,
-    object_key: str,
-    batch: bool = False
-) -> list[str] {
-    parts = split_path_parts(object_key);
-    if not batch {
-        keys = parent_folder_keys(object_key);
-        created: list[str] = [];
-        for pk in keys {
-            if _insert_one(store, bucket_id, pk) {
-                created.append(pk);
+        self.prefix = self.prefix + here.name + "/";
+        self.keys.append(self.prefix);
+        kids: list[Part] = [here ->:Step:->][?:Part];
+        i: int = 0;
+        while i < len(kids) {
+            j: int = i + 1;
+            while j < len(kids) {
+                if kids[j].cid < kids[i].cid {
+                    tmp = kids[i];
+                    kids[i] = kids[j];
+                    kids[j] = tmp;
+                }
+                j = j + 1;
             }
+            i = i + 1;
         }
-        return created;
+        if len(kids) > 0 {
+            for ch in kids {
+                visit [ch];
+            }
+        } else {
+            disengage;
+        }
     }
-    if not parts {
+}
+
+def split_key_parts(object_key: str) -> list[str] {
+    raw: list[str] = object_key.split("/");
+    parts: list[str] = [];
+    for seg in raw {
+        if seg != "" {
+            parts.append(seg);
+        }
+    }
+    if len(parts) == 0 {
         return [];
     }
-    head = build_path_graph(parts);
-    w = head spawn CollectParents(claimed={});
-    missing: list[str] = [];
-    for pk in w.parents {
-        if not folder_exists(store, bucket_id, pk) {
-            missing.append(pk);
+    if not object_key.endswith("/") {
+        trimmed: list[str] = [];
+        i: int = 0;
+        last: int = len(parts) - 1;
+        while i < last {
+            trimmed.append(parts[i]);
+            i = i + 1;
+        }
+        parts = trimmed;
+    }
+    return parts;
+}
+
+def parent_folder_keys(parts: list[str]) -> list[str] {
+    keys: list[str] = [];
+    prefix: str = "";
+    for part in parts {
+        prefix = prefix + part + "/";
+        keys.append(prefix);
+    }
+    return keys;
+}
+
+def build_part_chain(parts: list[str]) -> Part | None {
+    if len(parts) == 0 {
+        return None;
+    }
+    head: Part | None = None;
+    prev: Part | None = None;
+    depth: int = 0;
+    for part in parts {
+        depth = depth + 1;
+        cid: str = str(depth) + ":" + part;
+        nd = Part(name=part, depth=depth, cid=cid);
+        if head is None {
+            head = nd;
+        }
+        if prev is not None {
+            prev +>:Step:+> nd;
+        }
+        prev = nd;
+    }
+    return head;
+}
+
+def build_diamond_parts() -> Part {
+    a = Part(name="a", depth=1, cid="a");
+    b = Part(name="b", depth=2, cid="b");
+    c = Part(name="c", depth=2, cid="c_alt");
+    d = Part(name="d", depth=3, cid="d");
+    a +>:Step:+> b;
+    a +>:Step:+> c;
+    b +>:Step:+> d;
+    c +>:Step:+> d;
+    return a;
+}
+
+def collect_folder_keys(graph_root: Part) -> list[str] {
+    w = graph_root spawn CollectFolders(claimed={}, keys=[], prefix="");
+    print("collect_folder_keys=" + str(w.keys));
+    return w.keys;
+}
+
+def ensure_parent_folders(store: BucketStore, bucket_id: str, object_key: str) -> list[str] {
+    if store.bid != bucket_id {
+        return [];
+    }
+    parts = split_key_parts(object_key);
+    if len(parts) == 0 {
+        return [];
+    }
+    graph_root = build_part_chain(parts);
+    if graph_root is None {
+        return [];
+    }
+    w = graph_root spawn CollectFolders(claimed={}, keys=[], prefix="");
+    print("ensure_parent_folders batch keys=" + str(w.keys));
+    created: list[str] = [];
+    store.query_count = store.query_count + 1;
+    for key in w.keys {
+        if key not in store.folder_keys {
+            store.folder_keys[key] = True;
+            created.append(key);
         }
     }
-    return _insert_batch(store, bucket_id, missing);
+    return sorted(created);
 }
 
-def insert_query_count(store: FolderStore) -> int {
-    return store.query_count;
+def ensure_parent_folders_n_plus_one(store: BucketStore, bucket_id: str, object_key: str) -> list[str] {
+    if store.bid != bucket_id {
+        return [];
+    }
+    parts = split_key_parts(object_key);
+    keys = parent_folder_keys(parts);
+    created: list[str] = [];
+    for key in keys {
+        store.query_count = store.query_count + 1;
+        if key not in store.folder_keys {
+            store.folder_keys[key] = True;
+            created.append(key);
+        }
+    }
+    return sorted(created);
 }
 
-test "parent_folder_keys_three_deep" {
-    got = parent_folder_keys("a/b/c.txt");
-    assert got == ["a/", "a/b/"];
+test "split_key_file_object" {
+    parts = split_key_parts("a/b/c.txt");
+    assert len(parts) == 2;
+    assert parts[0] == "a";
+    assert parts[1] == "b";
 }
 
-test "parent_folder_keys_shallow" {
-    got = parent_folder_keys("file.txt");
-    assert got == [];
+test "ensure_batch_single_query" {
+    store = BucketStore(bid="b1", folder_keys={}, query_count=0);
+    created = ensure_parent_folders(store, "b1", "a/b/c.txt");
+    assert store.query_count == 1;
+    assert sorted(created) == ["a/", "a/b/"];
 }
 
-test "collect_parents_linear" {
-    head = build_path_graph(["a", "b", "c"]);
-    got = collect_parents_walk(head);
-    assert got == ["a/", "a/b/"];
+test "ensure_n_plus_one_queries" {
+    store = BucketStore(bid="b1", folder_keys={}, query_count=0);
+    created = ensure_parent_folders_n_plus_one(store, "b1", "a/b/c.txt");
+    assert store.query_count == 2;
+    assert sorted(created) == ["a/", "a/b/"];
 }
 
-test "collect_parents_diamond_dedup" {
-    head = build_diamond_graph();
-    w = head spawn CollectParents(claimed={});
-    exp: list[str] = ["a/", "a/b/", "a/c/"];
-    assert sorted(w.parents) == sorted(exp);
-    assert w.visit_count == 4;
+test "wrong_bucket_empty" {
+    store = BucketStore(bid="b1", folder_keys={}, query_count=0);
+    created = ensure_parent_folders(store, "b2", "a/b/");
+    assert len(created) == 0;
 }
 
-test "ensure_non_batch_query_count" {
-    store = FolderStore(folders={}, query_count=0, bucket_id="bk");
-    created = ensure_parent_folders(store, "bk", "x/y/z.obj", batch=False);
-    assert sorted(created) == sorted(["x/", "x/y/"]);
-    assert insert_query_count(store) == 2;
+test "linear_chain_collect" {
+    graph_root = build_part_chain(["x", "y", "z"]);
+    keys = collect_folder_keys(graph_root);
+    assert sorted(keys) == ["x/", "x/y/", "x/y/z/"];
 }
 
-test "ensure_batch_query_count" {
-    store = FolderStore(folders={}, query_count=0, bucket_id="bk");
-    created = ensure_parent_folders(store, "bk", "x/y/z.obj", batch=True);
-    assert sorted(created) == sorted(["x/", "x/y/"]);
-    assert insert_query_count(store) == 1;
+test "diamond_revisit_skips_second_d" {
+    graph_root = build_diamond_parts();
+    keys = collect_folder_keys(graph_root);
+    assert sorted(keys) == ["a/", "a/b/", "a/b/d/", "a/c/"];
+    has_c_d: bool = False;
+    for k in keys {
+        if k == "a/c/d/" {
+            has_c_d = True;
+        }
+    }
+    assert has_c_d == False;
 }

@@ -94,62 +94,61 @@ walker SearchWalker {
     }
 }
 
-test "kids returns children via in-edges" {
-    a = mk_account("1000", "Assets", "asset");
-    b = mk_account("1100", "Cash", "asset");
-    c = mk_account("1200", "Receivables", "asset");
-    root ++> a; root ++> b; root ++> c;
-    link(a, b);
-    link(a, c);
+test "kids lists direct children" {
+    root_node = mk_account("1000", "Assets", "asset");
+    cash = mk_account("1010", "Cash", "asset");
+    bank = mk_account("1011", "Bank", "asset");
+    link(root_node, cash);
+    link(root_node, bank);
     got: list[str] = [];
-    for k in kids(a) { got.append(k.code); }
-    assert sorted(got) == ["1100", "1200"];
+    for k in kids(root_node) { got.append(k.code); }
+    assert sorted(got) == ["1010", "1011"];;
 }
 
-test "tree closure with depth limit" {
-    a = mk_account("1000", "Assets", "asset");
-    b = mk_account("1100", "Cash", "asset");
-    c = mk_account("1110", "Petty Cash", "asset");
-    link(a, b);
-    link(b, c);
-    t = tree(a, 1);
-    assert t["code"] == "1000";
-    assert len(t["children"]) == 1;
-    assert t["children"][0]["code"] == "1100";
-    assert len(t["children"][0]["children"]) == 0;
+test "tree closure respects max_depth" {
+    root_node = mk_account("1000", "Assets", "asset");
+    cash = mk_account("1010", "Cash", "asset");
+    bank = mk_account("1011", "Bank", "asset");
+    link(root_node, cash);
+    link(root_node, bank);
+    t = tree(root_node, 1);
+    assert t["code"] == "1000";;
+    assert len(t["children"]) == 2;;
+    shallow = tree(root_node, 0);
+    assert len(shallow["children"]) == 0;;
 }
 
-test "path_to_root chain" {
-    a = mk_account("1000", "Assets", "asset");
-    b = mk_account("1100", "Cash", "asset");
-    link(a, b);
-    assert path_to_root(b) == ["1000", "1100"];
-    assert path_to_root(a) == ["1000"];
+test "path_to_root yields root-first chain" {
+    root_node = mk_account("1000", "Assets", "asset");
+    cash = mk_account("1010", "Cash", "asset");
+    petty = mk_account("1012", "Petty Cash", "asset");
+    link(root_node, cash);
+    link(cash, petty);
+    chain = path_to_root(petty);
+    assert chain == ["1000", "1010", "1012"];;
 }
 
-test "search multiset over subtree" {
-    a = mk_account("1000", "Assets", "asset");
-    b = mk_account("1100", "Cash on hand", "asset");
-    c = mk_account("1200", "Inventory", "asset");
-    d = mk_account("2100", "Cash equivalent", "liability");
-    link(a, b);
-    link(a, c);
-    link(a, d);
-    assert search_accounts(a, "cash") == ["1100", "2100"];
-    assert search_accounts(a, "zzz") == [];
+test "search sweeps subtree sorted" {
+    root_node = mk_account("1000", "Assets", "asset");
+    cash = mk_account("1010", "Cash", "asset");
+    bank = mk_account("1011", "Bank Account", "asset");
+    petty = mk_account("1012", "petty cash box", "asset");
+    link(root_node, cash);
+    link(root_node, bank);
+    link(cash, petty);
+    hits = search_accounts(root_node, "cash");
+    assert hits == ["1010", "1012"];;
+    assert search_accounts(root_node, "bank") == ["1011"];;
+    assert search_accounts(root_node, "zzz") == [];;
 }
 
-test "cycle guard survives diamond" {
-    a = mk_account("1000", "Assets", "asset");
-    b = mk_account("1100", "Cash", "asset");
-    c = mk_account("1200", "Receivables", "asset");
+test "cycle guarded walkers terminate" {
+    a = mk_account("2000", "Cycle A", "liability");
+    b = mk_account("2010", "Cycle B", "liability");
     link(a, b);
-    link(a, c);
-    link(b, c);
-    # c reachable twice; claim map must dedupe, no infinite loop
+    link(b, a);
     t = tree(a, 5);
-    assert t["code"] == "1000";
-    got: list[str] = [];
-    for cm in t["children"] { got.append(cm["code"]); }
-    assert sorted(got) == ["1100", "1200"];
+    assert t["code"] == "2000";;
+    chain = path_to_root(b);
+    assert len(chain) == 2;;
 }

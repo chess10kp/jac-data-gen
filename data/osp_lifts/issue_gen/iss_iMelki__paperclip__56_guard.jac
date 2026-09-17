@@ -1,307 +1,255 @@
-"""Vitest scratch root custody and cleanup — iMelki/paperclip#56."""
+# iss_iMelki__paperclip__56.jac — owned vitest scratch root custody graph
 
-node EphemeralRoot {
+node ScratchRoot {
     has cid: str;
     has caller_tag: str = "";
-    has alive: bool = True;
-    has locked: bool = False;
+    has logical_bytes: int = 0;
+    has removed: bool = False;
 }
 
-node ChildProc {
-    has cid: str;
-    has pid: int = 0;
-    has running: bool = True;
-}
-
-node EnvSlot {
-    has name: str;
-    has path: str = "";
+node Proc {
+    has pid: str;
+    has state: str = "quiescent";
 }
 
 node Manifest {
-    has owner_tag: str = "";
+    has owner_tag: str;
     has valid: bool = True;
 }
 
-edge ParentOf {}
-edge Binds {}
-edge HasManifest {}
+edge Owns {}
+edge Nested {}
 
-obj VitestScratchGraph {
-    has by_id: dict[str, object] = {};
-    has removed: dict[str, bool] = {};
+walker FindRoot {
+    has want: str;
+    has claimed: dict[str, bool] = {};
+    has hit: ScratchRoot | None = None;
+
+    can step with ScratchRoot entry {
+        if here.cid in self.claimed {
+            skip;
+        }
+        self.claimed[here.cid] = True;
+        if here.cid == self.want {
+            self.hit = here;
+        }
+        kids: list[ScratchRoot] = [here ->:Nested:->][?:ScratchRoot];
+        visit :0: kids;
+        print({"find": here.cid, "want": self.want});
+    }
 }
 
-def _slot_names -> list[str] {
-    names: list[str] = [];
-    names.append("TEMP");
-    names.append("TMP");
-    names.append("TMPDIR");
-    return names;
-}
-
-def _find_root(store: VitestScratchGraph, root_id: str) -> EphemeralRoot | None {
-    if root_id not in store.by_id {
-        return None;
-    }
-    nd: object = store.by_id[root_id];
-    if not (nd instanceof EphemeralRoot) {
-        return None;
-    }
-    hit: EphemeralRoot = nd as EphemeralRoot;
-    return hit;
-}
-
-def allocate_ephemeral_root(store: VitestScratchGraph, caller_tag: str) -> str {
-    rid: str = "eph-paperclip-vitest-" + caller_tag;
-    root_nd = EphemeralRoot(cid=rid, caller_tag=caller_tag);
-    store.by_id[rid] = root_nd;
-    root ++> root_nd;
-    slot_names: list[str] = _slot_names();
-    for slot_name in slot_names {
-        slot = EnvSlot(name=slot_name, path=rid);
-        sid: str = rid + ":" + slot_name;
-        store.by_id[sid] = slot;
-        root_nd +>:Binds:+> slot;
-    }
-    return rid;
-}
-
-def normalize_temp_env(store: VitestScratchGraph, root_id: str) -> dict[str, str] {
-    out: dict[str, str] = {};
-    root_nd = _find_root(store, root_id);
-    if root_nd is None {
-        return out;
-    }
-    slots: list[EnvSlot] = [root_nd ->:Binds:->][?:EnvSlot];
-    for slot in slots {
-        slot.path = root_id;
-        out[slot.name] = root_id;
-    }
-    return out;
-}
-
-def write_owner_manifest(store: VitestScratchGraph, root_id: str, owner_tag: str) -> bool {
-    root_nd = _find_root(store, root_id);
-    if root_nd is None {
-        return False;
-    }
-    man = Manifest(owner_tag=owner_tag, valid=True);
-    mid: str = root_id + ":manifest";
-    store.by_id[mid] = man;
-    root_nd +>:HasManifest:+> man;
-    return True;
-}
-
-def attach_child(store: VitestScratchGraph, root_id: str, child_id: str, pid: int) -> bool {
-    root_nd = _find_root(store, root_id);
-    if root_nd is None {
-        return False;
-    }
-    ch = ChildProc(cid=child_id, pid=pid, running=True);
-    store.by_id[child_id] = ch;
-    root_nd +>:ParentOf:+> ch;
-    return True;
-}
-
-walker CollectDescendants {
+walker CollectProcs {
     has claimed: dict[str, bool] = {};
     has found: list[str] = [];
 
-    can step_root with EphemeralRoot entry {
+    can step with ScratchRoot entry {
         if here.cid in self.claimed {
             skip;
         }
         self.claimed[here.cid] = True;
-        self.found.append(here.cid);
-        kids: list[ChildProc] = [here ->:ParentOf:->][?:ChildProc];
-        for kid in kids {
-            visit :0: [kid];
+        procs: list[Proc] = [here ->:Owns:->][?:Proc];
+        for p in procs {
+            self.found.append(p.pid);
         }
-    }
-
-    can step_child with ChildProc entry {
-        if here.cid in self.claimed {
-            skip;
-        }
-        self.claimed[here.cid] = True;
-        self.found.append(here.cid);
-        kids: list[ChildProc] = [here ->:ParentOf:->][?:ChildProc];
-        for kid in kids {
-            visit :0: [kid];
-        } else {
-            disengage;
-        }
+        kids: list[ScratchRoot] = [here ->:Nested:->][?:ScratchRoot];
+        visit :0: kids;
+        print({"collect": here.cid, "count": len(self.found)});
     }
 }
 
-def collect_descendants(store: VitestScratchGraph, root_id: str) -> list[str] {
-    root_nd = _find_root(store, root_id);
-    if root_nd is None {
+walker QuiesceCheck {
+    has claimed: dict[str, bool] = {};
+    has blocked: bool = False;
+
+    can step with ScratchRoot entry {
+        if here.cid in self.claimed {
+            skip;
+        }
+        self.claimed[here.cid] = True;
+        procs: list[Proc] = [here ->:Owns:->][?:Proc];
+        for p in procs {
+            if p.state != "quiescent" {
+                self.blocked = True;
+            }
+        }
+        kids: list[ScratchRoot] = [here ->:Nested:->][?:ScratchRoot];
+        visit :0: kids;
+        print({"quiesce": here.cid, "blocked": self.blocked});
+    }
+}
+
+def allocate_owned_root(caller_tag: str, stamp: str, nonce: str) -> str {
+    cid = "eph-paperclip-vitest-" + stamp + "-" + nonce;
+    nd = ScratchRoot(cid=cid, caller_tag=caller_tag);
+    root ++> nd;
+    return cid;
+}
+
+def normalize_temp_triplet(root_path: str) -> dict[str, str] {
+    env: dict[str, str] = {};
+    env["TEMP"] = root_path;
+    env["TMP"] = root_path;
+    env["TMPDIR"] = root_path;
+    return env;
+}
+
+def write_owner_manifest(root_node: ScratchRoot, owner_tag: str) -> bool {
+    if owner_tag == "" {
+        return False;
+    }
+    mf = Manifest(owner_tag=owner_tag, valid=True);
+    root_node ++> mf;
+    return True;
+}
+
+def validate_manifest(mf: Manifest) -> bool {
+    if not mf.valid {
+        return False;
+    }
+    if mf.owner_tag == "" {
+        return False;
+    }
+    return True;
+}
+
+def attach_proc(root_node: ScratchRoot, pid: str, state: str) -> bool {
+    p = Proc(pid=pid, state=state);
+    root_node +>:Owns:+> p;
+    return True;
+}
+
+def collect_child_pids(root_node: ScratchRoot) -> list[str] {
+    wk = root_node spawn CollectProcs(claimed={}, found=[]);
+    out: list[str] = [];
+    for pid in wk.found {
+        out.append(pid);
+    }
+    return sorted(out);
+}
+
+def collect_child_pids_for_cid(graph_anchor: ScratchRoot, cid: str) -> list[str] {
+    fw = graph_anchor spawn FindRoot(want=cid, claimed={}, hit=None);
+    if fw.hit is None {
         return [];
     }
-    w = root_nd spawn CollectDescendants(claimed={});
-    print w.found;
+    wk = fw.hit spawn CollectProcs(claimed={}, found=[]);
     out: list[str] = [];
-    for cid in w.found {
-        out.append(cid);
+    for pid in wk.found {
+        out.append(pid);
     }
-    out.sort();
-    return out;
+    return sorted(out);
 }
 
-walker QuiescenceProbe {
-    has claimed: dict[str, bool] = {};
-    has quiet: bool = True;
-
-    can probe_root with EphemeralRoot entry {
-        if here.cid in self.claimed {
-            skip;
-        }
-        self.claimed[here.cid] = True;
-        if here.locked {
-            self.quiet = False;
-        }
-        kids: list[ChildProc] = [here ->:ParentOf:->][?:ChildProc];
-        for kid in kids {
-            visit :0: [kid];
-        }
-    }
-
-    can probe_child with ChildProc entry {
-        if here.cid in self.claimed {
-            skip;
-        }
-        self.claimed[here.cid] = True;
-        if here.running {
-            self.quiet = False;
-        }
-        kids: list[ChildProc] = [here ->:ParentOf:->][?:ChildProc];
-        for kid in kids {
-            visit :0: [kid];
-        } else {
-            disengage;
-        }
-    }
+def children_quiescent(root_node: ScratchRoot) -> bool {
+    wk = root_node spawn QuiesceCheck(claimed={}, blocked=False);
+    return not wk.blocked;
 }
 
-def await_quiescence(store: VitestScratchGraph, root_id: str) -> bool {
-    root_nd = _find_root(store, root_id);
-    if root_nd is None {
-        return False;
+def remove_owned_root(root_node: ScratchRoot) -> dict[str, str] {
+    result: dict[str, str] = {};
+    if not children_quiescent(root_node) {
+        result["cleanup"] = "EBUSY";
+        result["residual"] = root_node.cid;
+        return result;
     }
-    w = root_nd spawn QuiescenceProbe(claimed={});
-    print w.quiet;
-    return w.quiet;
+    root_node.removed = True;
+    result["cleanup"] = "ok";
+    result["residual"] = "";
+    return result;
 }
 
-def verify_env_custody(store: VitestScratchGraph, root_id: str) -> bool {
-    root_nd = _find_root(store, root_id);
-    if root_nd is None {
-        return False;
+def verify_absent(cid: str, alive: list[str] | None) -> bool {
+    ids: list[str] = [];
+    if alive is not None {
+        for x in alive {
+            ids.append(x);
+        }
     }
-    slots: list[EnvSlot] = [root_nd ->:Binds:->][?:EnvSlot];
-    for slot in slots {
-        if slot.path != root_id {
+    for x in ids {
+        if x == cid {
             return False;
         }
     }
     return True;
 }
 
-def cleanup_owned_root(store: VitestScratchGraph, root_id: str) -> dict[str, object] {
-    receipt: dict[str, object] = {};
-    receipt["root_id"] = root_id;
-    receipt["cleanup_ok"] = False;
-    empty_res: list[str] = [];
-    receipt["residual"] = empty_res;
-    root_nd = _find_root(store, root_id);
-    if root_nd is None {
-        miss: list[str] = [];
-        miss.append(root_id);
-        receipt["residual"] = miss;
-        return receipt;
-    }
-    if not await_quiescence(store, root_id) {
-        busy: list[str] = [];
-        busy.append(root_id);
-        receipt["residual"] = busy;
-        return receipt;
-    }
-    to_drop: list[str] = collect_descendants(store, root_id);
-    mid: str = root_id + ":manifest";
-    if mid in store.by_id {
-        to_drop.append(mid);
-    }
-    slot_names: list[str] = _slot_names();
-    for sn in slot_names {
-        sid: str = root_id + ":" + sn;
-        if sid in store.by_id {
-            to_drop.append(sid);
-        }
-    }
-    to_drop.sort();
-    for cid in to_drop {
-        if cid in store.by_id {
-            store.removed[cid] = True;
-            del store.by_id[cid];
-        }
-    }
-    receipt["cleanup_ok"] = True;
-    left: list[str] = [];
-    receipt["residual"] = left;
-    return receipt;
+def build_terminal_receipt(
+    duration_ms: int,
+    exit_status: int,
+    logical_bytes: int,
+    child_count: int,
+    cleanup: str,
+    residual: str,
+    caller_tag: str
+) -> dict[str, str] {
+    rec: dict[str, str] = {};
+    rec["duration_ms"] = str(duration_ms);
+    rec["exit_status"] = str(exit_status);
+    rec["logical_bytes"] = str(logical_bytes);
+    rec["child_count"] = str(child_count);
+    rec["cleanup"] = cleanup;
+    rec["residual"] = residual;
+    rec["caller_tag"] = caller_tag;
+    return rec;
 }
 
-test "allocate_normalize_verify" {
-    store = VitestScratchGraph(by_id={}, removed={});
-    rid = allocate_ephemeral_root(store, "unit");
-    env = normalize_temp_env(store, rid);
-    assert (env["TEMP"] == rid);;
-    assert (env["TMP"] == rid);;
-    assert (verify_env_custody(store, rid) == True);;
+test "allocate_and_normalize" {
+    cid = allocate_owned_root("vitest", "20250915", "n1");
+    assert cid == "eph-paperclip-vitest-20250915-n1";
+    env = normalize_temp_triplet("/scratch/vitest");
+    assert env["TEMP"] == "/scratch/vitest";
+    assert env["TMPDIR"] == "/scratch/vitest";
 }
 
-test "manifest_and_descendants_sorted" {
-    store = VitestScratchGraph(by_id={}, removed={});
-    rid = allocate_ephemeral_root(store, "tree");
-    assert (write_owner_manifest(store, rid, "owner-a") == True);;
-    assert (attach_child(store, rid, "child-a", 101) == True);;
-    desc = collect_descendants(store, rid);
-    assert (desc == ["child-a", "eph-paperclip-vitest-tree"]);;
+test "manifest_write_validate" {
+    nd = ScratchRoot(cid="r-mf", caller_tag="ct");
+    root ++> nd;
+    assert write_owner_manifest(nd, "") == False;
+    assert write_owner_manifest(nd, "owner-a") == True;
+    mfs: list[Manifest] = [nd ->][?:Manifest];
+    assert len(mfs) == 1;
+    assert validate_manifest(mfs[0]) == True;
 }
 
-test "quiescence_blocks_on_running_child" {
-    store = VitestScratchGraph(by_id={}, removed={});
-    rid = allocate_ephemeral_root(store, "busy");
-    attach_child(store, rid, "child-busy", 202);
-    assert (await_quiescence(store, rid) == False);;
+test "collect_child_pids_sorted" {
+    nd = ScratchRoot(cid="r-col");
+    root ++> nd;
+    attach_proc(nd, "p2", "quiescent");
+    attach_proc(nd, "p1", "quiescent");
+    assert collect_child_pids(nd) == ["p1", "p2"];
 }
 
-test "cleanup_after_quiescence" {
-    store = VitestScratchGraph(by_id={}, removed={});
-    rid = allocate_ephemeral_root(store, "clean");
-    attach_child(store, rid, "child-done", 303);
-    nd: object = store.by_id["child-done"];
-    ch: ChildProc = nd as ChildProc;
-    ch.running = False;
-    receipt = cleanup_owned_root(store, rid);
-    assert (receipt["cleanup_ok"] == True);;
-    assert (rid not in store.by_id);;
+test "collect_for_nested_cid" {
+    parent = ScratchRoot(cid="r-par");
+    child = ScratchRoot(cid="r-ch");
+    root ++> parent;
+    parent +>:Nested:+> child;
+    attach_proc(child, "cp1", "quiescent");
+    assert collect_child_pids_for_cid(parent, "missing") == [];
+    assert collect_child_pids_for_cid(parent, "r-ch") == ["cp1"];
 }
 
-test "cleanup_blocked_on_abnormal_exit" {
-    store = VitestScratchGraph(by_id={}, removed={});
-    rid = allocate_ephemeral_root(store, "abort");
-    attach_child(store, rid, "orphan", 404);
-    receipt = cleanup_owned_root(store, rid);
-    assert (receipt["cleanup_ok"] == False);;
-    assert (rid in store.by_id);;
+test "remove_busy_when_not_quiescent" {
+    nd = ScratchRoot(cid="r-busy");
+    root ++> nd;
+    attach_proc(nd, "px", "running");
+    res = remove_owned_root(nd);
+    assert res["cleanup"] == "EBUSY";
+    assert res["residual"] == "r-busy";
+    assert nd.removed == False;
 }
 
-test "unknown_root_tolerance" {
-    store = VitestScratchGraph(by_id={}, removed={});
-    assert (normalize_temp_env(store, "missing") == {});;
-    assert (collect_descendants(store, "missing") == []);;
-    assert (await_quiescence(store, "missing") == False);;
+test "remove_ok_and_receipt" {
+    nd = ScratchRoot(cid="r-ok", caller_tag="tag-z");
+    root ++> nd;
+    attach_proc(nd, "py", "quiescent");
+    res = remove_owned_root(nd);
+    assert res["cleanup"] == "ok";
+    assert res["residual"] == "";
+    assert nd.removed == True;
+    rec = build_terminal_receipt(12, 0, 64, 1, "ok", "", "tag-z");
+    assert rec["child_count"] == "1";
+    assert verify_absent("gone", ["alive"]) == True;
+    assert verify_absent("alive", ["alive"]) == False;
 }

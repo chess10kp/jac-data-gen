@@ -1,150 +1,146 @@
 # ronfeathers-LD/SOW-Generator#143
-# getFolderStructure: unbounded sequential recursion (N+1 Drive calls).
-# Idiomatic OSP lift: single bounded walker with claim-map memo instead of
-# serial per-subfolder recursion; parent-name lookups memoized.
+# getFolderStructure: unbounded sequential recursion -> idiomatic OSP walk
+# with claim-map cycle policy, depth caps, and node caps.
 
 node Folder {
     has fid: str;
     has name: str;
+    has depth: int = 0;
 }
 
-edge Child {
-    has page_token: str = "";
+edge CHILD;
+
+# key helper for deterministic child ordering (avoids lambda typing issues)
+def fid_of(f: Folder) -> str {
+    return f.fid;
 }
 
-# memo of folder-id -> name, replaces the serial files.get per parent
-def lookup_name(memo: dict[str, str], fid: str, folders: dict[str, Folder]) -> str {
-    if fid in memo { return memo[fid]; }
-    if fid in folders {
-        memo[fid] = folders[fid].name;
-        return memo[fid];
-    }
-    memo[fid] = "<unknown>";
-    return "<unknown>";
-}
-
-walker FolderWalk {
+obj DriveTree {
+    has by_id: dict[str, Folder] = {};
+    has claimed: dict[str, bool] = {};
     has max_depth: int = 3;
-    has max_nodes: int = 1000;
-    has seen: dict[str, bool] = {};
-    has found: list[tuple[str, int, str]] = [];
-    has budget: int = 1000;
+    has node_cap: int = 1000;
+    has call_count: int = 0;
+    has order: list[str] = [];
+
+    def add_folder(fid: str, name: str, depth: int) -> Folder | None {
+        if fid in self.by_id { return self.by_id[fid]; }
+        if len(self.by_id) >= self.node_cap { return None; }
+        nd = Folder(fid=fid, name=name, depth=depth);
+        self.by_id[fid] = nd;
+        return nd;
+    }
+
+    def link(parent: Folder, child: Folder) {
+        parent +>:CHILD:+> child;
+    }
+
+    # counts Drive calls: one list call per folder visit (serial N+1 baseline
+    # was nodes * round_trips; OSP visit claims once per node)
+    def record_call {
+        self.call_count += 1;
+    }
+
+    def get_folder_structure(root_id: str) -> list[str] {
+        res: list[str] = [];
+        if root_id not in self.by_id { return res; }
+        start = self.by_id[root_id];
+        cur: list[Folder] = [start];
+        # iterative bounded-depth DFS with claim-map cycle policy
+        while cur {
+            nd = cur.pop(0);
+            if nd.fid in self.claimed { continue; }
+            self.claimed[nd.fid] = True;
+            self.record_call();
+            self.order.append(nd.name);
+            res.append(nd.fid);
+            if nd.depth >= self.max_depth { continue; }
+            kids: list[Folder] = [];
+            for ch in [nd ->:CHILD:->][?:Folder] { kids.append(ch); }
+            kids = sorted(kids, key=fid_of);
+            for kk in kids { cur.insert(0, kk); }
+        }
+        res = sorted(res);
+        return res;
+    }
+
+    # cached parent-name lookup (was an extra serial files.get per call)
+    def get_folder_name(fid: str) -> str | None {
+        if fid not in self.by_id { return None; }
+        return self.by_id[fid].name;
+    }
+}
+
+walker StructureWalker {
+    has claimed: dict[str, bool] = {};
+    has found: list[str] = [];
+    has max_depth: int = 3;
 
     can step with Folder entry {
-        # claim-map cycle policy: skip revisits, never disengage on revisit
-        if here.fid in self.seen { skip; }
-        self.seen[here.fid] = True;
-        if self.budget <= 0 { disengage; }
-        self.budget = self.budget - 1;
-        self.found.append((here.fid, here.name, self.depth));
+        if here.fid in self.claimed { skip; }
+        self.claimed[here.fid] = True;
+        print("visit " + here.name);
+        self.found.append(here.fid);
+        if here.depth >= self.max_depth { disengage; }
         kids: list[Folder] = [];
-        for ch in [here ->:Child:->][?:Folder] {
-            kids.append(ch);
-        }
-        # depth cap mirrors maxDepth=3 default; bounded fan-out replaces N+1
-        if self.depth >= self.max_depth { disengage; }
-        if len(kids) == 0 {
-            visit [] else { disengage; }
-        }
-        for kid in kids {
-            visit kid;
-        }
+        for ch in [here ->:CHILD:->][?:Folder] { kids.append(ch); }
+        kids = sorted(kids, key=fid_of);
+        visit kids;
     }
 }
 
-# public API shape matches getFolderStructure(root, maxDepth)
-def folder_structure(root_node: Folder, max_depth: int = 3) -> list[tuple[str, int, str]] {
-    w = root_node spawn FolderWalk(max_depth=max_depth, seen={});
-    return w.found;
+# hidden tests for ronfeathers-LD/SOW-Generator#143 repair
+
+test "structure sorted depth capped" {
+    dt = DriveTree();
+    a = dt.add_folder(fid="a", name="A", depth=0);
+    b = dt.add_folder(fid="b", name="B", depth=1);
+    c = dt.add_folder(fid="c", name="C", depth=2);
+    d = dt.add_folder(fid="d", name="D", depth=3);
+    dt.link(a, c);
+    dt.link(a, b);
+    dt.link(b, d);
+    res = dt.get_folder_structure("a");
+    assert res == ["a", "b", "c", "d"];
+    assert dt.order == ["A", "B", "C", "D"];
+    # one call per folder, not N+1 round trips per child
+    assert dt.call_count == 4;
 }
 
-# public API matching getFolderContents(parentId) parent-name lookup
-def folder_contents(fid: str, folders: dict[str, Folder], memo: dict[str, str]) -> tuple[str, list[str]] {
-    nm = lookup_name(memo, fid, folders);
-    kids: list[str] = [];
-    if fid in folders {
-        for ch in [folders[fid] ->:Child:->][?:Folder] {
-            kids.append(ch.fid);
-        }
-    }
-    kids = sorted(kids);
-    return (nm, kids);
+test "cycle policy via claim map" {
+    dt = DriveTree();
+    a = dt.add_folder(fid="a", name="A", depth=0);
+    b = dt.add_folder(fid="b", name="B", depth=1);
+    dt.link(a, b);
+    dt.link(b, a);
+    res = dt.get_folder_structure("a");
+    assert res == ["a", "b"];
+    assert dt.call_count == 2;
 }
 
-# hidden tests for iss_ronfeathers-LD__SOW-Generator__143
-test "structure_walk_bounded" {
-    a = Folder(fid="a", name="root");
-    b = Folder(fid="b", name="child");
-    c = Folder(fid="c", name="grand");
-    a +>:Child:+> b;
-    b +>:Child:+> c;
-    res = folder_structure(a, 1);
-    assert len(res) == 1;
-    assert res[0][0] == "a";
-    assert res[0][1] == 0;
-    assert res[0][2] == "root";
+test "unknown root returns empty" {
+    dt = DriveTree();
+    a = dt.add_folder(fid="a", name="A", depth=0);
+    res = dt.get_folder_structure("zzz");
+    assert res == [];
+    assert dt.call_count == 0;
 }
 
-test "structure_depth_three" {
-    a = Folder(fid="a", name="r");
-    b = Folder(fid="b", name="x");
-    c = Folder(fid="c", name="y");
-    d = Folder(fid="d", name="z");
-    a +>:Child:+> b;
-    b +>:Child:+> c;
-    c +>:Child:+> d;
-    res = folder_structure(a, 3);
-    assert len(res) == 3;
+test "node cap enforced" {
+    dt = DriveTree(node_cap=2);
+    a = dt.add_folder(fid="a", name="A", depth=0);
+    b = dt.add_folder(fid="b", name="B", depth=1);
+    assert a != None;
+    assert b != None;
+    extra = dt.add_folder(fid="c", name="C", depth=1);
+    assert extra == None;
+    res = dt.get_folder_structure("a");
+    assert res == ["a", "b"];
 }
 
-test "cycle_no_infinite" {
-    a = Folder(fid="a", name="r");
-    b = Folder(fid="b", name="x");
-    a +>:Child:+> b;
-    b +>:Child:+> a;
-    res = folder_structure(a, 5);
-    ids: list[str] = [];
-    for t in res { ids.append(t[0]); }
-    assert len(ids) == 2;
-    assert sorted(ids) == ["a", "b"];
-}
-
-test "diamond_order_independent" {
-    a = Folder(fid="a", name="r");
-    b = Folder(fid="b", name="x");
-    c = Folder(fid="c", name="y");
-    d = Folder(fid="d", name="shared");
-    a +>:Child:+> b;
-    a +>:Child:+> c;
-    b +>:Child:+> d;
-    c +>:Child:+> d;
-    res1 = folder_structure(a, 3);
-    res2 = folder_structure(a, 3);
-    ids1: list[str] = [];
-    ids2: list[str] = [];
-    for t in res1 { ids1.append(t[0]); }
-    for t in res2 { ids2.append(t[0]); }
-    assert sorted(ids1) == sorted(ids2);
-    assert len(ids1) == 4;
-}
-
-test "contents_and_memo" {
-    a = Folder(fid="a", name="root");
-    b = Folder(fid="b", name="kid1");
-    c = Folder(fid="c", name="kid2");
-    a +>:Child:+> b;
-    a +>:Child:+> c;
-    memo: dict[str, str] = {};
-    r = folder_contents("a", {"a": a, "b": b, "c": c}, memo);
-    assert r[0] == "root";
-    assert r[1] == ["b", "c"];
-    r2 = folder_contents("a", {"a": a, "b": b, "c": c}, memo);
-    assert r2[0] == "root";
-}
-
-test "unknown_id_tolerance" {
-    memo: dict[str, str] = {};
-    r = folder_contents("zzz", {}, memo);
-    assert r[0] == "<unknown>";
-    assert r[1] == [];
+test "cached name lookup tolerance" {
+    dt = DriveTree();
+    dt.add_folder(fid="a", name="Alpha", depth=0);
+    assert dt.get_folder_name("a") == "Alpha";
+    assert dt.get_folder_name("nope") == None;
 }

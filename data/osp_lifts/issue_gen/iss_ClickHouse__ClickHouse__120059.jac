@@ -1,182 +1,177 @@
-"""ClickHouse/ClickHouse#120059 — recursive CTE GLOBAL join non-convergence."""
+"""Recursive CTE row accumulation over a parent/child tree — ClickHouse/ClickHouse#120059."""
 
 node TreeNode {
-    has cid: str;
+    has id: str;
     has parent_id: str;
 }
 
 edge Child {}
 
-obj TooDeepRecursionError : Exception {
-    has limit: int;
+obj TreeGraph {
+    has nodes: list[TreeNode] = [];
+    has by_id: dict[str, TreeNode] = {};
 }
 
-walker CollectTree {
+exception TooDeepRecursionError {
+    has limit: int = 0;
+}
+
+def load_tree(rows: list[tuple[str, str]]) -> TreeGraph {
+    g = TreeGraph();
+    for pair in rows {
+        nid = pair[0];
+        pid = pair[1];
+        if nid not in g.by_id {
+            nd = TreeNode(id=nid, parent_id=pid);
+            g.by_id[nid] = nd;
+            g.nodes.append(nd);
+            root ++> nd;
+        }
+    }
+    for pair in rows {
+        nid = pair[0];
+        pid = pair[1];
+        if pid != "" and pid in g.by_id {
+            parent = g.by_id[pid];
+            child = g.by_id[nid];
+            parent +>:Child:+> child;
+        }
+    }
+    return g;
+}
+
+walker CollectBase {
+    has rows: list[tuple[str, str, int]] = [];
     has claimed: dict[str, bool] = {};
-    has nodes: list[TreeNode] = [];
-    can step with TreeNode entry {
-        if here.cid in self.claimed { skip; }
-        self.claimed[here.cid] = True;
-        self.nodes.append(here);
-        kids: list[TreeNode] = [here ->:Child:->][?:TreeNode];
-        for ch in kids {
+
+    can walk with TreeNode entry {
+        if here.id in self.claimed {
+            skip;
+        }
+        self.claimed[here.id] = True;
+        self.rows.append((here.id, here.parent_id, 0));
+        print("base", here.id, 0);
+        for ch in [here ->:Child:->][?:TreeNode] {
             visit :0: [ch];
         }
-        print "collect " + here.cid;
     }
 }
 
-walker MainDemo {
-    can run entry {
-        gr = build_demo_graph();
-        n = recursive_cte_count_local(gr);
-        print "demo_local=" + str(n);
-        disengage;
+walker Reachable {
+    has found: list[str] = [];
+    has claimed: dict[str, bool] = {};
+
+    can walk with TreeNode entry {
+        if here.id in self.claimed {
+            skip;
+        }
+        self.claimed[here.id] = True;
+        self.found.append(here.id);
+        print("visit", here.id);
+        for ch in [here ->:Child:->][?:TreeNode] {
+            visit :0: [ch];
+        }
     }
 }
 
-def row_key(cid: str, depth: int) -> str {
-    return cid + "|" + str(depth);
+def _base_rows(g: TreeGraph) -> list[tuple[str, str, int]] {
+    empty: list[tuple[str, str, int]] = [];
+    if len(g.nodes) == 0 {
+        return empty;
+    }
+    start = g.nodes[0];
+    w = start spawn CollectBase(claimed={});
+    return w.rows;
 }
 
-def parse_row(key: str) -> tuple[str, int] {
-    bar = 0;
+def _sort_rows(rows: list[tuple[str, str, int]]) -> list[tuple[str, str, int]] {
+    keys: list[tuple[int, str, int]] = [];
     i = 0;
-    while i < len(key) {
-        if key[i] == "|" { bar = i; }
-        i = i + 1;
+    while i < len(rows) {
+        r = rows[i];
+        keys.append((r[2], r[0], i));
+        i += 1;
     }
-    cid = key[0:bar];
-    d = int(key[bar + 1:]);
-    return (cid, d);
+    keys = sorted(keys);
+    out: list[tuple[str, str, int]] = [];
+    for k in keys {
+        out.append(rows[k[2]]);
+    }
+    return out;
 }
 
-def working_has(working: list[str], key: str) -> bool {
-    for wk in working {
-        if wk == key { return True; }
-    }
-    return False;
-}
-
-def expand_local(nodes: list[TreeNode], working: list[str]) -> list[str] {
-    out: list[str] = [];
-    for wk in working {
-        pr = parse_row(wk);
-        st_id = pr[0];
-        st_depth = pr[1];
-        for nd in nodes {
-            if nd.parent_id == st_id {
-                nk = row_key(nd.cid, st_depth + 1);
-                if not working_has(working, nk) and not working_has(out, nk) {
-                    out.append(nk);
+def recursive_cte_rows(
+    g: TreeGraph,
+    prefer_global: bool = False,
+    max_iterations: int = 20,
+) -> list[tuple[str, str, int]] {
+    accumulated: list[tuple[str, str, int]] = _base_rows(g);
+    frozen_global: list[tuple[str, str, int]] = [];
+    has_frozen = False;
+    iter_count = 0;
+    while True {
+        new_rows: list[tuple[str, str, int]] = [];
+        if prefer_global and has_frozen {
+            for fr in frozen_global {
+                new_rows.append(fr);
+            }
+        } else {
+            join_set: list[tuple[str, str, int]] = accumulated;
+            for st_row in join_set {
+                st_id = st_row[0];
+                st_depth = st_row[2];
+                for nd in g.nodes {
+                    if nd.parent_id == st_id {
+                        cand: tuple[str, str, int] = (nd.id, nd.parent_id, st_depth + 1);
+                        is_dup = False;
+                        for ex in accumulated {
+                            if ex[0] == cand[0] and ex[2] == cand[2] {
+                                is_dup = True;
+                            }
+                        }
+                        for ex in new_rows {
+                            if ex[0] == cand[0] and ex[2] == cand[2] {
+                                is_dup = True;
+                            }
+                        }
+                        if not is_dup {
+                            new_rows.append(cand);
+                        }
+                    }
                 }
             }
         }
-    }
-    return out;
-}
-
-def expand_global(nodes: list[TreeNode], frozen_st: list[str]) -> list[str] {
-    out: list[str] = [];
-    for wk in frozen_st {
-        pr = parse_row(wk);
-        st_id = pr[0];
-        st_depth = pr[1];
-        for nd in nodes {
-            if nd.parent_id == st_id {
-                nk = row_key(nd.cid, st_depth + 1);
-                out.append(nk);
+        if len(new_rows) == 0 {
+            break;
+        }
+        if iter_count >= max_iterations {
+            raise TooDeepRecursionError(limit=max_iterations);
+        }
+        for nr in new_rows {
+            accumulated.append(nr);
+        }
+        if prefer_global and not has_frozen {
+            depth1: list[tuple[str, str, int]] = [];
+            for acc in accumulated {
+                if acc[2] == 1 {
+                    depth1.append(acc);
+                }
+            }
+            if len(depth1) > 0 {
+                frozen_global = depth1;
+                has_frozen = True;
             }
         }
+        iter_count += 1;
     }
-    return out;
+    return _sort_rows(accumulated);
 }
 
-def build_demo_graph -> TreeNode {
-    a = TreeNode(cid="a", parent_id="");
-    b = TreeNode(cid="b", parent_id="a");
-    c = TreeNode(cid="c", parent_id="b");
-    root ++> a;
-    root ++> b;
-    root ++> c;
-    a +>:Child:+> b;
-    b +>:Child:+> c;
-    return a;
-}
-
-def build_diamond_graph -> TreeNode {
-    a = TreeNode(cid="a", parent_id="");
-    b = TreeNode(cid="b", parent_id="a");
-    c = TreeNode(cid="c", parent_id="a");
-    d = TreeNode(cid="d", parent_id="b");
-    root ++> a;
-    root ++> b;
-    root ++> c;
-    root ++> d;
-    a +>:Child:+> b;
-    a +>:Child:+> c;
-    b +>:Child:+> d;
-    c +>:Child:+> d;
-    return a;
-}
-
-def build_unknown_parent_graph -> TreeNode {
-    z = TreeNode(cid="z", parent_id="missing");
-    root ++> z;
-    return z;
-}
-
-def recursive_cte_rows_local(graph_root: TreeNode) -> list[str] {
-    w = graph_root spawn CollectTree(claimed={});
-    print "local_rows_start";
-    working: list[str] = [];
-    for nd in w.nodes {
-        working.append(row_key(nd.cid, 0));
-    }
-    changed = True;
-    while changed {
-        changed = False;
-        new_rows = expand_local(w.nodes, working);
-        for nr in new_rows {
-            working.append(nr);
-            changed = True;
-        }
-    }
-    return sorted(working);
-}
-
-def recursive_cte_count_local(graph_root: TreeNode) -> int {
-    rows = recursive_cte_rows_local(graph_root);
-    print "local_count=" + str(len(rows));
+def recursive_cte_count(
+    g: TreeGraph,
+    prefer_global: bool = False,
+    max_iterations: int = 20,
+) -> int {
+    rows = recursive_cte_rows(g, prefer_global, max_iterations);
     return len(rows);
-}
-
-def recursive_cte_count_global(graph_root: TreeNode, max_depth: int = 20) -> int {
-    w = graph_root spawn CollectTree(claimed={});
-    print "global_count_start";
-    working: list[str] = [];
-    frozen_st: list[str] = [];
-    for nd in w.nodes {
-        anchor = row_key(nd.cid, 0);
-        working.append(anchor);
-        frozen_st.append(anchor);
-    }
-    rnd = 0;
-    while rnd < max_depth {
-        new_rows = expand_global(w.nodes, frozen_st);
-        if len(new_rows) == 0 {
-            return len(working);
-        }
-        for nr in new_rows {
-            working.append(nr);
-        }
-        rnd = rnd + 1;
-    }
-    print "global_too_deep";
-    err = TooDeepRecursionError(limit=max_depth);
-    raise err;
-}
-
-with entry {
-    root spawn MainDemo;
 }

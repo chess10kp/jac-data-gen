@@ -1,195 +1,330 @@
-"""Stable ordered collection with stable indices — apple/swift-collections#103."""
+"""Stable ordered slots with stable ids for adjacency — apple/swift-collections#103."""
 
-node Element {
+node SHead {}
+
+node Slot {
     has sid: int;
-    has val: str;
-    has live: bool = True;
+    has payload: str;
+    has alive: bool = True;
 }
 
-edge Dep {}
+edge SeqNext {}
 
-walker ReachWalk {
-    has claimed: dict[str, bool] = {};
-    has vals: list[str] = [];
+node GHead {}
 
-    can step with Element entry {
-        skey = str(here.sid);
-        if skey in self.claimed { skip; }
-        self.claimed[skey] = True;
-        if here.live {
-            self.vals.append(here.val);
+node Vtx {
+    has vid: int;
+    has label: str;
+    has alive: bool = True;
+}
+
+edge Adj {}
+
+obj seq_state {
+    has head: SHead | None = None;
+    has tail: Slot | None = None;
+    has sid_gen: int = 0;
+    has by_id: dict[int, Slot] = {};
+}
+
+obj graph_state {
+    has head: GHead | None = None;
+    has vid_gen: int = 0;
+    has by_id: dict[int, Vtx] = {};
+}
+
+walker OrderCollect {
+    has claimed: dict[int, bool] = {};
+    has vals: list[str] = {};
+    can step_head with SHead entry {
+        root spawn OrderCollect(self.claimed, self.vals);
+        print ["order:root"];
+        nxt: list[Slot] = [];
+        for ch in [here ->:SeqNext:->][?:Slot] {
+            nxt.append(ch);
         }
-        kids: list[object] = [];
-        for ch in [here ->:Dep:->][?:Element] {
-            kids.append(ch);
-        }
-        if kids {
-            visit :0: kids;
+        if nxt != [] {
+            visit :0: nxt;
         } else {
             disengage;
         }
     }
-}
-
-walker DependentCollect {
-    has claimed: dict[str, bool] = {};
-    has doomed: list[int] = [];
-
-    can step with Element entry {
-        skey = str(here.sid);
-        if skey in self.claimed { skip; }
-        self.claimed[skey] = True;
-        if !here.live {
+    can step_slot with Slot entry {
+        if here.sid in self.claimed {
+            skip;
+        }
+        self.claimed[here.sid] = True;
+        if here.alive {
+            self.vals.append(here.payload);
+        }
+        nxt: list[Slot] = [];
+        for ch in [here ->:SeqNext:->][?:Slot] {
+            nxt.append(ch);
+        }
+        if nxt != [] {
+            visit :0: nxt;
+        } else {
             disengage;
         }
-        self.doomed.append(here.sid);
-        kids: list[object] = [];
-        for ch in [<-:Dep:<-][?:Element] {
-            kids.append(ch);
+        print ["order:slot", here.sid];
+    }
+}
+
+walker IndexFind {
+    has claimed: dict[int, bool] = {};
+    has target: str;
+    has found: int | None = None;
+    can step_head with SHead entry {
+        root spawn IndexFind(self.claimed, self.target, self.found);
+        print ["find:root"];
+        if self.found is not None {
+            disengage;
         }
-        if kids {
-            visit :0: kids;
+        nxt: list[Slot] = [];
+        for ch in [here ->:SeqNext:->][?:Slot] {
+            nxt.append(ch);
+        }
+        if nxt != [] {
+            visit :0: nxt;
         } else {
             disengage;
         }
     }
+    can step_slot with Slot entry {
+        if self.found is not None {
+            disengage;
+        }
+        if here.sid in self.claimed {
+            skip;
+        }
+        self.claimed[here.sid] = True;
+        if here.alive and here.payload == self.target {
+            self.found = here.sid;
+            disengage;
+        }
+        nxt: list[Slot] = [];
+        for ch in [here ->:SeqNext:->][?:Slot] {
+            nxt.append(ch);
+        }
+        if nxt != [] {
+            visit :0: nxt;
+        } else {
+            disengage;
+        }
+        print ["find:slot", here.sid];
+    }
 }
 
-def make_bag -> dict {
-    bag: dict = {};
-    bag["next"] = 1;
-    ord: list[int] = [];
-    bag["order"] = ord;
-    mp: dict[str, Element] = {};
-    bag["map"] = mp;
-    return bag;
+walker NeighborCollect {
+    has claimed: dict[int, bool] = {};
+    has nids: list[int] = {};
+    can step_vtx with Vtx entry {
+        root spawn NeighborCollect(self.claimed, self.nids);
+        if here.vid in self.claimed {
+            skip;
+        }
+        self.claimed[here.vid] = True;
+        nbrs: list[Vtx] = [];
+        for ch in [here ->:Adj:->][?:Vtx] {
+            if ch.alive {
+                nbrs.append(ch);
+            }
+        }
+        for nb in nbrs {
+            hit = False;
+            for existing in self.nids {
+                if existing == nb.vid {
+                    hit = True;
+                    break;
+                }
+            }
+            if not hit {
+                self.nids.append(nb.vid);
+            }
+        }
+        print ["nbr:src", here.vid];
+        disengage;
+    }
 }
 
-def bag_append(bag: dict, val: str) -> int {
-    nxt = bag["next"];
-    bag["next"] = nxt + 1;
-    el = Element(sid=nxt, val=val, live=True);
-    root ++> el;
-    mp = bag["map"] as dict[str, Element];
-    mp[str(nxt)] = el;
-    bag["map"] = mp;
-    ord = bag["order"] as list[int];
-    ord.append(nxt);
-    bag["order"] = ord;
-    return nxt;
+walker ReachCollect {
+    has claimed: dict[int, bool] = {};
+    has reached: list[int] = {};
+    can step_vtx with Vtx entry {
+        root spawn ReachCollect(self.claimed, self.reached);
+        if here.vid in self.claimed {
+            skip;
+        }
+        self.claimed[here.vid] = True;
+        if here.alive {
+            self.reached.append(here.vid);
+        }
+        nxt: list[Vtx] = [];
+        for ch in [here ->:Adj:->][?:Vtx] {
+            if ch.alive {
+                nxt.append(ch);
+            }
+        }
+        if nxt != [] {
+            visit :0: nxt;
+        } else {
+            disengage;
+        }
+        print ["reach", here.vid];
+    }
 }
 
-def bag_get(bag: dict, sid: int) -> str | None {
-    mp = bag["map"] as dict[str, Element];
-    key = str(sid);
-    if !(key in mp) {
+def make_store -> seq_state {
+    hd = SHead;
+    root ++> hd;
+    st = seq_state(head=hd, tail=None, sid_gen=0, by_id={});
+    return st;
+}
+
+def append_val(st: seq_state, value: str) -> int {
+    sid = st.sid_gen;
+    st.sid_gen = sid + 1;
+    sl = Slot(sid=sid, payload=value, alive=True);
+    st.by_id[sid] = sl;
+    if st.tail is None {
+        if st.head is not None {
+            st.head +>:SeqNext:+> sl;
+        }
+    } else {
+        st.tail +>:SeqNext:+> sl;
+    }
+    st.tail = sl;
+    return sid;
+}
+
+def get_val(st: seq_state, sid: int) -> str | None {
+    if sid not in st.by_id {
         return None;
     }
-    el = mp[key] as Element;
-    if !el.live {
+    sl = st.by_id[sid] as Slot;
+    if not sl.alive {
         return None;
     }
-    return el.val;
+    return sl.payload;
 }
 
-def bag_remove(bag: dict, sid: int) -> bool {
-    mp = bag["map"] as dict[str, Element];
-    key = str(sid);
-    if !(key in mp) {
+def remove_val(st: seq_state, sid: int) -> bool {
+    if sid not in st.by_id {
         return False;
     }
-    el = mp[key] as Element;
-    if !el.live {
+    sl = st.by_id[sid] as Slot;
+    if not sl.alive {
         return False;
     }
-    el.live = False;
+    sl.alive = False;
     return True;
 }
 
-def bag_first_of(bag: dict, val: str) -> int | None {
-    ord = bag["order"] as list[int];
-    mp = bag["map"] as dict[str, Element];
-    for sid in ord {
-        key = str(sid);
-        if key in mp {
-            el = mp[key] as Element;
-            if el.live and el.val == val {
-                return sid;
-            }
-        }
+def ordered_values(st: seq_state) -> list[str] {
+    if st.head is None {
+        return [];
     }
-    return None;
+    wk = st.head spawn OrderCollect(claimed={}, vals=[]);
+    return wk.vals;
 }
 
-def bag_link(bag: dict, src: int, dst: int) -> bool {
-    mp = bag["map"] as dict[str, Element];
-    skey = str(src);
-    dkey = str(dst);
-    if !(skey in mp) or !(dkey in mp) {
+def first_index(st: seq_state, value: str) -> int | None {
+    if st.head is None {
+        return None;
+    }
+    wk = st.head spawn IndexFind(claimed={}, target=value, found=None);
+    return wk.found;
+}
+
+def make_graph -> graph_state {
+    gh = GHead;
+    root ++> gh;
+    g = graph_state(head=gh, vid_gen=0, by_id={});
+    return g;
+}
+
+def add_vertex(g: graph_state, label: str) -> int {
+    vid = g.vid_gen;
+    g.vid_gen = vid + 1;
+    vx = Vtx(vid=vid, label=label, alive=True);
+    g.by_id[vid] = vx;
+    if g.head is not None {
+        g.head +>:Adj:+> vx;
+    }
+    return vid;
+}
+
+def add_edge(g: graph_state, src: int, dst: int) -> None {
+    if src not in g.by_id {
+        return;
+    }
+    if dst not in g.by_id {
+        return;
+    }
+    sv = g.by_id[src] as Vtx;
+    dv = g.by_id[dst] as Vtx;
+    if not sv.alive {
+        return;
+    }
+    if not dv.alive {
+        return;
+    }
+    sv +>:Adj:+> dv;
+}
+
+def get_label(g: graph_state, vid: int) -> str | None {
+    if vid not in g.by_id {
+        return None;
+    }
+    vx = g.by_id[vid] as Vtx;
+    if not vx.alive {
+        return None;
+    }
+    return vx.label;
+}
+
+def remove_vertex(g: graph_state, vid: int) -> bool {
+    if vid not in g.by_id {
         return False;
     }
-    a = mp[skey] as Element;
-    b = mp[dkey] as Element;
-    if !a.live or !b.live {
+    vx = g.by_id[vid] as Vtx;
+    if not vx.alive {
         return False;
     }
-    a +>:Dep:+> b;
+    vx.alive = False;
     return True;
 }
 
-def bag_ordered(bag: dict) -> list[str] {
-    out: list[str] = [];
-    ord = bag["order"] as list[int];
-    mp = bag["map"] as dict[str, Element];
-    for sid in ord {
-        key = str(sid);
-        if key in mp {
-            el = mp[key] as Element;
-            if el.live {
-                out.append(el.val);
-            }
-        }
+def neighbors(g: graph_state, vid: int) -> list[int] {
+    if vid not in g.by_id {
+        return [];
     }
+    vx = g.by_id[vid] as Vtx;
+    if not vx.alive {
+        return [];
+    }
+    wk = vx spawn NeighborCollect(claimed={}, nids=[]);
+    out: list[int] = [];
+    for nid in wk.nids {
+        out.append(nid);
+    }
+    out.sort();
     return out;
 }
 
-def bag_cascade_remove(bag: dict, sid: int) -> list[str] {
-    mp = bag["map"] as dict[str, Element];
-    key = str(sid);
-    if !(key in mp) {
+def reachable(g: graph_state, start: int) -> list[int] {
+    if start not in g.by_id {
         return [];
     }
-    start = mp[key] as Element;
-    if !start.live {
+    vx = g.by_id[start] as Vtx;
+    if not vx.alive {
         return [];
     }
-    w = start spawn DependentCollect(claimed={});
-    doomed = w.doomed;
-    vals: list[str] = [];
-    for dsid in doomed {
-        dkey = str(dsid);
-        if dkey in mp {
-            el = mp[dkey] as Element;
-            if el.live {
-                vals.append(el.val);
-                el.live = False;
-            }
-        }
+    wk = vx spawn ReachCollect(claimed={}, reached=[]);
+    out: list[int] = [];
+    for rid in wk.reached {
+        out.append(rid);
     }
-    vals.sort();
-    return vals;
-}
-
-def run_probe -> list[str] {
-    bag = make_bag();
-    a = bag_append(bag, "a");
-    b = bag_append(bag, "b");
-    c = bag_append(bag, "c");
-    bag_link(bag, a, c);
-    bag_link(bag, b, c);
-    mp = bag["map"] as dict[str, Element];
-    el = mp[str(a)] as Element;
-    w = el spawn ReachWalk(claimed={});
-    print(w.vals);
-    return w.vals;
+    out.sort();
+    return out;
 }

@@ -1,261 +1,277 @@
-"""mikeev261/HidHide#12 — PID-to-image BST lift (recursive tree + boot self-test)."""
+"""
+PID-to-image mapping lift — mikeev261/HidHide#12.
+Replaces bespoke recursive BST + boot self-test with OSP nodes/walkers.
+"""
 
 node PidNode {
     has pid: int;
     has image: str;
-    has live: bool = True;
+    has cid: str;
 }
 
-node CacheSlot {
-    has slot_id: str;
-    has fresh: bool = True;
+node PidRegistry {
+    has cid: str = "pid-registry";
 }
 
-edge Left {}
-edge Right {}
-edge Aux {}
-edge Invalidates {}
+edge left {}
+edge right {}
+edge probe {}
 
-walker InsertWalk {
-    has pid: int;
-    has image: str;
-    has placed: bool = False;
-    has updated: bool = False;
-    has touch_node: PidNode | None = None;
-    has claimed: dict[int, bool] = {};
+def make_registry -> PidRegistry {
+    let reg = PidRegistry();
+    root ++> reg;
+    return reg;
+}
 
-    can descend with PidNode entry {
-        if here.pid in self.claimed { skip; }
-        self.claimed[here.pid] = True;
-        if not here.live { disengage; }
-        if here.pid == self.pid {
-            here.image = self.image;
-            self.updated = True;
-            self.placed = True;
-            self.touch_node = here;
+walker InsertFind {
+    has target_pid: int;
+    has parent: PidNode | None = None;
+    has attach_left: bool = False;
+    has needs_root: bool = False;
+    has hit_existing: bool = False;
+    has existing: PidNode | None = None;
+    has claimed: dict[str, bool] = {};
+    can step with PidNode entry {
+        if here.cid in self.claimed { skip; }
+        self.claimed[here.cid] = True;
+        print("insert-find", here.pid);
+        if here.pid == self.target_pid {
+            self.hit_existing = True;
+            self.existing = here;
             disengage;
         }
-        if self.pid < here.pid {
-            kids: list[PidNode] = [here ->:Left:->][?:PidNode];
-            if kids { visit :0: [kids[0]]; }
-            else {
-                child = PidNode(pid=self.pid, image=self.image);
-                here +>:Left:+> child;
-                self.placed = True;
-                disengage;
-            }
+        self.parent = here;
+        if self.target_pid < here.pid {
+            self.attach_left = True;
+            let ls: list[PidNode] = [here ->:left:->][?:PidNode];
+            if len(ls) > 0 { visit :0: ls; } else { disengage; }
         } else {
-            kids: list[PidNode] = [here ->:Right:->][?:PidNode];
-            if kids { visit :0: [kids[0]]; }
-            else {
-                child = PidNode(pid=self.pid, image=self.image);
-                here +>:Right:+> child;
-                self.placed = True;
-                disengage;
-            }
+            self.attach_left = False;
+            let rs: list[PidNode] = [here ->:right:->][?:PidNode];
+            if len(rs) > 0 { visit :0: rs; } else { disengage; }
         }
+    }
+    can begin with PidRegistry entry {
+        print("insert-find registry");
+        let roots: list[PidNode] = [here ->][?:PidNode];
+        if len(roots) == 0 { self.needs_root = True; disengage; }
+        else { visit :0: roots; }
     }
 }
 
-walker LookupWalk {
-    has target: int;
-    has found: str = "";
-    has hit: bool = False;
-    has claimed: dict[int, bool] = {};
-
-    can seek with PidNode entry {
-        if here.pid in self.claimed { skip; }
-        self.claimed[here.pid] = True;
-        if not here.live { disengage; }
-        if here.pid == self.target {
-            self.found = here.image;
-            self.hit = True;
+walker Lookup {
+    has target_pid: int;
+    has found: bool = False;
+    has found_image: str = "";
+    has claimed: dict[str, bool] = {};
+    can step with PidNode entry {
+        if here.cid in self.claimed { skip; }
+        self.claimed[here.cid] = True;
+        print("lookup", here.pid);
+        if here.pid == self.target_pid {
+            self.found = True;
+            self.found_image = here.image;
             disengage;
         }
-        if self.target < here.pid {
-            kids: list[PidNode] = [here ->:Left:->][?:PidNode];
-            if kids { visit :0: [kids[0]]; } else { disengage; }
+        if self.target_pid < here.pid {
+            let ls: list[PidNode] = [here ->:left:->][?:PidNode];
+            if len(ls) > 0 { visit :0: ls; } else { disengage; }
         } else {
-            kids: list[PidNode] = [here ->:Right:->][?:PidNode];
-            if kids { visit :0: [kids[0]]; } else { disengage; }
+            let rs: list[PidNode] = [here ->:right:->][?:PidNode];
+            if len(rs) > 0 { visit :0: rs; } else { disengage; }
         }
+    }
+    can begin with PidRegistry entry {
+        print("lookup registry");
+        let roots: list[PidNode] = [here ->][?:PidNode];
+        if len(roots) > 0 { visit :0: roots; } else { disengage; }
     }
 }
 
-walker RemoveSeekWalk {
-    has target: int;
-    has hit: bool = False;
-    has found_node: PidNode | None = None;
-    has claimed: dict[int, bool] = {};
-
-    can seek with PidNode entry {
-        if here.pid in self.claimed { skip; }
-        self.claimed[here.pid] = True;
-        if not here.live { disengage; }
-        if here.pid == self.target {
-            self.hit = True;
-            self.found_node = here;
-            disengage;
+walker Validate {
+    has ok: bool = True;
+    has claimed: dict[str, bool] = {};
+    can step with PidNode entry {
+        if here.cid in self.claimed { skip; }
+        self.claimed[here.cid] = True;
+        print("validate", here.pid);
+        let ls: list[PidNode] = [here ->:left:->][?:PidNode];
+        for ch in ls {
+            if ch.pid >= here.pid { self.ok = False; }
+            visit :0: [ch];
         }
-        if self.target < here.pid {
-            kids: list[PidNode] = [here ->:Left:->][?:PidNode];
-            if kids { visit :0: [kids[0]]; } else { disengage; }
-        } else {
-            kids: list[PidNode] = [here ->:Right:->][?:PidNode];
-            if kids { visit :0: [kids[0]]; } else { disengage; }
+        let rs: list[PidNode] = [here ->:right:->][?:PidNode];
+        for ch in rs {
+            if ch.pid <= here.pid { self.ok = False; }
+            visit :0: [ch];
         }
     }
-}
-
-walker InvalidateHereWalk {
-    has count: int = 0;
-    has claimed: dict[int, bool] = {};
-
-    can sweep with PidNode entry {
-        if here.pid in self.claimed { skip; }
-        self.claimed[here.pid] = True;
-        slots: list[CacheSlot] = [here ->:Invalidates:->][?:CacheSlot];
-        for sl in slots {
-            sl.fresh = False;
-            self.count += 1;
-        }
+    can begin with PidRegistry entry {
+        print("validate registry");
+        let roots: list[PidNode] = [here ->][?:PidNode];
+        for r in roots { visit :0: [r]; }
         disengage;
     }
 }
 
-walker SelfTestWalk {
-    has ok: bool = True;
-    has claimed: dict[int, bool] = {};
-
-    can audit with PidNode entry {
-        if here.pid in self.claimed { skip; }
-        self.claimed[here.pid] = True;
-        kids_l: list[PidNode] = [here ->:Left:->][?:PidNode];
-        if kids_l {
-            if kids_l[0].pid >= here.pid { self.ok = False; }
-        }
-        kids_r: list[PidNode] = [here ->:Right:->][?:PidNode];
-        if kids_r {
-            if kids_r[0].pid <= here.pid { self.ok = False; }
-        }
-        nxt: list[PidNode] = [];
-        for k in kids_l { nxt.append(k); }
-        for k in kids_r { nxt.append(k); }
-        if nxt { visit :0: nxt; } else { disengage; }
-    }
-}
-
-walker CollectPidWalk {
-    has seen_count: int = 0;
-    has claimed: dict[int, bool] = {};
-
+walker CollectAll {
+    has pids: list[int] = [];
+    has claimed: dict[str, bool] = {};
     can step with PidNode entry {
-        if here.pid in self.claimed { skip; }
-        self.claimed[here.pid] = True;
-        self.seen_count += 1;
-        kids: list[PidNode] = [];
-        kl: list[PidNode] = [here ->:Left:->][?:PidNode];
-        kr: list[PidNode] = [here ->:Right:->][?:PidNode];
-        ka: list[PidNode] = [here ->:Aux:->][?:PidNode];
-        for k in kl { kids.append(k); }
-        for k in kr { kids.append(k); }
-        for k in ka { kids.append(k); }
-        if kids { visit :0: kids; } else { disengage; }
+        if here.cid in self.claimed { skip; }
+        self.claimed[here.cid] = True;
+        print("collect", here.pid);
+        self.pids.append(here.pid);
+        let ls: list[PidNode] = [here ->:left:->][?:PidNode];
+        for ch in ls { visit :0: [ch]; }
+        let rs: list[PidNode] = [here ->:right:->][?:PidNode];
+        for ch in rs { visit [ch]; }
+        let ps: list[PidNode] = [here ->:probe:->][?:PidNode];
+        for ch in ps { visit [ch]; }
+    }
+    can begin with PidRegistry entry {
+        print("collect registry");
+        let roots: list[PidNode] = [here ->][?:PidNode];
+        for r in roots { visit :0: [r]; }
+        disengage;
     }
 }
 
-def make_store -> PidNode | None {
+walker RemoveFind {
+    has target_pid: int;
+    has victim: PidNode | None = None;
+    has parent: PidNode | None = None;
+    has victim_is_left: bool = False;
+    has claimed: dict[str, bool] = {};
+    can step with PidNode entry {
+        if here.cid in self.claimed { skip; }
+        self.claimed[here.cid] = True;
+        print("remove-find", here.pid);
+        if here.pid == self.target_pid {
+            self.victim = here;
+            disengage;
+        }
+        if self.target_pid < here.pid {
+            let ls: list[PidNode] = [here ->:left:->][?:PidNode];
+            if len(ls) > 0 {
+                self.parent = here;
+                self.victim_is_left = True;
+                visit :0: ls;
+            } else { disengage; }
+        } else {
+            let rs: list[PidNode] = [here ->:right:->][?:PidNode];
+            if len(rs) > 0 {
+                self.parent = here;
+                self.victim_is_left = False;
+                visit :0: rs;
+            } else { disengage; }
+        }
+    }
+    can begin with PidRegistry entry {
+        print("remove-find registry");
+        let roots: list[PidNode] = [here ->][?:PidNode];
+        if len(roots) > 0 { visit :0: roots; } else { disengage; }
+    }
+}
+
+def insert_pid(reg: PidRegistry, pid: int, image: str) -> None {
+    let w = reg spawn InsertFind(target_pid=pid);
+    if w.hit_existing {
+        if w.existing is not None { w.existing.image = image; }
+        return;
+    }
+    let nd = PidNode(pid=pid, image=image, cid="p" + str(pid));
+    if w.needs_root { reg ++> nd; }
+    elif w.attach_left { w.parent +>: left:+> nd; }
+    else { w.parent +>: right:+> nd; }
+}
+
+def lookup_image(reg: PidRegistry, pid: int) -> str | None {
+    let w = reg spawn Lookup(target_pid=pid);
+    if w.found { return w.found_image; }
     return None;
 }
 
-def store_insert(tree_root: PidNode | None, pid: int, image: str) -> PidNode {
-    if tree_root is None {
-        nd = PidNode(pid=pid, image=image);
-        root ++> nd;
-        print("insert_root", pid);
-        return nd;
-    }
-    w = tree_root spawn InsertWalk(pid=pid, image=image, claimed={});
-    if w.updated {
-        inv = w.touch_node spawn InvalidateHereWalk(claimed={});
-        print("insert_reuse", pid, inv.count);
-    } else {
-        print("insert_ok", pid);
-    }
-    return tree_root;
-}
-
-def store_lookup(tree_root: PidNode | None, pid: int) -> str | None {
-    if tree_root is None { return None; }
-    w = tree_root spawn LookupWalk(target=pid, claimed={});
-    print("lookup", pid, w.hit);
-    if w.hit { return w.found; }
-    return None;
-}
-
-def store_remove(tree_root: PidNode | None, pid: int) -> bool {
-    if tree_root is None { return False; }
-    w = tree_root spawn RemoveSeekWalk(target=pid, claimed={});
-    if not w.hit {
-        print("remove_miss", pid);
-        return False;
-    }
-    w.found_node.live = False;
-    inv = w.found_node spawn InvalidateHereWalk(claimed={});
-    print("remove_ok", pid, inv.count);
+def remove_pid(reg: PidRegistry, pid: int) -> bool {
+    let w = reg spawn RemoveFind(target_pid=pid);
+    if w.victim is None { return False; }
+    let ls: list[PidNode] = [w.victim ->:left:->][?:PidNode];
+    let rs: list[PidNode] = [w.victim ->:right:->][?:PidNode];
+    if len(ls) > 0 or len(rs) > 0 { return False; }
+    if w.parent is None { reg <+< w.victim; }
+    elif w.victim_is_left { w.parent <+:left:+< w.victim; }
+    else { w.parent <+:right:+< w.victim; }
+    del w.victim;
     return True;
 }
 
-def store_boot_self_test(tree_root: PidNode | None) -> bool {
-    if tree_root is None { return True; }
-    w = tree_root spawn SelfTestWalk(claimed={});
-    print("self_test", w.ok);
+def validate_registry(reg: PidRegistry) -> bool {
+    let w = reg spawn Validate;
     return w.ok;
 }
 
-def store_live_count(tree_root: PidNode | None) -> int {
-    if tree_root is None { return 0; }
-    w = tree_root spawn CollectPidWalk(claimed={});
-    print("live_count", w.seen_count);
-    return w.seen_count;
+def list_pids(reg: PidRegistry) -> list[int] {
+    let w = reg spawn CollectAll;
+    let out: list[int] = [];
+    for p in w.pids { out.append(p); }
+    return sorted(out);
 }
 
-test "insert_lookup" {
-    tr: PidNode | None = make_store();
-    tr = store_insert(tr, 42, "hidhide.exe");
-    assert store_lookup(tr, 42) == "hidhide.exe";;
+def boot_self_test(reg: PidRegistry) -> bool {
+    print("boot_self_test");
+    return validate_registry(reg);
 }
 
-test "insert_update_reuse" {
-    tr: PidNode | None = make_store();
-    tr = store_insert(tr, 10, "old");
-    tr = store_insert(tr, 10, "new");
-    assert store_lookup(tr, 10) == "new";;
+test "insert_lookup_update" {
+    let reg = make_registry();
+    insert_pid(reg, 100, "a.exe");
+    insert_pid(reg, 50, "b.exe");
+    insert_pid(reg, 150, "c.exe");
+    assert lookup_image(reg, 100) == "a.exe";
+    assert lookup_image(reg, 50) == "b.exe";
+    assert lookup_image(reg, 999) is None;
+    insert_pid(reg, 50, "b2.exe");
+    assert lookup_image(reg, 50) == "b2.exe";
 }
 
-test "remove_soft_delete" {
-    tr: PidNode | None = make_store();
-    tr = store_insert(tr, 5, "gone");
-    assert store_remove(tr, 5) == True;;
-    assert store_lookup(tr, 5) is None;;
+test "validate_and_boot" {
+    let reg = make_registry();
+    insert_pid(reg, 200, "x.exe");
+    insert_pid(reg, 100, "y.exe");
+    insert_pid(reg, 300, "z.exe");
+    assert validate_registry(reg) is True;
+    assert boot_self_test(reg) is True;
 }
 
-test "remove_miss" {
-    tr: PidNode | None = make_store();
-    tr = store_insert(tr, 1, "a");
-    assert store_remove(tr, 99) == False;;
+test "list_pids_sorted" {
+    let reg = make_registry();
+    insert_pid(reg, 30, "p.exe");
+    insert_pid(reg, 10, "q.exe");
+    insert_pid(reg, 20, "r.exe");
+    assert list_pids(reg) == [10, 20, 30];
 }
 
-test "boot_self_test_valid_bst" {
-    tr: PidNode | None = make_store();
-    tr = store_insert(tr, 20, "mid");
-    tr = store_insert(tr, 10, "left");
-    tr = store_insert(tr, 30, "right");
-    assert store_boot_self_test(tr) == True;;
-    assert store_live_count(tr) == 3;;
+test "remove_leaf_ok" {
+    let reg = make_registry();
+    insert_pid(reg, 40, "m.exe");
+    insert_pid(reg, 20, "n.exe");
+    insert_pid(reg, 60, "o.exe");
+    assert remove_pid(reg, 20) is True;
+    assert lookup_image(reg, 20) is None;
+    assert list_pids(reg) == [40, 60];
 }
 
-test "lookup_empty_store" {
-    tr: PidNode | None = make_store();
-    assert store_lookup(tr, 7) is None;;
+test "remove_with_children_fails" {
+    let reg = make_registry();
+    insert_pid(reg, 50, "u.exe");
+    insert_pid(reg, 25, "v.exe");
+    insert_pid(reg, 75, "w.exe");
+    assert remove_pid(reg, 50) is False;
+    assert lookup_image(reg, 50) == "u.exe";
+}
+
+test "remove_missing_false" {
+    let reg = make_registry();
+    insert_pid(reg, 11, "k.exe");
+    assert remove_pid(reg, 99) is False;
 }

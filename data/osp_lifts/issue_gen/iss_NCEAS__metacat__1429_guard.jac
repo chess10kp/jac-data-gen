@@ -1,226 +1,560 @@
-"""NCEAS/metacat#1429 — closure table for version chains."""
+# NCEAS/metacat#1429 — closure table for version chains (OSP lift).
+
+node Catalog {
+    has name: str = "versions";
+}
 
 node Version {
     has guid: str;
 }
 
+edge InCatalog {}
 edge Obsoletes {}
 
-def create_store -> dict {
-    store: dict = {};
-    store["versions"] = {};
-    store["direct_parent"] = {};
-    store["direct_child"] = {};
-    store["closure"] = [];
-    return store;
-}
-
-def _ensure_version(store: dict, guid: str) -> Version {
-    versions = store["versions"] as dict[str, Version];
-    if guid in versions {
-        return versions[guid];
-    }
-    nd = Version(guid=guid);
-    root ++> nd;
-    versions[guid] = nd;
-    return nd;
-}
-
-def register_version(store: dict, guid: str) {
-    _ensure_version(store, guid);
-}
-
-def add_obsoletes_link(store: dict, parent_guid: str, child_guid: str) {
-    parent_nd = _ensure_version(store, parent_guid);
-    child_nd = _ensure_version(store, child_guid);
-    parent_nd +>:Obsoletes:+> child_nd;
-    dp = store["direct_parent"] as dict[str, str];
-    dc = store["direct_child"] as dict[str, str];
-    dp[child_guid] = parent_guid;
-    dc[parent_guid] = child_guid;
-}
-
-walker CollectDesc {
-    has origin: str;
-    has rows: list[list];
+walker NewerReach {
+    has anchor: str;
+    has found: list[list] = [];
     has claimed: dict[str, bool] = {};
-    has cur_depth: int = 0;
+    has depths: dict[str, int] = {};
+
+    can expand with Version entry {
+        if here.guid in self.claimed {
+            skip;
+        }
+        self.claimed[here.guid] = True;
+        if here.guid not in self.depths {
+            self.depths[here.guid] = 0;
+        }
+        d: int = self.depths[here.guid];
+        row: list = [self.anchor, here.guid, d];
+        self.found.append(row);
+        kids: list[Version] = [here <-:Obsoletes:<-][?:Version];
+        kids = _sort_versions(kids);
+        nd: int = d + 1;
+        for kid in kids {
+            if kid.guid not in self.depths {
+                self.depths[kid.guid] = nd;
+            }
+        }
+        if kids {
+            visit :0: kids;
+        }
+    }
+}
+
+walker CanReach {
+    has target: str;
+    has claimed: dict[str, bool] = {};
+    has ok: bool = False;
+
+    can probe with Version entry {
+        if here.guid in self.claimed {
+            skip;
+        }
+        self.claimed[here.guid] = True;
+        if here.guid == self.target {
+            self.ok = True;
+        }
+        newer: list[Version] = [here <-:Obsoletes:<-][?:Version];
+        newer = _sort_versions(newer);
+        if newer {
+            visit :0: newer;
+        }
+    }
+}
+
+walker WalkNewer {
+    has chain: list[str] = [];
+    has claimed: dict[str, bool] = {};
+    has target: str = "";
 
     can step with Version entry {
         if here.guid in self.claimed {
             skip;
         }
         self.claimed[here.guid] = True;
-        row: list = [];
-        row.append(self.origin);
-        row.append(here.guid);
-        row.append(self.cur_depth);
-        self.rows.append(row);
-        print "closure", self.origin, here.guid, self.cur_depth;
-        kids: list[Version] = [here ->:Obsoletes:->][?:Version];
-        for ch in kids {
-            wk = ch spawn CollectDesc(
-                origin=self.origin,
-                rows=self.rows,
-                claimed=self.claimed,
-                cur_depth=self.cur_depth + 1
-            );
+        self.chain.append(here.guid);
+        newer: list[Version] = [here <-:Obsoletes:<-][?:Version];
+        nxt = _pick_successor(newer, self.target);
+        if nxt {
+            visit :0: [nxt];
         }
     }
 }
 
-def rebuild_closure_table(store: dict) -> list {
-    versions = store["versions"] as dict[str, Version];
-    all_rows: list[list] = [];
-    keys: list[str] = [];
-    for g in versions {
-        keys.append(g);
+def _sort_versions(vs: list[Version]) -> list[Version] {
+    out: list[Version] = [];
+    for v in vs {
+        out.append(v);
     }
-    keys = sorted(keys);
-    for og in keys {
-        nd = versions[og];
-        rows: list[list] = [];
-        claimed: dict[str, bool] = {};
-        wk = nd spawn CollectDesc(origin=og, rows=rows, claimed=claimed, cur_depth=0);
-        for r in rows {
-            all_rows.append(r);
+    i: int = 0;
+    while i < len(out) {
+        j: int = i + 1;
+        while j < len(out) {
+            if out[j].guid < out[i].guid {
+                tmp: Version = out[i];
+                out[i] = out[j];
+                out[j] = tmp;
+            }
+            j += 1;
         }
+        i += 1;
     }
-    store["closure"] = all_rows;
-    return sorted(all_rows);
+    return out;
 }
 
-def get_descendants(store: dict, guid: str) -> list {
-    versions = store["versions"] as dict[str, Version];
-    if guid not in versions {
-        return [];
-    }
-    closure = store["closure"] as list[list];
-    result: list[list] = [];
-    for row in closure {
-        if row[0] == guid and row[2] > 0 {
-            pair: list = [];
-            pair.append(row[1]);
-            pair.append(row[2]);
-            result.append(pair);
-        }
-    }
-    return sorted(result);
-}
-
-def get_ancestors(store: dict, guid: str) -> list {
-    versions = store["versions"] as dict[str, Version];
-    if guid not in versions {
-        return [];
-    }
-    closure = store["closure"] as list[list];
-    result: list[list] = [];
-    for row in closure {
-        if row[1] == guid and row[2] > 0 {
-            pair: list = [];
-            pair.append(row[0]);
-            pair.append(row[2]);
-            result.append(pair);
-        }
-    }
-    return sorted(result);
-}
-
-def get_direct_parent(store: dict, guid: str) -> str | None {
-    dp = store["direct_parent"] as dict[str, str];
-    if guid not in dp {
+def _pick_successor(candidates: list[Version], target: str) -> Version | None {
+    if not candidates {
         return None;
     }
-    return dp[guid];
+    sorted_c: list[Version] = _sort_versions(candidates);
+    if len(sorted_c) == 1 {
+        return sorted_c[0];
+    }
+    chosen: Version | None = None;
+    for n in sorted_c {
+        cr = n spawn CanReach(target=target, claimed={});
+        if cr.ok {
+            chosen = n;
+            break;
+        }
+    }
+    if not chosen {
+        chosen = sorted_c[0];
+    }
+    return chosen;
 }
 
-def get_direct_child(store: dict, guid: str) -> str | None {
-    dc = store["direct_child"] as dict[str, str];
-    if guid not in dc {
-        return None;
-    }
-    return dc[guid];
+def _versions_under(cat: Catalog) -> list[Version] {
+    return [cat ->:InCatalog:->][?:Version];
 }
 
-walker DemoWalk {
-    can boot with entry {
-        print "metacat#1429 closure-table demo";
-        visit [-->][?:Version];
+def _find_version(cat: Catalog, guid: str) -> Version | None {
+    for v in _versions_under(cat) {
+        if v.guid == guid {
+            return v;
+        }
     }
+    return None;
+}
 
-    can step with Version entry {
-        print "version", here.guid;
+def _oldest_from(v: Version) -> Version {
+    cur: Version = v;
+    while True {
+        older: list[Version] = [cur ->:Obsoletes:->][?:Version];
+        older = _sort_versions(older);
+        if older {
+            cur = older[0];
+        } else {
+            break;
+        }
     }
+    return cur;
+}
+
+def build_version_graph(specs: list) -> Catalog {
+    cat = Catalog();
+    root ++> cat;
+    by_guid: dict[str, Version] = {};
+    for spec in specs {
+        g: str = spec["guid"];
+        nd = Version(guid=g);
+        by_guid[g] = nd;
+        cat +>:InCatalog:+> nd;
+    }
+    for spec in specs {
+        g: str = spec["guid"];
+        newer: Version = by_guid[g];
+        targets: list = [];
+        if "obsoletes" in spec {
+            ob: any = spec["obsoletes"];
+            if ob is str {
+                targets.append(ob);
+            } else {
+                for t in ob {
+                    targets.append(t);
+                }
+            }
+        }
+        for og in targets {
+            if og in by_guid {
+                older: Version = by_guid[og];
+                newer +>:Obsoletes:+> older;
+            }
+        }
+    }
+    return cat;
+}
+
+def closure_table(cat: Catalog) -> list[list] {
+    rows: list[list] = [];
+    for v in _versions_under(cat) {
+        depths: dict[str, int] = {};
+        depths[v.guid] = 0;
+        w = v spawn NewerReach(
+            anchor=v.guid,
+            claimed={},
+            depths=depths
+        );
+        for r in w.found {
+            rows.append(r);
+        }
+    }
+    return sorted(rows);
+}
+
+def versions_for(cat: Catalog, guid: str) -> list[str] {
+    if not _find_version(cat, guid) {
+        return [];
+    }
+    seen: dict[str, bool] = {};
+    for row in closure_table(cat) {
+        p: str = row[0];
+        c: str = row[1];
+        if p == guid {
+            seen[c] = True;
+        }
+        if c == guid {
+            seen[p] = True;
+        }
+    }
+    seen[guid] = True;
+    out: list[str] = [];
+    for k in seen {
+        out.append(k);
+    }
+    return sorted(out);
+}
+
+def chain_from_oldest(cat: Catalog, guid: str) -> list[str] {
+    v = _find_version(cat, guid);
+    if not v {
+        return [];
+    }
+    start: Version = _oldest_from(v);
+    wk = start spawn WalkNewer(claimed={}, target=guid);
+    return wk.chain;
 }
 
 with entry {
-    st = create_store();
-    register_version(st, "P1");
-    register_version(st, "P2");
-    add_obsoletes_link(st, "P2", "P1");
-    rebuild_closure_table(st);
-    root spawn DemoWalk;
+    demo_specs: list = [
+        {"guid": "v1"},
+        {"guid": "v2", "obsoletes": "v1"},
+        {"guid": "v3", "obsoletes": "v2"}
+    ];
+    demo_cat = build_version_graph(demo_specs);
+    v1n = _find_version(demo_cat, "v1");
+    w = v1n spawn NewerReach(
+        anchor="v1",
+        claimed={},
+        depths={"v1": 0}
+    );
+    print(w.found);
 }
 
-test "create_store_has_tables" {
-    st = create_store();
-    vers = st["versions"] as dict[str, Version];
-    closure = st["closure"] as list[list];
-    assert len(vers) == 0;
-    assert len(closure) == 0;
+# NCEAS/metacat#1429 — closure table for version chains (OSP lift).
+
+node Catalog {
+    has name: str = "versions";
 }
 
-test "direct_parent_child_pair" {
-    st = create_store();
-    register_version(st, "P1");
-    register_version(st, "P2");
-    add_obsoletes_link(st, "P2", "P1");
-    assert get_direct_parent(st, "P1") == "P2";
-    assert get_direct_child(st, "P2") == "P1";
-    assert get_direct_parent(st, "P2") is None;
+node Version {
+    has guid: str;
 }
 
-test "closure_self_rows_depth_zero" {
-    st = create_store();
-    register_version(st, "A");
-    register_version(st, "B");
-    rows = rebuild_closure_table(st);
-    expect: list[list] = [["A", "A", 0], ["B", "B", 0]];
-    assert rows == expect;
+edge InCatalog {}
+edge Obsoletes {}
+
+walker NewerReach {
+    has anchor: str;
+    has found: list[list] = [];
+    has claimed: dict[str, bool] = {};
+    has depths: dict[str, int] = {};
+
+    can expand with Version entry {
+        if here.guid in self.claimed {
+            skip;
+        }
+        self.claimed[here.guid] = True;
+        if here.guid not in self.depths {
+            self.depths[here.guid] = 0;
+        }
+        d: int = self.depths[here.guid];
+        row: list = [self.anchor, here.guid, d];
+        self.found.append(row);
+        kids: list[Version] = [here <-:Obsoletes:<-][?:Version];
+        kids = _sort_versions(kids);
+        nd: int = d + 1;
+        for kid in kids {
+            if kid.guid not in self.depths {
+                self.depths[kid.guid] = nd;
+            }
+        }
+        if kids {
+            visit :0: kids;
+        }
+    }
 }
 
-test "descendants_multihop_chain" {
-    st = create_store();
-    register_version(st, "A");
-    register_version(st, "B");
-    register_version(st, "C");
-    add_obsoletes_link(st, "B", "A");
-    add_obsoletes_link(st, "C", "B");
-    rebuild_closure_table(st);
-    got = get_descendants(st, "C");
-    expect: list[list] = [["A", 2], ["B", 1]];
-    assert got == expect;
+walker CanReach {
+    has target: str;
+    has claimed: dict[str, bool] = {};
+    has ok: bool = False;
+
+    can probe with Version entry {
+        if here.guid in self.claimed {
+            skip;
+        }
+        self.claimed[here.guid] = True;
+        if here.guid == self.target {
+            self.ok = True;
+        }
+        newer: list[Version] = [here <-:Obsoletes:<-][?:Version];
+        newer = _sort_versions(newer);
+        if newer {
+            visit :0: newer;
+        }
+    }
 }
 
-test "ancestors_multihop_chain" {
-    st = create_store();
-    register_version(st, "A");
-    register_version(st, "B");
-    register_version(st, "C");
-    add_obsoletes_link(st, "B", "A");
-    add_obsoletes_link(st, "C", "B");
-    rebuild_closure_table(st);
-    got = get_ancestors(st, "A");
-    expect: list[list] = [["B", 1], ["C", 2]];
-    assert got == expect;
+walker WalkNewer {
+    has chain: list[str] = [];
+    has claimed: dict[str, bool] = {};
+    has target: str = "";
+
+    can step with Version entry {
+        if here.guid in self.claimed {
+            skip;
+        }
+        self.claimed[here.guid] = True;
+        self.chain.append(here.guid);
+        newer: list[Version] = [here <-:Obsoletes:<-][?:Version];
+        nxt = _pick_successor(newer, self.target);
+        if nxt {
+            visit :0: [nxt];
+        }
+    }
 }
 
-test "unknown_guid_queries_empty" {
-    st = create_store();
-    register_version(st, "X");
-    rebuild_closure_table(st);
-    assert get_descendants(st, "MISSING") == [];
-    assert get_ancestors(st, "MISSING") == [];
-    assert get_direct_parent(st, "MISSING") is None;
-    assert get_direct_child(st, "MISSING") is None;
+def _sort_versions(vs: list[Version]) -> list[Version] {
+    out: list[Version] = [];
+    for v in vs {
+        out.append(v);
+    }
+    i: int = 0;
+    while i < len(out) {
+        j: int = i + 1;
+        while j < len(out) {
+            if out[j].guid < out[i].guid {
+                tmp: Version = out[i];
+                out[i] = out[j];
+                out[j] = tmp;
+            }
+            j += 1;
+        }
+        i += 1;
+    }
+    return out;
+}
+
+def _pick_successor(candidates: list[Version], target: str) -> Version | None {
+    if not candidates {
+        return None;
+    }
+    sorted_c: list[Version] = _sort_versions(candidates);
+    if len(sorted_c) == 1 {
+        return sorted_c[0];
+    }
+    chosen: Version | None = None;
+    for n in sorted_c {
+        cr = n spawn CanReach(target=target, claimed={});
+        if cr.ok {
+            chosen = n;
+            break;
+        }
+    }
+    if not chosen {
+        chosen = sorted_c[0];
+    }
+    return chosen;
+}
+
+def _versions_under(cat: Catalog) -> list[Version] {
+    return [cat ->:InCatalog:->][?:Version];
+}
+
+def _find_version(cat: Catalog, guid: str) -> Version | None {
+    for v in _versions_under(cat) {
+        if v.guid == guid {
+            return v;
+        }
+    }
+    return None;
+}
+
+def _oldest_from(v: Version) -> Version {
+    cur: Version = v;
+    while True {
+        older: list[Version] = [cur ->:Obsoletes:->][?:Version];
+        older = _sort_versions(older);
+        if older {
+            cur = older[0];
+        } else {
+            break;
+        }
+    }
+    return cur;
+}
+
+def build_version_graph(specs: list) -> Catalog {
+    cat = Catalog();
+    root ++> cat;
+    by_guid: dict[str, Version] = {};
+    for spec in specs {
+        g: str = spec["guid"];
+        nd = Version(guid=g);
+        by_guid[g] = nd;
+        cat +>:InCatalog:+> nd;
+    }
+    for spec in specs {
+        g: str = spec["guid"];
+        newer: Version = by_guid[g];
+        targets: list = [];
+        if "obsoletes" in spec {
+            ob: any = spec["obsoletes"];
+            if ob is str {
+                targets.append(ob);
+            } else {
+                for t in ob {
+                    targets.append(t);
+                }
+            }
+        }
+        for og in targets {
+            if og in by_guid {
+                older: Version = by_guid[og];
+                newer +>:Obsoletes:+> older;
+            }
+        }
+    }
+    return cat;
+}
+
+def closure_table(cat: Catalog) -> list[list] {
+    rows: list[list] = [];
+    for v in _versions_under(cat) {
+        depths: dict[str, int] = {};
+        depths[v.guid] = 0;
+        w = v spawn NewerReach(
+            anchor=v.guid,
+            claimed={},
+            depths=depths
+        );
+        for r in w.found {
+            rows.append(r);
+        }
+    }
+    return sorted(rows);
+}
+
+def versions_for(cat: Catalog, guid: str) -> list[str] {
+    if not _find_version(cat, guid) {
+        return [];
+    }
+    seen: dict[str, bool] = {};
+    for row in closure_table(cat) {
+        p: str = row[0];
+        c: str = row[1];
+        if p == guid {
+            seen[c] = True;
+        }
+        if c == guid {
+            seen[p] = True;
+        }
+    }
+    seen[guid] = True;
+    out: list[str] = [];
+    for k in seen {
+        out.append(k);
+    }
+    return sorted(out);
+}
+
+def chain_from_oldest(cat: Catalog, guid: str) -> list[str] {
+    v = _find_version(cat, guid);
+    if not v {
+        return [];
+    }
+    start: Version = _oldest_from(v);
+    wk = start spawn WalkNewer(claimed={}, target=guid);
+    return wk.chain;
+}
+
+test "linear_closure_rows" {
+    specs: list = [
+        {"guid": "v1"},
+        {"guid": "v2", "obsoletes": "v1"},
+        {"guid": "v3", "obsoletes": "v2"}
+    ];
+    cat = build_version_graph(specs);
+    got = closure_table(cat);
+    exp: list[list] = [
+        ["v1", "v1", 0],
+        ["v1", "v2", 1],
+        ["v1", "v3", 2],
+        ["v2", "v2", 0],
+        ["v2", "v3", 1],
+        ["v3", "v3", 0]
+    ];
+    assert got == exp;
+}
+
+test "diamond_revisit_skip" {
+    specs: list = [
+        {"guid": "v1"},
+        {"guid": "v2", "obsoletes": "v1"},
+        {"guid": "v3", "obsoletes": "v1"},
+        {"guid": "v4", "obsoletes": ["v2", "v3"]}
+    ];
+    cat = build_version_graph(specs);
+    got = closure_table(cat);
+    exp: list[list] = [
+        ["v1", "v1", 0],
+        ["v1", "v2", 1],
+        ["v1", "v3", 1],
+        ["v1", "v4", 2],
+        ["v2", "v2", 0],
+        ["v2", "v4", 1],
+        ["v3", "v3", 0],
+        ["v3", "v4", 1],
+        ["v4", "v4", 0]
+    ];
+    assert got == exp;
+}
+
+test "chain_from_oldest_order" {
+    specs: list = [
+        {"guid": "v1"},
+        {"guid": "v2", "obsoletes": "v1"},
+        {"guid": "v3", "obsoletes": "v2"}
+    ];
+    cat = build_version_graph(specs);
+    assert chain_from_oldest(cat, "v2") == ["v1", "v2", "v3"];
+}
+
+test "versions_for_linear" {
+    specs: list = [
+        {"guid": "v1"},
+        {"guid": "v2", "obsoletes": "v1"},
+        {"guid": "v3", "obsoletes": "v2"}
+    ];
+    cat = build_version_graph(specs);
+    assert versions_for(cat, "v2") == ["v1", "v2", "v3"];
+}
+
+test "missing_guid_empty" {
+    specs: list = [{"guid": "v1"}];
+    cat = build_version_graph(specs);
+    assert chain_from_oldest(cat, "missing") == [];
+    assert versions_for(cat, "missing") == [];
 }

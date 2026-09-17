@@ -1,119 +1,143 @@
-# perl-semantic-analyzer ref: EffortlessMetrics/perl-lsp-swarm#7493
-# Retire legacy reparsing WorkspaceIndex: analyzer derives per-file
-# contributions from accepted parsed sources; ProjectModel owns cross-file.
-# gen = -1 marks a purged (retired) file node.
+# Lift: EffortlessMetrics/perl-lsp-swarm#7493
+# Retire the legacy reparsing WorkspaceIndex; per-file semantic contributions
+# are deterministic facts; cross-file lookup goes through ProjectModel edges.
 
-node FileNode {
+node Symbol {
+    has name: str;
+    has kind: str;
     has uri: str;
-    gen: int = 0;
-    symbols: list[str] = [];
-    deps: list[str] = [];
+}
+
+node FileUnit {
+    has uri: str;
+    has gen: int = 0;
 }
 
 edge DependsOn {}
-
 edge Defines {}
 
-node ProjectModel {
-    has name: str;
-    has accepted: dict[str, FileNode] = {};
+obj SemanticAnalyzer {
+    # per-file, deterministic fact extraction over supplied identity+text
+    has facts: dict[str, list[dict[str, str]]] = {};
+
+    def analyze(self, uri: str, gen: int, text: str) -> list[dict[str, str]] {
+        syms: list[dict[str, str]] = [];
+        for ln in text.split("\n") {
+            parts: list[str] = ln.split(" ");
+            if len(parts) > 1 and parts[0] == "sub" {
+                s: dict[str, str] = {"name": parts[1], "kind": "sub", "uri": uri, "gen": str(gen)};
+                syms.append(s);
+            } elif len(parts) > 1 and parts[0] == "use" {
+                s2: dict[str, str] = {"name": parts[1], "kind": "dep", "uri": uri, "gen": str(gen)};
+                syms.append(s2);
+            }
+        }
+        self.facts[uri] = syms;
+        return syms;
+    }
+
+    def stale_check(self, uri: str, gen: int) -> bool {
+        # stale generations cannot publish through a legacy cache
+        if uri not in self.facts {
+            return True;
+        }
+        for f in self.facts[uri] {
+            if int(f["gen"]) != gen {
+                return True;
+            }
+        }
+        return False;
+    }
 }
 
-walker IngestFile {
-    has uri: str;
-    has gen: int;
-    has symbols: list[str];
-    has deps: list[str];
+def extract_names(facts: list[dict[str, str]]) -> list[str] {
+    ns: list[str] = [];
+    for f in facts {
+        ns.append(f["name"]);
+    }
+    return sorted(ns);
+}
 
-    can ingest with ProjectModel entry {
-        kids: list[FileNode] = [here ->:Defines:->][?:FileNode];
-        target: FileNode | None = None;
-        for k in kids {
-            if k.uri == self.uri { target = k; }
+obj ProjectModel {
+    # owns cross-file materialization: files as nodes, deps as edges
+    has touched: dict[str, bool] = {};
+
+    def ingest(self, uri: str, facts: list[dict[str, str]]) -> FileUnit {
+        fu = FileUnit(uri=uri);
+        root ++> fu;
+        for f in facts {
+            if f["kind"] == "sub" {
+                sn = Symbol(name=f["name"], kind="sub", uri=uri);
+                fu +>:Defines:+> sn;
+            } elif f["kind"] == "dep" {
+                dn = Symbol(name=f["name"], kind="dep", uri=uri);
+                fu +>:DependsOn:+> dn;
+            }
         }
+        self.touched[uri] = True;
+        return fu;
+    }
+
+    def link(self, a: FileUnit, b: FileUnit) {
+        a +>:DependsOn:+> b;
+    }
+
+    def deps_of(self, uri: str) -> list[str] {
+        target: FileUnit | None = None;
+        for c in root --> {
+            fu = c as FileUnit;
+            if fu.uri == uri {
+                target = fu;
+            }
+        }
+        found: list[str] = [];
         if target is None {
-            target = FileNode(uri=self.uri);
-            here +>:Defines:+> target;
+            return found;
         }
-        # accepted-generation rule: stale gens cannot publish
-        if target.gen > self.gen {
-            print("stale_rejected " + self.uri);
-            disengage;
-        }
-        target.gen = self.gen;
-        target.symbols = self.symbols;
-        target.deps = self.deps;
-        for d in self.deps {
-            provider: FileNode | None = None;
-            for k in [here ->:Defines:->][?:FileNode] {
-                if d in k.symbols { provider = k; }
-            }
-            if provider is not None {
-                target +>:DependsOn:+> provider;
+        for d in target -->:DependsOn:-> {
+            ds = d as Symbol;
+            if ds.kind == "dep" {
+                found.append(ds.name);
             }
         }
-        here.accepted[self.uri] = target;
-        print("ingested " + self.uri);
+        return sorted(found);
     }
 }
 
-walker AnalyzeFile {
+walker CollectClosure {
+    # cross-file lookup walk over ProjectModel graph; claim-map cycle policy
     has claimed: dict[str, bool] = {};
-    has out: dict[str, list[str]] = {};
+    has seen: list[str] = [];
 
-    can analyze with FileNode entry {
-        if here.uri in self.claimed { skip; }
-        self.claimed[here.uri] = True;
-        reach: list[str] = [];
-        for d in [here ->:DependsOn:->][?:FileNode] {
-            if d.gen < 0 { continue; }
-            reach.append(d.uri);
-            visit [d];
+    can step with FileUnit entry {
+        if here.uri in self.claimed {
+            skip;
         }
-        self.out[here.uri] = sorted(reach);
-    }
-}
-
-walker PurgeUri {
-    has uri: str;
-
-    can purge with ProjectModel entry {
-        kids: list[FileNode] = [here ->:Defines:->][?:FileNode];
-        for k in kids {
-            if k.uri == self.uri {
-                # retire: purge publishes nothing, contributes nothing
-                k.gen = -1;
-                k.symbols = [];
-                k.deps = [];
+        self.claimed[here.uri] = True;
+        self.seen.append(here.uri);
+        nxt: list[FileUnit] = [];
+        for ch in [here ->:DependsOn:->] {
+            fs = ch as FileUnit | None;
+            if fs is not None {
+                nxt.append(fs);
             }
         }
-        print("purged " + self.uri);
+        visit nxt;
+    }
+
+    can note_sym with Symbol entry {
+        print("sym", here.name);
     }
 }
 
-def contribution(p: ProjectModel, uri: str) -> dict[str, list[str]] {
-    # deterministic per-file closure via walker, no reparse
-    f: FileNode | None = None;
-    for k in [p ->:Defines:->][?:FileNode] {
-        if k.uri == uri { f = k; }
-    }
-    if f is None or f.gen < 0 { return {}; }
-    w = f spawn AnalyzeFile(claimed={}, out={});
-    return w.out;
-}
+walker IndexSymbols {
+    # replaces legacy WorkspaceIndex: per-file symbol materialization
+    has count: int = 0;
 
-def lookup(p: ProjectModel, sym: str) -> list[str] {
-    uris: list[str] = [];
-    for k in [p ->:Defines:->][?:FileNode] {
-        if k.gen >= 0 and sym in k.symbols { uris.append(k.uri); }
+    can step with FileUnit entry {
+        for ch in [here ->:Defines:->] {
+            self.count += 1;
+        }
+        print("file", here.uri, "count", self.count);
     }
-    return sorted(uris);
-}
-
-with entry {
-    pm = ProjectModel(name="demo");
-    IngestFile(uri="file:///a.pm", gen=1, symbols=["A"], deps=["B"]) spawn pm;
-    IngestFile(uri="file:///b.pm", gen=1, symbols=["B"], deps=[]) spawn pm;
-    print(lookup(pm, "A"));
-    print(contribution(pm, "file:///a.pm"));
 }

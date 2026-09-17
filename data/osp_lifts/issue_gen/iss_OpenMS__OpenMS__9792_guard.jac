@@ -19,6 +19,14 @@ node Spectrum {
 edge Holds {}                  # Spectrum -> Peak
 edge View {}                   # Spectrum -> aliased Peak (view lease)
 
+# module-level sort key helper (no lambdas)
+def by_mz(p: Peak) -> float {
+    return p.mz;
+}
+def by_pos(p: Peak) -> int {
+    return p.pos;
+}
+
 graph mssim {
     has spectra: dict[str, Spectrum] = {};
 
@@ -32,7 +40,7 @@ graph mssim {
     def _ordered(sp: Spectrum) -> list[Peak] {
         # view of held peaks sorted by explicit position field
         raw: list[Peak] = [sp ->:Holds:->][?:Peak];
-        return sorted(raw, key=lambda p: p.pos);
+        return sorted(raw, key=by_pos);
     }
 
     # get_peak: owned copy semantics (policy: get_* returns a copy)
@@ -40,9 +48,10 @@ graph mssim {
         sp = self.spectra.get(sid);
         if sp is None { return None; }
         kids = self._ordered(sp);
-        if idx < 0 { idx = len(kids) + idx; }
-        if idx < 0 or idx >= len(kids) { return None; }
-        p = kids[idx];
+        i: int = idx;
+        if i < 0 { i = len(kids) + i; }
+        if i < 0 or i >= len(kids) { return None; }
+        p = kids[i];
         return Peak(mz=p.mz, intensity=p.intensity);  # owned copy
     }
 
@@ -51,9 +60,10 @@ graph mssim {
         sp = self.spectra.get(sid);
         if sp is None { return None; }
         kids = self._ordered(sp);
-        if idx < 0 { idx = len(kids) + idx; }
-        if idx < 0 or idx >= len(kids) { return None; }
-        return kids[idx];  # alias
+        i: int = idx;
+        if i < 0 { i = len(kids) + i; }
+        if i < 0 or i >= len(kids) { return None; }
+        return kids[i];  # alias
     }
 
     def add_peak(sid: str, mz: float, inten: float) -> bool {
@@ -69,8 +79,7 @@ graph mssim {
     def sort_peaks(sid: str) -> bool {
         sp = self.spectra.get(sid);
         if sp is None { return False; }
-        kids = self._ordered(sp);
-        ordered: list[Peak] = sorted(kids, key=lambda p: p.mz);
+        ordered: list[Peak] = sorted(self._ordered(sp), key=by_mz);
         for i in range(len(ordered)) {
             ordered[i].pos = i;
         }
@@ -100,6 +109,26 @@ graph mssim {
         }
         return n;
     }
+
+    # lease a view edge to an aliased peak (mirrors pyOpenMS _view accessors)
+    def lease_view(sid: str, idx: int) -> bool {
+        sp = self.spectra.get(sid);
+        if sp is None { return False; }
+        kids = self._ordered(sp);
+        if idx < 0 or idx >= len(kids) { return False; }
+        sp +>:View:+> kids[idx];
+        return True;
+    }
+
+    def live_views(sid: str) -> int {
+        sp = self.spectra.get(sid);
+        if sp is None { return 0; }
+        n: int = 0;
+        for v in [sp ->:View:->][?:Peak] {
+            if v.live { n = n + 1; }
+        }
+        return n;
+    }
 }
 
 walker RebindAudit {
@@ -107,14 +136,13 @@ walker RebindAudit {
     has audited: int = 0;
 
     can step with Spectrum entry {
-        if here.sid in self.claimed { skip; }   # diamond revisits: claim + skip
+        # diamond revisits: claim-map + skip (never disengage on revisit)
+        if here.sid in self.claimed { skip; }
         self.claimed[here.sid] = True;
         self.audited = self.audited + 1;
         print("audit", here.sid, "generation", here.generation);
-        kids: list[Spectrum] = [];
-        for nxt in [here ->:Holds:->][?:Spectrum] { kids.append(nxt); }
-        for nxt in [root ->:Holds:->][?:Spectrum] { kids.append(nxt); }
-        visit kids;
+        nxt: list[Spectrum] = [root -->][?:Spectrum];
+        visit nxt;
     }
 }
 
@@ -133,58 +161,70 @@ with entry {
     print("audited spectra", wk.audited);
 }
 
-test "owned_copy" {
+# hidden guard tests for iss_OpenMS__OpenMS__9792 (program source above)
+
+test "owned_copy_semantics" {
     g = mssim();
-    g.add_spectrum("scan1");
-    g.add_peak("scan1", 101.0, 500.0);
-    g.add_peak("scan1", 100.5, 900.0);
-    cp = g.get_peak("scan1", -1);
+    g.add_spectrum("s1");
+    ok = g.add_peak("s1", 200.0, 10.0);
+    assert ok;
+    cp = g.get_peak("s1", 0);
     assert cp is not None;
-    assert cp.intensity == 900.0;
-    # mutation of the copy must not touch the stored data
-    cp.intensity = 0.0;
-    assert g.get_peak("scan1", -1).intensity == 900.0;
+    assert cp.intensity == 10.0;
+    cp.intensity = 999.0;
+    back = g.get_peak("s1", 0);
+    assert back.intensity == 10.0;   # copy, not alias
 }
 
-test "alias_and_invalidate" {
+test "negative_index_and_unknown" {
     g = mssim();
-    g.add_spectrum("scan1");
-    g.add_peak("scan1", 101.0, 500.0);
-    g.add_peak("scan1", 100.5, 900.0);
-    aliased = g.spectrum_peak_view("scan1", 0);
-    assert aliased.mz == 100.5;
-    # structural op kills the view lease (generation bump)
-    assert g.sort_peaks("scan1") is True;
-    assert g.spectra["scan1"].generation >= 2;
-    assert g.peaks_sorted("scan1") == [(100.5, 900.0), (101.0, 500.0)];
+    g.add_spectrum("s1");
+    g.add_peak("s1", 100.0, 1.0);
+    g.add_peak("s1", 101.0, 2.0);
+    assert g.get_peak("s1", -1) is not None;
+    assert g.get_peak("s1", -1).intensity == 2.0;
+    assert g.get_peak("s1", 5) is None;
+    assert g.get_peak("missing", 0) is None;
+    assert g.add_peak("missing", 1.0, 1.0) == False;
+    assert g.sort_peaks("missing") == False;
+    assert g.peaks_sorted("missing") == [];
 }
 
-test "invalidate_counts_views_once" {
+test "sort_reorders_by_mz" {
     g = mssim();
-    g.add_spectrum("s");
-    g.add_peak("s", 1.0, 10.0);
-    v = g.spectrum_peak_view("s", 0);
-    assert v.live is True;
-    n = g.invalidate(g.spectra["s"]);
-    assert n == 0;  # no View edges were leased
-    assert g.spectra["s"].generation == 2;  # add_peak + explicit invalidate
+    g.add_spectrum("s1");
+    g.add_peak("s1", 300.0, 3.0);
+    g.add_peak("s1", 100.0, 1.0);
+    g.add_peak("s1", 200.0, 2.0);
+    got = g.peaks_sorted("s1");
+    assert got == [(100.0, 1.0), (200.0, 2.0), (300.0, 3.0)];
+    assert g.get_peak("s1", 0).intensity == 1.0;
+    assert g.get_peak("s1", -1).intensity == 3.0;
 }
 
-test "unknown_spectrum_tolerant" {
+test "structural_op_kills_view_leases" {
     g = mssim();
-    assert g.get_peak("nope", 0) is None;
-    assert g.spectrum_peak_view("nope", 0) is None;
-    assert g.add_peak("nope", 1.0, 1.0) is False;
-    assert g.sort_peaks("nope") is False;
-    assert g.peaks_sorted("nope") == [];
+    g.add_spectrum("s1");
+    g.add_peak("s1", 101.0, 5.0);
+    g.add_peak("s1", 100.0, 9.0);
+    assert g.lease_view("s1", 0);
+    assert g.live_views("s1") == 1;
+    v = g.spectrum_peak_view("s1", 0);
+    assert v.live;
+    assert g.sort_peaks("s1");
+    assert g.live_views("s1") == 0;      # generation bump swept the lease
+    assert v.live == False;
 }
 
-test "audit_walker_claim_dedup" {
+test "invalidate_counts_only_live_once" {
     g = mssim();
-    g.add_spectrum("a");
-    g.add_spectrum("b");
-    g.add_peak("a", 100.0, 1.0);
-    g.add_peak("b", 200.0, 2.0);
-    wk = root spawn RebindAudit(claimed={});
-    assert wk.audited == 2;
+    g.add_spectrum("s1");
+    g.add_peak("s1", 100.0, 1.0);
+    g.lease_view("s1", 0);
+    g.lease_view("s1", 0);
+    n1 = g.invalidate(g.spectra["s1"]);
+    n2 = g.invalidate(g.spectra["s1"]);
+    assert n1 == 2;
+    assert n2 == 0;   # already dead leases are not recounted
+    assert g.spectra["s1"].generation == 2;
 }

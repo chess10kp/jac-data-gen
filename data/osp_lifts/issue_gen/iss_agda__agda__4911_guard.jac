@@ -1,253 +1,244 @@
-"""Mutual Cx/Hyp scope lift — agda/agda#4911."""
+"""agda/agda#4911 — mutual Cx/Hyp scope vs separate modules."""
 
-node Ctx {
+node Cx {
     has cid: str;
+    has layout: str = "works";
 }
 
 node Hyp {
-    has cid: str;
-    has atom: str;
+    has hid: str;
+    has owner_cid: str;
 }
 
-edge Parent {}
-edge HasHyp {}
-edge Param {}
+edge Owns {}
+edge Extends {}
 
-walker FindNode {
-    has target: str;
-    has claimed: dict[str, bool] = {};
-    has ctx_hit: Ctx | None = None;
-    has hyp_hit: Hyp | None = None;
+obj MutualScope {
+    has graph_root: Cx;
+    has layout: str;
+    has hyp_map: dict[str, str];
+    has cx_seq: int = 1;
+    has hyp_seq: int = 1;
 
-    can scan_ctx with Ctx entry {
-        if here.cid in self.claimed {
-            skip;
-        }
-        self.claimed[here.cid] = True;
-        print("find", here.cid);
-        if here.cid == self.target {
-            self.ctx_hit = here;
-            disengage;
-        }
-        has_edge: bool = False;
-        for ch in [here ->:Parent:->][?:Ctx] {
-            has_edge = True;
-            visit :0: [ch];
-        }
-        for h in [here ->:HasHyp:->][?:Hyp] {
-            has_edge = True;
-            visit :0: [h];
-        }
-        if not has_edge {
-            disengage;
-        }
+    def empty(self) -> str {
+        return self.graph_root.cid;
     }
 
-    can scan_hyp with Hyp entry {
-        if here.cid in self.claimed {
-            skip;
-        }
-        self.claimed[here.cid] = True;
-        print("find", here.cid);
-        if here.cid == self.target {
-            self.hyp_hit = here;
-            disengage;
-        }
-        has_edge: bool = False;
-        for g in [here ->:Param:->][?:Ctx] {
-            has_edge = True;
-            visit :0: [g];
-        }
-        if not has_edge {
-            disengage;
-        }
-    }
-}
-
-walker ClosureWalker {
-    has claimed: dict[str, bool] = {};
-    has found: list[str] = [];
-
-    can walk_ctx with Ctx entry {
-        if here.cid in self.claimed {
-            skip;
-        }
-        self.claimed[here.cid] = True;
-        self.found.append(here.cid);
-        print("closure", here.cid);
-        has_edge: bool = False;
-        for ch in [here ->:Parent:->][?:Ctx] {
-            has_edge = True;
-            visit :0: [ch];
-        }
-        for h in [here ->:HasHyp:->][?:Hyp] {
-            has_edge = True;
-            visit :0: [h];
-        }
-        if not has_edge {
-            disengage;
-        }
+    def bind_hyp(self, gamma: str) -> str {
+        g = self._find_cx(gamma);
+        if g is None { return ""; }
+        hid = "h" + str(self.hyp_seq);
+        self.hyp_seq += 1;
+        h = Hyp(hid=hid, owner_cid=gamma);
+        root ++> h;
+        g +>:Owns:+> h;
+        self.hyp_map[hid] = gamma;
+        return hid;
     }
 
-    can walk_hyp with Hyp entry {
-        if here.cid in self.claimed {
-            skip;
+    def extend(self, gamma: str, hyp: str) -> str {
+        if gamma == "" or hyp == "" { return ""; }
+        g = self._find_cx(gamma);
+        if g is None { return ""; }
+        hp = self._find_hyp(hyp);
+        if hp is None { return ""; }
+        if hyp not in self.hyp_map { return ""; }
+        if self.hyp_map[hyp] != gamma { return ""; }
+        cid = "cx" + str(self.cx_seq);
+        self.cx_seq += 1;
+        ext = Cx(cid=cid, layout=self.layout);
+        root ++> ext;
+        g +>:Extends:+> ext;
+        ext +>:Owns:+> hp;
+        return cid;
+    }
+
+    def constructors(self) -> list[str] {
+        w = self.graph_root spawn ScopeCollect(layout=self.layout);
+        out: list[str] = [];
+        for nm in sorted(w.names) {
+            out.append(nm);
         }
-        self.claimed[here.cid] = True;
-        self.found.append(here.cid);
-        print("closure", here.cid);
-        has_edge: bool = False;
-        for g in [here ->:Param:->][?:Ctx] {
-            has_edge = True;
-            visit :0: [g];
+        return out;
+    }
+
+    def in_scope(self, name: str) -> bool {
+        names: list[str] = self.constructors();
+        for nm in names {
+            if nm == name { return True; }
         }
-        if not has_edge {
-            disengage;
-        }
-    }
-}
-
-def find_ctx(cid: str) -> Ctx | None {
-    w = root spawn FindNode(target=cid, claimed={});
-    return w.ctx_hit;
-}
-
-def find_hyp(cid: str) -> Hyp | None {
-    w = root spawn FindNode(target=cid, claimed={});
-    return w.hyp_hit;
-}
-
-def empty_context -> str {
-    g = Ctx(cid="Cx·");
-    root ++> g;
-    return g.cid;
-}
-
-def make_hypothesis(gamma_id: str, atom: str) -> str | None {
-    gamma = find_ctx(gamma_id);
-    if gamma is None {
-        return None;
-    }
-    hid = "Hyp:" + atom + "@" + gamma_id;
-    h = Hyp(cid=hid, atom=atom);
-    root ++> h;
-    h +>:Param:+> gamma;
-    return h.cid;
-}
-
-def extend_context(gamma_id: str, hyp_id: str) -> str | None {
-    gamma = find_ctx(gamma_id);
-    hyp = find_hyp(hyp_id);
-    if gamma is None or hyp is None {
-        return None;
-    }
-    param_ok: bool = False;
-    for g in [hyp ->:Param:->][?:Ctx] {
-        if g.cid == gamma_id {
-            param_ok = True;
-        }
-    }
-    if not param_ok {
-        return None;
-    }
-    nid = "Cx:" + gamma_id + "," + hyp_id;
-    ext = Ctx(cid=nid);
-    root ++> ext;
-    ext +>:Parent:+> gamma;
-    ext +>:HasHyp:+> hyp;
-    return ext.cid;
-}
-
-def postulate_in_scope(gamma_id: str, hyp_id: str) -> bool {
-    gamma = find_ctx(gamma_id);
-    hyp = find_hyp(hyp_id);
-    if gamma is None or hyp is None {
         return False;
     }
-    for g in [hyp ->:Param:->][?:Ctx] {
-        if g.cid == gamma_id {
-            return True;
+
+    def weaken(self, hyp: str, src_gamma: str) -> str | None {
+        if not self.in_scope(",") { return None; }
+        ext_cid = self.extend(src_gamma, hyp);
+        if ext_cid == "" { return None; }
+        new_h = self.bind_hyp(ext_cid);
+        if new_h == "" { return None; }
+        return new_h;
+    }
+
+    def _find_cx(self, cid: str) -> Cx | None {
+        w = self.graph_root spawn FindCx(target=cid);
+        return w.found;
+    }
+
+    def _find_hyp(self, hid: str) -> Hyp | None {
+        w = self.graph_root spawn FindHyp(target=hid);
+        return w.found;
+    }
+}
+
+walker ScopeCollect {
+    has layout: str;
+    has names: list[str] = [];
+    can collect with Cx entry {
+        scope_out: list[str] = [];
+        scope_out.append("scope");
+        scope_out.append(self.layout);
+        print scope_out;
+        if self.layout == "works" {
+            if "," not in self.names { self.names.append(","); }
+            if "." not in self.names { self.names.append("."); }
+            if "Hyp" not in self.names { self.names.append("Hyp"); }
+        } else {
+            if "." not in self.names { self.names.append("."); }
+            if "Hyp" not in self.names { self.names.append("Hyp"); }
+        }
+        disengage;
+    }
+}
+
+walker FindCx {
+    has target: str;
+    has found: Cx | None = None;
+    has claimed: dict[str, bool] = {};
+    can step with Cx entry {
+        if here.cid in self.claimed { skip; }
+        self.claimed[here.cid] = True;
+        find_out: list[str] = [];
+        find_out.append("find_cx");
+        find_out.append(here.cid);
+        print find_out;
+        if here.cid == self.target {
+            self.found = here;
+            disengage;
+        }
+        raw: list[Cx] = [here ->:Extends:->][?:Cx];
+        kids: list[Cx] = [];
+        for ch in raw { kids.append(ch); }
+        for ch in kids { visit :0: [ch]; }
+    }
+}
+
+walker FindHyp {
+    has target: str;
+    has found: Hyp | None = None;
+    has claimed_cx: dict[str, bool] = {};
+    has claimed_hyp: dict[str, bool] = {};
+    can scan_cx with Cx entry {
+        if here.cid in self.claimed_cx { skip; }
+        self.claimed_cx[here.cid] = True;
+        scan_cx_out: list[str] = [];
+        scan_cx_out.append("scan_cx");
+        scan_cx_out.append(here.cid);
+        print scan_cx_out;
+        hyps: list[Hyp] = [here ->:Owns:->][?:Hyp];
+        for h in hyps { visit :0: [h]; }
+        raw: list[Cx] = [here ->:Extends:->][?:Cx];
+        kids: list[Cx] = [];
+        for ch in raw { kids.append(ch); }
+        for ch in kids { visit :0: [ch]; }
+    }
+    can scan_hyp with Hyp entry {
+        if here.hid in self.claimed_hyp { skip; }
+        self.claimed_hyp[here.hid] = True;
+        cur: Hyp = here;
+        scan_hyp_out: list[str] = [];
+        scan_hyp_out.append("scan_hyp");
+        scan_hyp_out.append(cur.hid);
+        print scan_hyp_out;
+        if cur.hid == self.target {
+            self.found = cur;
+            disengage;
         }
     }
-    return False;
 }
 
-def weaken_hypothesis(hyp_id: str, gamma_id: str, atom: str) -> str | None {
-    if not postulate_in_scope(gamma_id, hyp_id) {
-        return None;
+walker CountCx {
+    has claimed: dict[str, bool] = {};
+    has count: int = 0;
+    can step with Cx entry {
+        if here.cid in self.claimed { skip; }
+        self.claimed[here.cid] = True;
+        self.count += 1;
+        count_out: list[str] = [];
+        count_out.append("count");
+        count_out.append(here.cid);
+        count_out.append(str(self.count));
+        print count_out;
+        raw: list[Cx] = [here ->:Extends:->][?:Cx];
+        kids: list[Cx] = [];
+        for ch in raw { kids.append(ch); }
+        for ch in kids { visit :0: [ch]; }
     }
-    ext_id = extend_context(gamma_id, hyp_id);
-    if ext_id is None {
-        return None;
-    }
-    ext = find_ctx(ext_id);
-    if ext is None {
-        return None;
-    }
-    wkid = "Hyp:wk:" + hyp_id + ":" + atom;
-    wk = Hyp(cid=wkid, atom=atom);
-    root ++> wk;
-    wk +>:Param:+> ext;
-    ext +>:HasHyp:+> wk;
-    return wkid;
 }
 
-def mutual_closure(start_id: str) -> list[str] {
-    anchor_ctx = find_ctx(start_id);
-    anchor_hyp = find_hyp(start_id);
-    if anchor_ctx is not None {
-        w = anchor_ctx spawn ClosureWalker(claimed={});
-    } else if anchor_hyp is not None {
-        w = anchor_hyp spawn ClosureWalker(claimed={});
-    } else {
-        return [];
-    }
-    out: list[str] = [];
-    for cid in sorted(w.found) {
-        out.append(cid);
-    }
-    return out;
+def create_scope(layout: str) -> MutualScope {
+    graph_root = Cx(cid="cx0", layout=layout);
+    root ++> graph_root;
+    hyp_map: dict[str, str] = {};
+    ms = MutualScope(
+        graph_root=graph_root,
+        layout=layout,
+        hyp_map=hyp_map,
+        cx_seq=1,
+        hyp_seq=1
+    );
+    return ms;
 }
 
-test "empty_context_root" {
-    assert empty_context() == "Cx·";
+test "works_layout_constructors" {
+    ms = create_scope("works");
+    assert ms.empty() == "cx0";
+    c: list[str] = ms.constructors();
+    assert c == [",", ".", "Hyp"];
 }
 
-test "make_and_extend_context" {
-    gid = empty_context();
-    hid = make_hypothesis(gid, "P");
-    assert hid == "Hyp:P@Cx·";
-    eid = extend_context(gid, hid);
-    assert eid == "Cx:Cx·,Hyp:P@Cx·";
+test "broken_layout_constructors" {
+    ms = create_scope("broken");
+    c: list[str] = ms.constructors();
+    assert c == [".", "Hyp"];
 }
 
-test "postulate_in_scope" {
-    gid = empty_context();
-    hid = make_hypothesis(gid, "P");
-    assert postulate_in_scope(gid, hid) == True;
-    assert postulate_in_scope(gid, "missing") == False;
+test "bind_and_extend" {
+    ms = create_scope("works");
+    h = ms.bind_hyp("cx0");
+    assert h == "h1";
+    ext = ms.extend("cx0", h);
+    assert ext == "cx1";
+    assert ms.in_scope(",") == True;
+    assert ms.in_scope("nope") == False;
 }
 
-test "weaken_hypothesis" {
-    gid = empty_context();
-    hid = make_hypothesis(gid, "P");
-    wkid = weaken_hypothesis(hid, gid, "Q");
-    assert wkid == "Hyp:wk:" + hid + ":Q";
+test "weaken_works" {
+    ms = create_scope("works");
+    h = ms.bind_hyp("cx0");
+    wh = ms.weaken(h, "cx0");
+    assert wh == "h2";
 }
 
-test "mutual_closure_from_context" {
-    gid = empty_context();
-    assert mutual_closure(gid) == [gid];
+test "weaken_no_comma" {
+    ms = create_scope("broken");
+    h = ms.bind_hyp("cx0");
+    wh = ms.weaken(h, "cx0");
+    assert wh is None;
 }
 
-test "mutual_closure_from_extended" {
-    gid = empty_context();
-    hid = make_hypothesis(gid, "P");
-    eid = extend_context(gid, hid);
-    got = mutual_closure(eid);
-    want: list[str] = [];
-    for cid in sorted([eid, gid, hid]) {
-        want.append(cid);
-    }
-    assert got == want;
+test "extend_invalid" {
+    ms = create_scope("works");
+    assert ms.extend("", "h1") == "";
+    assert ms.extend("cx0", "") == "";
+    assert ms.extend("missing", "h1") == "";
 }

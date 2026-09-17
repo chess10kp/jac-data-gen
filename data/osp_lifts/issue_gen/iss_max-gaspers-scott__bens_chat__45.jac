@@ -1,302 +1,190 @@
-"""Message subtree batch query and client retreeify — max-gaspers-scott/bens_chat#45."""
+"""Message subtree fetch and client retreeify — max-gaspers-scott/bens_chat#45."""
 
 node Message {
-    has mid: str;
-    has parent_ref: str = "";
-    has sent_at: str = "";
+    has message_id: str;
+    has parent_id: str = "";
     has body: str = "";
+    has sent_at: int = 0;
 }
 
 edge Reply {}
 
-def msg_row(msg: Message, depth: int) -> dict {
-    return {
-        "message_id": msg.mid,
-        "parent_id": msg.parent_ref,
-        "sent_at": msg.sent_at,
-        "body": msg.body,
-        "depth": depth,
-    };
-}
-
-def cmp_rows(a: dict, b: dict) -> int {
-    da = a["depth"] as int;
-    db = b["depth"] as int;
-    if da < db {
-        return -1;
-    }
-    if da > db {
-        return 1;
-    }
-    sa = a["sent_at"] as str;
-    sb = b["sent_at"] as str;
-    if sa < sb {
-        return -1;
-    }
-    if sa > sb {
-        return 1;
-    }
-    return 0;
-}
-
-def sort_rows(rows: list) -> list {
-    out: list = [];
-    for r in rows {
-        out.append(r);
-    }
-    n = len(out);
-    i = 0;
-    while i < n {
-        j = i + 1;
-        while j < n {
-            if cmp_rows(out[j] as dict, out[i] as dict) < 0 {
-                tmp = out[i];
-                out[i] = out[j];
-                out[j] = tmp;
-            }
-            j += 1;
-        }
-        i += 1;
-    }
-    return out;
-}
-
-def sort_msgs(nodes: list[Message]) -> list[Message] {
-    out: list[Message] = [];
-    for nd in nodes {
-        out.append(nd);
-    }
-    n = len(out);
-    i = 0;
-    while i < n {
-        j = i + 1;
-        while j < n {
-            if out[j].sent_at < out[i].sent_at {
-                tmp = out[i];
-                out[i] = out[j];
-                out[j] = tmp;
-            }
-            j += 1;
-        }
-        i += 1;
-    }
-    return out;
-}
-
-def materialize(store: dict[str, dict], focus_id: str) -> Message | None {
-    nodes: dict[str, Message] = {};
-    mids: list[str] = sorted(store);
-    for mid in mids {
-        row = store[mid] as dict;
-        pid = "";
-        if "parent_id" in row {
-            pid = row["parent_id"] as str;
-        }
-        sat = "";
-        if "sent_at" in row {
-            sat = row["sent_at"] as str;
-        }
-        bod = "";
-        if "body" in row {
-            bod = row["body"] as str;
-        }
-        nd = Message(mid=mid, parent_ref=pid, sent_at=sat, body=bod);
-        nodes[mid] = nd;
-        root ++> nd;
-    }
-    focus: Message | None = None;
-    for mid in mids {
-        nd = nodes[mid];
-        if mid == focus_id {
-            focus = nd;
-        }
-        pr = nd.parent_ref;
-        if pr != "" {
-            if pr in nodes {
-                par = nodes[pr];
-                par +>:Reply:+> nd;
-            }
-        }
-        row = store[mid] as dict;
-        if "extra_replies" in row {
-            extras = row["extra_replies"] as list;
-            for xr in extras {
-                xid = xr as str;
-                if xid in nodes {
-                    xp = nodes[xid];
-                    xp +>:Reply:+> nd;
-                }
-            }
-        }
-    }
-    return focus;
+node MsgRoot {
+    has by_id: dict[str, Message] = {};
 }
 
 walker SubtreeWalker {
+    has max_depth: int;
+    has depth: int;
     has claimed: dict[str, bool] = {};
-    has origin: str = "";
-    has max_depth: int = 1;
-    has walk_depth: int = 0;
-    has collected: list = [];
+    has out_rows: list[dict] = {};
 
-    can descend with Message entry {
-        if here.mid in self.claimed {
+    can walk with Message entry {
+        if here.message_id in self.claimed {
             skip;
         }
-        self.claimed[here.mid] = True;
-
-        if here.mid == self.origin {
-            print(["subtree_origin", here.mid]);
-            kids: list[Message] = [];
-            for ch in [here ->:Reply:->][?:Message] {
-                kids.append(ch);
-            }
-            kids = sort_msgs(kids);
-            for kid in kids {
-                self.walk_depth = 1;
-                visit :0: [kid];
-            }
-            skip;
+        self.claimed[here.message_id] = True;
+        if self.depth > 0 {
+            row: dict = {};
+            row["message_id"] = here.message_id;
+            row["parent_id"] = here.parent_id;
+            row["body"] = here.body;
+            row["sent_at"] = here.sent_at;
+            row["depth"] = self.depth;
+            self.out_rows.append(row);
+            print(here.message_id + " " + str(self.depth));
         }
-
-        self.collected.append(msg_row(here, self.walk_depth));
-        print(["subtree_visit", here.mid, self.walk_depth]);
-        if self.walk_depth < self.max_depth {
-            kids2: list[Message] = [];
-            for ch in [here ->:Reply:->][?:Message] {
-                kids2.append(ch);
-            }
-            kids2 = sort_msgs(kids2);
-            nd = self.walk_depth + 1;
-            for kid in kids2 {
-                self.walk_depth = nd;
-                visit :0: [kid];
-            }
+        if self.depth >= self.max_depth {
+            disengage;
         }
-    }
-}
-
-def query_message_subtree(parent_id: str, max_depth: int, store: dict[str, dict]) -> list {
-    if parent_id not in store {
-        return [];
-    }
-    anchor = materialize(store, parent_id);
-    if anchor is None {
-        return [];
-    }
-    w = anchor spawn SubtreeWalker(origin=parent_id, max_depth=max_depth, claimed={}, collected=[]);
-    return sort_rows(w.collected);
-}
-
-def nest_node(msg: Message, child_trees: dict[str, dict]) -> dict {
-    kids_out: list = [];
-    kid_nodes: list[Message] = [];
-    for ch in [msg ->:Reply:->][?:Message] {
-        kid_nodes.append(ch);
-    }
-    kid_nodes = sort_msgs(kid_nodes);
-    for kn in kid_nodes {
-        if kn.mid in child_trees {
-            kids_out.append(child_trees[kn.mid]);
-        }
-    }
-    return {
-        "message_id": msg.mid,
-        "parent_id": msg.parent_ref,
-        "sent_at": msg.sent_at,
-        "body": msg.body,
-        "children": kids_out,
-    };
-}
-
-walker TreeifyWalker {
-    has claimed: dict[str, bool] = {};
-    has built: dict[str, dict] = {};
-
-    can assemble with Message entry {
-        if here.mid in self.claimed {
-            skip;
-        }
-        self.claimed[here.mid] = True;
         kids: list[Message] = [];
         for ch in [here ->:Reply:->][?:Message] {
             kids.append(ch);
         }
-        kids = sort_msgs(kids);
-        for kid in kids {
-            visit :0: [kid];
+        kids = sort_messages_by_sent_at(kids);
+        ki: int = 0;
+        while ki < len(kids) {
+            ch: Message = kids[ki];
+            ch spawn SubtreeWalker(
+                max_depth=self.max_depth,
+                depth=self.depth + 1,
+                claimed=self.claimed,
+                out_rows=self.out_rows
+            );
+            ki += 1;
         }
-        self.built[here.mid] = nest_node(here, self.built);
-        print(["treeify_visit", here.mid]);
+        disengage;
     }
 }
 
-def retreeify_messages(flat_rows: list) -> dict | None {
-    if len(flat_rows) == 0 {
-        return None;
+def sort_messages_by_sent_at(nodes: list[Message]) -> list[Message] {
+    out: list[Message] = [];
+    i: int = 0;
+    while i < len(nodes) {
+        out.append(nodes[i]);
+        i += 1;
     }
-    store: dict[str, dict] = {};
-    for row in flat_rows {
-        r = row as dict;
-        mid = r["message_id"] as str;
-        store[mid] = r;
-    }
-    root_id: str = "";
-    root_count: int = 0;
-    mids: list[str] = sorted(store);
-    for mid in mids {
-        r = store[mid] as dict;
-        pid = "";
-        if "parent_id" in r {
-            pid = r["parent_id"] as str;
+    j: int = 1;
+    while j < len(out) {
+        k: int = j;
+        while k > 0 {
+            a: Message = out[k];
+            b: Message = out[k - 1];
+            if a.sent_at >= b.sent_at {
+                break;
+            }
+            out[k] = b;
+            out[k - 1] = a;
+            k -= 1;
         }
-        if pid == "" or pid not in store {
-            root_id = mid;
-            root_count += 1;
-        }
+        j += 1;
     }
-    if root_count != 1 {
-        return None;
-    }
-    anchor = materialize(store, root_id);
-    if anchor is None {
-        return None;
-    }
-    w = anchor spawn TreeifyWalker(claimed={}, built={});
-    if root_id in w.built {
-        return w.built[root_id];
-    }
-    return None;
+    return out;
 }
 
-def load_thread_tree(store: dict[str, dict], thread_root_id: str, max_depth: int) -> dict | None {
-    if thread_root_id not in store {
+def sort_subtree_rows(rows: list[dict]) -> list[dict] {
+    out: list[dict] = [];
+    i: int = 0;
+    while i < len(rows) {
+        out.append(rows[i]);
+        i += 1;
+    }
+    j: int = 1;
+    while j < len(out) {
+        k: int = j;
+        while k > 0 {
+            a: dict = out[k] as dict;
+            b: dict = out[k - 1] as dict;
+            ad: int = a["depth"] as int;
+            bd: int = b["depth"] as int;
+            as_: int = a["sent_at"] as int;
+            bs: int = b["sent_at"] as int;
+            if ad < bd or (ad == bd and as_ < bs) {
+                break;
+            }
+            out[k] = b;
+            out[k - 1] = a;
+            k -= 1;
+        }
+        j += 1;
+    }
+    return out;
+}
+
+def build_store(rows: list[dict]) -> MsgRoot {
+    store = MsgRoot();
+    ri: int = 0;
+    while ri < len(rows) {
+        row: dict = rows[ri] as dict;
+        mid: str = row["message_id"] as str;
+        pid: str = row["parent_id"] as str;
+        nd = Message(
+            message_id=mid,
+            parent_id=pid,
+            body=row["body"] as str,
+            sent_at=row["sent_at"] as int
+        );
+        store.by_id[mid] = nd;
+        root ++> nd;
+        ri += 1;
+    }
+    ri = 0;
+    while ri < len(rows) {
+        row = rows[ri] as dict;
+        pid = row["parent_id"] as str;
+        mid = row["message_id"] as str;
+        if pid != "" and pid in store.by_id and mid in store.by_id {
+            par: Message = store.by_id[pid] as Message;
+            kid: Message = store.by_id[mid] as Message;
+            par +>:Reply:+> kid;
+        }
+        ri += 1;
+    }
+    return store;
+}
+
+def subtree_flat(store: MsgRoot, parent_id: str, max_depth: int) -> list[dict] {
+    if parent_id not in store.by_id {
+        return [];
+    }
+    parent_nd: Message = store.by_id[parent_id] as Message;
+    w = parent_nd spawn SubtreeWalker(max_depth=max_depth, depth=0);
+    return sort_subtree_rows(w.out_rows);
+}
+
+def flat_to_tree(rows: list[dict]) -> dict[str, any] | None {
+    if len(rows) == 0 {
         return None;
     }
-    rows = query_message_subtree(thread_root_id, max_depth, store);
-    r0 = store[thread_root_id] as dict;
-    pid0 = "";
-    if "parent_id" in r0 {
-        pid0 = r0["parent_id"] as str;
+    by_id: dict[str, dict] = {};
+    i: int = 0;
+    while i < len(rows) {
+        row: dict = rows[i] as dict;
+        nid: str = row["message_id"] as str;
+        node_d: dict = {};
+        node_d["message_id"] = nid;
+        node_d["parent_id"] = row["parent_id"] as str;
+        node_d["body"] = row["body"] as str;
+        node_d["sent_at"] = row["sent_at"] as int;
+        node_d["depth"] = row["depth"] as int;
+        node_d["children"] = [];
+        by_id[nid] = node_d;
+        i += 1;
     }
-    sat0 = "";
-    if "sent_at" in r0 {
-        sat0 = r0["sent_at"] as str;
+    roots: list[dict] = [];
+    for nid in by_id {
+        nd: dict = by_id[nid] as dict;
+        pid: str = nd["parent_id"] as str;
+        if pid == "" or pid not in by_id {
+            roots.append(nd);
+        } else {
+            par: dict = by_id[pid] as dict;
+            chs: list[dict] = par["children"] as list[dict];
+            chs.append(nd);
+        }
     }
-    bod0 = "";
-    if "body" in r0 {
-        bod0 = r0["body"] as str;
+    if len(roots) != 1 {
+        return None;
     }
-    full_rows: list = [];
-    full_rows.append({
-        "message_id": thread_root_id,
-        "parent_id": pid0,
-        "sent_at": sat0,
-        "body": bod0,
-        "depth": 0,
-    });
-    for rw in rows {
-        full_rows.append(rw);
-    }
-    return retreeify_messages(full_rows);
+    return roots[0];
 }

@@ -1,126 +1,175 @@
-# chenhong268/cbrain#247 — local graph reasoning layer (BFS/DFS traversal core)
+# chenhong268/cbrain#247 — local graph reasoning layer for CBrain
+# Unified BFS/DFS traversal core with depth limits and provenance-safe
+# local relevance ranking over stored edges.
 
 node Entity {
     has eid: str;
     has label: str = "";
-}
-
-edge REL {
-    has rel_type: str = "related";
-    has weight: float = 1.0;
     has trust_state: str = "candidate";
 }
 
-def build(graph_root: Entity, nodes: list[Entity]) -> None {
-    for nd in nodes { root ++> nd; }
+edge Rel {
+    has rtype: str = "related";
+    has weight: float = 1.0;
+    has confidence: float = 1.0;
 }
 
-def fetch(eid: str, table: dict[str, Entity]) -> Entity | None {
-    if eid in table { return table[eid]; }
+graph brain_graph {
+    has entities: dict[str, Entity] = {};
+}
+
+def get_entity(g: brain_graph, eid: str) -> Entity | None {
+    if eid in g.entities {
+        return g.entities[eid];
+    }
     return None;
 }
 
-walker BFS {
+def add_entity(g: brain_graph, eid: str, label: str) -> Entity {
+    nd = Entity(eid=eid, label=label);
+    root ++> nd;
+    g.entities[eid] = nd;
+    return nd;
+}
+
+def link(g: brain_graph, src: str, dst: str, rtype: str, weight: float) -> bool {
+    a = get_entity(g, src);
+    b = get_entity(g, dst);
+    if a is None or b is None {
+        return False;
+    }
+    a +>:Rel(rtype=rtype, weight=weight):+> b;
+    return True;
+}
+
+walker Bfs {
     has max_depth: int = 3;
+    has depth: int = 0;
     has claimed: dict[str, bool] = {};
     has order: list[str] = [];
-    has depths: dict[str, int] = {};
 
     can step with Entity entry {
-        if here.eid in self.claimed { skip; }
+        if here.eid in self.claimed {
+            skip;
+        }
         self.claimed[here.eid] = True;
         self.order.append(here.eid);
-        my_d: int = 0;
-        if here.eid in self.depths { my_d = self.depths[here.eid]; }
-        if my_d < self.max_depth {
-            kids: list[Entity] = [here ->:REL:->][?:Entity];
-            for k in kids {
-                if k.eid not in self.depths { self.depths[k.eid] = my_d + 1; }
-            }
-            visit kids;
+        if self.depth >= self.max_depth {
+            disengage;
         }
-        print("bfs claimed:", sorted(self.claimed.keys()));
-    }
-}
-
-walker DFS {
-    has start_eid: str;
-    has claimed: dict[str, bool] = {};
-    has found: str = "";
-
-    can hunt with Entity entry {
-        if here.eid in self.claimed { skip; }
-        self.claimed[here.eid] = True;
-        if here.eid == self.start_eid { self.found = here.eid; }
-        if self.found == "" {
-            kids: list[Entity] = [];
-            for k in [here ->:REL:->][?:Entity] { kids.append(k); }
-            visit :0: kids;
+        kids: list[Entity] = [here ->:Rel:->];
+        kids = sorted(kids, key=lambda k: k.eid);
+        if len(kids) == 0 {
+            disengage;
         }
-        print("dfs claimed:", sorted(self.claimed.keys()), "found:", self.found);
+        self.depth += 1;
+        visit kids;
     }
 }
 
-walker DepthStats {
+def bfs_closure(g: brain_graph, start: str, max_depth: int) -> list[str] {
+    src = get_entity(g, start);
+    if src is None {
+        return [];
+    }
+    w = src spawn Bfs(max_depth=max_depth, claimed={});
+    out: list[str] = [];
+    for x in w.order {
+        out.append(x);
+    }
+    return sorted(out);
+}
+
+walker Dfs {
     has claimed: dict[str, bool] = {};
-    has depth: dict[str, int] = {};
-    has bridge: list[str] = [];
+    has order: list[str] = [];
 
-    can measure with Entity entry {
-        if here.eid in self.claimed { skip; }
+    can step with Entity entry {
+        if here.eid in self.claimed {
+            skip;
+        }
         self.claimed[here.eid] = True;
-        nbrs: list[Entity] = [here ->:REL:->][?:Entity];
-        self.depth[here.eid] = len(nbrs);
-        if len(nbrs) >= 2 { self.bridge.append(here.eid); }
-        visit nbrs;
-        print("stats claimed:", sorted(self.claimed.keys()));
+        self.order.append(here.eid);
+        kids: list[Entity] = [here ->:Rel:->];
+        kids = sorted(kids, key=lambda k: k.eid);
+        for kid in kids {
+            visit :0: [kid];
+        }
     }
 }
 
-test "bfs_diamond_revisit_no_truncation" {
-    root ++> root spawn Entity(eid="hub");
-    a = Entity(eid="a"); b = Entity(eid="b"); c = Entity(eid="c"); d = Entity(eid="d");
-    a +>:REL:+> b; a +>:REL:+> c; b +>:REL:+> d; c +>:REL:+> d;
-    root ++> a;
-    wk = a spawn BFS(max_depth=10);
-    assert len(wk.claimed) == 4;
-    assert sorted(wk.order) == ["a", "b", "c", "d"];
+def dfs_closure(g: brain_graph, start: str) -> list[str] {
+    src = get_entity(g, start);
+    if src is None {
+        return [];
+    }
+    w = src spawn Dfs(claimed={});
+    return sorted(w.order);
 }
 
-test "bfs_depth_limit_stops_at_max" {
-    x1 = Entity(eid="x1"); x2 = Entity(eid="x2"); x3 = Entity(eid="x3"); x4 = Entity(eid="x4");
-    x1 +>:REL:+> x2; x2 +>:REL:+> x3; x3 +>:REL:+> x4;
-    root ++> x1;
-    wk = x1 spawn BFS(max_depth=2);
-    assert sorted(wk.claimed.keys()) == ["x1", "x2", "x3"];
-    assert wk.depths["x3"] == 2;
+def local_rank(g: brain_graph, start: str, max_depth: int) -> dict[str, float] {
+    src = get_entity(g, start);
+    if src is None {
+        return {};
+    }
+    scores: dict[str, float] = {};
+    w = src spawn Bfs(max_depth=max_depth, claimed={});
+    # deterministic one-score-per-hop: nearer nodes score higher
+    for i in range(len(w.order)) {
+        eid = w.order[i];
+        if eid != start {
+            scores[eid] = 1.0 / float(i + 1);
+        }
+    }
+    return scores;
 }
 
-test "bfs_cycle_covers_all" {
-    m1 = Entity(eid="m1"); m2 = Entity(eid="m2"); m3 = Entity(eid="m3");
-    m1 +>:REL:+> m2; m2 +>:REL:+> m3; m3 +>:REL:+> m1;
-    root ++> m1;
-    wk = m1 spawn BFS(max_depth=10);
-    assert len(wk.claimed) == 3;
-    assert wk.order[0] == "m1";
-    assert sorted(wk.order) == ["m1", "m2", "m3"];
+test "bfs_unknown_start" {
+    g = brain_graph();
+    assert bfs_closure(g, "nope", 2) == [];
 }
 
-test "dfs_finds_target_among_cycle" {
-    y1 = Entity(eid="y1"); y2 = Entity(eid="y2"); y3 = Entity(eid="y3");
-    y1 +>:REL:+> y2; y2 +>:REL:+> y3; y3 +>:REL:+> y1;
-    root ++> y1;
-    wk = y1 spawn DFS(start_eid="y3");
-    assert wk.found == "y3";
-    assert len(wk.claimed) == 3;
+test "bfs_depth_limit" {
+    g = brain_graph();
+    add_entity(g, "a", "A");
+    add_entity(g, "b", "B");
+    add_entity(g, "c", "C");
+    add_entity(g, "d", "D");
+    assert link(g, "a", "b", "rel", 1.0);
+    assert link(g, "b", "c", "rel", 1.0);
+    assert link(g, "c", "d", "rel", 1.0);
+    assert bfs_closure(g, "a", 2) == ["a", "b", "c"];
+    assert bfs_closure(g, "a", 5) == ["a", "b", "c", "d"];
+    assert dfs_closure(g, "a") == ["a", "b", "c", "d"];
 }
 
-test "depth_stats_bridge_detection" {
-    p = Entity(eid="p"); q = Entity(eid="q"); r = Entity(eid="r"); s = Entity(eid="s");
-    p +>:REL:+> q; p +>:REL:+> r; q +>:REL:+> s; r +>:REL:+> s;
-    root ++> p;
-    wk = p spawn DepthStats();
-    assert len(wk.claimed) == 4;
-    assert wk.depth["p"] == 2 and wk.depth["s"] == 0;
-    assert wk.bridge == ["p"];
+test "bfs_cycle_terminates" {
+    g = brain_graph();
+    add_entity(g, "a", "A");
+    add_entity(g, "b", "B");
+    assert link(g, "a", "b", "rel", 1.0);
+    assert link(g, "b", "a", "rel", 1.0);
+    assert bfs_closure(g, "a", 10) == ["a", "b"];
+    assert dfs_closure(g, "a") == ["a", "b"];
+}
+
+test "link_unknown_returns_false" {
+    g = brain_graph();
+    add_entity(g, "a", "A");
+    assert link(g, "a", "ghost", "rel", 1.0) == False;
+    assert link(g, "ghost", "a", "rel", 1.0) == False;
+}
+
+test "local_rank_scores" {
+    g = brain_graph();
+    add_entity(g, "a", "A");
+    add_entity(g, "b", "B");
+    add_entity(g, "c", "C");
+    assert link(g, "a", "b", "rel", 1.0);
+    assert link(g, "a", "c", "rel", 1.0);
+    r = local_rank(g, "a", 1);
+    assert "a" not in r;
+    assert r["b"] == 0.5 and r["c"] == 0.5;
+    r2 = local_rank(g, "zz", 2);
+    assert len(r2) == 0;
 }

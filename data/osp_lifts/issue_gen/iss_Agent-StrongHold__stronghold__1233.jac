@@ -1,204 +1,180 @@
-"""Agent-StrongHold/stronghold#1233 — memory relations traversal research scaffold."""
+"""Agent-StrongHold/stronghold#1233 — multi-hop relation traversal and supersession cascade."""
+
+node GraphRoot {
+    has tag: str = "memory_layer";
+}
 
 node Fact {
     has fid: str;
-    has source_episode_id: str = "";
-    has superseded_by: str = "";
+    has label: str = "";
 }
 
-edge Relates {
-    has start_at: int = 0;
-    has end_at: int = 999999;
-    has source_episode_id: str = "";
-}
-
-walker FindFactWalker {
-    has target: str = "";
-    has hit: Fact | None = None;
-    has claimed: dict[str, bool] = {};
-
-    can seek with Fact entry {
-        if here.fid in self.claimed { skip; }
-        self.claimed[here.fid] = True;
-        if here.fid == self.target {
-            self.hit = here;
-            disengage;
-        }
-        kids: list[Fact] = [here ->:Relates:->][?:Fact];
-        idx: int = 0;
-        while idx < len(kids) {
-            visit :0: [kids[idx]];
-            idx += 1;
-        }
-        raw_kids = [here ->];
-        ri: int = 0;
-        while ri < len(raw_kids) {
-            cand = raw_kids[ri];
-            if cand is Fact {
-                ch = cand as Fact;
-                if not (ch.fid in self.claimed) {
-                    visit :0: [ch];
-                }
-            }
-            ri += 1;
-        }
-    }
-}
-
-def find_fact(graph_root: Fact, fid: str) -> Fact | None {
-    w = graph_root spawn FindFactWalker(target=fid, claimed={}, hit=None);
-    return w.hit;
-}
+edge Rel {}
+edge Supersedes {}
 
 walker ReachWalker {
-    has start_id: str = "";
-    has max_hops: int = 2;
-    has graph_root: Fact;
     has claimed: dict[str, bool] = {};
-    has depth: dict[str, int] = {};
+    has hops: dict[str, int] = {};
+    has max_hops: int = 2;
     has found: list[str] = [];
 
     can hop with Fact entry {
         if here.fid in self.claimed { skip; }
         self.claimed[here.fid] = True;
-        cur: int = 0;
-        if here.fid in self.depth {
-            cur = self.depth[here.fid];
-        }
-        if here.fid != self.start_id {
-            self.found.append(here.fid);
-        }
-        if cur >= self.max_hops {
-            disengage;
-        }
-        outs: list[Fact] = [here ->:Relates:->][?:Fact];
-        oi: int = 0;
-        while oi < len(outs) {
-            ch = outs[oi];
-            if not (ch.fid in self.claimed) {
-                self.depth[ch.fid] = cur + 1;
-                visit :0: [ch];
+        hop = 0;
+        if here.fid in self.hops { hop = self.hops[here.fid]; }
+        if hop > self.max_hops { disengage; }
+        self.found.append(here.fid);
+        print(here.fid);
+        nxt: list[Fact] = [here ->:Rel:->][?:Fact];
+        queued: list[Fact] = [];
+        for ch in nxt {
+            nh = hop + 1;
+            if nh <= self.max_hops {
+                if ch.fid not in self.hops { self.hops[ch.fid] = nh; }
+                queued.append(ch);
             }
-            oi += 1;
         }
+        if len(queued) > 0 { visit :0: queued; } else { disengage; }
     }
 }
 
-walker SuperWalker {
-    has graph_root: Fact;
+walker CascadeWalker {
     has claimed: dict[str, bool] = {};
     has chain: list[str] = [];
 
-    can chase with Fact entry {
+    can follow with Fact entry {
         if here.fid in self.claimed { skip; }
         self.claimed[here.fid] = True;
-        if here.superseded_by != "" {
-            self.chain.append(here.superseded_by);
-            nxt = find_fact(self.graph_root, here.superseded_by);
-            if nxt is not None {
-                if not (nxt.fid in self.claimed) {
-                    visit :0: [nxt];
-                }
-            } else {
-                disengage;
-            }
-        } else {
+        self.chain.append(here.fid);
+        print(here.fid);
+        nxt: list[Fact] = [here ->:Supersedes:->][?:Fact];
+        if len(nxt) > 0 { visit :0: nxt; } else { disengage; }
+    }
+}
+
+walker PathWalker {
+    has claimed: dict[str, bool] = {};
+    has depths: dict[str, int] = {};
+    has target: str = "";
+    has max_depth: int = 3;
+    has box: dict[str, bool] = {};
+
+    can seek with Fact entry {
+        if "hit" in self.box and self.box["hit"] { disengage; }
+        if here.fid in self.claimed { skip; }
+        dep = 0;
+        if here.fid in self.depths { dep = self.depths[here.fid]; }
+        if dep > self.max_depth { disengage; }
+        self.claimed[here.fid] = True;
+        print(here.fid);
+        if here.fid == self.target {
+            self.box["hit"] = True;
             disengage;
         }
+        nxt: list[Fact] = [here ->:Rel:->][?:Fact];
+        queued: list[Fact] = [];
+        for ch in nxt {
+            nd = dep + 1;
+            if nd <= self.max_depth {
+                if ch.fid not in self.depths { self.depths[ch.fid] = nd; }
+                queued.append(ch);
+            }
+        }
+        if len(queued) > 0 { visit :0: queued; } else { disengage; }
     }
 }
 
-walker ActiveRelWalker {
-    has as_of: int = 0;
-    has claimed: dict[str, bool] = {};
-    has rows: list[str] = [];
-
-    can scan with Fact entry {
-        if here.fid in self.claimed { skip; }
-        self.claimed[here.fid] = True;
-        outs: list[Fact] = [here ->:Relates:->][?:Fact];
-        ei: int = 0;
-        while ei < len(outs) {
-            dst = outs[ei];
-            rel_edges: list[Relates] = [here ->:Relates:->][?:Relates];
-            ri: int = 0;
-            while ri < len(rel_edges) {
-                e = rel_edges[ri];
-                if e.start_at <= self.as_of and self.as_of <= e.end_at {
-                    row = here.fid + "|" + dst.fid + "|" + e.source_episode_id;
-                    self.rows.append(row);
-                }
-                ri += 1;
-            }
-            ei += 1;
-        }
-        raw_kids = [here ->];
-        ki: int = 0;
-        while ki < len(raw_kids) {
-            cand = raw_kids[ki];
-            if cand is Fact {
-                ch = cand as Fact;
-                if not (ch.fid in self.claimed) {
-                    visit :0: [ch];
-                }
-            }
-            ki += 1;
+def lookup_fact(gr: GraphRoot, fid: str) -> Fact | None {
+    pending: list[Fact] = [gr ->][?:Fact];
+    seen: dict[str, bool] = {};
+    while len(pending) > 0 {
+        cur = pending.pop();
+        if cur.fid not in seen {
+            seen[cur.fid] = True;
+            if cur.fid == fid { return cur; }
+            more: list[Fact] = [cur ->][?:Fact];
+            for m in more { pending.append(m); }
         }
     }
+    return None;
 }
 
-def build_memory_graph -> Fact {
-    graph_root = Fact(fid="__root__");
-    a = Fact(fid="A", source_episode_id="ep_a");
-    b = Fact(fid="B", source_episode_id="ep_b");
-    c = Fact(fid="C", source_episode_id="ep_c");
-    d = Fact(fid="D", source_episode_id="ep_d", superseded_by="E");
-    e = Fact(fid="E", source_episode_id="ep_e", superseded_by="F");
-    f = Fact(fid="F", source_episode_id="ep_f");
-    root ++> graph_root;
-    graph_root ++> a;
-    graph_root ++> b;
-    graph_root ++> c;
-    graph_root ++> d;
-    graph_root ++> e;
-    graph_root ++> f;
-    a +>:Relates:+> b;
-    a +>:Relates:+> c;
-    b +>:Relates:+> d;
-    c +>:Relates:+> d;
-    return graph_root;
-}
-
-def reachable_within_hops(graph_root: Fact, start_id: str, max_hops: int) -> list[str] {
-    start_nd = find_fact(graph_root, start_id);
-    if start_nd is None {
-        empty: list[str] = [];
-        return empty;
+def build_memory_layer(
+    fact_ids: list,
+    rel_from: list,
+    rel_to: list,
+    sup_from: list,
+    sup_to: list,
+) -> GraphRoot {
+    gr = GraphRoot();
+    root ++> gr;
+    by_id: dict[str, Fact] = {};
+    for fid in fact_ids {
+        nd = Fact(fid=fid);
+        gr ++> nd;
+        by_id[fid] = nd;
     }
-    depth0: dict[str, int] = {};
-    depth0[start_id] = 0;
-    w = start_nd spawn ReachWalker(
-        start_id=start_id,
-        max_hops=max_hops,
-        graph_root=graph_root,
-        claimed={},
-        depth=depth0,
-        found=[]
-    );
-    return sorted(w.found);
+    i = 0;
+    while i < len(rel_from) {
+        sf = rel_from[i];
+        st = rel_to[i];
+        if sf in by_id and st in by_id {
+            by_id[sf] +>:Rel:+> by_id[st];
+        }
+        i += 1;
+    }
+    j = 0;
+    while j < len(sup_from) {
+        so = sup_from[j];
+        sn = sup_to[j];
+        if so in by_id and sn in by_id {
+            by_id[so] +>:Supersedes:+> by_id[sn];
+        }
+        j += 1;
+    }
+    return gr;
 }
 
-def supersession_chain(graph_root: Fact, fid: str) -> list[str] {
-    start_nd = find_fact(graph_root, fid);
-    if start_nd is None {
-        empty: list[str] = [];
-        return empty;
-    }
-    w = start_nd spawn SuperWalker(graph_root=graph_root, claimed={}, chain=[]);
+def reachable_fact_ids(gr: GraphRoot, start_id: str, max_hops: int) -> list[str] {
+    start = lookup_fact(gr, start_id);
+    if start is None { return []; }
+    hops0: dict[str, int] = {};
+    hops0[start.fid] = 0;
+    found: list[str] = [];
+    w = start spawn ReachWalker(claimed={}, hops=hops0, max_hops=max_hops, found=found);
+    _ = w.found;
+    return sorted(found);
+}
+
+def supersession_chain(gr: GraphRoot, fact_id: str) -> list[str] {
+    start = lookup_fact(gr, fact_id);
+    if start is None { return []; }
+    chain: list[str] = [];
+    w = start spawn CascadeWalker(claimed={}, chain=chain);
     return w.chain;
 }
 
-def active_relations_at(graph_root: Fact, as_of: int) -> list[str] {
-    w = graph_root spawn ActiveRelWalker(as_of=as_of, claimed={}, rows=[]);
-    return sorted(w.rows);
+def relation_path_exists(
+    gr: GraphRoot,
+    start_id: str,
+    end_id: str,
+    max_depth: int,
+) -> bool {
+    start = lookup_fact(gr, start_id);
+    if start is None { return False; }
+    if start_id == end_id { return True; }
+    depths0: dict[str, int] = {};
+    depths0[start.fid] = 0;
+    box: dict[str, bool] = {};
+    w = start spawn PathWalker(
+        claimed={},
+        depths=depths0,
+        target=end_id,
+        max_depth=max_depth,
+        box=box,
+    );
+    if "hit" in w.box { return w.box["hit"]; }
+    if "hit" in box { return box["hit"]; }
+    return False;
 }

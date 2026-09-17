@@ -1,167 +1,169 @@
-"""Self-referential M2M back-populate — sqlalchemy/sqlalchemy#6137."""
-
-node GraphRoot {}
+"""sqlalchemy/sqlalchemy#6137"""
 
 node Entity {
     has cid: str;
-    has kind: str;
+    has polymorph: str;
 }
-
-edge Membership {}
 
 edge Neighbor {}
 
-walker NeighborClosure {
-    has claimed: dict[str, bool] = {};
-    has start_id: str = "";
-    has found: list[str] = [];
-
-    can begin with GraphRoot entry {
-        for ent in [here ->:Membership:->][?:Entity] {
-            if ent.cid == self.start_id {
-                visit ent;
-            }
-        }
-        print {"walker": "NeighborClosure", "start": self.start_id, "found": len(self.found)};
-    }
-
-    can walk with Entity entry {
-        if here.cid in self.claimed {
-            skip;
-        }
-        self.claimed[here.cid] = True;
-        if here.cid != self.start_id {
-            self.found.append(here.cid);
-        }
-        kids: list[Entity] = [here ->:Neighbor:->][?:Entity];
-        visit :0: kids;
-    }
+def _nodes(st: dict[str, object]) -> dict[str, object] {
+    return st["nodes"] as dict[str, object];
 }
 
-def new_graph -> GraphRoot {
-    gr = GraphRoot();
-    return gr;
+def new_store() -> dict[str, object] {
+    st: dict[str, object] = {};
+    st["nodes"] = {};
+    return st;
 }
 
-def _find_entity(graph_root: GraphRoot, node_id: str) -> Entity | None {
-    for ent in [graph_root ->:Membership:->][?:Entity] {
-        if ent.cid == node_id {
-            return ent;
-        }
-    }
-    return None;
-}
-
-def create_entity(graph_root: GraphRoot, kind: str) -> str {
-    count: int = 0;
-    for ent in [graph_root ->:Membership:->][?:Entity] {
-        count = count + 1;
-    }
-    cid: str = "e" + str(count);
-    ent = Entity(cid=cid, kind=kind);
-    graph_root +>:Membership:+> ent;
+def create_entity(st: dict[str, object], polymorph: str) -> str {
+    nodes = _nodes(st);
+    cid = "e" + str(len(nodes));
+    nd = Entity(cid=cid, polymorph=polymorph);
+    root ++> nd;
+    nodes[cid] = nd;
     return cid;
 }
 
-def connect_neighbors(graph_root: GraphRoot, a_id: str, b_id: str) -> bool {
-    if a_id == b_id {
-        return False;
+def _get(st: dict[str, object], node_id: str) -> object {
+    nodes = _nodes(st);
+    if node_id not in nodes {
+        return None;
     }
-    a = _find_entity(graph_root, a_id);
-    b = _find_entity(graph_root, b_id);
-    if a is None or b is None {
-        return False;
-    }
-    a +>:Neighbor:+> b;
-    b +>:Neighbor:+> a;
-    return True;
+    return nodes[node_id];
 }
 
-def get_neighbors(graph_root: GraphRoot, node_id: str) -> list[str] {
-    target = _find_entity(graph_root, node_id);
-    if target is None {
+def _has_neighbor(a: Entity, b_id: str) -> bool {
+    for ch in [a ->:Neighbor:->][?:Entity] {
+        if ch.cid == b_id {
+            return True;
+        }
+    }
+    return False;
+}
+
+def link_neighbors(st: dict[str, object], left_id: str, right_id: str) -> None {
+    left_obj = _get(st, left_id);
+    right_obj = _get(st, right_id);
+    if left_obj is None or right_obj is None {
+        return;
+    }
+    left = left_obj as Entity;
+    right = right_obj as Entity;
+    if not _has_neighbor(left, right.cid) {
+        left +>:Neighbor:+> right;
+    }
+    if not _has_neighbor(right, left.cid) {
+        right +>:Neighbor:+> left;
+    }
+}
+
+def neighbor_ids(st: dict[str, object], node_id: str) -> list[str] {
+    nd_obj = _get(st, node_id);
+    if nd_obj is None {
         return [];
     }
-    ids: list[str] = [];
-    for n in [target ->:Neighbor:->][?:Entity] {
-        ids.append(n.cid);
-    }
-    return sorted(ids);
-}
-
-def disconnect_neighbors(graph_root: GraphRoot, a_id: str, b_id: str) -> bool {
-    a = _find_entity(graph_root, a_id);
-    b = _find_entity(graph_root, b_id);
-    if a is None or b is None {
-        return False;
-    }
-    for peer in [a ->:Neighbor:->][?:Entity] {
-        if peer.cid == b_id {
-            peer disconnect from a;
-        }
-    }
-    for peer in [b ->:Neighbor:->][?:Entity] {
-        if peer.cid == a_id {
-            peer disconnect from b;
-        }
-    }
-    return True;
-}
-
-def neighbor_closure(graph_root: GraphRoot, start_id: str) -> list[str] {
-    w = graph_root spawn NeighborClosure(claimed={}, start_id=start_id, found=[]);
+    nd = nd_obj as Entity;
     out: list[str] = [];
-    for x in w.found {
-        out.append(x);
+    for ch in [nd ->:Neighbor:->][?:Entity] {
+        out.append(ch.cid);
     }
     return sorted(out);
 }
 
-test "create_and_connect" {
-    gr = new_graph();
-    a = create_entity(gr, "user");
-    b = create_entity(gr, "user");
-    c = create_entity(gr, "user");
-    assert connect_neighbors(gr, a, b);
-    assert connect_neighbors(gr, b, c);
-    assert get_neighbors(gr, a) == ["e1"];
-    assert get_neighbors(gr, b) == ["e0", "e2"];
-    assert neighbor_closure(gr, a) == ["e1", "e2"];
+def back_populated(st: dict[str, object], left_id: str, right_id: str) -> bool {
+    left_obj = _get(st, left_id);
+    right_obj = _get(st, right_id);
+    if left_obj is None or right_obj is None {
+        return False;
+    }
+    left = left_obj as Entity;
+    right = right_obj as Entity;
+    return _has_neighbor(left, right.cid) and _has_neighbor(right, left.cid);
 }
 
-test "self_connect_rejected" {
-    gr = new_graph();
-    a = create_entity(gr, "user");
-    assert connect_neighbors(gr, a, a) == False;
-    assert get_neighbors(gr, a) == [];
+walker CompWalker {
+    has claimed: dict[str, bool] = {};
+    has found: list[str] = [];
+
+    can step_entity with Entity entry {
+        if here.cid in self.claimed {
+            skip;
+        }
+        self.claimed[here.cid] = True;
+        self.found.append(here.cid);
+        print({"comp": here.cid});
+        kids: list[Entity] = [];
+        for ch in [here ->:Neighbor:->][?:Entity] {
+            kids.append(ch);
+        }
+        visit :0: kids else {
+            disengage;
+        }
+    }
 }
 
-test "missing_node_tolerance" {
-    gr = new_graph();
-    a = create_entity(gr, "user");
-    assert connect_neighbors(gr, a, "missing") == False;
-    assert get_neighbors(gr, "missing") == [];
-    assert neighbor_closure(gr, "missing") == [];
+def connected_component(st: dict[str, object], start_id: str) -> list[str] {
+    start_obj = _get(st, start_id);
+    if start_obj is None {
+        return [];
+    }
+    start = start_obj as Entity;
+    w = start spawn CompWalker(claimed={});
+    out: list[str] = [];
+    for cid in w.found {
+        out.append(cid);
+    }
+    return sorted(out);
 }
 
-test "disconnect_bidirectional" {
-    gr = new_graph();
-    a = create_entity(gr, "user");
-    b = create_entity(gr, "user");
-    assert connect_neighbors(gr, a, b);
-    assert disconnect_neighbors(gr, a, b);
-    assert get_neighbors(gr, a) == [];
-    assert get_neighbors(gr, b) == [];
-    assert neighbor_closure(gr, a) == [];
+test "back_populated_symmetric" {
+    st = new_store();
+    left_id = create_entity(st, "tag");
+    right_id = create_entity(st, "tag");
+    link_neighbors(st, left_id, right_id);
+    assert back_populated(st, left_id, right_id);
+    assert back_populated(st, right_id, left_id);
 }
 
-test "cycle_closure_once_only" {
-    gr = new_graph();
-    a = create_entity(gr, "user");
-    b = create_entity(gr, "user");
-    c = create_entity(gr, "user");
-    assert connect_neighbors(gr, a, b);
-    assert connect_neighbors(gr, b, c);
-    assert connect_neighbors(gr, c, a);
-    assert neighbor_closure(gr, a) == ["e1", "e2"];
+test "neighbor_ids_sorted" {
+    st = new_store();
+    a = create_entity(st, "tag");
+    b = create_entity(st, "tag");
+    c = create_entity(st, "tag");
+    link_neighbors(st, a, b);
+    link_neighbors(st, c, a);
+    assert neighbor_ids(st, a) == sorted([b, c]);
+}
+
+test "unknown_ids_tolerated" {
+    st = new_store();
+    assert neighbor_ids(st, "missing") == [];
+    assert connected_component(st, "missing") == [];
+    assert back_populated(st, "missing", "also_missing") == False;
+}
+
+test "diamond_revisit_component" {
+    st = new_store();
+    a = create_entity(st, "tag");
+    b = create_entity(st, "tag");
+    c = create_entity(st, "tag");
+    d = create_entity(st, "tag");
+    link_neighbors(st, a, b);
+    link_neighbors(st, a, c);
+    link_neighbors(st, c, d);
+    link_neighbors(st, b, d);
+    comp = connected_component(st, a);
+    expected: list[str] = sorted([a, b, c, d]);
+    assert comp == expected;
+    assert len(comp) == 4;
+}
+
+test "isolated_component" {
+    st = new_store();
+    lone = create_entity(st, "tag");
+    other = create_entity(st, "tag");
+    assert connected_component(st, lone) == [lone];
+    assert neighbor_ids(st, other) == [];
 }

@@ -1,126 +1,134 @@
-"""tree-sitter-perl/perl-lsp#120 — iterative builder walk replacing CST recursion."""
+# iss_tree-sitter-perl__perl-lsp__120.jac
+# tree-sitter-perl/perl-lsp#120 — Session B iterative builder walk (depth-gated CST collect)
 
-node Task {
+node CstNode {
     has cid: str;
-    has kind: str = "cst";
+    has kind: str;
     has depth: int = 0;
 }
 
 edge Child {}
 
-obj TaskGraph {
-    has root_id: str = "";
-    has root: Task;
-    has by_id: dict[str, Task] = {};
+walker BuilderW {
+    has claimed: dict[str, bool] = {};
+    has depth_limit: int = 0;
+    has kinds: list[str] = [];
+
+    can walk with CstNode entry {
+        if here.cid in self.claimed {
+            skip;
+        }
+        self.claimed[here.cid] = True;
+        if here.depth <= self.depth_limit {
+            self.kinds.append(here.kind);
+        }
+        log: list[str] = [];
+        log.append("builder");
+        log.append(here.cid);
+        depth_s: str = f"{here.depth}";
+        log.append(depth_s);
+        print log;
+        if here.depth >= self.depth_limit {
+            disengage;
+        }
+        kids: list[CstNode] = [here ->:Child:->][?:CstNode];
+        ri: int = len(kids) - 1;
+        while ri >= 0 {
+            visit :0: [kids[ri]];
+            ri -= 1;
+        }
+    }
 }
 
-walker BuilderWalk {
+walker OrderW {
     has claimed: dict[str, bool] = {};
-    has max_depth: int = -1;
     has order: list[str] = [];
 
-    can step with Task entry {
+    can walk with CstNode entry {
         if here.cid in self.claimed {
             skip;
         }
         self.claimed[here.cid] = True;
         self.order.append(here.cid);
-        print {"builder": here.cid, "depth": here.depth};
-        if self.max_depth >= 0 and here.depth >= self.max_depth {
-            disengage;
-        }
-        kids: list[Task] = [];
-        for ch in [here ->:Child:->][?:Task] {
-            kids.append(ch);
-        }
-        i: int = 0;
-        while i < len(kids) {
-            j: int = i + 1;
-            while j < len(kids) {
-                if kids[j].cid < kids[i].cid {
-                    tmp: Task = kids[i];
-                    kids[i] = kids[j];
-                    kids[j] = tmp;
-                }
-                j += 1;
-            }
-            i += 1;
-        }
-        rev: list[Task] = [];
-        idx: int = len(kids) - 1;
-        while idx >= 0 {
-            rev.append(kids[idx]);
-            idx -= 1;
-        }
-        if rev {
-            visit :0: rev;
-        } else {
-            disengage;
+        log: list[str] = [];
+        log.append("order");
+        log.append(here.cid);
+        print log;
+        kids: list[CstNode] = [here ->:Child:->][?:CstNode];
+        ri: int = len(kids) - 1;
+        while ri >= 0 {
+            visit :0: [kids[ri]];
+            ri -= 1;
         }
     }
 }
 
-def make_task_graph(specs: list, parent_child: list) -> TaskGraph {
-    g = TaskGraph();
-    for spec in specs {
-        tid: str = spec[0];
-        kind: str = spec[1];
-        dep: int = spec[2];
-        nd = Task(cid=tid, kind=kind, depth=dep);
-        g.by_id[tid] = nd;
-    }
-    if specs {
-        g.root_id = specs[0][0];
-        g.root = g.by_id[g.root_id];
-    }
-    for pc in parent_child {
-        p: str = pc[0];
-        c: str = pc[1];
-        if p not in g.by_id {
-            continue;
+walker MarkPruneW {
+    has claimed: dict[str, bool] = {};
+    has drop_kinds: dict[str, bool] = {};
+    has mark_nodes: list[CstNode] = [];
+
+    can walk with CstNode entry {
+        if here.cid in self.claimed {
+            skip;
         }
-        if c not in g.by_id {
-            continue;
+        self.claimed[here.cid] = True;
+        if here.kind in self.drop_kinds {
+            self.mark_nodes.append(here);
         }
-        pa: Task = g.by_id[p];
-        ch: Task = g.by_id[c];
-        pa +>:Child:+> ch;
+        log: list[str] = [];
+        log.append("mark");
+        log.append(here.cid);
+        print log;
+        kids: list[CstNode] = [here ->:Child:->][?:CstNode];
+        for ch in kids {
+            visit [ch];
+        }
     }
-    return g;
 }
 
-def iter_builder_order(g: TaskGraph, max_depth: int = -1) -> list[str] {
-    w = g.root spawn BuilderWalk(claimed={}, max_depth=max_depth);
+def mk_drop_map(kinds: list[str]) -> dict[str, bool] {
+    out: dict[str, bool] = {};
+    for k in kinds {
+        out[k] = True;
+    }
+    return out;
+}
+
+def builder_index(graph_root: CstNode, depth_limit: int) -> list[str] {
+    w = graph_root spawn BuilderW(depth_limit=depth_limit, claimed={});
+    return w.kinds;
+}
+
+def builder_order(graph_root: CstNode) -> list[str] {
+    w = graph_root spawn OrderW(claimed={});
     return w.order;
 }
 
-def tail_task_ids(g: TaskGraph, depth_limit: int) -> list[str] {
-    ids: list[str] = [];
-    for tid in g.by_id {
-        nd: Task = g.by_id[tid];
-        if nd.depth >= depth_limit {
-            ids.append(tid);
+def find_by_cid(graph_root: CstNode, target_cid: str) -> str | None {
+    w = graph_root spawn OrderW(claimed={});
+    for cid in w.order {
+        if cid == target_cid {
+            return cid;
         }
     }
-    ids = sorted(ids);
-    return ids;
+    return None;
 }
 
-def session_assignments(task_ids: list[str], sessions: list[str]) -> dict[str, list[str]] {
-    out: dict[str, list[str]] = {};
-    for s in sessions {
-        out[s] = [];
+def cascade_prune_kinds(graph_root: CstNode, kinds: list[str] | None = None) -> list[str] {
+    use_kinds: list[str] = [];
+    if kinds is not None {
+        use_kinds = kinds;
     }
-    ordered: list[str] = [];
-    for tid in task_ids {
-        ordered.append(tid);
+    dk = mk_drop_map(use_kinds);
+    w = graph_root spawn MarkPruneW(drop_kinds=dk, claimed={});
+    pruned: list[str] = [];
+    for nd in w.mark_nodes {
+        pruned.append(nd.cid);
     }
-    ordered = sorted(ordered);
-    i: int = 0;
-    for tid in ordered {
-        sl: str = sessions[i % len(sessions)];
-        out[sl].append(tid);
-        i += 1;
+    pruned = sorted(pruned);
+    for nd in w.mark_nodes {
+        destroy nd;
     }
-    return out;
+    return pruned;
 }

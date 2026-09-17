@@ -162,64 +162,67 @@ def can_move(graph_root: Task, tid: str) -> bool {
     return wk.ok;
 }
 
-test "create and depth" {
-    root_node = Task(tid="root", title="root");
-    a = create_task(root_node, "a", "A");
-    b = create_task(root_node, "b", "B", "a");
-    c = create_task(root_node, "c", "C", "b");
-    assert depth_of(root_node, "a") == 0;
-    assert depth_of(root_node, "b") == 1;
-    assert depth_of(root_node, "c") == 2;
-    assert depth_of(root_node, "zz") == -1;
+test "create_and_depth" {
+    r = Task(tid="r", title="root");
+    a = create_task(r, "a", "A");
+    b = create_task(r, "b", "B", parent_tid="a");
+    c = create_task(r, "c", "C", parent_tid="b");
+    d = create_task(r, "d", "D", parent_tid="zz");
+    assert depth_of(r, "a") == 0;
+    assert depth_of(r, "b") == 1;
+    assert depth_of(r, "c") == 2;
+    assert depth_of(r, "d") == 0;
+    assert depth_of(r, "nope") == -1;
 }
 
-test "unknown parent tolerated as root" {
-    root_node = Task(tid="root", title="root");
-    x = create_task(root_node, "x", "X", "nope");
-    assert depth_of(root_node, "x") == 0;
-    assert len(subtree_ids(root_node, "x")) == 1;
+test "can_indent_bound" {
+    r = Task(tid="r", title="root");
+    create_task(r, "a", "A");
+    create_task(r, "b", "B", parent_tid="a");
+    create_task(r, "c", "C", parent_tid="b");
+    create_task(r, "d", "D", parent_tid="c");
+    assert can_indent(r, "a") == True;
+    assert can_indent(r, "c") == True;
+    assert can_indent(r, "d") == False;
+    assert can_move(r, "d") == False;
+    assert can_move(r, "c") == True;
 }
 
-test "can_indent respects max depth" {
-    root_node = Task(tid="root", title="root");
-    a = create_task(root_node, "a", "A");
-    b = create_task(root_node, "b", "B", "a");
-    c = create_task(root_node, "c", "C", "b");
-    d = create_task(root_node, "d", "D", "c");
-    assert can_indent(root_node, "a") == True;
-    assert can_indent(root_node, "c") == True;
-    assert can_indent(root_node, "d") == False;
+test "subtree_closure" {
+    r = Task(tid="r", title="root");
+    create_task(r, "a", "A");
+    create_task(r, "b", "B", parent_tid="a");
+    create_task(r, "c", "C", parent_tid="a");
+    create_task(r, "d", "D", parent_tid="b");
+    assert subtree_ids(r, "a") == ["a", "b", "c", "d"];
+    assert subtree_ids(r, "b") == ["b", "d"];
+    assert subtree_ids(r, "zz") == [];
 }
 
-test "subtree closure multiset and order independence" {
-    root_node = Task(tid="root", title="root");
-    a = create_task(root_node, "a", "A");
-    b = create_task(root_node, "b", "B", "a");
-    c = create_task(root_node, "c", "C", "b");
-    d = create_task(root_node, "d", "D", "a");
-    got = subtree_ids(root_node, "a");
-    assert got == ["a", "b", "c", "d"];
-    assert subtree_ids(root_node, "missing") == [];
-}
-
-test "complete cascade marks descendants once" {
-    root_node = Task(tid="root", title="root");
-    a = create_task(root_node, "a", "A");
-    b = create_task(root_node, "b", "B", "a");
-    c = create_task(root_node, "c", "C", "b");
-    marked = complete_cascade(root_node, "a");
+test "cascade_marks_descendants" {
+    r = Task(tid="r", title="root");
+    create_task(r, "a", "A");
+    create_task(r, "b", "B", parent_tid="a");
+    create_task(r, "c", "C", parent_tid="b");
+    create_task(r, "x", "X");
+    marked = complete_cascade(r, "a");
     assert marked == ["a", "b", "c"];
-    assert c.done == True;
-    assert complete_cascade(root_node, "zz") == [];
+    t = find_task(r, "c");
+    assert t is not None and t.done == True;
+    tx = find_task(r, "x");
+    assert tx is not None and tx.done == False;
 }
 
-test "can_move walker" {
-    root_node = Task(tid="root", title="root");
-    a = create_task(root_node, "a", "A");
-    b = create_task(root_node, "b", "B", "a");
-    c = create_task(root_node, "c", "C", "b");
-    d = create_task(root_node, "d", "D", "c");
-    assert can_move(root_node, "a") == True;
-    assert can_move(root_node, "d") == False;
-    assert can_move(root_node, "zz") == False;
+test "complete_cascade_unknown" {
+    r = Task(tid="r", title="root");
+    create_task(r, "a", "A");
+    assert complete_cascade(r, "zz") == [];
+    assert len(all_tasks(r)) == 2;
+}
+
+test "find_task" {
+    r = Task(tid="r", title="root");
+    create_task(r, "a", "A");
+    assert find_task(r, "a") is not None;
+    assert find_task(r, "zz") is None;
 }

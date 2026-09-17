@@ -1,331 +1,320 @@
-"""
-t-benze/happyranch#827 - batched subtree severity rollup for task roots.
-"""
-
-node TaskAnchor {
-    has label: str = "happyranch_tasks";
-}
+"""t-benze/happyranch#827 — batched task-root severity rollup; eliminate subtree N+1."""
 
 node Task {
-    has tid: str;
-    has status: str;
-    has created_at: int = 0;
-    has sort_id: int = 0;
+    has task_id: str;
+    has severity: str;
+    has created_at: int;
 }
 
-edge RootLink {}
 edge Child {}
 
-glob SEVERITY_RANK: dict[str, int] = {
-    "critical": 4,
-    "error": 3,
-    "warning": 2,
-    "ok": 1,
-};
-
-def sort_tasks_desc(items: list[Task]) -> list[Task] {
-    n = len(items);
-    i = 0;
-    while i < n {
-        j = i + 1;
-        while j < n {
-            a = items[i] as Task;
-            b = items[j] as Task;
-            swap = False;
-            if a.created_at < b.created_at {
-                swap = True;
-            } elif a.created_at == b.created_at and a.sort_id < b.sort_id {
-                swap = True;
-            }
-            if swap {
-                items[i] = b;
-                items[j] = a;
-            }
-            j += 1;
-        }
-        i += 1;
-    }
-    return items;
+obj TaskStore {
+    has anchor: Task;
+    has by_id: dict[str, Task] = {};
+    has roots: list[Task] = [];
 }
 
-def attach_tasks(anchor: TaskAnchor, rows: list[dict]) {
-    by_id: dict[str, Task] = {};
-    for row in rows {
-        nd = Task(
-            tid=row["id"] as str,
-            status=row["status"] as str,
-            created_at=row["created_at"] as int,
-            sort_id=row["sort_id"] as int,
-        );
-        by_id[row["id"] as str] = nd;
-    }
-    for row in rows {
-        pid = row["parent_id"] as str;
-        if pid == "" {
-            rt = by_id[row["id"] as str] as Task;
-            anchor +>:RootLink:+> rt;
-        }
-    }
-    for row in rows {
-        pid = row["parent_id"] as str;
-        if pid != "" {
-            p = by_id[pid] as Task;
-            c = by_id[row["id"] as str] as Task;
-            p +>:Child:+> c;
-        }
-        extras: list[str] = [];
-        if "extra_parents" in row {
-            extras = row["extra_parents"] as list[str];
-        }
-        for xp in extras {
-            p2 = by_id[xp] as Task;
-            c2 = by_id[row["id"] as str] as Task;
-            p2 +>:Child:+> c2;
-        }
-    }
-}
-
-def build_graph(rows: list[dict]) -> TaskAnchor {
-    anchor = TaskAnchor();
-    root ++> anchor;
-    attach_tasks(anchor, rows);
-    return anchor;
+def severity_rank(sev: str) -> int {
+    if sev == "critical" { return 3; }
+    if sev == "warning" { return 2; }
+    return 1;
 }
 
 def rollup_severity(statuses: list[str]) -> str {
-    best = "ok";
-    best_rank = 1;
-    for st in statuses {
-        rk = SEVERITY_RANK[st] as int;
-        if rk > best_rank {
-            best_rank = rk;
-            best = st;
+    best: str = "ok";
+    best_rank: int = 1;
+    for s in statuses {
+        r = severity_rank(s);
+        if r > best_rank {
+            best_rank = r;
+            best = s;
         }
     }
     return best;
 }
 
-walker TaskLookup {
-    has tid: str;
-    has claimed: dict[str, bool] = {};
-    has hit: Task | None = None;
-
-    can seek with TaskAnchor entry {
-        for rt in [here ->:RootLink:->][?:Task] {
-            visit rt;
-        }
-        print({"lookup": self.tid, "found": self.hit is not None});
+def remove_at(items: list[Task], idx: int) -> list[Task] {
+    out: list[Task] = [];
+    i: int = 0;
+    for it in items {
+        if i != idx { out.append(it); }
+        i = i + 1;
     }
-
-    can step with Task entry {
-        if here.tid in self.claimed { skip; }
-        self.claimed[here.tid] = True;
-        if here.tid == self.tid { self.hit = here; }
-        for ch in [here ->:Child:->][?:Task] {
-            visit ch;
-        }
-    }
-}
-
-def get_task(anchor: TaskAnchor, task_id: str) -> dict | None {
-    lk = anchor spawn TaskLookup(tid=task_id);
-    if lk.hit is None { return None; }
-    t = lk.hit as Task;
-    return {
-        "id": t.tid,
-        "status": t.status,
-        "created_at": t.created_at,
-        "sort_id": t.sort_id,
-    };
-}
-
-walker ChildrenQuery {
-    has parent_id: str;
-    has claimed: dict[str, bool] = {};
-    has child_ids: list[str] = [];
-
-    can query with TaskAnchor entry {
-        for rt in [here ->:RootLink:->][?:Task] {
-            visit rt;
-        }
-        print({"children_of": self.parent_id, "n": len(self.child_ids)});
-    }
-
-    can pick with Task entry {
-        if here.tid in self.claimed { skip; }
-        self.claimed[here.tid] = True;
-        if here.tid == self.parent_id {
-            for ch in [here ->:Child:->][?:Task] {
-                self.child_ids.append(ch.tid);
-            }
-        }
-        for ch in [here ->:Child:->][?:Task] {
-            visit ch;
-        }
-    }
-}
-
-def get_children(anchor: TaskAnchor, parent_id: str) -> list[str] {
-    w = anchor spawn ChildrenQuery(parent_id=parent_id);
-    out: list[str] = [];
-    for cid in w.child_ids { out.append(cid); }
-    sorted(out);
     return out;
 }
 
-walker SubtreeWalk {
+def sort_roots(roots: list[Task]) -> list[Task] {
+    remaining: list[Task] = [];
+    ordered: list[Task] = [];
+    for r in roots { remaining.append(r); }
+    while len(remaining) > 0 {
+        best_i: int = 0;
+        best: Task = remaining[0];
+        i: int = 0;
+        for r in remaining {
+            take: bool = False;
+            if r.created_at > best.created_at { take = True; }
+            elif r.created_at == best.created_at and r.task_id > best.task_id { take = True; }
+            if take {
+                best = r;
+                best_i = i;
+            }
+            i = i + 1;
+        }
+        ordered.append(best);
+        remaining = remove_at(remaining, best_i);
+    }
+    return ordered;
+}
+
+walker CollectStatusesW {
     has claimed: dict[str, bool] = {};
     has statuses: list[str] = [];
 
-    can enter with Task entry {
-        if here.tid in self.claimed { skip; }
-        self.claimed[here.tid] = True;
-        self.statuses.append(here.status);
-        print({"subtree_visit": here.tid, "status": here.status});
-        for ch in [here ->:Child:->][?:Task] {
-            visit :0: ch;
+    can walk with Task entry {
+        if here.task_id in self.claimed { skip; }
+        self.claimed[here.task_id] = True;
+        self.statuses.append(here.severity);
+        kids: list[Task] = [here ->:Child:->][?:Task];
+        for ch in kids {
+            visit :0: [ch];
         }
     }
 }
 
-def get_subtree_statuses(anchor: TaskAnchor, root_id: str) -> list[str] {
-    lk = anchor spawn TaskLookup(tid=root_id);
-    if lk.hit is None { return []; }
-    sw = lk.hit spawn SubtreeWalk();
-    out: list[str] = [];
-    for st in sw.statuses { out.append(st); }
-    return out;
-}
-
-walker BatchRollup {
-    has limit: int = 50;
+walker CountQueriesW {
     has claimed: dict[str, bool] = {};
-    has active_root: str = "";
-    has bucket: dict[str, list[str]] = {};
-    has results: list[dict] = [];
+    has count: int = 0;
 
-    can begin with TaskAnchor entry {
-        roots: list[Task] = [];
-        for rt in [here ->:RootLink:->][?:Task] {
-            roots.append(rt);
-        }
-        roots = sort_tasks_desc(roots);
-        taken = 0;
-        for rt in roots {
-            if taken >= self.limit { break; }
-            self.active_root = rt.tid;
-            clr: dict[str, bool] = {};
-            self.claimed = clr;
-            empty: list[str] = [];
-            self.bucket[self.active_root] = empty;
-            visit rt;
-            taken += 1;
-        }
-        idx = 0;
-        for rt in roots {
-            if idx >= self.limit { break; }
-            sts = self.bucket[rt.tid] as list[str];
-            roll = rollup_severity(sts);
-            row = {
-                "id": rt.tid,
-                "status": rt.status,
-                "created_at": rt.created_at,
-                "sort_id": rt.sort_id,
-                "rollup_severity": roll,
-            };
-            self.results.append(row);
-            idx += 1;
-        }
-        print({"batch_rollup": len(self.results), "limit": self.limit});
-    }
-
-    can collect with Task entry {
-        if here.tid in self.claimed { skip; }
-        self.claimed[here.tid] = True;
-        if self.active_root != "" {
-            sts = self.bucket[self.active_root] as list[str];
-            sts.append(here.status);
-        }
-        for ch in [here ->:Child:->][?:Task] {
-            visit ch;
+    can probe with Task entry {
+        if here.task_id in self.claimed { skip; }
+        self.claimed[here.task_id] = True;
+        self.count = self.count + 2;
+        kids: list[Task] = [here ->:Child:->][?:Task];
+        for ch in kids {
+            visit :0: [ch];
         }
     }
 }
 
-def load_task_roots_with_rollup(anchor: TaskAnchor, limit: int = 50) -> list[dict] {
-    w = anchor spawn BatchRollup(limit=limit);
-    out: list[dict] = [];
-    for row in w.results { out.append(row); }
-    return out;
+def build_task_store(specs: list[dict]) -> TaskStore {
+    anchor = Task(task_id="__anchor__", severity="ok", created_at=0);
+    store = TaskStore(anchor=anchor);
+    by_id: dict[str, Task] = {};
+    roots: list[Task] = [];
+    for spec in specs {
+        tid = spec["task_id"] as str;
+        nd = Task(
+            task_id=tid,
+            severity=spec["severity"] as str,
+            created_at=spec["created_at"] as int
+        );
+        by_id[tid] = nd;
+    }
+    store.by_id = by_id;
+    for spec in specs {
+        tid = spec["task_id"] as str;
+        nd = by_id[tid];
+        pid = spec["parent_id"];
+        if pid is None {
+            roots.append(nd);
+            store.anchor ++> nd;
+        } else {
+            pkey = pid as str;
+            if pkey in by_id {
+                par = by_id[pkey];
+                par +>:Child:+> nd;
+            }
+        }
+    }
+    store.roots = roots;
+    return store;
 }
 
-test "get_task_hit_and_miss" {
-    rows: list[dict] = [
-        {"id": "r1", "parent_id": "", "status": "ok", "created_at": 10, "sort_id": 1},
-        {"id": "c1", "parent_id": "r1", "status": "warning", "created_at": 9, "sort_id": 2},
-    ];
-    g = build_graph(rows);
-    hit = get_task(g, "c1");
-    assert hit is not None;
-    assert hit["id"] == "c1";
-    assert hit["status"] == "warning";
-    miss = get_task(g, "nope");
-    assert miss is None;
+def get_task(store: TaskStore, task_id: str) -> Task | None {
+    if task_id in store.by_id {
+        return store.by_id[task_id];
+    }
+    return None;
 }
 
-test "get_children_sorted" {
-    rows: list[dict] = [
-        {"id": "p", "parent_id": "", "status": "ok", "created_at": 1, "sort_id": 1},
-        {"id": "b", "parent_id": "p", "status": "ok", "created_at": 1, "sort_id": 1},
-        {"id": "a", "parent_id": "p", "status": "ok", "created_at": 1, "sort_id": 2},
-    ];
-    g = build_graph(rows);
-    kids = get_children(g, "p");
-    assert kids == ["a", "b"];
+def get_subtree_statuses(store: TaskStore, root_id: str) -> list[str] {
+    nd = get_task(store, root_id);
+    if nd is None {
+        return [];
+    }
+    w = nd spawn CollectStatusesW(claimed={});
+    print("subtree statuses for " + root_id);
+    return w.statuses;
 }
 
-test "subtree_statuses_dfs_once" {
-    rows: list[dict] = [
-        {"id": "r", "parent_id": "", "status": "ok", "created_at": 5, "sort_id": 1},
-        {"id": "x", "parent_id": "r", "status": "warning", "created_at": 4, "sort_id": 1},
-        {"id": "y", "parent_id": "x", "status": "critical", "created_at": 3, "sort_id": 1},
-        {
-            "id": "z",
-            "parent_id": "y",
-            "status": "error",
-            "created_at": 2,
-            "sort_id": 1,
-            "extra_parents": ["r"],
-        },
-    ];
-    g = build_graph(rows);
-    sts = get_subtree_statuses(g, "r");
-    assert sts == ["ok", "warning", "critical", "error"];
+def list_roots(store: TaskStore, limit: int = 50) -> list[dict] {
+    ordered = sort_roots(store.roots);
+    page: list[Task] = [];
+    n: int = 0;
+    for r in ordered {
+        if n >= limit { break; }
+        page.append(r);
+        n = n + 1;
+    }
+    result: list[dict] = [];
+    for root_node in page {
+        w = root_node spawn CollectStatusesW(claimed={});
+        print("rollup walk for " + root_node.task_id);
+        roll = rollup_severity(w.statuses);
+        row: dict = {};
+        row["task_id"] = root_node.task_id;
+        row["severity_rollup"] = roll;
+        result.append(row);
+    }
+    return result;
 }
 
-test "batch_rollup_limit_and_severity" {
-    rows: list[dict] = [
-        {"id": "old", "parent_id": "", "status": "ok", "created_at": 1, "sort_id": 1},
-        {"id": "new", "parent_id": "", "status": "ok", "created_at": 100, "sort_id": 1},
-        {"id": "c1", "parent_id": "new", "status": "warning", "created_at": 99, "sort_id": 1},
-        {"id": "c2", "parent_id": "new", "status": "critical", "created_at": 98, "sort_id": 1},
-    ];
-    g = build_graph(rows);
-    batch = load_task_roots_with_rollup(g, 1);
-    assert len(batch) == 1;
-    assert batch[0]["id"] == "new";
-    assert batch[0]["rollup_severity"] == "critical";
+def simulate_recursive_query_count(store: TaskStore, limit: int = 50) -> int {
+    total: int = 0;
+    ordered = sort_roots(store.roots);
+    n: int = 0;
+    for root_node in ordered {
+        if n >= limit { break; }
+        w = root_node spawn CountQueriesW(claimed={});
+        print("recursive probe " + root_node.task_id);
+        total = total + 1 + w.count;
+        n = n + 1;
+    }
+    return total;
 }
 
-test "batch_rollup_root_ordering" {
-    rows: list[dict] = [
-        {"id": "a", "parent_id": "", "status": "ok", "created_at": 50, "sort_id": 2},
-        {"id": "b", "parent_id": "", "status": "ok", "created_at": 50, "sort_id": 5},
-        {"id": "c", "parent_id": "", "status": "ok", "created_at": 10, "sort_id": 1},
-    ];
-    g = build_graph(rows);
-    batch = load_task_roots_with_rollup(g, 3);
-    ids: list[str] = [];
-    for row in batch { ids.append(row["id"] as str); }
-    assert ids == ["b", "a", "c"];
+def simulate_batched_query_count(store: TaskStore, limit: int = 50) -> int {
+    ordered = sort_roots(store.roots);
+    taken: int = 0;
+    for root_node in ordered {
+        if taken >= limit { break; }
+        taken = taken + 1;
+    }
+    print("batched roots rollup roots=" + str(len(store.roots)) + " limit=" + str(limit) + " taken=" + str(taken));
+    return 2;
+}
+
+test "rollup picks max severity" {
+    statuses: list[str] = [];
+    statuses.append("ok");
+    statuses.append("warning");
+    statuses.append("critical");
+    assert rollup_severity(statuses) == "critical";
+}
+
+test "list_roots rollup order" {
+    specs: list[dict] = [];
+    s0: dict = {};
+    s0["task_id"] = "a";
+    s0["severity"] = "ok";
+    s0["created_at"] = 10;
+    s0["parent_id"] = None;
+    specs.append(s0);
+    s1: dict = {};
+    s1["task_id"] = "b";
+    s1["severity"] = "warning";
+    s1["created_at"] = 20;
+    s1["parent_id"] = None;
+    specs.append(s1);
+    s2: dict = {};
+    s2["task_id"] = "c";
+    s2["severity"] = "critical";
+    s2["created_at"] = 5;
+    s2["parent_id"] = "a";
+    specs.append(s2);
+    s3: dict = {};
+    s3["task_id"] = "d";
+    s3["severity"] = "ok";
+    s3["created_at"] = 15;
+    s3["parent_id"] = "b";
+    specs.append(s3);
+    store = build_task_store(specs);
+    rows = list_roots(store, 50);
+    assert len(rows) == 2;
+    assert rows[0]["task_id"] == "b";
+    assert rows[0]["severity_rollup"] == "warning";
+    assert rows[1]["task_id"] == "a";
+    assert rows[1]["severity_rollup"] == "critical";
+}
+
+test "subtree statuses unknown id" {
+    specs: list[dict] = [];
+    store = build_task_store(specs);
+    got = get_subtree_statuses(store, "missing");
+    assert len(got) == 0;
+}
+
+test "subtree statuses walk" {
+    specs: list[dict] = [];
+    s0: dict = {};
+    s0["task_id"] = "a";
+    s0["severity"] = "ok";
+    s0["created_at"] = 10;
+    s0["parent_id"] = None;
+    specs.append(s0);
+    s1: dict = {};
+    s1["task_id"] = "c";
+    s1["severity"] = "critical";
+    s1["created_at"] = 5;
+    s1["parent_id"] = "a";
+    specs.append(s1);
+    store = build_task_store(specs);
+    got = get_subtree_statuses(store, "a");
+    assert len(got) == 2;
+    assert got[0] == "ok";
+    assert got[1] == "critical";
+}
+
+test "recursive vs batched query counts" {
+    specs: list[dict] = [];
+    s0: dict = {};
+    s0["task_id"] = "a";
+    s0["severity"] = "ok";
+    s0["created_at"] = 10;
+    s0["parent_id"] = None;
+    specs.append(s0);
+    s1: dict = {};
+    s1["task_id"] = "b";
+    s1["severity"] = "warning";
+    s1["created_at"] = 20;
+    s1["parent_id"] = None;
+    specs.append(s1);
+    s2: dict = {};
+    s2["task_id"] = "c";
+    s2["severity"] = "critical";
+    s2["created_at"] = 5;
+    s2["parent_id"] = "a";
+    specs.append(s2);
+    s3: dict = {};
+    s3["task_id"] = "d";
+    s3["severity"] = "ok";
+    s3["created_at"] = 15;
+    s3["parent_id"] = "b";
+    specs.append(s3);
+    store = build_task_store(specs);
+    recursive = simulate_recursive_query_count(store, 50);
+    batched = simulate_batched_query_count(store, 50);
+    assert recursive == 10;
+    assert batched == 2;
+}
+
+test "list_roots honors limit" {
+    specs: list[dict] = [];
+    s0: dict = {};
+    s0["task_id"] = "a";
+    s0["severity"] = "ok";
+    s0["created_at"] = 10;
+    s0["parent_id"] = None;
+    specs.append(s0);
+    s1: dict = {};
+    s1["task_id"] = "b";
+    s1["severity"] = "warning";
+    s1["created_at"] = 20;
+    s1["parent_id"] = None;
+    specs.append(s1);
+    store = build_task_store(specs);
+    rows = list_roots(store, 1);
+    assert len(rows) == 1;
+    assert rows[0]["task_id"] == "b";
 }

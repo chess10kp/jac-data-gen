@@ -1,69 +1,85 @@
-# Lift of astral-sh/uv#9191: cache invalidation on local dependencies in docker.
-# Python original hand-rolled adjacency dicts + memoized ancestor closure +
-# cascade invalidation sweep. Here: native OSP graph with node Pkg, edge Dep.
+# astral-sh/uv#9191 — cache invalidation on local deps (docker ctime drift)
+# Use checksums (not inode/ctime) for freshness of local dependency graph.
 
-node Pkg {
-    has pid: str;
-    has ctime: int = 0;
-    has inode: int = 0;
-    has checksum: str = "";
+node Package {
+    has name: str;
+    has checksum: str;
+    has installed_checksum: str = "";
 }
 
-edge Dep {
-    has requires_editable: bool = True;
+edge DependsOn {}
+
+# build dependency graph: parent depends on children
+def add_dep(parent: Package, child: Package) {
+    parent +>:DependsOn:+> child;
 }
 
-walker AncestorWalk {
+# checksum-based freshness: fresh iff installed checksum matches current
+def is_fresh(pkg: Package) -> bool {
+    return pkg.installed_checksum == pkg.checksum and pkg.installed_checksum != "";
+}
+
+def install(pkg: Package) {
+    pkg.installed_checksum = pkg.checksum;
+}
+
+# memoized stale-closure: mark pkg stale and cascade to all dependents
+walker Invalidate {
     has claimed: dict[str, bool] = {};
-    has acc: list[str] = [];
-    has origin_pid: str = "";
+    has invalidated: list[str] = [];
 
-    can step with Pkg entry {
-        if here.pid in self.claimed { skip; }
-        self.claimed[here.pid] = True;
-        if here.pid != self.origin_pid { self.acc.append(here.pid); }
-        visit [here ->:Dep:->];
+    can sweep with Package entry {
+        if here.name in self.claimed { skip; }
+        self.claimed[here.name] = True;
+        self.invalidated.append(here.name);
+        here.installed_checksum = "";
+        # move up to dependents (parents that depend on here): incoming DependsOn
+        visit [here <-:DependsOn:-];
     }
 }
 
-obj PkgRegistry {
-    has nodes: dict[str, Pkg];
+def mark_stale(pkg: Package) -> list[str] {
+    wk = pkg spawn Invalidate(claimed={});
+    return sorted(wk.invalidated);
+}
 
-    def init {
-        self.nodes = {};
-    }
+# memoized fresh closure: all transitive local deps that are fresh
+walker FreshCheck {
+    has claimed: dict[str, bool] = {};
+    has stale: list[str] = [];
 
-    def add(pid: str, ctime: int, inode: int, checksum: str) -> Pkg {
-        p = Pkg(pid=pid, ctime=ctime, inode=inode, checksum=checksum);
-        self.nodes[pid] = p;
-        root ++> p;
-        return p;
-    }
-
-    def link(src: str, dst: str) -> bool {
-        if (src not in self.nodes) or (dst not in self.nodes) { return False; }
-        self.nodes[src] +>:Dep:+> self.nodes[dst];
-        return True;
-    }
-
-    def get(pid: str) -> Pkg | None {
-        if pid in self.nodes { return self.nodes[pid]; }
-        return None;
+    can check with Package entry {
+        if here.name in self.claimed { skip; }
+        self.claimed[here.name] = True;
+        if not is_fresh(here) {
+            self.stale.append(here.name);
+        }
+        visit [here ->:DependsOn:->];
     }
 }
 
-def build_index(specs: list[tuple[str, int, int, str]]) -> PkgRegistry {
-    reg = PkgRegistry();
-    for s in specs {
-        reg.add(s[0], s[1], s[2], s[3]);
-    }
-    return reg;
+def stale_closure(pkg: Package) -> list[str] {
+    wk = pkg spawn FreshCheck(claimed={});
+    return sorted(wk.stale);
 }
 
-def cascade_invalidate(reg: PkgRegistry, pid: str) -> list[str] {
-    # Collect first (claim-map walk), no mutation during walk.
-    start = reg.get(pid);
-    if start is None { return []; }
-    wk = start spawn AncestorWalk(claimed={}, acc=[], origin_pid=pid);
-    return sorted(wk.acc);
+walker Demo {
+    can go with root entry {
+        api = Package(name="api", checksum="c1");
+        lib = Package(name="lib", checksum="c2");
+        core = Package(name="core", checksum="c3");
+        root ++> api; root ++> lib; root ++> core;
+        add_dep(api, lib);
+        add_dep(lib, core);
+        install(api); install(lib); install(core);
+        print(sorted(stale_closure(api)));
+        core.checksum = "c3b";
+        print(sorted(stale_closure(api)));
+        print(mark_stale(core));
+        print(sorted(stale_closure(api)));
+    }
+}
+
+with entry {
+    root spawn Demo();
 }

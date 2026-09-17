@@ -19,6 +19,14 @@ node Spectrum {
 edge Holds {}                  # Spectrum -> Peak
 edge View {}                   # Spectrum -> aliased Peak (view lease)
 
+# module-level sort key helper (no lambdas)
+def by_mz(p: Peak) -> float {
+    return p.mz;
+}
+def by_pos(p: Peak) -> int {
+    return p.pos;
+}
+
 graph mssim {
     has spectra: dict[str, Spectrum] = {};
 
@@ -32,7 +40,7 @@ graph mssim {
     def _ordered(sp: Spectrum) -> list[Peak] {
         # view of held peaks sorted by explicit position field
         raw: list[Peak] = [sp ->:Holds:->][?:Peak];
-        return sorted(raw, key=lambda p: p.pos);
+        return sorted(raw, key=by_pos);
     }
 
     # get_peak: owned copy semantics (policy: get_* returns a copy)
@@ -40,9 +48,10 @@ graph mssim {
         sp = self.spectra.get(sid);
         if sp is None { return None; }
         kids = self._ordered(sp);
-        if idx < 0 { idx = len(kids) + idx; }
-        if idx < 0 or idx >= len(kids) { return None; }
-        p = kids[idx];
+        i: int = idx;
+        if i < 0 { i = len(kids) + i; }
+        if i < 0 or i >= len(kids) { return None; }
+        p = kids[i];
         return Peak(mz=p.mz, intensity=p.intensity);  # owned copy
     }
 
@@ -51,9 +60,10 @@ graph mssim {
         sp = self.spectra.get(sid);
         if sp is None { return None; }
         kids = self._ordered(sp);
-        if idx < 0 { idx = len(kids) + idx; }
-        if idx < 0 or idx >= len(kids) { return None; }
-        return kids[idx];  # alias
+        i: int = idx;
+        if i < 0 { i = len(kids) + i; }
+        if i < 0 or i >= len(kids) { return None; }
+        return kids[i];  # alias
     }
 
     def add_peak(sid: str, mz: float, inten: float) -> bool {
@@ -69,8 +79,7 @@ graph mssim {
     def sort_peaks(sid: str) -> bool {
         sp = self.spectra.get(sid);
         if sp is None { return False; }
-        kids = self._ordered(sp);
-        ordered: list[Peak] = sorted(kids, key=lambda p: p.mz);
+        ordered: list[Peak] = sorted(self._ordered(sp), key=by_mz);
         for i in range(len(ordered)) {
             ordered[i].pos = i;
         }
@@ -100,6 +109,26 @@ graph mssim {
         }
         return n;
     }
+
+    # lease a view edge to an aliased peak (mirrors pyOpenMS _view accessors)
+    def lease_view(sid: str, idx: int) -> bool {
+        sp = self.spectra.get(sid);
+        if sp is None { return False; }
+        kids = self._ordered(sp);
+        if idx < 0 or idx >= len(kids) { return False; }
+        sp +>:View:+> kids[idx];
+        return True;
+    }
+
+    def live_views(sid: str) -> int {
+        sp = self.spectra.get(sid);
+        if sp is None { return 0; }
+        n: int = 0;
+        for v in [sp ->:View:->][?:Peak] {
+            if v.live { n = n + 1; }
+        }
+        return n;
+    }
 }
 
 walker RebindAudit {
@@ -107,14 +136,13 @@ walker RebindAudit {
     has audited: int = 0;
 
     can step with Spectrum entry {
-        if here.sid in self.claimed { skip; }   # diamond revisits: claim + skip
+        # diamond revisits: claim-map + skip (never disengage on revisit)
+        if here.sid in self.claimed { skip; }
         self.claimed[here.sid] = True;
         self.audited = self.audited + 1;
         print("audit", here.sid, "generation", here.generation);
-        kids: list[Spectrum] = [];
-        for nxt in [here ->:Holds:->][?:Spectrum] { kids.append(nxt); }
-        for nxt in [root ->:Holds:->][?:Spectrum] { kids.append(nxt); }
-        visit kids;
+        nxt: list[Spectrum] = [root -->][?:Spectrum];
+        visit nxt;
     }
 }
 

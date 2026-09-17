@@ -1,167 +1,193 @@
 # azaharizaman/nexus#123 — Employee Management Foundation
-# Lifted hand-rolled hierarchy recursion to idiomatic OSP graph.
+# Idiomatic OSP lift: employee records, manager hierarchy, lifecycle events.
 
 node Employee {
     has eid: str;
     has name: str;
-    has email: str;
-    has employee_number: str;
-    has tenant_id: str;
     has status: str = "ACTIVE";
-    has employment_type: str = "FULL_TIME";
-    has deleted: bool = False;
+    has etype: str = "FULL_TIME";
+    has ssn_enc: str = "";
+    has anonymous: bool = False;
+    has history: list[str] = [];
 }
 
 edge ReportsTo {}
 
-edge HistoryEvent {
-    has event_type: str;
-    has event_date: str;
+edge InTenant {
+    has tid: str;
 }
 
-def employee(eid: str, name: str, email: str, num: str, tenant: str) -> Employee {
-    return Employee(eid=eid, name=name, email=email, employee_number=num, tenant_id=tenant);
+glob EMP_INDEX: dict[str, Employee] = {};
+
+def register(e: Employee) {
+    EMP_INDEX[e.eid] = e;
 }
 
-# record a lifecycle event, scoped by tenant employee-number uniqueness
-def hire(mgr: Employee | None, emp: Employee) -> Employee {
-    if mgr {
-        mgr +>:ReportsTo:+> emp;
-    } else {
-        root ++> emp;
+def lookup(eid: str) -> Employee | None {
+    if eid in EMP_INDEX {
+        return EMP_INDEX[eid];
     }
-    emp spawn HireEvent(etype="HIRE");
-    return emp;
+    return None;
 }
 
-def transfer(emp: Employee, new_mgr: Employee) -> Employee {
-    for rm in [emp -:ReportsTo:->] { del rm; }
-    new_mgr +>:ReportsTo:+> emp;
-    emp spawn LifecycleEvent(etype="TRANSFER");
-    return emp;
+def hire(eid: str, name: str, ssn: str, tenant: Employee, etype: str = "FULL_TIME") -> Employee {
+    e = Employee(eid=eid, name=name, etype=etype);
+    e.ssn_enc = "enc(" + ssn + ")";
+    e.history.append("HIRE");
+    tenant +>:InTenant(tid=tenant.eid):+> e;
+    register(e);
+    return e;
 }
 
-def terminate(emp: Employee) -> bool {
-    emp.status = "TERMINATED";
-    emp spawn LifecycleEvent(etype="TERMINATION");
+def set_manager(emp: Employee, mgr: Employee) {
+    emp +>:ReportsTo:+> mgr;
+    emp.history.append("TRANSFER");
+}
+
+def terminate(eid: str) -> bool {
+    e = lookup(eid);
+    if e is None { return False; }
+    if e.status == "TERMINATED" { return False; }
+    e.status = "TERMINATED";
+    e.history.append("TERMINATION");
     return True;
 }
 
-# recursive direct/indirect reports closure via walker, claim-map cycle policy
-walker ReportClosure {
+def anonymize(eid: str) -> bool {
+    e = lookup(eid);
+    if e is None { return False; }
+    e.name = "Anonymous";
+    e.ssn_enc = "";
+    e.anonymous = True;
+    return True;
+}
+
+def direct_reports(eid: str) -> list[str] {
+    e = lookup(eid);
+    if e is None { return []; }
+    outs: list[str] = [];
+    for r in [e ->:ReportsTo:<-][?:Employee] {
+        outs.append(r.eid);
+    }
+    return sorted(outs);
+}
+
+def chain_up(eid: str) -> list[str] {
+    # climb manager chain, cycle-safe via claim map
+    start = lookup(eid);
+    if start is None { return []; }
+    seen: dict[str, bool] = {};
+    chain: list[str] = [];
+    cur = start;
+    while cur is not None and cur.eid not in seen {
+        seen[cur.eid] = True;
+        chain.append(cur.eid);
+        mgrs = [cur ->:ReportsTo:->][?:Employee];
+        if len(mgrs) == 0 { break; }
+        cur = mgrs[0];
+    }
+    return chain;
+}
+
+walker OrgScan {
     has claimed: dict[str, bool] = {};
     has found: list[str] = [];
 
     can step with Employee entry {
-        if here.eid in self.claimed { skip; }
-        self.claimed[here.eid] = True;
-        kids: list[Employee] = [];
-        for ch in [here ->:ReportsTo:->] { kids.append(ch); }
-        for k in kids {
-            self.found.append(k.eid);
+        if here.eid in self.claimed {
+            skip;
         }
+        self.claimed[here.eid] = True;
+        if here.status == "ACTIVE" {
+            self.found.append(here.eid);
+        }
+        kids = [here ->:ReportsTo:<-][?:Employee];
         visit kids;
     }
 }
 
-def all_reports(emp: Employee) -> list[str] {
-    w = emp spawn ReportClosure(claimed={});
-    res: list[str] = [];
-    for e in w.found {
-        if e != emp.eid { res.append(e); }
-    }
-    return sorted(res);
-}
-
-walker HireEvent {
-    has etype: str;
-    can go with Employee entry {
-        here +>:HistoryEvent(event_type=self.etype, event_date="2024-01-01"):+> here;
-        print("event recorded: " + self.etype + " for " + here.eid);
-    }
-}
-
-walker LifecycleEvent {
-    has etype: str;
-    can go with Employee entry {
-        here +>:HistoryEvent(event_type=self.etype, event_date="2024-06-01"):+> here;
-        print("lifecycle: " + self.etype + " for " + here.eid);
-    }
-}
-
-def can_be_deleted(emp: Employee) -> bool {
-    evs: list[HistoryEvent] = [emp ->:HistoryEvent:->];
-    for ev in evs {
-        if ev.event_type == "TERMINATION" { return False; }
-    }
-    return True;
-}
-
-def anonymize(emp: Employee) -> Employee {
-    emp.name = "Anonymous";
-    emp.email = "anonymous@example.invalid";
-    print("anonymized " + emp.eid);
-    return emp;
+def active_under(eid: str) -> list[str] {
+    e = lookup(eid);
+    if e is None { return []; }
+    w = e spawn OrgScan(claimed={});
+    return sorted(w.found);
 }
 
 with entry {
-    ceo = employee("e1", "Ada", "ada@x.io", "E-0001", "t1");
-    hire(None, ceo);
-    b = employee("e2", "Bob", "bob@x.io", "E-0002", "t1");
-    c = employee("e3", "Cid", "cid@x.io", "E-0003", "t1");
-    hire(ceo, b);
-    hire(ceo, c);
-    transfer(c, b);
-    print(sorted(all_reports(ceo)));
+    ceo = Employee(eid="T1", name="CEO");
+    register(ceo);
+    hire("E1", "Alice", "111", ceo);
+    hire("E2", "Bob", "222", ceo, etype="INTERN");
+    set_manager(lookup("E1"), ceo);
+    set_manager(lookup("E2"), lookup("E1"));
+    print(sorted(active_under("T1")));
 }
 
-test "hire_and_transfer_reports" {
-    ceo = employee("e1", "Ada", "ada@x.io", "E-0001", "t1");
-    hire(None, ceo);
-    b = employee("e2", "Bob", "bob@x.io", "E-0002", "t1");
-    c = employee("e3", "Cid", "cid@x.io", "E-0003", "t1");
-    hire(ceo, b);
-    hire(ceo, c);
-    transfer(c, b);
-    assert all_reports(ceo) == ["e2", "e3"];;
-    assert all_reports(b) == ["e3"];;
+test "hire_and_lookup" {
+    ceo = Employee(eid="T1", name="CEO");
+    register(ceo);
+    e = hire("E1", "Alice", "111", ceo);
+    assert lookup("E1") is not None;
+    assert lookup("E1").ssn_enc == "enc(111)";
+    assert lookup("E1").etype == "FULL_TIME";
+    assert lookup("E1").status == "ACTIVE";
+    assert lookup("ZZZ") is None;
+    assert e.history == ["HIRE"];
 }
 
-test "transfer_moves_edge" {
-    m1 = employee("m1", "A", "a@x", "E-1", "t1");
-    m2 = employee("m2", "B", "b@x", "E-2", "t1");
-    s = employee("s1", "C", "c@x", "E-3", "t1");
-    hire(m1, s);
-    transfer(s, m2);
-    assert all_reports(m1) == [];;
-    assert all_reports(m2) == ["s1"];;
+test "set_manager_and_chain_up" {
+    ceo = Employee(eid="T1", name="CEO");
+    register(ceo);
+    e1 = hire("E1", "Alice", "111", ceo);
+    e2 = hire("E2", "Bob", "222", ceo);
+    set_manager(e2, e1);
+    set_manager(e1, ceo);
+    assert chain_up("E2") == ["E2", "E1", "T1"];
+    assert sorted(direct_reports("T1")) == ["E1", "E2"];
+    assert direct_reports("E2") == [];
+    assert "TRANSFER" in e2.history;
 }
 
-test "terminate_blocks_delete" {
-    e = employee("t9", "X", "x@x", "E-9", "t1");
-    hire(None, e);
-    assert can_be_deleted(e);;
-    terminate(e);
-    assert not can_be_deleted(e);;
-    assert e.status == "TERMINATED";;
+test "chain_up_unknown_and_cycle" {
+    assert chain_up("NOPE") == [];
+    a = Employee(eid="A", name="A");
+    b = Employee(eid="B", name="B");
+    register(a); register(b);
+    set_manager(a, b);
+    set_manager(b, a);
+    assert chain_up("A") == ["A", "B"];
 }
 
-test "closure_diamond_adversarial_order" {
-    ceo = employee("d1", "A", "a@x", "E-1", "t1");
-    hire(None, ceo);
-    mid = employee("d2", "B", "b@x", "E-2", "t1");
-    leaf = employee("d3", "C", "c@x", "E-3", "t1");
-    # insert leaf edge first so a revisit fires before deeper first-visits
-    hire(ceo, leaf);
-    hire(ceo, mid);
-    hire(mid, leaf);
-    assert all_reports(ceo) == ["d2", "d3"];;
+test "terminate_semantics" {
+    ceo = Employee(eid="T1", name="CEO");
+    register(ceo);
+    hire("E1", "Alice", "111", ceo);
+    assert terminate("E1") is True;
+    assert terminate("E1") is False;
+    assert terminate("NOPE") is False;
+    assert lookup("E1").status == "TERMINATED";
+    assert "TERMINATION" in lookup("E1").history;
 }
 
-test "anonymize_fields" {
-    e = employee("a1", "Zed", "zed@x", "E-4", "t1");
-    hire(None, e);
-    e = anonymize(e);
-    assert e.name == "Anonymous";;
-    assert e.email == "anonymous@example.invalid";;
+test "anonymize_semantics" {
+    ceo = Employee(eid="T1", name="CEO");
+    register(ceo);
+    hire("E1", "Alice", "111", ceo);
+    assert anonymize("E1") is True;
+    assert anonymize("NOPE") is False;
+    assert lookup("E1").name == "Anonymous";
+    assert lookup("E1").ssn_enc == "";
+    assert lookup("E1").anonymous is True;
+}
+
+test "active_under_scan" {
+    ceo = Employee(eid="T1", name="CEO");
+    register(ceo);
+    e1 = hire("E1", "Alice", "111", ceo);
+    e2 = hire("E2", "Bob", "222", ceo);
+    set_manager(e2, e1);
+    set_manager(e1, ceo);
+    terminate("E2");
+    assert active_under("T1") == ["E1", "T1"];
+    assert active_under("NOPE") == [];
 }

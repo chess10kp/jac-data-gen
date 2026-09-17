@@ -1,173 +1,180 @@
-"""ilevkivskyi/typing_inspect#36 — normalize typing origins for recursive type-tree folds."""
+# iss_ilevkivskyi__typing_inspect__36.jac
+# ilevkivskyi/typing_inspect#36 — type-tree origin deconstruction for recursive fold/rebuild
 
-node TypeStore { has label: str = "store"; }
-node TypeExpr { has tid: str; has origin_raw: str; }
-edge StoreLink {}
-edge ChildArg {}
-
-def normalize_origin(raw: str) -> str {
-  aliases: dict[str, str] = {};
-  aliases["collections.abc.Iterable"] = "typing.Iterable";
-  aliases["collections.abc.Callable"] = "typing.Callable";
-  aliases["collections.abc.Mapping"] = "typing.Mapping";
-  aliases["collections.abc.Sequence"] = "typing.Sequence";
-  if raw in aliases {
-    return aliases[raw];
-  }
-  return raw;
+node TypeNode {
+    has cid: str;
+    has origin_name: str;
+    has canonical_origin: str;
 }
 
-def wire_store(store: TypeStore, expr: TypeExpr) -> TypeExpr {
-  store +>:StoreLink:+> expr;
-  return expr;
+edge ArgEdge {}
+
+node GraphRegistry {
+    has anchor: TypeNode;
+    has by_id: dict[str, TypeNode] = {};
 }
 
-def link_child(parent: TypeExpr, child: TypeExpr) -> TypeExpr {
-  parent +>:ChildArg:+> child;
-  return child;
+walker FoldOrigins {
+    has claimed: dict[str, bool] = {};
+    has collected: list[str] = [];
+    has root_id: str = "";
+
+    can step with TypeNode entry {
+        if here.cid in self.claimed {
+            skip;
+        }
+        self.claimed[here.cid] = True;
+        self.collected.append(here.canonical_origin);
+        print(here.canonical_origin);
+        kids: list[TypeNode] = [here ->:ArgEdge:->][?:TypeNode];
+        for ch in kids {
+            visit ch;
+        }
+    }
 }
 
-walker OriginLookup {
-  has target_tid: str;
-  has result: str = "";
-  has claimed: dict[str, bool] = {};
+walker GatherLabels {
+    has claimed: dict[str, bool] = {};
+    has cache: dict[str, str] = {};
+    has start_id: str = "";
 
-  can seek_store with TypeStore entry {
-    print("lookup", self.target_tid);
-    exprs: list[TypeExpr] = [];
-    for ln in [here ->:StoreLink:->][?:TypeExpr] {
-      exprs.append(ln);
+    can gather with TypeNode entry {
+        if here.cid in self.claimed {
+            skip;
+        }
+        self.claimed[here.cid] = True;
+        kids: list[TypeNode] = [here ->:ArgEdge:->][?:TypeNode];
+        for ch in kids {
+            visit ch;
+        }
+        parts: list[str] = [];
+        for ch in kids {
+            if ch.cid in self.cache {
+                parts.append(self.cache[ch.cid]);
+            }
+        }
+        parts = sorted(parts);
+        inner = "";
+        if len(parts) > 0 {
+            inner = parts[0];
+            idx = 1;
+            while idx < len(parts) {
+                inner = inner + ", " + parts[idx];
+                idx += 1;
+            }
+            inner = "[" + inner + "]";
+        }
+        self.cache[here.cid] = here.canonical_origin + inner;
+        print(self.cache[here.cid]);
     }
-    if exprs {
-      visit exprs;
-    } else {
-      disengage;
-    }
-  }
-
-  can seek_expr with TypeExpr entry {
-    if here.tid in self.claimed { skip; }
-    self.claimed[here.tid] = True;
-    if here.tid == self.target_tid {
-      self.result = normalize_origin(here.origin_raw);
-      print("hit", self.target_tid, self.result);
-      disengage;
-    }
-    chs: list[TypeExpr] = [];
-    for ch in [here ->:ChildArg:->][?:TypeExpr] {
-      chs.append(ch);
-    }
-    if chs {
-      visit chs;
-    }
-  }
 }
 
-walker ArgsLookup {
-  has target_tid: str;
-  has result: list[str] = [];
-  has claimed: dict[str, bool] = {};
-
-  can seek_store with TypeStore entry {
-    print("args_lookup", self.target_tid);
-    exprs: list[TypeExpr] = [];
-    for ln in [here ->:StoreLink:->][?:TypeExpr] {
-      exprs.append(ln);
+def resolve_canonical_origin(origin: str) -> str {
+    if origin == "collections.abc.Iterable" {
+        return "typing.Iterable";
     }
-    if exprs {
-      visit exprs;
-    } else {
-      disengage;
+    if origin == "collections.abc.Mapping" {
+        return "typing.Mapping";
     }
-  }
-
-  can seek_expr with TypeExpr entry {
-    if here.tid in self.claimed { skip; }
-    self.claimed[here.tid] = True;
-    if here.tid == self.target_tid {
-      args: list[str] = [];
-      for ch in [here ->:ChildArg:->][?:TypeExpr] {
-        args.append(ch.tid);
-      }
-      self.result = args;
-      print("args_hit", self.target_tid, len(args));
-      disengage;
+    if origin == "collections.abc.Sequence" {
+        return "typing.Sequence";
     }
-    chs: list[TypeExpr] = [];
-    for ch in [here ->:ChildArg:->][?:TypeExpr] {
-      chs.append(ch);
-    }
-    if chs {
-      visit chs;
-    }
-  }
+    return origin;
 }
 
-walker OriginCollector {
-  has root_id: str;
-  has claimed: dict[str, bool] = {};
-  has found: list[str] = [];
-
-  can start_store with TypeStore entry {
-    print("collect", self.root_id);
-    seeds: list[TypeExpr] = [];
-    for ln in [here ->:StoreLink:->][?:TypeExpr] {
-      if ln.tid == self.root_id {
-        seeds.append(ln);
-      }
+def get_origin(reg: GraphRegistry, type_id: str) -> str | None {
+    if type_id not in reg.by_id {
+        return None;
     }
-    if seeds {
-      visit :0: seeds;
-    } else {
-      disengage;
-    }
-  }
-
-  can walk_expr with TypeExpr entry {
-    if here.tid in self.claimed { skip; }
-    self.claimed[here.tid] = True;
-    norm = normalize_origin(here.origin_raw);
-    self.found.append(norm);
-    print("walk", here.tid, norm);
-    kids: list[TypeExpr] = [];
-    for ch in [here ->:ChildArg:->][?:TypeExpr] {
-      kids.append(ch);
-    }
-    if kids {
-      i: int = len(kids) - 1;
-      while i >= 0 {
-        visit :0: [kids[i]];
-        i -= 1;
-      }
-    }
-  }
+    n = reg.by_id[type_id] as TypeNode;
+    return n.origin_name;
 }
 
-def get_origin(store: TypeStore, type_id: str) -> str {
-  w = store spawn OriginLookup(target_tid=type_id);
-  return w.result;
+def get_args(reg: GraphRegistry, type_id: str) -> list[str] {
+    if type_id not in reg.by_id {
+        return [];
+    }
+    n = reg.by_id[type_id] as TypeNode;
+    kids: list[TypeNode] = [n ->:ArgEdge:->][?:TypeNode];
+    out: list[str] = [];
+    for kid in kids {
+        out.append(kid.cid);
+    }
+    return sorted(out);
 }
 
-def get_args(store: TypeStore, type_id: str) -> list[str] {
-  w = store spawn ArgsLookup(target_tid=type_id);
-  return w.result;
+def fold_canonical_origins(reg: GraphRegistry, type_id: str) -> list[str] {
+    if type_id not in reg.by_id {
+        return [];
+    }
+    start = reg.by_id[type_id] as TypeNode;
+    w = start spawn FoldOrigins(root_id=type_id);
+    return sorted(w.collected);
 }
 
-def collect_origins(store: TypeStore, root_id: str) -> list[str] {
-  w = store spawn OriginCollector(root_id=root_id);
-  out: list[str] = sorted(w.found);
-  return out;
+def reconstruct_type(reg: GraphRegistry, type_id: str) -> str {
+    if type_id not in reg.by_id {
+        return "";
+    }
+    start = reg.by_id[type_id] as TypeNode;
+    cache: dict[str, str] = {};
+    wk = start spawn GatherLabels(start_id=type_id, cache=cache);
+    if type_id in wk.cache {
+        return wk.cache[type_id];
+    }
+    return "";
+}
+
+def make_iterable_int_reg -> GraphRegistry {
+    iter_n = TypeNode(
+        cid="iter",
+        origin_name="collections.abc.Iterable",
+        canonical_origin="typing.Iterable"
+    );
+    int_n = TypeNode(
+        cid="int",
+        origin_name="builtins.int",
+        canonical_origin="builtins.int"
+    );
+    iter_n +>:ArgEdge:+> int_n;
+    root ++> iter_n;
+    idx: dict[str, TypeNode] = {};
+    idx["iter"] = iter_n;
+    idx["int"] = int_n;
+    return GraphRegistry(anchor=iter_n, by_id=idx);
+}
+
+def make_diamond_reg -> GraphRegistry {
+    u = TypeNode(cid="u", origin_name="typing.Union", canonical_origin="typing.Union");
+    la = TypeNode(
+        cid="la",
+        origin_name="collections.abc.Iterable",
+        canonical_origin="typing.Iterable"
+    );
+    lb = TypeNode(
+        cid="lb",
+        origin_name="collections.abc.Iterable",
+        canonical_origin="typing.Iterable"
+    );
+    i = TypeNode(cid="i", origin_name="builtins.int", canonical_origin="builtins.int");
+    u +>:ArgEdge:+> la;
+    u +>:ArgEdge:+> lb;
+    la +>:ArgEdge:+> i;
+    lb +>:ArgEdge:+> i;
+    root ++> u;
+    idx: dict[str, TypeNode] = {};
+    idx["u"] = u;
+    idx["la"] = la;
+    idx["lb"] = lb;
+    idx["i"] = i;
+    return GraphRegistry(anchor=u, by_id=idx);
 }
 
 with entry {
-  st = TypeStore(label="demo");
-  root ++> st;
-  iterable = TypeExpr(tid="iter", origin_raw="collections.abc.Iterable");
-  arg_int = TypeExpr(tid="int_t", origin_raw="builtins.int");
-  wire_store(st, iterable);
-  link_child(iterable, arg_int);
-  w = root spawn OriginCollector(root_id="iter");
-  print("demo_origin", get_origin(st, "iter"));
-  print("demo_args", get_args(st, "iter"));
-  print("demo_collect", sorted(w.found));
+    reg = make_iterable_int_reg();
+    w = reg.anchor spawn FoldOrigins(root_id="iter");
+    print(get_origin(reg, "iter"));
+    print(fold_canonical_origins(reg, "iter"));
+    print(reconstruct_type(reg, "iter"));
+    print(len(w.collected));
 }

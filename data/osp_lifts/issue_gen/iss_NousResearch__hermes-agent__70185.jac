@@ -1,111 +1,104 @@
-# Lift of NousResearch/hermes-agent#70185
-# Desktop sessions silently archived via compression-lineage cascade;
-# session_key=NULL prevents gateway resume. Session nodes connected by
-# Compression edges; archiving one cascades bidirectionally (ancestors
-# AND descendants) via a claim-map walker with skip-based cycle policy.
+"""
+Lift of NousResearch/hermes-agent#70185: desktop sessions silently archived
+via compression-lineage cascade; session_key=NULL breaks resume.
+"""
 
 node Session {
     has sid: str;
-    has archived: bool = False;
-    has session_key: str | None = None;
     has source: str = "desktop";
+    has session_key: str | None = None;
+    has archived: bool = False;
+    has audit: list[str] = [];
 }
 
-edge Compression { }
+edge CompressionLink {}
 
-def make_session(sid: str, session_key: str | None = None, source: str = "desktop") -> Session {
-    s = Session(sid=sid, session_key=session_key, source=source);
-    root ++> s;
+glob graph_root: dict[str, Session] = {};
+
+def add_session(sid: str, source: str = "desktop", session_key: str | None = None) -> Session {
+    s = Session(sid=sid, source=source, session_key=session_key);
+    graph_root[sid] = s;
     return s;
 }
 
-def link_compression(a: Session, b: Session) {
-    a +>:Compression:+> b;
+def link_compression(prev: Session, nxt: Session) {
+    prev +>:CompressionLink:+> nxt;
 }
 
-def find_session(sid: str) -> Session | None {
-    all: list[Session] = [];
-    for s in [root ->][?:Session] { all.append(s); }
-    for s in all {
-        if s.sid == sid { return s; }
-    }
-    return None;
-}
-
-walker ArchiveCascade {
+# collect the full compression lineage (ancestors + descendants) via claim-map
+walker collect_lineage {
     has claimed: dict[str, bool] = {};
-    has collected: list[str] = [];
+    has lineage: list[str] = [];
+
     can step with Session entry {
         if here.sid in self.claimed { skip; }
         self.claimed[here.sid] = True;
-        self.collected.append(here.sid);
-        kids: list[Session] = [];
-        for ch in [here ->:Compression:->][?:Session] { kids.append(ch); }
-        for ch in [here <-:Compression:-][?:Session] { kids.append(ch); }
-        visit kids else { disengage; }
+        self.lineage.append(here.sid);
+        nbrs: list[Session] = [];
+        for nb in [here ->:CompressionLink:->][?:Session] { nbrs.append(nb); }
+        for nb in [here <-:CompressionLink:-][?:Session] { nbrs.append(nb); }
+        visit nbrs;
     }
 }
 
-# Two-phase mutation: walker only COLLECTS the closure; archive writes
-# happen after the walk completes (never inside a walk).
 def set_session_archived(sid: str) -> list[str] {
-    start = find_session(sid);
-    if start is None { return []; }
-    wk = start spawn ArchiveCascade(claimed={}, collected=[]);
-    hit: list[str] = [];
-    for s in [root ->][?:Session] {
-        if s.sid in wk.collected {
-            s.archived = True;
-            hit.append(s.sid);
+    if sid not in graph_root {
+        return [];
+    }
+    start = graph_root[sid];
+    # two-phase: collect during walk, mutate after
+    wk = start spawn collect_lineage(claimed={});
+    affected: list[str] = [];
+    for s in wk.lineage { affected.append(s); }
+    affected = sorted(affected);
+    for s in affected {
+        # `node` is a reserved keyword; use nd
+        nd = graph_root[s];
+        nd.archived = True;
+        nd.audit.append("archived sid=" + s);
+    }
+    return affected;
+}
+
+def unarchive_desktop_sessions -> int {
+    n: int = 0;
+    for sid in sorted(graph_root.keys()) {
+        s = graph_root[sid];
+        if s.source == "desktop" and s.archived {
+            s.archived = False;
+            n = n + 1;
         }
     }
-    return sorted(hit);
+    return n;
 }
 
-def count_cascade(sid: str) -> int {
-    return len(set_session_archived(sid));
-}
-
-def list_archived() -> list[str] {
-    out: list[str] = [];
-    for s in [root ->][?:Session] {
-        if s.archived { out.append(s.sid); }
-    }
-    return sorted(out);
-}
-
-# Gateway resume lookup: session_key is the primary key; when NULL on
-# desktop sessions the fallback gateway fields do not resolve either,
-# so the resume path returns None and a fresh session is created.
-def find_latest_gateway_session_for_peer(sid: str) -> Session | None {
-    start = find_session(sid);
-    if start is None { return None; }
-    if start.session_key is None { return None; }
-    best: Session | None = None;
-    best_sid: str = "";
-    for s in [root ->][?:Session] {
-        if s.session_key == start.session_key and not s.archived {
-            if best is None {
-                best = s;
-                best_sid = s.sid;
-            } else {
-                if s.sid > best_sid {
-                    best = s;
-                    best_sid = s.sid;
-                }
-            }
+def find_latest_gateway_session_for_peer(session_key: str) -> str | None {
+    best: str | None = None;
+    for sid in sorted(graph_root.keys()) {
+        s = graph_root[sid];
+        if s.session_key == session_key and not s.archived {
+            if best is None or sid > best { best = sid; }
         }
     }
     return best;
 }
 
-def unarchive_by_source(src: str) -> list[str] {
-    out: list[str] = [];
-    for s in [root ->][?:Session] {
-        if s.source == src and s.archived {
-            s.archived = False;
-            out.append(s.sid);
-        }
+def count_archived -> int {
+    n: int = 0;
+    for sid in graph_root.keys() {
+        if graph_root[sid].archived { n = n + 1; }
     }
-    return sorted(out);
+    return n;
+}
+
+with entry {
+    a = add_session("s1", "desktop");
+    b = add_session("s2", "desktop");
+    c = add_session("s3", "desktop", session_key="peerX");
+    link_compression(a, b);
+    link_compression(b, c);
+    hit = set_session_archived("s2");
+    print("cascade archived:", hit);
+    print("resume for peerX:", find_latest_gateway_session_for_peer("peerX"));
+    print("unarchived:", unarchive_desktop_sessions());
 }

@@ -1,263 +1,300 @@
-"""Training lift source: fderuiter/quasiperfect#340."""
+"""fderuiter/quasiperfect#340 — implication graph + SCC lift."""
 
-node Comp {
-    has idx: int;
+node Component {
+    has cid: str;
     has p: int;
     has two_e: int;
 }
 
 edge Implies {}
 
-node Cdg {
-    has forced_candidates: list[list[int]];
-    has adjacency: list[list[int]];
-    has scc_id: list[int];
-    has scc_members: list[list[int]];
-}
-
-def divisors_gt_one(two_e_plus_one: int) -> list[int] {
-    out: list[int] = [];
-    d: int = 2;
-    while d < two_e_plus_one {
-        if two_e_plus_one % d == 0 {
-            out.append(d);
+def divisors_gt1(n: int) -> list[int] {
+    ds: list[int] = [];
+    if n < 2 {
+        return ds;
+    }
+    for d in range(2, n + 1) {
+        if n % d == 0 {
+            ds.append(d);
         }
-        d += 1;
     }
-    return sorted(out);
+    return ds;
 }
 
-def prime_to_component_indices(comps: list[Comp]) -> dict[int, list[int]] {
-    mp: dict[int, list[int]] = {};
-    for c in comps {
-        if c.p in mp {
-            bucket: list[int] = mp[c.p];
-        } else {
-            bucket = [];
-        }
-        bucket.append(c.idx);
-        mp[c.p] = bucket;
+def sort_components_by_cid(nodes: list[Component]) -> list[Component] {
+    out: list[Component] = [];
+    for nd in nodes {
+        out.append(nd);
     }
-    return mp;
-}
-
-def forced_candidate_sets(comps: list[Comp]) -> list[list[int]] {
-    n: int = len(comps);
-    out: list[list[int]] = [];
-    i: int = 0;
-    while i < n {
-        out.append([]);
-        i += 1;
-    }
-    for ci in comps {
-        modn: int = ci.two_e + 1;
-        divs: list[int] = divisors_gt_one(modn);
-        for d in divs {
-            for cj in comps {
-                if cj.p % d == 1 {
-                    row: list[int] = out[ci.idx];
-                    seen: bool = False;
-                    for v in row {
-                        if v == cj.idx {
-                            seen = True;
-                        }
-                    }
-                    if not seen {
-                        row.append(cj.idx);
-                    }
-                    out[ci.idx] = sorted(row);
-                }
+    for i in range(len(out)) {
+        for j in range(i + 1, len(out)) {
+            if out[i].cid > out[j].cid {
+                tmp = out[i];
+                out[i] = out[j];
+                out[j] = tmp;
             }
         }
     }
     return out;
 }
 
-def implication_adjacency(forced: list[list[int]], n: int) -> list[list[int]] {
-    adj: list[list[int]] = [];
-    i: int = 0;
-    while i < n {
-        adj.append([]);
-        i += 1;
+def forced_candidate_sets(specs: list[dict]) -> list[list[int]] {
+    n: int = len(specs);
+    forced: list[list[int]] = [];
+    for _i in range(n) {
+        forced.append([]);
     }
-    i = 0;
-    while i < n {
-        for j in forced[i] {
-            adj[i].append(j);
+    if n == 0 {
+        return forced;
+    }
+    prime_to_ix: dict[int, list[int]] = {};
+    for i in range(n) {
+        sp = specs[i] as dict;
+        p: int = sp["p"];
+        if p in prime_to_ix {
+            prime_to_ix[p].append(i);
+        } else {
+            prime_to_ix[p] = [i];
         }
-        i += 1;
+    }
+    for i in range(n) {
+        sp_i = specs[i] as dict;
+        modulus: int = sp_i["two_e"] + 1;
+        divs: list[int] = divisors_gt1(modulus);
+        seen_j: dict[int, bool] = {};
+        for d in divs {
+            for j in range(n) {
+                if j == i {
+                    continue;
+                }
+                sp_j = specs[j] as dict;
+                if sp_j["p"] % d == 1 {
+                    if j not in seen_j {
+                        seen_j[j] = True;
+                        forced[i].append(j);
+                    }
+                }
+            }
+        }
+        forced[i] = sorted(forced[i]);
+    }
+    return forced;
+}
+
+def implication_adjacency(forced: list[list[int]]) -> list[list[int]] {
+    adj: list[list[int]] = [];
+    for row in forced {
+        adj.append([]);
+        for j in row {
+            adj[len(adj) - 1].append(j);
+        }
     }
     return adj;
 }
 
-def tarjan_scc(adj: list[list[int]]) -> list[any] {
+def tarjan_scc(adj: list[list[int]]) -> dict {
     n: int = len(adj);
-    index: int = 0;
-    stack: list[int] = [];
-    onstack: dict[int, bool] = {};
-    ids: list[int] = [];
-    low: list[int] = [];
-    scc_id: list[int] = [];
-    i: int = 0;
-    while i < n {
-        ids.append(-1);
-        low.append(0);
-        scc_id.append(-1);
-        i += 1;
+    comp_to_scc: list[int] = [];
+    for _k in range(n) {
+        comp_to_scc.append(-1);
     }
-    members: list[list[int]] = [];
-    work: list[list[int]] = [];
+    scc_members: list[list[int]] = [];
+    if n == 0 {
+        return {"forced_key": 0, "component_to_scc": comp_to_scc, "scc_members": scc_members};
+    }
+    order: list[int] = [];
+    seen: list[bool] = [];
+    for _k in range(n) {
+        seen.append(False);
+    }
     for start in range(n) {
-        if ids[start] != -1 {
+        if seen[start] {
             continue;
         }
-        work.append([start, 0]);
-        while len(work) > 0 {
-            frame: list[int] = work[len(work) - 1];
-            v: int = frame[0];
-            ei: int = frame[1];
-            if ei == 0 {
-                ids[v] = index;
-                low[v] = index;
-                index += 1;
-                stack.append(v);
-                onstack[v] = True;
+        stack: list[tuple] = [(start, 0)];
+        while len(stack) > 0 {
+            v: int = stack[len(stack) - 1][0];
+            ei: int = stack[len(stack) - 1][1];
+            if not seen[v] {
+                seen[v] = True;
             }
             if ei < len(adj[v]) {
-                w: int = adj[v][ei];
-                frame[1] = ei + 1;
-                if ids[w] == -1 {
-                    work.append([w, 0]);
-                } elif w in onstack {
-                    if low[w] < low[v] {
-                        low[v] = low[w];
-                    }
+                u: int = adj[v][ei];
+                stack[len(stack) - 1] = (v, ei + 1);
+                if not seen[u] {
+                    stack.append((u, 0));
                 }
             } else {
-                work.pop();
-                if low[v] == ids[v] {
-                    comp: list[int] = [];
-                    while True {
-                        x: int = stack[len(stack) - 1];
-                        stack.pop();
-                        onstack[x] = False;
-                        scc_id[x] = len(members);
-                        comp.append(x);
-                        if x == v {
-                            break;
-                        }
-                    }
-                    members.append(sorted(comp));
-                }
-                if len(work) > 0 {
-                    parent: list[int] = work[len(work) - 1];
-                    pv: int = parent[0];
-                    if low[v] < low[pv] {
-                        low[pv] = low[v];
-                    }
-                }
+                order.append(v);
+                stack.pop();
             }
         }
     }
-    return [scc_id, members];
-}
-
-def wire_implication_graph(comps: list[Comp], adj: list[list[int]]) {
-    by_idx: dict[int, Comp] = {};
-    for c in comps {
-        by_idx[c.idx] = c;
-        root ++> c;
+    rev: list[list[int]] = [];
+    for _i in range(n) {
+        rev.append([]);
     }
-    i: int = 0;
-    while i < len(adj) {
-        src: Comp = by_idx[i];
+    for i in range(n) {
         for j in adj[i] {
-            dst: Comp = by_idx[j];
-            src +>:Implies:+> dst;
+            rev[j].append(i);
         }
-        i += 1;
     }
+    seen2: list[bool] = [];
+    for _k in range(n) {
+        seen2.append(False);
+    }
+    sid: int = 0;
+    for oi in range(len(order) - 1, -1, -1) {
+        v = order[oi];
+        if seen2[v] {
+            continue;
+        }
+        memb: list[int] = [];
+        stack2: list[int] = [v];
+        seen2[v] = True;
+        while len(stack2) > 0 {
+            x: int = stack2[len(stack2) - 1];
+            stack2.pop();
+            memb.append(x);
+            for u in rev[x] {
+                if not seen2[u] {
+                    seen2[u] = True;
+                    stack2.append(u);
+                }
+            }
+        }
+        memb = sorted(memb);
+        scc_members.append(memb);
+        for m in memb {
+            comp_to_scc[m] = sid;
+        }
+        sid += 1;
+    }
+    scc_members = sorted(scc_members);
+    remap: dict[int, int] = {};
+    for ni in range(len(scc_members)) {
+        remap[comp_to_scc[scc_members[ni][0]]] = ni;
+    }
+    for vi in range(n) {
+        comp_to_scc[vi] = remap[comp_to_scc[vi]];
+    }
+    return {"component_to_scc": comp_to_scc, "scc_members": scc_members};
 }
 
-walker ImplicationWalk {
-    has claimed: dict[int, bool] = {};
-    has order: list[int] = {};
+def cdg_new(specs: list[dict]) -> dict {
+    forced: list[list[int]] = forced_candidate_sets(specs);
+    adj: list[list[int]] = implication_adjacency(forced);
+    scc: dict = tarjan_scc(adj);
+    return {
+        "forced": forced,
+        "adjacency": adj,
+        "component_to_scc": scc["component_to_scc"],
+        "scc_members": scc["scc_members"],
+    };
+}
 
-    can step with Comp entry {
-        if here.idx in self.claimed {
+def build_implication_graph(specs: list[dict]) -> Component {
+    nodes: list[Component] = [];
+    for i in range(len(specs)) {
+        sp = specs[i] as dict;
+        nd = Component(cid=str(i), p=sp["p"], two_e=sp["two_e"]);
+        root ++> nd;
+        nodes.append(nd);
+    }
+    if len(nodes) == 0 {
+        return Component(cid="-1", p=0, two_e=0);
+    }
+    adj: list[list[int]] = implication_adjacency(forced_candidate_sets(specs));
+    for i in range(len(adj)) {
+        for j in adj[i] {
+            if j >= 0 and j < len(nodes) {
+                nodes[i] +>:Implies:+> nodes[j];
+            }
+        }
+    }
+    return nodes[0];
+}
+
+walker TraceImplies {
+    has claimed: dict[str, bool] = {};
+    has found: list[str] = [];
+
+    can step with Component entry {
+        if here.cid in self.claimed {
             skip;
         }
-        self.claimed[here.idx] = True;
-        self.order.append(here.idx);
-        print(here.idx);
-        kids: list[Comp] = [here ->:Implies:->][?:Comp];
-        nxt: list[Comp] = [];
-        for ch in kids {
-            nxt.append(ch);
+        self.claimed[here.cid] = True;
+        self.found.append(here.cid);
+        print(["trace", here.cid]);
+        kids: list[Component] = [];
+        for ch in [here ->:Implies:->][?:Component] {
+            kids.append(ch);
         }
-        visit :0: nxt else { disengage; }
+        kids = sort_components_by_cid(kids);
+        if kids {
+            visit :0: kids;
+        } else {
+            disengage;
+        }
     }
 }
 
-def make_cdg(comps: list[Comp]) -> Cdg {
-    forced: list[list[int]] = forced_candidate_sets(comps);
-    n: int = len(comps);
-    adj: list[list[int]] = implication_adjacency(forced, n);
-    scc_pair: list[any] = tarjan_scc(adj);
-    scc_ids: list[int] = scc_pair[0];
-    scc_members: list[list[int]] = scc_pair[1];
-    wire_implication_graph(comps, adj);
-    w = root spawn ImplicationWalk(claimed={});
-    print(len(w.order));
-    return Cdg(
-        forced_candidates=forced,
-        adjacency=adj,
-        scc_id=scc_ids,
-        scc_members=scc_members
-    );
+with entry {
+    demo_specs: list[dict] = [
+        {"p": 13, "two_e": 4},
+        {"p": 11, "two_e": 2},
+        {"p": 31, "two_e": 6},
+    ];
+    print(cdg_new(demo_specs));
+    graph_root_node = build_implication_graph(demo_specs);
+    wk = graph_root_node spawn TraceImplies(claimed={});
+    print(wk.found);
 }
 
-test "divisors_gt_one_twelve" {
-    xs: list[int] = divisors_gt_one(12);
-    assert xs == [2, 3, 4, 6];
+test "divisors_gt1_basic" {
+    assert divisors_gt1(1) == [];
+    assert divisors_gt1(6) == [2, 3, 6];
 }
 
-test "tarjan_chain_three" {
-    adj: list[list[int]] = [[1], [2], []];
-    pair: list[any] = tarjan_scc(adj);
-    scc_ids: list[int] = pair[0];
-    scc_members: list[list[int]] = pair[1];
-    assert scc_ids == [2, 1, 0];
-    assert scc_members == [[0], [1], [2]];
+test "forced_candidate_sets_demo" {
+    specs: list[dict] = [
+        {"p": 13, "two_e": 4},
+        {"p": 11, "two_e": 2},
+        {"p": 31, "two_e": 6},
+    ];
+    assert forced_candidate_sets(specs) == [[1, 2], [0, 2], []];
 }
 
-test "tarjan_mutual_cycle" {
-    adj: list[list[int]] = [[1], [0]];
-    pair: list[any] = tarjan_scc(adj);
-    scc_ids: list[int] = pair[0];
-    scc_members: list[list[int]] = pair[1];
-    assert scc_ids == [0, 0];
-    assert scc_members == [[0, 1]];
+test "tarjan_scc_demo" {
+    adj: list[list[int]] = [[1, 2], [0, 2], []];
+    r = tarjan_scc(adj);
+    assert r["component_to_scc"] == [0, 0, 1];
+    assert r["scc_members"] == [[0, 1], [2]];
 }
 
-test "forced_candidate_mod_four" {
-    c0 = Comp(idx=0, p=3, two_e=3);
-    c1 = Comp(idx=1, p=5, two_e=0);
-    c2 = Comp(idx=2, p=7, two_e=0);
-    comps: list[Comp] = [c0, c1, c2];
-    forced: list[list[int]] = forced_candidate_sets(comps);
-    assert forced[0] == [1, 2];
-    assert forced[1] == [];
-    assert forced[2] == [];
+test "cdg_new_demo" {
+    specs: list[dict] = [
+        {"p": 13, "two_e": 4},
+        {"p": 11, "two_e": 2},
+        {"p": 31, "two_e": 6},
+    ];
+    r = cdg_new(specs);
+    assert r["forced"] == [[1, 2], [0, 2], []];
+    assert r["adjacency"] == [[1, 2], [0, 2], []];
+    assert r["component_to_scc"] == [0, 0, 1];
+    assert r["scc_members"] == [[0, 1], [2]];
 }
 
-test "make_cdg_scc_and_adjacency" {
-    c0 = Comp(idx=0, p=3, two_e=3);
-    c1 = Comp(idx=1, p=5, two_e=0);
-    c2 = Comp(idx=2, p=7, two_e=0);
-    comps: list[Comp] = [c0, c1, c2];
-    cdg: Cdg = make_cdg(comps);
-    assert cdg.adjacency == [[1, 2], [], []];
-    assert cdg.scc_id == [2, 0, 1];
-    assert cdg.scc_members == [[1], [2], [0]];
+test "sort_components_by_cid" {
+    a = Component(cid="2", p=1, two_e=1);
+    b = Component(cid="10", p=2, two_e=2);
+    c = Component(cid="1", p=3, two_e=3);
+    got = sort_components_by_cid([a, b, c]);
+    assert [got[0].cid, got[1].cid, got[2].cid] == ["1", "10", "2"];
+}
+
+test "tarjan_scc_empty" {
+    r = tarjan_scc([]);
+    assert r["component_to_scc"] == [];
+    assert r["scc_members"] == [];
 }

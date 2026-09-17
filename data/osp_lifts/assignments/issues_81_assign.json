@@ -1,0 +1,135 @@
+{
+  "manifest": "issues_81.jsonl",
+  "records": [
+    {
+      "repo": "auchenberg/dependo",
+      "issue": 7,
+      "url": "https://github.com/auchenberg/dependo/issues/7",
+      "title": "Recursively Trace Dependencies",
+      "score": 8,
+      "signals": {
+        "traversal.recursive": 3,
+        "activity.discussion": 3,
+        "activity.reactions": 2
+      },
+      "body": "dependo is great to see what files a given file depends on, but it doesn't go any levels deeper to show what files those files depend on, and so on.\n"
+    },
+    {
+      "repo": "ben-manes/gradle-versions-plugin",
+      "issue": 282,
+      "url": "https://github.com/ben-manes/gradle-versions-plugin/issues/282",
+      "title": "Check dependency updates recursively?",
+      "score": 8,
+      "signals": {
+        "traversal.recursive": 3,
+        "activity.discussion": 3,
+        "activity.reactions": 2
+      },
+      "body": "For example, `androidx.preference:preference:1.1.0-alpha02` depends on `androidx.fragment:fragment:1.1.0-alpha02`, but there exists update `androidx.fragment:fragment:1.1.0-alpha03`."
+    },
+    {
+      "repo": "bevyengine/bevy",
+      "issue": 23018,
+      "url": "https://github.com/bevyengine/bevy/issues/23018",
+      "title": "Relational Queries",
+      "score": 8,
+      "signals": {
+        "traversal.recursive": 3,
+        "activity.discussion": 3,
+        "activity.reactions": 2
+      },
+      "body": "## Goal Description\n\nAccessing related entities (parents, children, ancestors) is a common demand when writing more complex logic in the ECS (particularly when working with scenes or UI). Our existing solutions are insufficiently ergonomic and challenging to discover, and inadequately composable. Without the use of multiple queries, boilerplate logic or exclusive systems, users should be able to:\n\n- fetch the value of a given component on the entity's parent\n- fetch the value of a given component from the first encountered ancestor on an entity, if such an entity is found\n- fetch the entity ID of the first encountered sibling entity with the given component\n- find the first child or grand-child with the given component\n- check if the values of a given component on any of the (recursive) children have changed \n- perform all of these operations but using arbitrary tree-like relationships instead of `Children`/`ChildOf`\n\nRelational queries which involve value-checking are out-of-scope: only existing query filters need to be supported.\n\nPreviously:  https://github.com/bevyengine/bevy/issues/17647\n\n## Goal Status\n\nThis is a potential [Bevy Project Goal](https://bevy.org/learn/contribute/project-information/project-goals/). Its state on the [Project Goals Board](https://github.com/orgs/bevyengine/projects/23/views/1) determines if it is Proposed, Postponed, Blocked (Approved), Inactive (Approved), Active (Approved), Completed, or Declined.\n\n- **Staffing SMEs**: Not yet staffed\n- **Working Group Link**: Working Group not yet formed\n- **Design Documents**: Design documents not yet written"
+    },
+    {
+      "repo": "dart-lang/sdk",
+      "issue": 50414,
+      "url": "https://github.com/dart-lang/sdk/issues/50414",
+      "title": "[Records] Extend horizontal inference to cover record literals",
+      "score": 8,
+      "signals": {
+        "traversal.recursive": 3,
+        "activity.discussion": 3,
+        "activity.reactions": 2
+      },
+      "body": "In https://github.com/dart-lang/language/issues/2578, @eernstg points out that it would be nice for [horizontal inference](https://github.com/dart-lang/language/blob/master/accepted/future-releases/horizontal-inference/feature-specification.md) to apply to elements of a record passed to a function.  For example, in the same way that\r\n```dart\r\nvar x = [1,2,3].fold(0, (a, b) => a + b);\r\n```\r\nproperly infers that the type argument to `fold` is `int` (and hence the type of `x` is `int`), it would be nice for the following code to behave similarly:\r\n```dart\r\nextension <E> on Iterable<E> {\r\n  T foldRec<T>((T value, T Function(T, E)) arguments) {\r\n    var (value, function) = arguments;\r\n    for (var e in this) value = function(value, e);\r\n    return value;\r\n  }\r\n}\r\nvar x = [1,2,3].foldRec((0, (a, b) => a + b));\r\n```\r\n\r\nA key motivation for this is that in the future, if we add support for `if` and `...` in argument lists, people are likely to expect a call like\r\n```dart\r\nf(a, if (b) ...(c, d) else ...(e, f));\r\n```\r\nto be type inferred similarly to:\r\n```dart\r\nb ? f(a, c, d) : f(a, e, f);\r\n```\r\n\r\nIn order for this to meaningfully work, during type inference we would need to recursively walk the syntax tree starting at the function's argument list, descending into `if` tests and spreads of record literals, and then apply horizontal inference to the \"flattened\" list of potential function arguments that results.  Given that, it seems consistent to have this recursive walk descend into all record literals (not just ones that are spread).\r\n\r\nA note on priority: it wouldn't be the end of the world if we ran out of time and had to postpone it to a future release; it's not an absolutely essential part of the records feature.  So we should probably prioritize other parts of records and patterns ahead of this."
+    },
+    {
+      "repo": "denoland/deno_emit",
+      "issue": 133,
+      "url": "https://github.com/denoland/deno_emit/issues/133",
+      "title": "Provide option to avoid tree walking during transpilation",
+      "score": 8,
+      "signals": {
+        "traversal.recursive": 3,
+        "activity.discussion": 3,
+        "activity.reactions": 2
+      },
+      "body": "I have a use case where I do not want deno_emit to walk the import tree when transpiling. When I tell it to transpile `index.ts` I only want it to give me the JS for `index.ts`, but not the JS for everything `index.ts` imports recursively.\r\n\r\nMy use case is that I don't want to have to specify which files are \"roots\" or \"entry points\" for transpiling. I want to say \"transpile all TS files in this directory\" so I can output them to another folder as modules rather than bundles.\r\n\r\nCurrently, I have three workarounds.\r\n\r\n1. Walk the directory, call `transpile` for each TS file, pick out the current file from the returned map. This has the unfortunate side-effect of performing many redundant transpilations.\r\n2. Create a main map, walk the directory, if the current file already exists in the main map, skip it, otherwise call `transpile` on the current TS file and add its results to the main map. This is more efficient, but it still walks the entire import tree.\r\n3. Walk the directory, call `transpile` for each TS file, provide a `load` function that returns `{ kind: \"module\", specifier, content }` for imports that match the current entry and `{ kind: \"external\", specifier }` for those that don't, which seems to exclude it from the map. This is complicated and requires implementing something that could be built in, but it does prevent walking the entire import tree, so it's the most efficient."
+    },
+    {
+      "repo": "dotnet/msbuild",
+      "issue": 1576,
+      "url": "https://github.com/dotnet/msbuild/issues/1576",
+      "title": "Excludes or removes in project folder don't apply to recursive includes from a parent folder",
+      "score": 8,
+      "signals": {
+        "traversal.recursive": 3,
+        "activity.discussion": 3,
+        "activity.reactions": 2
+      },
+      "body": "Repro project: [ProjectFolder.zip](https://github.com/Microsoft/msbuild/files/712071/ProjectFolder.zip)\r\n\r\nConsider the following project (named `Project.proj`):\r\n\r\n```xml\r\n<Project xmlns=\"http://schemas.microsoft.com/developer/msbuild/2003\">\r\n  <ItemGroup>\r\n    <File Include=\"..\\**\" Exclude=\"Project.proj\" />\r\n  </ItemGroup>\r\n  <Target Name=\"Build\">\r\n    <Message Text=\"@(File)\"/>\r\n  </Target>\r\n</Project>\r\n```\r\n\r\nThe `File` include is recursively including all files starting in the parent directory of the project.  The `Exclude` statement is expected to prevent the `Project.proj` file to be excluded.\r\n\r\nHowever, when you build the project:\r\n\r\n**EXPECTED:** The `File` item (and hence output message) does not include `Project.proj`\r\n**ACTUAL:** `Project.proj` is included in the file item, as `..\\ProjectFolder\\Project.proj`"
+    },
+    {
+      "repo": "dotnet/orleans",
+      "issue": 1883,
+      "url": "https://github.com/dotnet/orleans/issues/1883",
+      "title": "Reactive Queries",
+      "score": 8,
+      "signals": {
+        "traversal.recursive": 3,
+        "activity.discussion": 3,
+        "activity.reactions": 2
+      },
+      "body": "Hi all,\n\nI'm interning at MSR this summer and will be working on what we (currently) call reactive queries. Since there seems to be quite some interest and previous ideas already, I decided to start a thread to get the community's feedback.\n\nThe main idea is to allow programmers to write declarative \"queries\" that get updated whenever the result of that query changes (where a query is actually just a method calling some other grain methods, for now). This declarative (pull-based) query is then transformed into a reactive (push-based) version by the runtime. Thus, executing such query will set up the required subscriptions (dependency tracking) for you in the runtime in order to get updated whenever the result of the query changes.\n\nConcretely, at the client or consumer end one would write something like this:\n\n``` c#\nvar Grain = GrainFactory.GetGrain<IMyGrain>(0);\nQuery Query = Grain.MyQuery(args).KeepAlive(2000, CancellationToken);\nwhile (Interested) {\n    Result result = await Query.NextUpdateAsync();\n    // Use the entire result of the query (so not a delta change), e.g. to display on screen\n}\n```\n\nAnd your query in your grain would look like this, for example:\n\n``` c#\npublic class MyGrain : IGrainReactive {\n    List<IOtherGrain> OtherGrains;\n\n    public Query<Result> MyQuery(args){\n       return Task.WhenAll(this.OtherGrains.Select((g) => await g.OtherQuery());\n    }\n\n    public Task AddGrain(IOtherGrain grain) {\n        this.OtherGrains.Add(grain);\n        return TaskDone.Done;\n    }\n}\n```\n\nThis has the following semantics:\n- Whenever the result of the Query changes, this will be propagated to the client and `Query.NextUpdateAsync()` will return with the new result.\n- Even though multiple updates might have been propagated in between 2 calls, `.NextUpdateAsync()` will just return the latest result (thus possibly skipping some versions of the state), i.e. we are only interested in the latest state.\n- These updates will stop whenever the invoked grain hasn't received a keep-alive notification for the configured time or when it is explicitly cancelled using the CancellationToken (this is recursively propagated to other grains on which this query depends).\n\nIn order to achieve this, the runtime will perform the following actions:\n- When a query is initiated for the first time, it will be executed just as if it is a regular async method call, together with the following additions:\n  - Every grain that calls a query will memoize the result of this query.\n  - Every grain on which a query was called will set up a subscription to subscribe the caller to this query. The result of this query will also be memoized on this end.\n- Whenever a non-query is called on a `IReactiveGrain`, all the queries that other grains depend on from this grain will be re-executed. If the result of the query is different from the memoized result, the new value will be pushed to the dependents. They will recursively do the same thing, all the way up to the client that executed the query, where `Query.NextUpdateAsync()` will then return with the new result of the query. Finally, whenever a query is re-executed and it contains calls to other queries, the re-execution will use the memoized results instead of re-invoking those queries.\n\nThus, In the example code `AddGrain(IOtherGrain grain)` will trigger a re-execution of `MyQuery(args)` for this client, but will re-use the memoized results from `g.OtherQuery()`. Re-executing the queries on every non-query method invocation is very conservative, but it is a good start to keep the implementation simple.\n\n(Note: Since the result of a query is memoized on both ends, update propagation can later be optimised to let the grains only communicate via diff operations.)\n\nThis proposal relates to https://github.com/dotnet/orleans/issues/940, except that we plan to go one step further by not requiring the programmer to manually construct an `IObservable`. Instead we keep track of when data that is dependent on might affect a query and then automatically propagate this.\n\nWe have a pretty good idea about the core of this concept, but the API in which this is exposed to the programmer is still in transit. So any feedback is very welcome.\n\nThanks for your opinion! :)\n"
+    },
+    {
+      "repo": "dsa-collective/algorithm-visualizer",
+      "issue": 11,
+      "url": "https://github.com/dsa-collective/algorithm-visualizer/issues/11",
+      "title": "Build corpus of example algorithms with annotated visualization configs",
+      "score": 8,
+      "signals": {
+        "traversal.recursive": 3,
+        "traversal.bfs_dfs": 2,
+        "manual_impl.adjacency": 3
+      },
+      "body": "## Context\n\nEach visualizer needs known-good example algorithms to validate against and to serve as demos/documentation. Right now there's no shared corpus, so every issue would otherwise define its own ad hoc examples.\n\n## What\n\nBuild a corpus of example algorithms under `examples/`, organized by visualizer type, each with:\n\n- The algorithm source (clean, unannotated \u2014 the tracer must work on plain code)\n- A small `README` snippet or docstring describing what to expect in the visualization\n- Sample input(s) to run it with\n\nCover at minimum: two-pointer (reverse array, container with most water), sliding window (longest substring without repeat), recursion (factorial, fibonacci, tree traversal), graph (BFS grid, DFS adjacency list), heap (running median, k-th largest), DP (climbing stairs, edit distance, LCS).\n\n## Acceptance Criteria\n\n- [ ] At least 2 examples per visualizer type (10+ total) added under `examples/`\n- [ ] Each example runs end-to-end through the CLI without visualizer-specific flags beyond `--visualizer`/`--function`\n- [ ] Referenced from the project README as the recommended way to try the tool\n"
+    },
+    {
+      "repo": "flutter/flutter",
+      "issue": 118635,
+      "url": "https://github.com/flutter/flutter/issues/118635",
+      "title": "Include assets from a directory recursively",
+      "score": 8,
+      "signals": {
+        "traversal.recursive": 3,
+        "activity.discussion": 3,
+        "activity.reactions": 2
+      },
+      "body": "Greetings Flutter team & community,\r\n\r\nI would like to re-open the discussion which started in #4890.\r\n\r\nIn particular, a mechanism to add asset files *recursively* would benefit my use case, and as evidenced by [this comment](https://github.com/flutter/flutter/issues/4890#issuecomment-407327749), I suspect would benefit use cases of others.\r\n\r\nMy present use case is that I would like to embed many files into the app, so that I do not have to stand up a back end to host the files. This seems like a fairly typical desire.\r\n\r\nHowever, not being able to recursively add assets is a hindrance.\r\n\r\nI understand that\r\n\r\n- There are possible work-arounds, such as tools/scripts to generated the needed paths for the `assets` key\r\n- The reason for not implementing recursive asset inclusion in #4890 relates to the handling of variants (see #16413 and [this](https://medium.com/flutter-community/contributing-to-flutter-part-3-4b96d924d8ba))\r\n\r\n## Use case\r\n\r\nAdd many files as assets, for example, when you'd prefer to bundle files with the app package rather than download them separately.\r\n\r\n## Proposal\r\n\r\nI am mostly hoping to spark some conversation around this, although one possible way to do this given the legacy/constraints of variants would be to introduce a new pubspec.yaml key, analogous to `assets`, but which does not allow variants and will be capable of adding files recursively and/or by wildcard. Said new key could be named something like `nonvariant_assets`.\r\n\r\nThank you for your time."
+    },
+    {
+      "repo": "flyspray/flyspray",
+      "issue": 949,
+      "url": "https://github.com/flyspray/flyspray/issues/949",
+      "title": "Category Management",
+      "score": 8,
+      "signals": {
+        "manual_impl.adjacency": 3,
+        "manual_impl.cascade": 2,
+        "activity.discussion": 3
+      },
+      "body": "I took a look at how Flyspray handles categories.\n\nFor those wanting to follow along, Categories implements the [Nested Set](https://en.wikipedia.org/wiki/Nested_set_model) model, also known as Celko Trees.  A more in-depth discussion can be found on [Mike Hillyer's blog](https://mikehillyer.com/articles/managing-hierarchical-data-in-mysql/) (skip past the adjacency list part).\n\nThe `list_categories` table implements a standard Nested Set, with the addition of becoming multi-rooted through the `project_id` column and a couple extra columns not relevant to the tree structure: `category_owner` and `show_in_list`.\n\nCategory management is in `modify.inc.php`.  Here's what I found.\n\n## case `update_category`\n\n### Parent, Sibling checks\n\nWhen the parent node is fetched, perhaps specify `project_id = ?` in the subquery for safety?  The only possible problem I see is if another project's categories have the exact same structure and therefore identical `lft`/`rgt` values occur in both trees.\n\nThe change wouldn't affect subquery dependency or performance, and the following query that checks for duplicate sibling names does this in its subquery.\n\n### Category Update\n\nThe category management UI is a complex form that allows a user to achieve several types of actions at once:\n\n* Change category name, owner, visibility (not very relevant to tree integrity)\n* Rearrange category tree\n* Delete category\n\nThe user can flag categories for deletion by checking associated checkboxes.\n\nCategories are rearranged by clicking a category row, which highlights it along with its children.  The arrow box is then used to move these rows (as a unit) up/down the table or change their depth in/out.\n\nEach table row contains hidden inputs for `lft` and `rgt`.  These are only updated when the form is submitted, not when the table rows are manipulated.  The submit handler (in `js/tablecontrol.js`) does not consider the state of any `delete` checkboxes.\n\nThe form data is submitted as arrays: `list_name`, `lft`, `rgt`, `show_in_list`, `category_owner`, and `delete` all keyed by category ID.  \n\n> ASIDE: This mitigates but doesn't fully solve the PHP `max_input_vars` issue... sending these arrays as JSON strings would solve it, as there would only ever be 6 inputs.\n\nIn the backend, the `$_POST` vars are gathered into corresponding local arrays.  The bulk of the work happens when `$listnames` is looped over:\n\n* Find the parent category\n* Search for children of the parent with the same (freshly submitted) name (error out if found)\n* Update every changeable field in the category: `category_name`, `show_in_list`, `category_owner`, `lft`, `rgt`\n* If the category's `show_in_list` was unchecked, set `$listshow[$id]` to `0` for all its descendants.\n\n> The last step is problematic as it assumes the browser has ordered the form data in accordance with the table's HTML structure, and therefore that PHP is iterating over `$listnames` in that order.  There may be other ways in which `$listshow[N]` is changed after the `$listnames[N]` iteration.\n\nAfter the loop concludes, the categories marked for deletion are wiped out in a single query.\n\nThat's end of the `update_category` case.  If any categories were deleted, there may be any number of gaps in the project tree's `lft`/`rgt` numbering, thus contorting the tree into an unintended shape.\n\n**This case should be recalculating `lft` and `rgt` after any categories are deleted for the entire tree.**  See \"Deleteing nodes\" in the blog post.  Also, consideration should be made whether the doomed category is a leaf (no descendants).\n\nA leaf can simply be deleted and the subsequent `lft`/`rgt` sequence updated.\n\nOtherwise, a potential choice comes up: also delete descendant categories, or promote them \"up\" one level to fill the gap left by the now-deleted parent.\n\nSince the UI only presents individual delete checkboxes with no indication of any cascade behavior, it makes more sense that we take the promotion route.\n\nSince we allow deleting many categories in a request, I suggest we query for the doomed categories first, in order of descending depth, then descending `rgt`, to minimize churn in the table.  This will create another occasion for checking duplicate names of potential siblings.  Then we loop over the doomed categories, updating the sequencing after each.\n\n> Note: When `$_POST['list_name]` is validated, we should be checking that the (trimmed) values are not empty.  This happens within the `$listnames` loop (which is bailed on from `Flyspray::show_error()`), another potential for tree breakage.\n\n## case `pm.add_category`, `admin.add_category`\n\nThis case does the following:\n\n* Find the parent category\n* Search for children of the parent with the same name (error out if found)\n* Update `rgt` in the whole tree after the new category's insertion point\n* Update `lft` in the whole tree after the new category's insertion point\n* With space created in ordering sequence, insert the new category\n\nPosition is recalculated here, unlike during `update_category`.\n\n## Test Data\n\nTest data generation of categories now utilizes `CategoriesNestedSetDB::addChildNode()`, which adjusts `rgt` and `lft` in the tree before inserting the new category.\n\n## Questions for @peterdd:\n\n* Which Nested Set composer packages did you try?\n* Are the classes in `CategoriesNestedSetChecks.php` intended to replace all other interaction with the `{list_categories}` table?\n"
+    }
+  ]
+}

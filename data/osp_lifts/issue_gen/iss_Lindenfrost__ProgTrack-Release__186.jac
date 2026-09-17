@@ -1,134 +1,101 @@
-# OSP lift of Lindenfrost/ProgTrack-Release#186
+# Lift of Lindenfrost/ProgTrack-Release#186
+# Heritage Track first-render, sibling-ghost scope closure, ancestor expansion.
+
 node Animal {
     has aid: str;
-    has sex: str = "U";
+    has archived: bool = False;
 }
 
 edge ParentOf {}
+edge PartnerOf {}
+edge GhostContext {}
 
-edge GhostContext {
-    has kind: str = "sibling";
+def get_animal(reg: dict[str, Animal], aid: str) -> Animal | None {
+    # unknown-id tolerance: return None, never raise
+    if aid in reg {
+        return reg[aid];
+    }
+    return None;
 }
 
-node Frame {
-    has fid: str;
-    has labels: dict[str, str] = {};
-}
-
-node FrameNode {
-    has fid: str;
-    has collides: bool = False;
-}
-
-edge Contains {}
-
-walker SelectAnimals {
-    has claimed: dict[str, bool] = {};
-    has picks: list[str] = [];
-    has found: list[str] = [];
-
-    can gather with Animal entry {
-        if here.aid in self.claimed { skip; }
-        self.claimed[here.aid] = True;
-        self.found.append(here.aid);
-        parents: list[Animal] = [];
-        for p in [here <-:ParentOf:-] {
-            if p instanceof Animal {
-                parents.append(p);
+def expand_ancestors(seeds: list[Animal], depth: int) -> list[Animal] {
+    # bounded ancestor expansion (SelectedAnimalsStrategy)
+    scope: dict[str, bool] = {};
+    out: list[Animal] = [];
+    frontier: list[Animal] = [];
+    for s in seeds { frontier.append(s); }
+    d: int = 0;
+    while d <= depth && len(frontier) > 0 {
+        nxt: list[Animal] = [];
+        for a in frontier {
+            if a.aid in scope { continue; }
+            scope[a.aid] = True;
+            out.append(a);
+            for p in [a ->:ParentOf:->][?:Animal] {
+                if p.aid not in scope { nxt.append(p); }
             }
         }
-        visit parents;
+        frontier = nxt;
+        d += 1;
     }
-
-    can done with Animal exit {
-        print("select:", self.found);
-    }
+    return out;
 }
 
-walker ScopeGhosts {
-    has depth: int = 4;
-    has ghosts: dict[str, str] = {};
-    has claimed: dict[str, bool] = {};
-
-    can expand with Animal entry {
-        if here.aid in self.claimed { skip; }
-        self.claimed[here.aid] = True;
-        # bounded sibling closure: peers sharing an in-scope parent
-        for p in [here <-:ParentOf:-] {
-            if p instanceof Animal {
-                for sib in [p ->:ParentOf:->] {
-                    if sib instanceof Animal {
-                        if sib.aid != here.aid and sib.aid not in self.ghosts {
-                            self.ghosts[sib.aid] = "sibling";
-                        }
-                    }
-                }
+def sibling_ghost_closure(scope: list[Animal]) -> list[Animal] {
+    # one bounded pass: stage newly found context nodes so later
+    # family-completeness evaluation sees them (no recursive expansion)
+    staged: dict[str, Animal] = {};
+    ghosts: list[Animal] = [];
+    for a in scope { staged[a.aid] = a; }
+    for a in scope {
+        # parents already in scope expose their siblings as ghosts
+        for p in [a ->:ParentOf:->][?:Animal] {
+            if p.aid not in staged { staged[p.aid] = p; ghosts.append(p); }
+            for sib in [p <-:ParentOf:<-][?:Animal] {
+                if sib.aid not in staged { staged[sib.aid] = sib; ghosts.append(sib); }
             }
         }
-        kids: list[Animal] = [];
-        for k in [here ->:ParentOf:->] {
-            if k instanceof Animal {
-                kids.append(k);
-            }
+        # missing genetic co-parent needed to make the visible family complete
+        for part in [a ->:PartnerOf:->][?:Animal] {
+            if part.aid not in staged { staged[part.aid] = part; ghosts.append(part); }
         }
-        if self.depth > 0 {
-            self.depth -= 1;
-            visit kids;
-        } else {
-            print("scope done at", here.aid);
-            disengage;
+        for part2 in [a <-:PartnerOf:<-][?:Animal] {
+            if part2.aid not in staged { staged[part2.aid] = part2; ghosts.append(part2); }
         }
+    }
+    return ghosts;
+}
+
+walker HeritageRender {
+    has selected: list[str] = [];
+    has depth: int = 8;
+    has scope: list[Animal] = [];
+    has ghosts: list[Animal] = [];
+    has reg: dict[str, Animal] = {};
+
+    can step with Animal entry {
+        # first-render safety: claim-map dedup, never disengage on revisit
+        if here.aid in self.reg { skip; }
+        self.reg[here.aid] = here;
+        seeds: list[Animal] = [];
+        for aid in self.selected {
+            a = get_animal(self.reg, aid);
+            if a is not None { seeds.append(a); }
+        }
+        # pass 1: ancestor expansion; pass 2: staged ghost closure on result
+        self.scope = expand_ancestors(seeds, self.depth);
+        self.ghosts = sibling_ghost_closure(self.scope);
+        # deny archived-only render: invalid geometry guard
+        ok: bool = False;
+        for a in self.scope { if not a.archived { ok = True; } }
+        if not ok { print("invalid geometry"); disengage; }
+        print("rendered " + str(len(self.scope)) + " scope, "
+              + str(len(self.ghosts)) + " ghosts");
+        disengage;
     }
 }
 
-walker BuildGeometry {
-    has claimed: dict[str, bool] = {};
-    has ok: bool = False;
-
-    can lay with Frame entry {
-        if here.fid in self.claimed { skip; }
-        self.claimed[here.fid] = True;
-        nodes: list[FrameNode] = [];
-        for fn in [here ->:Contains:->] {
-            if fn instanceof FrameNode {
-                nodes.append(fn);
-            }
-        }
-        for fn in nodes {
-            if fn.collides {
-                here.ok = False;
-                print("collision at", fn.fid);
-                disengage;
-            }
-            here.labels[fn.fid] = "ok";
-        }
-        here.ok = True;
-        print("geometry ok:", here.fid);
-    }
-}
-
-# collect the in-scope closure from graph_root when root is picked
-def scope_ancestors(graph_root: Animal, picks: list[str]) -> list[str] {
-    found: list[str] = [];
-    if graph_root.aid not in picks {
-        return sorted(found);
-    }
-    w = graph_root spawn SelectAnimals(claimed={}, picks=picks, found=found);
-    res: list[str] = [];
-    for a in w.found {
-        res.append(a);
-    }
-    return sorted(res);
-}
-
-# bounded sibling-ghost map seeded at graph_root
-def sibling_ghosts(graph_root: Animal) -> dict[str, str] {
-    w = graph_root spawn ScopeGhosts(claimed={}, ghosts={}, depth=4);
-    return w.ghosts;
-}
-
-# frame geometry validation: any colliding frame node fails the frame
-def validate_geometry(frame: Frame) -> bool {
-    w = frame spawn BuildGeometry(claimed={}, ok=False);
-    return w.ok;
+def render_heritage(root_node: Animal, selected: list[str]) -> HeritageRender {
+    w = root_node spawn HeritageRender(selected=selected);
+    return w;
 }
