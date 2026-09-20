@@ -37,13 +37,9 @@ def load_rules(
         store.parent_of[rid] = parent;
     }
     for (rid, parent) in rules {
-        if parent is not None {
-            p: Rule | None = store.rules.get(parent, None);
-            nd: Rule | None = store.rules.get(rid, None);
-            if p is not None and nd is not None {
-                p +>:ChildOf:+> nd;
-                p +>:Depends:+> nd;
-            }
+        if parent is not None and parent in store.rules and rid in store.rules {
+            store.rules[parent] +>:ChildOf:+> store.rules[rid];
+            store.rules[parent] +>:Depends:+> store.rules[rid];
         }
     }
     for (dep, rule) in depends_edges {
@@ -89,7 +85,6 @@ def profile_total_ms(store: RuleStore, rule_id: str, ticks: dict[str, int]) -> i
     }
     return total;
 }
-
 test "rule dependency profiler" {
     store = load_rules(
         [("leaf", "parent"), ("parent", "root"), ("root", None), ("sibling", "root")],

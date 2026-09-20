@@ -183,7 +183,6 @@ def blocked_tasks(b: Board) -> list[str] {
     }
     return sorted(out);
 }
-
 test "derived blocking is direct only" {
     b = build_board(["design", "impl", "test", "release"]);
     link(b, "design", "impl");
@@ -253,6 +252,10 @@ test "resolved edge still closes cycle and badge never a status" {
         assert False, "resolved-edge cycle";
     } except ValueError { assert True; }
     st = b.resolve("x");
+    if st is None {
+        assert False, "x missing";
+        return;
+    }
     assert st.status == "todo";           # badge machinery left status alone
     assert not st.blocked_badge or is_blocked(b, "x");
 }

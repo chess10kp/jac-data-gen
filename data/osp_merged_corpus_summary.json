@@ -1,0 +1,187 @@
+{
+  "generated_at": "2026-09-20T02:47:22.454226",
+  "spec_version": "OSP_IDIOMIZE_TASK-v2.1",
+  "jac_version": "0.36.1",
+  "total_records": 7842,
+  "tiers": {
+    "legacy_test_verified": 2196,
+    "legacy_compile_only": 5079,
+    "v21_gold": 543,
+    "v21_candidate": 24
+  },
+  "gate_outcomes": {
+    "legacy_gate": {
+      "all_pass": 2058,
+      "guard_test": 33,
+      "jac_check": 26,
+      "guard_test jac_check": 105,
+      "elimination_scan": 6
+    },
+    "v21_gate": {
+      "all_pass": 504,
+      "guard_evidence_required guard_test jac_check": 24,
+      "guard_evidence_required guard_test": 31,
+      "floor_check": 3,
+      "elimination_scan": 5
+    }
+  },
+  "code_duplicates": 159,
+  "unique_code_hashes": 7683,
+  "sft_release_set": 543,
+  "out": "/home/jac/repos/jac_llm_data/data/osp_merged_corpus.jsonl",
+  "codemod_repair": {
+    "at": "2026-09-19T19:27:07.319769",
+    "promoted": 0,
+    "compile_clean": 0,
+    "fresh_green_backfill": 2,
+    "still_failing": 0,
+    "skipped": {
+      "fresh_green": 2
+    }
+  },
+  "fixup_remaining": {
+    "at": "2026-09-19T23:58:30.121817",
+    "model": "composer-2.5",
+    "run": "corpus-fixup-20260919-235830-680a2f",
+    "usage": {
+      "in": 211082,
+      "out": 63345,
+      "cache": 2279212
+    },
+    "results": {
+      "trio": {
+        "osp__synthetic__c5__cacheinv": {
+          "outcome": "held",
+          "check": true,
+          "guard": "fail",
+          "elim_clean": true
+        },
+        "osp__synthetic__c5__fsvfsdel": {
+          "outcome": "held",
+          "check": true,
+          "guard": "fail",
+          "elim_clean": true
+        },
+        "osp__synthetic__c5__cfginclud": {
+          "outcome": "promoted",
+          "edits": 1
+        }
+      },
+      "llm": {
+        "osp_A_12__mm3_v6": {
+          "outcome": "compile_clean"
+        },
+        "osp_A_12__mm3_v37": {
+          "outcome": "compile_clean"
+        },
+        "osp_A_12__mm3_v61": {
+          "outcome": "compile_clean"
+        },
+        "osp_A_12__mm3_v36": {
+          "outcome": "compile_clean"
+        },
+        "osp_A_12__composer_v38": {
+          "outcome": "compile_clean"
+        },
+        "iss_ssc-ict-innovatie__nl-kat-coordination__5265": {
+          "outcome": "compile_clean"
+        },
+        "iss_thedeepestspace__svsch__325": {
+          "outcome": "compile_clean"
+        },
+        "iss_effortlessmetrics__perl-lsp-swarm__8155": {
+          "outcome": "compile_clean"
+        },
+        "iss_bobluppes__graaf__332": {
+          "outcome": "compile_clean"
+        },
+        "iss_zhongjis__pi-config__7": {
+          "outcome": "compile_clean"
+        },
+        "iss_Oblikovati__Oblikovati__3069": {
+          "outcome": "compile_clean"
+        },
+        "iss_davidofchatham__meta-conductor__53": {
+          "outcome": "compile_clean"
+        },
+        "iss_neetcode-gh__leetcode__6005": {
+          "outcome": "compile_clean"
+        },
+        "iss_topoteretes__cognee__4431": {
+          "outcome": "check_fail"
+        },
+        "iss_dbt-labs__dbt-core__10632": {
+          "outcome": "compile_clean"
+        },
+        "iss_paulnsorensen__milknado__292": {
+          "outcome": "check_fail"
+        },
+        "iss_cockroachdb__cockroach__173727": {
+          "outcome": "compile_clean"
+        },
+        "iss_datajoint__datajoint-python__1496": {
+          "outcome": "check_fail"
+        },
+        "iss_xuanhieu2611__Slipwell__34": {
+          "outcome": "compile_clean"
+        },
+        "osp__lsst-sqre__ook__237__dm55388i": {
+          "outcome": "promoted"
+        },
+        "osp__DotNaos__project-space__879__addrecur": {
+          "outcome": "promoted"
+        },
+        "osp__LadybugDB__ladybug__650__complete": {
+          "outcome": "promoted"
+        },
+        "osp__Kinetic639__coreframe-boilerplate__92__replacer": {
+          "outcome": "promoted"
+        },
+        "osp__asulwer__RoslynRules__117__ruleperf": {
+          "outcome": "promoted"
+        },
+        "osp__sydlexius__canticle__665__refactor": {
+          "outcome": "held",
+          "guard": "fail"
+        }
+      }
+    },
+    "round2": {
+      "at": "2026-09-20T00:04:05.539800",
+      "tiers": {
+        "legacy_test_verified": 2195,
+        "legacy_compile_only": 5080,
+        "v21_gold": 526,
+        "v21_candidate": 41
+      }
+    },
+    "round3": {
+      "at": "2026-09-20T00:05:46.075074"
+    }
+  },
+  "guard_fixup": {
+    "at": "2026-09-20T15:27:34.787251",
+    "runs": [
+      "guard-fixup runs in data/run_ledger.sqlite3 (45 + 22 LLM calls)",
+      "pass1: data/osp_repair/guard_fixup_20260920",
+      "pass2: data/osp_repair/guard_fixup_20260920_round2"
+    ],
+    "repaired": 22,
+    "repaired_ids_v21_annex": 13,
+    "repaired_legacy": 9,
+    "unresolved": {
+      "iss_ContextualWisdomLab__fast-mlsirm__1412": "runtime-impossible: hidden test constructs Cell(distance=1e999); jac 0.36.1 store cannot serialize the row and every graph access re-flushes it (PgWire Infinity). Record kept, SFT-excluded (\u00a78.3); see validation.guard_unresolved in the corpus record."
+    },
+    "harness": {
+      "codespace": "either-side pass: unpinned first, server-pinned retry on fail (native codespace miscompiles set()-args/for-loops/f-string appends in walkers; spec \u00a72). audit_all_generated.gate_merged_row, pack_merged_corpus gate_legacy/gate_v21.",
+      "subprocess": "process-group kill on timeout (jac leaves postgres grandchildren holding the stdout pipe).",
+      "memory": "run audits with --workers <= 3 on this 14GB box; 12 workers OOMed."
+    },
+    "evidence": "audit_generated_units.jsonl (full pinned audit): 7842/7842 check pass, guard 2670 pass / 4 fail; 3 of the 4 are traversal-order-sensitive v21 records that pass unpinned (verified 2x each); 1 documented above. 22 repaired records verified green individually."
+  },
+  "promotion": {
+    "at": "2026-09-20T15:45:00",
+    "promoted_to_gold": 14,
+    "note": "13 repaired v21 candidates promoted; only failing gate was guard_test"
+  }
+}

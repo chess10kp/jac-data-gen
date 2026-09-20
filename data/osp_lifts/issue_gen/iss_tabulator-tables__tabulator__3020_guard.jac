@@ -1,370 +1,266 @@
-"""tabulator-tables/tabulator#3020 — Deep match header filter for hierarchical tree rows."""
+"""tabulator-tables/tabulator#3020 — deep tree filter exposing ancestor paths."""
 
-node Location {
-    has id: str;
-    has location: str;
-    has color: str = "";
+node Row {
+    has cid: str;
+    has values: dict[str, str] = {};
 }
 
 edge Child {}
 
-walker TreeMatchWalker {
-    has header_value: str;
-    has column_name: str;
-    has cache: dict[str, bool];
-    has target_id: str = "";
-    has collect_all: bool = False;
-    has result: bool = False;
-    has visible: list[str] = [];
+walker FindRow {
+    has target_id: str;
+    has found: Row | None = None;
     has claimed: dict[str, bool] = {};
 
-    can walk with Location entry {
-        if here.id in self.claimed {
+    can step with Row entry {
+        if here.cid in self.claimed {
             skip;
         }
-        self.claimed[here.id] = True;
-
-        if here.id in self.cache {
-            if here.id == self.target_id {
-                self.result = self.cache[here.id];
-            }
-            if self.collect_all and self.cache[here.id] {
-                self.visible.append(here.id);
-            }
-            print({"id": here.id, "cached": self.cache[here.id]});
+        self.claimed[here.cid] = True;
+        if here.cid == self.target_id {
+            self.found = here;
+            print("find hit " + here.cid);
             disengage;
         }
-
-        children: list[Location] = [here ->:Child:->][?:Location];
-        for ch in children {
-            visit ch;
+        kids: list[Row] = [here ->:Child:->][?:Row];
+        if kids {
+            visit kids;
+        } else {
+            disengage;
         }
+    }
+}
 
-        any_child_match: bool = False;
-        for ch in children {
-            ch_id = ch.id;
-            if ch_id in self.cache {
-                if self.cache[ch_id] {
-                    any_child_match = True;
+walker CollectSubtree {
+    has rows: list[Row] = [];
+    has claimed: dict[str, bool] = {};
+
+    can step with Row entry {
+        if here.cid in self.claimed {
+            skip;
+        }
+        self.claimed[here.cid] = True;
+        self.rows.append(here);
+        kids: list[Row] = [here ->:Child:->][?:Row];
+        if kids {
+            visit kids;
+        } else {
+            disengage;
+        }
+        print("collect " + here.cid);
+    }
+}
+
+walker MeasureDepth {
+    has depths: dict[str, int] = {};
+    has claimed: dict[str, bool] = {};
+    has base: int = 0;
+
+    can step with Row entry {
+        if here.cid in self.claimed {
+            skip;
+        }
+        self.claimed[here.cid] = True;
+        self.depths[here.cid] = self.base;
+        kids: list[Row] = [here ->:Child:->][?:Row];
+        if kids {
+            for kid in kids {
+                kid spawn MeasureDepth(
+                    depths=self.depths,
+                    claimed=self.claimed,
+                    base=self.base + 1
+                );
+            }
+        } else {
+            disengage;
+        }
+        print("depth " + here.cid + "=" + str(self.base));
+    }
+}
+
+walker DemoFilter {
+    can run entry {
+        graph_root = build_location_tree;
+        vis = visible_row_ids(graph_root, "world", "yellow", "colour");
+        print("demo_visible=" + str(vis));
+    }
+}
+
+def field_matches(header_value: str, field_value: str | None) -> bool {
+    if field_value is None {
+        return False;
+    }
+    hv = header_value.lower();
+    fv = field_value.lower();
+    return fv.find(hv) >= 0;
+}
+
+def clear_match_cache(cache: dict[str, bool]) {
+    keys: list[str] = [];
+    for k in cache {
+        keys.append(k);
+    }
+    for k in keys {
+        del cache[k];
+    }
+}
+
+def find_row_by_id(graph_root: Row, target_id: str) -> Row | None {
+    w = graph_root spawn FindRow(target_id=target_id);
+    return w.found;
+}
+
+def collect_subtree_rows(start: Row) -> list[Row] {
+    w = start spawn CollectSubtree();
+    return w.rows;
+}
+
+def measure_depths(start: Row) -> dict[str, int] {
+    w = start spawn MeasureDepth();
+    return w.depths;
+}
+
+def deep_match_row(
+    graph_root: Row,
+    node_id: str,
+    header_value: str,
+    column_name: str,
+    cache: dict[str, bool],
+) -> bool {
+    if node_id in cache {
+        return cache[node_id];
+    }
+    target = find_row_by_id(graph_root, node_id);
+    if target is None {
+        return False;
+    }
+    rows: list[Row] = collect_subtree_rows(target);
+    depths: dict[str, int] = measure_depths(target);
+    max_d = 0;
+    for r in rows {
+        d = depths[r.cid];
+        if d > max_d {
+            max_d = d;
+        }
+    }
+    d = max_d;
+    while d >= 0 {
+        for r in rows {
+            if depths[r.cid] != d {
+                continue;
+            }
+            cid = r.cid;
+            if cid in cache {
+                continue;
+            }
+            child_hit = False;
+            kids: list[Row] = [r ->:Child:->][?:Row];
+            for kid in kids {
+                if cache[kid.cid] {
+                    child_hit = True;
                     break;
                 }
             }
-        }
-
-        if any_child_match {
-            self.cache[here.id] = True;
-            if here.id == self.target_id {
-                self.result = True;
+            fv: str | None = None;
+            if column_name in r.values {
+                fv = r.values[column_name];
             }
-            if self.collect_all {
-                self.visible.append(here.id);
-            }
-            print({"id": here.id, "match": True, "via": "descendant"});
-            disengage;
+            self_hit = field_matches(header_value, fv);
+            cache[cid] = child_hit or self_hit;
         }
-
-        field_val: str = "";
-        if self.column_name == "location" {
-            field_val = here.location;
-        } elif self.column_name == "color" {
-            field_val = here.color;
-        }
-
-        self_match: bool = False;
-        if field_val != "" {
-            fv = field_val.lower();
-            hv = self.header_value.lower();
-            if fv.find(hv) >= 0 {
-                self_match = True;
-            }
-        }
-
-        self.cache[here.id] = self_match;
-        if here.id == self.target_id {
-            self.result = self_match;
-        }
-        if self.collect_all and self_match {
-            self.visible.append(here.id);
-        }
-        print({"id": here.id, "match": self_match, "via": "self"});
-        disengage;
+        d -= 1;
     }
+    return cache[node_id];
 }
 
-obj DeepMatchFilter {
-    has graph_root: Location | None = None;
-    has id_index: dict[str, Location] = {};
-    has cache: dict[str, bool] = {};
-
-    def add_node(id: str, location: str, color: str = "", parent_id: str | None = None) -> None {
-        node = Location(id=id, location=location, color=color);
-        self.id_index[id] = node;
-        if parent_id is None {
-            if self.graph_root is None {
-                self.graph_root = node;
-                root ++> node;
-            }
-        } else {
-            if parent_id in self.id_index {
-                parent = self.id_index[parent_id];
-                parent +>:Child:+> node;
-            }
+def visible_row_ids(
+    graph_root: Row,
+    root_id: str,
+    header_value: str,
+    column_name: str,
+) -> list[str] {
+    anchor = find_row_by_id(graph_root, root_id);
+    if anchor is None {
+        return [];
+    }
+    cache: dict[str, bool] = {};
+    deep_match_row(graph_root, root_id, header_value, column_name, cache);
+    rows: list[Row] = collect_subtree_rows(anchor);
+    out: list[str] = [];
+    for r in rows {
+        if cache[r.cid] {
+            out.append(r.cid);
         }
     }
-
-    def link(parent_id: str, child_id: str) {
-        if parent_id in self.id_index and child_id in self.id_index {
-            parent = self.id_index[parent_id];
-            child = self.id_index[child_id];
-            parent +>:Child:+> child;
-        }
-    }
-
-    def clear_cache {
-        self.cache = {};
-    }
-
-    def deep_match(header_value: str, node_id: str, column_name: str = "location") -> bool {
-        if self.graph_root is None {
-            return False;
-        }
-        if node_id not in self.id_index {
-            return False;
-        }
-        w = self.graph_root spawn TreeMatchWalker(
-            header_value=header_value,
-            column_name=column_name,
-            cache=self.cache,
-            target_id=node_id,
-            collect_all=False
-        );
-        if node_id in self.cache {
-            return self.cache[node_id];
-        }
-        return w.result;
-    }
-
-    def visible_node_ids(header_value: str, column_name: str = "location") -> list[str] {
-        self.clear_cache();
-        if self.graph_root is None {
-            return [];
-        }
-        w = self.graph_root spawn TreeMatchWalker(
-            header_value=header_value,
-            column_name=column_name,
-            cache=self.cache,
-            collect_all=True
-        );
-        out: list[str] = [];
-        for vid in w.visible {
-            out.append(vid);
-        }
-        return sorted(out);
-    }
+    out = sorted(out);
+    return out;
 }
 
-"""tabulator-tables/tabulator#3020 — Deep match header filter for hierarchical tree rows."""
-
-node Location {
-    has id: str;
-    has location: str;
-    has color: str = "";
+def build_location_tree -> Row {
+    world = Row(
+        cid="world",
+        values={"location": "World", "colour": "blue"},
+    );
+    root ++> world;
+    building = Row(
+        cid="building",
+        values={"location": "HQ", "colour": "grey"},
+    );
+    world +>:Child:+> building;
+    floor = Row(
+        cid="floor",
+        values={"location": "Floor 3", "colour": "white"},
+    );
+    building +>:Child:+> floor;
+    desk = Row(
+        cid="desk",
+        values={"location": "Desk 12", "colour": "yellow"},
+    );
+    floor +>:Child:+> desk;
+    return world;
 }
 
-edge Child {}
-
-walker TreeMatchWalker {
-    has header_value: str;
-    has column_name: str;
-    has cache: dict[str, bool];
-    has target_id: str = "";
-    has collect_all: bool = False;
-    has result: bool = False;
-    has visible: list[str] = [];
-    has claimed: dict[str, bool] = {};
-
-    can walk with Location entry {
-        if here.id in self.claimed {
-            skip;
-        }
-        self.claimed[here.id] = True;
-
-        if here.id in self.cache {
-            if here.id == self.target_id {
-                self.result = self.cache[here.id];
-            }
-            if self.collect_all and self.cache[here.id] {
-                self.visible.append(here.id);
-            }
-            print({"id": here.id, "cached": self.cache[here.id]});
-            disengage;
-        }
-
-        children: list[Location] = [here ->:Child:->][?:Location];
-        for ch in children {
-            visit ch;
-        }
-
-        any_child_match: bool = False;
-        for ch in children {
-            ch_id = ch.id;
-            if ch_id in self.cache {
-                if self.cache[ch_id] {
-                    any_child_match = True;
-                    break;
-                }
-            }
-        }
-
-        if any_child_match {
-            self.cache[here.id] = True;
-            if here.id == self.target_id {
-                self.result = True;
-            }
-            if self.collect_all {
-                self.visible.append(here.id);
-            }
-            print({"id": here.id, "match": True, "via": "descendant"});
-            disengage;
-        }
-
-        field_val: str = "";
-        if self.column_name == "location" {
-            field_val = here.location;
-        } elif self.column_name == "color" {
-            field_val = here.color;
-        }
-
-        self_match: bool = False;
-        if field_val != "" {
-            fv = field_val.lower();
-            hv = self.header_value.lower();
-            if fv.find(hv) >= 0 {
-                self_match = True;
-            }
-        }
-
-        self.cache[here.id] = self_match;
-        if here.id == self.target_id {
-            self.result = self_match;
-        }
-        if self.collect_all and self_match {
-            self.visible.append(here.id);
-        }
-        print({"id": here.id, "match": self_match, "via": "self"});
-        disengage;
-    }
+with entry {
+    root spawn DemoFilter();
 }
 
-obj DeepMatchFilter {
-    has graph_root: Location | None = None;
-    has id_index: dict[str, Location] = {};
-    has cache: dict[str, bool] = {};
-
-    def add_node(id: str, location: str, color: str = "", parent_id: str | None = None) -> None {
-        node = Location(id=id, location=location, color=color);
-        self.id_index[id] = node;
-        if parent_id is None {
-            if self.graph_root is None {
-                self.graph_root = node;
-                root ++> node;
-            }
-        } else {
-            if parent_id in self.id_index {
-                parent = self.id_index[parent_id];
-                parent +>:Child:+> node;
-            }
-        }
-    }
-
-    def link(parent_id: str, child_id: str) {
-        if parent_id in self.id_index and child_id in self.id_index {
-            parent = self.id_index[parent_id];
-            child = self.id_index[child_id];
-            parent +>:Child:+> child;
-        }
-    }
-
-    def clear_cache {
-        self.cache = {};
-    }
-
-    def deep_match(header_value: str, node_id: str, column_name: str = "location") -> bool {
-        if self.graph_root is None {
-            return False;
-        }
-        if node_id not in self.id_index {
-            return False;
-        }
-        w = self.graph_root spawn TreeMatchWalker(
-            header_value=header_value,
-            column_name=column_name,
-            cache=self.cache,
-            target_id=node_id,
-            collect_all=False
-        );
-        if node_id in self.cache {
-            return self.cache[node_id];
-        }
-        return w.result;
-    }
-
-    def visible_node_ids(header_value: str, column_name: str = "location") -> list[str] {
-        self.clear_cache();
-        if self.graph_root is None {
-            return [];
-        }
-        w = self.graph_root spawn TreeMatchWalker(
-            header_value=header_value,
-            column_name=column_name,
-            cache=self.cache,
-            collect_all=True
-        );
-        out: list[str] = [];
-        for vid in w.visible {
-            out.append(vid);
-        }
-        return sorted(out);
-    }
+test "field_matches_substring_insensitive" {
+    assert field_matches("YEL", "yellow");
+    assert not field_matches("pink", "yellow");
+    assert not field_matches("x", None);
 }
 
-test "self_match_location" {
-    f = DeepMatchFilter();
-    f.add_node("a", "Seattle");
-    assert f.deep_match("sea", "a") == True;;
+test "visible_yellow_includes_ancestors" {
+    graph_root = build_location_tree;
+    vis = visible_row_ids(graph_root, "world", "yellow", "colour");
+    assert vis == ["building", "desk", "floor", "world"];
 }
 
-test "parent_visible_via_child" {
-    f = DeepMatchFilter();
-    f.add_node("root", "HQ", "");
-    f.add_node("leaf", "Seattle", "", "root");
-    assert f.deep_match("sea", "root") == True;;
-    assert f.deep_match("sea", "leaf") == True;;
+test "visible_blue_only_root" {
+    graph_root = build_location_tree;
+    vis = visible_row_ids(graph_root, "world", "blue", "colour");
+    assert vis == ["world"];
 }
 
-test "no_match" {
-    f = DeepMatchFilter();
-    f.add_node("a", "Boston");
-    assert f.deep_match("sea", "a") == False;;
+test "find_row_by_id_hit_and_miss" {
+    graph_root = build_location_tree;
+    hit = find_row_by_id(graph_root, "desk");
+    miss = find_row_by_id(graph_root, "missing");
+    assert hit is not None;
+    assert hit.cid == "desk";
+    assert miss is None;
 }
 
-test "visible_sorted_parents_and_matches" {
-    f = DeepMatchFilter();
-    f.add_node("a", "Root", "");
-    f.add_node("b", "Seattle", "", "a");
-    f.add_node("c", "Boston", "", "a");
-    vis = f.visible_node_ids("sea");
-    assert vis == ["a", "b"];;
+test "deep_match_row_uses_cache" {
+    graph_root = build_location_tree;
+    cache: dict[str, bool] = {};
+    assert deep_match_row(graph_root, "desk", "yellow", "colour", cache);
+    assert cache["desk"];
+    assert deep_match_row(graph_root, "desk", "yellow", "colour", cache);
 }
 
-test "color_column_match" {
-    f = DeepMatchFilter();
-    f.add_node("x", "Place", "crimson");
-    assert f.deep_match("crim", "x", "color") == True;;
-}
-
-test "unknown_node_id" {
-    f = DeepMatchFilter();
-    f.add_node("a", "Seattle");
-    assert f.deep_match("sea", "missing") == False;;
+test "clear_match_cache_empties" {
+    cache: dict[str, bool] = {"desk": True, "floor": True};
+    clear_match_cache(cache);
+    assert len(cache) == 0;
 }

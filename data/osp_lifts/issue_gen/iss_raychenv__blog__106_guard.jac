@@ -1,193 +1,176 @@
-"""Graph BFS/DFS traversals — raychenv/blog#106 (pythonds adjacency / queue walk)."""
+# iss_raychenv__blog__106.jac
+# raychenv/blog#106 — pythonds tree traversals lifted to OSP walkers.
 
-node Vertex {
-    has vid: str;
-    has label: str = "";
+node TreeNode {
+    has cid: str;
+    has label: str;
 }
 
-edge Arc {}
-
-node GraphHub {
-    has by_vid: dict[str, Vertex] = {};
+node TreeStore {
+    has index: dict[str, TreeNode] = {};
 }
 
-walker BfsWalker {
+edge Child {}
+
+walker PreorderWalker {
     has claimed: dict[str, bool] = {};
-    has order: list[str] = [];
+    has out: list[str] = [];
 
-    can step with Vertex entry {
-        if here.vid in self.claimed {
-            skip;
-        }
-        self.claimed[here.vid] = True;
-        self.order.append(here.vid);
-        print("bfs", here.vid);
-        kids: list[Vertex] = [];
-        for ch in [here ->:Arc:->][?:Vertex] {
-            kids.append(ch);
-        }
-        for i in range(len(kids) - 1, -1, -1) {
-            visit :0: [kids[i]];
-        }
+    can walk with TreeNode entry {
+        if here.cid in self.claimed { skip; }
+        self.claimed[here.cid] = True;
+        self.out.append(here.label);
+        print here.label;
+        kids: list[TreeNode] = [here ->:Child:->][?:TreeNode];
+        visit :0: kids;
     }
 }
 
-walker DfsWalker {
+walker PostorderWalker {
     has claimed: dict[str, bool] = {};
-    has order: list[str] = [];
+    has out: list[str] = [];
 
-    can step with Vertex entry {
-        if here.vid in self.claimed {
-            skip;
-        }
-        self.claimed[here.vid] = True;
-        self.order.append(here.vid);
-        print("dfs", here.vid);
-        kids: list[Vertex] = [];
-        for ch in [here ->:Arc:->][?:Vertex] {
-            kids.append(ch);
-        }
-        for kid in kids {
-            visit [kid];
-        }
+    can walk with TreeNode entry {
+        if here.cid in self.claimed { skip; }
+        kids: list[TreeNode] = [here ->:Child:->][?:TreeNode];
+        visit kids;
+        self.claimed[here.cid] = True;
+        self.out.append(here.label);
+        print here.label;
     }
 }
 
-walker BootWalker {
+walker LevelWalker {
     has claimed: dict[str, bool] = {};
+    has out: list[str] = [];
+    has queue: list[TreeNode] = [];
 
-    can boot with Vertex entry {
-        if here.vid in self.claimed {
-            skip;
+    can walk with TreeNode entry {
+        self.queue.append(here);
+        while len(self.queue) > 0 {
+            cur = self.queue.pop(0);
+            if cur.cid in self.claimed { continue; }
+            self.claimed[cur.cid] = True;
+            self.out.append(cur.label);
+            print cur.label;
+            chs: list[TreeNode] = [cur ->:Child:->][?:TreeNode];
+            for ch in chs {
+                self.queue.append(ch);
+            }
         }
-        self.claimed[here.vid] = True;
-        print("blog_106_graph_osp_ready");
         disengage;
     }
 }
 
-def make_graph -> GraphHub {
-    hub = GraphHub(by_vid={});
-    root ++> hub;
-    return hub;
+walker DemoWalker {
+    can boot entry {
+        adj: dict[str, list[str]] = {"a": ["b"], "b": []};
+        st = build_store(adj, None);
+        if "a" in st.index {
+            nd = st.index["a"];
+            w = nd spawn PreorderWalker(claimed={});
+            print w.out;
+        }
+    }
 }
 
-def add_vertex(hub: GraphHub, vid: str, label: str = "") -> None {
-    if vid in hub.by_vid {
-        return;
+def build_store(adjacency: dict[str, list[str]], labels: dict[str, str] | None = None) -> TreeStore {
+    st = TreeStore();
+    lab: dict[str, str] = {};
+    if labels is not None {
+        lab = labels;
     }
-    v = Vertex(vid=vid, label=label);
-    hub ++> v;
-    hub.by_vid[vid] = v;
+    keys: list[str] = sorted(adjacency.keys());
+    for cid in keys {
+        lbl: str = cid;
+        if cid in lab {
+            lbl = lab[cid];
+        }
+        nd = TreeNode(cid=cid, label=lbl);
+        root ++> nd;
+        st.index[cid] = nd;
+    }
+    for cid in keys {
+        kid_ids: list[str] = adjacency[cid];
+        p = st.index[cid];
+        for kid_id in kid_ids {
+            if kid_id in st.index {
+                k = st.index[kid_id];
+                p +>:Child:+> k;
+            }
+        }
+    }
+    return st;
 }
 
-def add_edge(hub: GraphHub, src: str, dst: str) -> None {
-    if src not in hub.by_vid {
-        return;
-    }
-    if dst not in hub.by_vid {
-        return;
-    }
-    a = hub.by_vid[src];
-    b = hub.by_vid[dst];
-    a +>:Arc:+> b;
-}
-
-def neighbors(hub: GraphHub, vid: str) -> list[str] {
-    out: list[str] = [];
-    if vid not in hub.by_vid {
-        return out;
-    }
-    v = hub.by_vid[vid];
-    for ch in [v ->:Arc:->][?:Vertex] {
-        out.append(ch.vid);
-    }
-    return out;
-}
-
-def bfs_order(hub: GraphHub, start: str) -> list[str] {
-    if start not in hub.by_vid {
+def preorder(store: TreeStore, root_id: str) -> list[str] {
+    if root_id not in store.index {
         return [];
     }
-    v0 = hub.by_vid[start];
-    w = v0 spawn BfsWalker(claimed={}, order=[]);
-    return w.order;
+    nd = store.index[root_id];
+    w = nd spawn PreorderWalker(claimed={});
+    return w.out;
 }
 
-def dfs_preorder(hub: GraphHub, start: str) -> list[str] {
-    if start not in hub.by_vid {
+def postorder(store: TreeStore, root_id: str) -> list[str] {
+    if root_id not in store.index {
         return [];
     }
-    v0 = hub.by_vid[start];
-    w = v0 spawn DfsWalker(claimed={}, order=[]);
-    return w.order;
+    nd = store.index[root_id];
+    w = nd spawn PostorderWalker(claimed={});
+    return w.out;
+}
+
+def levelorder(store: TreeStore, root_id: str) -> list[str] {
+    if root_id not in store.index {
+        return [];
+    }
+    nd = store.index[root_id];
+    w = nd spawn LevelWalker(claimed={});
+    return w.out;
 }
 
 with entry {
-    hub = make_graph();
-    add_vertex(hub, "boot");
-    boot = hub.by_vid["boot"];
-    boot spawn BootWalker(claimed={});
+    root spawn DemoWalker;
 }
 
-test "missing_start_empty" {
-    hub = make_graph();
-    add_vertex(hub, "a");
-    assert (bfs_order(hub, "z") == []);
-    assert (dfs_preorder(hub, "z") == []);
+test "preorder_multibranch" {
+    adj: dict[str, list[str]] = {"a": ["b", "c"], "b": ["d", "e"], "c": [], "d": [], "e": []};
+    st = build_store(adj, None);
+    assert preorder(st, "a") == ["a", "b", "d", "e", "c"];
 }
 
-test "single_vertex_orders" {
-    hub = make_graph();
-    add_vertex(hub, "solo");
-    assert (bfs_order(hub, "solo") == ["solo"]);
-    assert (dfs_preorder(hub, "solo") == ["solo"]);
+test "postorder_multibranch" {
+    adj: dict[str, list[str]] = {"a": ["b", "c"], "b": ["d", "e"], "c": [], "d": [], "e": []};
+    st = build_store(adj, None);
+    assert postorder(st, "a") == ["d", "e", "b", "c", "a"];
 }
 
-test "linear_bfs_dfs" {
-    hub = make_graph();
-    add_vertex(hub, "a");
-    add_vertex(hub, "b");
-    add_vertex(hub, "c");
-    add_edge(hub, "a", "b");
-    add_edge(hub, "b", "c");
-    assert (bfs_order(hub, "a") == ["a", "b", "c"]);
-    assert (dfs_preorder(hub, "a") == ["a", "b", "c"]);
+test "levelorder_multibranch" {
+    adj: dict[str, list[str]] = {"a": ["b", "c"], "b": ["d", "e"], "c": [], "d": [], "e": []};
+    st = build_store(adj, None);
+    assert levelorder(st, "a") == ["a", "b", "c", "d", "e"];
 }
 
-test "branching_orders" {
-    hub = make_graph();
-    add_vertex(hub, "r");
-    add_vertex(hub, "a");
-    add_vertex(hub, "b");
-    add_vertex(hub, "c");
-    add_edge(hub, "r", "a");
-    add_edge(hub, "r", "b");
-    add_edge(hub, "a", "c");
-    assert (bfs_order(hub, "r") == ["r", "a", "b", "c"]);
-    assert (dfs_preorder(hub, "r") == ["r", "a", "c", "b"]);
+test "unknown_root_returns_empty" {
+    st = build_store({"a": []}, None);
+    assert preorder(st, "missing") == [];
+    assert postorder(st, "missing") == [];
+    assert levelorder(st, "missing") == [];
 }
 
-test "neighbors_and_edge_guards" {
-    hub = make_graph();
-    add_vertex(hub, "x");
-    add_vertex(hub, "y");
-    add_edge(hub, "x", "y");
-    add_edge(hub, "x", "missing");
-    add_edge(hub, "missing", "y");
-    nbrs = neighbors(hub, "x");
-    assert (sorted(nbrs) == ["y"]);
-    assert (neighbors(hub, "ghost") == []);
-    add_vertex(hub, "x");
-    assert (len(hub.by_vid) == 2);
+test "labels_override" {
+    adj: dict[str, list[str]] = {"a": ["b"], "b": []};
+    labels: dict[str, str] = {"a": "A", "b": "B"};
+    st = build_store(adj, labels);
+    assert preorder(st, "a") == ["A", "B"];
+    assert postorder(st, "a") == ["B", "A"];
+    assert levelorder(st, "a") == ["A", "B"];
 }
 
-test "cycle_revisit_once" {
-    hub = make_graph();
-    add_vertex(hub, "p");
-    add_vertex(hub, "q");
-    add_edge(hub, "p", "q");
-    add_edge(hub, "q", "p");
-    assert (bfs_order(hub, "p") == ["p", "q"]);
-    assert (dfs_preorder(hub, "p") == ["p", "q"]);
+test "single_node" {
+    st = build_store({"solo": []}, None);
+    assert preorder(st, "solo") == ["solo"];
+    assert postorder(st, "solo") == ["solo"];
+    assert levelorder(st, "solo") == ["solo"];
 }

@@ -1,167 +1,435 @@
-# Lift of Lindenfrost/ProgTrack-Release#186
-# Heritage Track first-render, sibling-ghost scope closure, ancestor expansion.
+"""Lindenfrost/ProgTrack-Release#186 — bounded pedigree scope and sibling ghost closure."""
 
 node Animal {
-    has aid: str;
+    has cid: str;
     has archived: bool = False;
 }
 
-edge ParentOf {}
-edge PartnerOf {}
-edge GhostContext {}
+edge Parent {}
 
-def get_animal(reg: dict[str, Animal], aid: str) -> Animal | None {
-    # unknown-id tolerance: return None, never raise
-    if aid in reg {
-        return reg[aid];
-    }
-    return None;
+node HeritageHub {
+    has members: dict[str, Animal] = {};
 }
 
-def expand_ancestors(seeds: list[Animal], depth: int) -> list[Animal] {
-    # bounded ancestor expansion (SelectedAnimalsStrategy)
-    scope: dict[str, bool] = {};
-    out: list[Animal] = [];
-    frontier: list[Animal] = [];
-    for s in seeds { frontier.append(s); }
-    d: int = 0;
-    while d <= depth && len(frontier) > 0 {
-        nxt: list[Animal] = [];
-        for a in frontier {
-            if a.aid in scope { continue; }
-            scope[a.aid] = True;
-            out.append(a);
-            for p in [a ->:ParentOf:->][?:Animal] {
-                if p.aid not in scope { nxt.append(p); }
+walker ScopeWalker {
+    has claimed: dict[str, bool] = {};
+    has limit: int = 0;
+    has seeds: list[str] = [];
+    has include_archived: bool = True;
+    has found: list[str] = [];
+    has depth_by: dict[str, int] = {};
+
+    can boot with HeritageHub entry {
+        root spawn ScopeWalker(
+            claimed={},
+            limit=self.limit,
+            seeds=self.seeds,
+            include_archived=self.include_archived,
+            found=[],
+            depth_by={}
+        );
+        print("scope_walk_boot");
+        for sid in self.seeds {
+            if sid not in here.members {
+                continue;
+            }
+            nd = here.members[sid] as Animal;
+            self.depth_by[sid] = 0;
+            visit :0: [nd];
+        }
+    }
+
+    can ascend with Animal entry {
+        if here.cid in self.claimed {
+            skip;
+        }
+        cur: int = 0;
+        if here.cid in self.depth_by {
+            cur = self.depth_by[here.cid];
+        }
+        if cur > self.limit {
+            disengage;
+        }
+        if not self.include_archived and here.archived {
+            disengage;
+        }
+        self.claimed[here.cid] = True;
+        self.found.append(here.cid);
+        print(here.cid);
+        parents: list[Animal] = [];
+        for p in [here <-:Parent:<-][?:Animal] {
+            parents.append(p);
+        }
+        for p in parents {
+            nd: int = cur + 1;
+            self.depth_by[p.cid] = nd;
+            visit :0: [p];
+        }
+    }
+}
+
+def build_fixture -> HeritageHub {
+    hub = HeritageHub();
+    root ++> hub;
+    finwe = Animal(cid="finwe", archived=False);
+    elrond = Animal(cid="elrond", archived=False);
+    elros = Animal(cid="elros", archived=False);
+    arwen = Animal(cid="arwen", archived=False);
+    beth = Animal(cid="beth", archived=False);
+    denethor = Animal(cid="denethor", archived=False);
+    eldarion = Animal(cid="eldarion", archived=False);
+    archived_sib = Animal(cid="archived_sib", archived=True);
+    root ++> finwe;
+    root ++> elrond;
+    root ++> elros;
+    root ++> arwen;
+    root ++> beth;
+    root ++> denethor;
+    root ++> eldarion;
+    root ++> archived_sib;
+    hub.members["finwe"] = finwe;
+    hub.members["elrond"] = elrond;
+    hub.members["elros"] = elros;
+    hub.members["arwen"] = arwen;
+    hub.members["beth"] = beth;
+    hub.members["denethor"] = denethor;
+    hub.members["eldarion"] = eldarion;
+    hub.members["archived_sib"] = archived_sib;
+    finwe +>:Parent:+> elrond;
+    finwe +>:Parent:+> elros;
+    finwe +>:Parent:+> archived_sib;
+    elrond +>:Parent:+> arwen;
+    elros +>:Parent:+> denethor;
+    beth +>:Parent:+> denethor;
+    denethor +>:Parent:+> eldarion;
+    return hub;
+}
+
+def build_diamond_fixture -> HeritageHub {
+    hub = HeritageHub();
+    root ++> hub;
+    gp = Animal(cid="gp", archived=False);
+    p2 = Animal(cid="p2", archived=False);
+    p1 = Animal(cid="p1", archived=False);
+    kid = Animal(cid="kid", archived=False);
+    root ++> gp;
+    root ++> p2;
+    root ++> p1;
+    root ++> kid;
+    hub.members["gp"] = gp;
+    hub.members["p2"] = p2;
+    hub.members["p1"] = p1;
+    hub.members["kid"] = kid;
+    p2 +>:Parent:+> gp;
+    p1 +>:Parent:+> gp;
+    kid +>:Parent:+> p2;
+    kid +>:Parent:+> p1;
+    return hub;
+}
+
+def expand_ancestors(hub: HeritageHub, selected: list[str], depth: int, include_archived: bool = True) -> list[str] {
+    w = hub spawn ScopeWalker(
+        claimed={},
+        limit=depth,
+        seeds=selected,
+        include_archived=include_archived,
+        found=[],
+        depth_by={}
+    );
+    return sorted(w.found);
+}
+
+def sibling_ghosts_for_scope(hub: HeritageHub, scope_ids: list[str]) -> list[str] {
+    scope_set: dict[str, bool] = {};
+    for sid in scope_ids {
+        scope_set[sid] = True;
+    }
+    ghosts: list[str] = [];
+    ghost_set: dict[str, bool] = {};
+    for sid in sorted(scope_ids) {
+        if sid not in hub.members {
+            continue;
+        }
+        animal = hub.members[sid] as Animal;
+        parents: list[Animal] = [];
+        for p in [animal <-:Parent:<-][?:Animal] {
+            parents.append(p);
+        }
+        for p in parents {
+            sibs: list[Animal] = [];
+            for ch in [p ->:Parent:->][?:Animal] {
+                sibs.append(ch);
+            }
+            for sib in sibs {
+                scid = sib.cid;
+                if scid in scope_set {
+                    continue;
+                }
+                if scid in ghost_set {
+                    continue;
+                }
+                ghost_set[scid] = True;
+                ghosts.append(scid);
             }
         }
-        frontier = nxt;
-        d += 1;
     }
-    return out;
+    return sorted(ghosts);
 }
 
-def sibling_ghost_closure(scope: list[Animal]) -> list[Animal] {
-    # one bounded pass: stage newly found context nodes so later
-    # family-completeness evaluation sees them (no recursive expansion)
-    staged: dict[str, Animal] = {};
-    ghosts: list[Animal] = [];
-    for a in scope { staged[a.aid] = a; }
-    for a in scope {
-        # parents already in scope expose their siblings as ghosts
-        for p in [a ->:ParentOf:->][?:Animal] {
-            if p.aid not in staged { staged[p.aid] = p; ghosts.append(p); }
-            for sib in [p <-:ParentOf:<-][?:Animal] {
-                if sib.aid not in staged { staged[sib.aid] = sib; ghosts.append(sib); }
+def effective_display_nodes(hub: HeritageHub, selected: list[str], depth: int, include_archived: bool = True) -> list[str] {
+    ancestors = expand_ancestors(hub, selected, depth, include_archived);
+    ghosts = sibling_ghosts_for_scope(hub, ancestors);
+    merged: list[str] = [];
+    seen: dict[str, bool] = {};
+    for cid in ancestors {
+        if cid in seen {
+            continue;
+        }
+        seen[cid] = True;
+        merged.append(cid);
+    }
+    for gid in ghosts {
+        if gid in seen {
+            continue;
+        }
+        seen[gid] = True;
+        merged.append(gid);
+    }
+    return sorted(merged);
+}
+
+"""Lindenfrost/ProgTrack-Release#186 — bounded pedigree scope and sibling ghost closure."""
+
+node Animal {
+    has cid: str;
+    has archived: bool = False;
+}
+
+edge Parent {}
+
+node HeritageHub {
+    has members: dict[str, Animal] = {};
+}
+
+walker ScopeWalker {
+    has claimed: dict[str, bool] = {};
+    has limit: int = 0;
+    has seeds: list[str] = [];
+    has include_archived: bool = True;
+    has found: list[str] = [];
+    has depth_by: dict[str, int] = {};
+
+    can boot with HeritageHub entry {
+        root spawn ScopeWalker(
+            claimed={},
+            limit=self.limit,
+            seeds=self.seeds,
+            include_archived=self.include_archived,
+            found=[],
+            depth_by={}
+        );
+        print("scope_walk_boot");
+        for sid in self.seeds {
+            if sid not in here.members {
+                continue;
+            }
+            nd = here.members[sid] as Animal;
+            self.depth_by[sid] = 0;
+            visit :0: [nd];
+        }
+    }
+
+    can ascend with Animal entry {
+        if here.cid in self.claimed {
+            skip;
+        }
+        cur: int = 0;
+        if here.cid in self.depth_by {
+            cur = self.depth_by[here.cid];
+        }
+        if cur > self.limit {
+            disengage;
+        }
+        if not self.include_archived and here.archived {
+            disengage;
+        }
+        self.claimed[here.cid] = True;
+        self.found.append(here.cid);
+        print(here.cid);
+        parents: list[Animal] = [];
+        for p in [here <-:Parent:<-][?:Animal] {
+            parents.append(p);
+        }
+        for p in parents {
+            nd: int = cur + 1;
+            self.depth_by[p.cid] = nd;
+            visit :0: [p];
+        }
+    }
+}
+
+def build_fixture -> HeritageHub {
+    hub = HeritageHub();
+    root ++> hub;
+    finwe = Animal(cid="finwe", archived=False);
+    elrond = Animal(cid="elrond", archived=False);
+    elros = Animal(cid="elros", archived=False);
+    arwen = Animal(cid="arwen", archived=False);
+    beth = Animal(cid="beth", archived=False);
+    denethor = Animal(cid="denethor", archived=False);
+    eldarion = Animal(cid="eldarion", archived=False);
+    archived_sib = Animal(cid="archived_sib", archived=True);
+    root ++> finwe;
+    root ++> elrond;
+    root ++> elros;
+    root ++> arwen;
+    root ++> beth;
+    root ++> denethor;
+    root ++> eldarion;
+    root ++> archived_sib;
+    hub.members["finwe"] = finwe;
+    hub.members["elrond"] = elrond;
+    hub.members["elros"] = elros;
+    hub.members["arwen"] = arwen;
+    hub.members["beth"] = beth;
+    hub.members["denethor"] = denethor;
+    hub.members["eldarion"] = eldarion;
+    hub.members["archived_sib"] = archived_sib;
+    finwe +>:Parent:+> elrond;
+    finwe +>:Parent:+> elros;
+    finwe +>:Parent:+> archived_sib;
+    elrond +>:Parent:+> arwen;
+    elros +>:Parent:+> denethor;
+    beth +>:Parent:+> denethor;
+    denethor +>:Parent:+> eldarion;
+    return hub;
+}
+
+def build_diamond_fixture -> HeritageHub {
+    hub = HeritageHub();
+    root ++> hub;
+    gp = Animal(cid="gp", archived=False);
+    p2 = Animal(cid="p2", archived=False);
+    p1 = Animal(cid="p1", archived=False);
+    kid = Animal(cid="kid", archived=False);
+    root ++> gp;
+    root ++> p2;
+    root ++> p1;
+    root ++> kid;
+    hub.members["gp"] = gp;
+    hub.members["p2"] = p2;
+    hub.members["p1"] = p1;
+    hub.members["kid"] = kid;
+    p2 +>:Parent:+> gp;
+    p1 +>:Parent:+> gp;
+    kid +>:Parent:+> p2;
+    kid +>:Parent:+> p1;
+    return hub;
+}
+
+def expand_ancestors(hub: HeritageHub, selected: list[str], depth: int, include_archived: bool = True) -> list[str] {
+    w = hub spawn ScopeWalker(
+        claimed={},
+        limit=depth,
+        seeds=selected,
+        include_archived=include_archived,
+        found=[],
+        depth_by={}
+    );
+    return sorted(w.found);
+}
+
+def sibling_ghosts_for_scope(hub: HeritageHub, scope_ids: list[str]) -> list[str] {
+    scope_set: dict[str, bool] = {};
+    for sid in scope_ids {
+        scope_set[sid] = True;
+    }
+    ghosts: list[str] = [];
+    ghost_set: dict[str, bool] = {};
+    for sid in sorted(scope_ids) {
+        if sid not in hub.members {
+            continue;
+        }
+        animal = hub.members[sid] as Animal;
+        parents: list[Animal] = [];
+        for p in [animal <-:Parent:<-][?:Animal] {
+            parents.append(p);
+        }
+        for p in parents {
+            sibs: list[Animal] = [];
+            for ch in [p ->:Parent:->][?:Animal] {
+                sibs.append(ch);
+            }
+            for sib in sibs {
+                scid = sib.cid;
+                if scid in scope_set {
+                    continue;
+                }
+                if scid in ghost_set {
+                    continue;
+                }
+                ghost_set[scid] = True;
+                ghosts.append(scid);
             }
         }
-        # missing genetic co-parent needed to make the visible family complete
-        for part in [a ->:PartnerOf:->][?:Animal] {
-            if part.aid not in staged { staged[part.aid] = part; ghosts.append(part); }
-        }
-        for part2 in [a <-:PartnerOf:<-][?:Animal] {
-            if part2.aid not in staged { staged[part2.aid] = part2; ghosts.append(part2); }
-        }
     }
-    return ghosts;
+    return sorted(ghosts);
 }
 
-walker HeritageRender {
-    has selected: list[str] = [];
-    has depth: int = 8;
-    has scope: list[Animal] = [];
-    has ghosts: list[Animal] = [];
-    has reg: dict[str, Animal] = {};
-
-    can step with Animal entry {
-        # first-render safety: claim-map dedup, never disengage on revisit
-        if here.aid in self.reg { skip; }
-        self.reg[here.aid] = here;
-        seeds: list[Animal] = [];
-        for aid in self.selected {
-            a = get_animal(self.reg, aid);
-            if a is not None { seeds.append(a); }
+def effective_display_nodes(hub: HeritageHub, selected: list[str], depth: int, include_archived: bool = True) -> list[str] {
+    ancestors = expand_ancestors(hub, selected, depth, include_archived);
+    ghosts = sibling_ghosts_for_scope(hub, ancestors);
+    merged: list[str] = [];
+    seen: dict[str, bool] = {};
+    for cid in ancestors {
+        if cid in seen {
+            continue;
         }
-        # pass 1: ancestor expansion; pass 2: staged ghost closure on result
-        self.scope = expand_ancestors(seeds, self.depth);
-        self.ghosts = sibling_ghost_closure(self.scope);
-        # deny archived-only render: invalid geometry guard
-        ok: bool = False;
-        for a in self.scope { if not a.archived { ok = True; } }
-        if not ok { print("invalid geometry"); disengage; }
-        print("rendered " + str(len(self.scope)) + " scope, "
-              + str(len(self.ghosts)) + " ghosts");
-        disengage;
+        seen[cid] = True;
+        merged.append(cid);
     }
+    for gid in ghosts {
+        if gid in seen {
+            continue;
+        }
+        seen[gid] = True;
+        merged.append(gid);
+    }
+    return sorted(merged);
 }
 
-def render_heritage(root_node: Animal, selected: list[str]) -> HeritageRender {
-    w = root_node spawn HeritageRender(selected=selected);
-    return w;
+test "expand_depth_zero" {
+    hub = build_fixture();
+    got = expand_ancestors(hub, ["eldarion"], 0);
+    assert (got == ["eldarion"]);
 }
 
-test "expand_ancestors_depth" {
-    grand = Animal(aid="G");
-    par = Animal(aid="P");
-    kid = Animal(aid="K");
-    par +>:ParentOf:+> kid;
-    grand +>:ParentOf:+> par;
-    out = expand_ancestors([kid], 1);
-    ids: list[str] = [];
-    for a in out { ids.append(a.aid); }
-    assert sorted(ids) == ["K", "P"];
+test "expand_bounded_ancestors" {
+    hub = build_fixture();
+    got = expand_ancestors(hub, ["eldarion"], 2);
+    assert (got == ["beth", "denethor", "eldarion", "elros"]);
 }
 
-test "expand_ancestors_cycle_safe" {
-    a = Animal(aid="A");
-    b = Animal(aid="B");
-    a +>:ParentOf:+> b;
-    b +>:ParentOf:+> a;
-    out = expand_ancestors([a], 5);
-    ids: list[str] = [];
-    for x in out { ids.append(x.aid); }
-    assert len(ids) == 2;
+test "expand_skips_archived_seed" {
+    hub = build_fixture();
+    got = expand_ancestors(hub, ["archived_sib"], 2, False);
+    assert (got == []);
 }
 
-test "ghost_partner_both_directions" {
-    p1 = Animal(aid="P1");
-    p2 = Animal(aid="P2");
-    kid = Animal(aid="K");
-    p1 +>:PartnerOf:+> p2;
-    p1 +>:ParentOf:+> kid;
-    p2 +>:ParentOf:+> kid;
-    ghosts = sibling_ghost_closure([kid]);
-    ids: list[str] = [];
-    for g in ghosts { ids.append(g.aid); }
-    assert sorted(ids) == ["P1", "P2"];
+test "sibling_ghosts_from_scope" {
+    hub = build_fixture();
+    got = sibling_ghosts_for_scope(hub, ["elrond"]);
+    assert (got == ["archived_sib", "elros"]);
 }
 
-test "ghost_sibling_scope" {
-    dad = Animal(aid="D");
-    c1 = Animal(aid="C1");
-    c2 = Animal(aid="C2");
-    dad +>:ParentOf:+> c1;
-    dad +>:ParentOf:+> c2;
-    ghosts = sibling_ghost_closure([c1]);
-    ids: list[str] = [];
-    for g in ghosts { ids.append(g.aid); }
-    assert sorted(ids) == ["C2"];
+test "effective_display_merges_ghosts" {
+    hub = build_fixture();
+    got = effective_display_nodes(hub, ["elrond"], 1, True);
+    assert (got == ["archived_sib", "elrond", "elros", "finwe"]);
 }
 
-test "render_heritage_counts" {
-    root_node = Animal(aid="R");
-    anc = Animal(aid="ANC");
-    kid = Animal(aid="KID");
-    anc +>:ParentOf:+> root_node;
-    root_node +>:ParentOf:+> kid;
-    w = render_heritage(root_node, ["R"]);
-    ids: list[str] = [];
-    for a in w.scope { ids.append(a.aid); }
-    assert sorted(ids) == ["ANC", "R"];
-}
-
-test "archived_only_invalid" {
-    root_node = Animal(aid="Z", archived=True);
-    w = render_heritage(root_node, ["Z"]);
-    assert len(w.scope) == 1;
+test "diamond_ancestor_closure" {
+    hub = build_diamond_fixture();
+    got = expand_ancestors(hub, ["kid"], 2);
+    assert (got == ["gp", "kid", "p1", "p2"]);
 }

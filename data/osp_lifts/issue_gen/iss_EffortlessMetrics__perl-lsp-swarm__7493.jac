@@ -1,143 +1,228 @@
-# Lift: EffortlessMetrics/perl-lsp-swarm#7493
-# Retire the legacy reparsing WorkspaceIndex; per-file semantic contributions
-# are deterministic facts; cross-file lookup goes through ProjectModel edges.
+"""EffortlessMetrics/perl-lsp-swarm#7493 — per-file semantic contributions; ProjectModel cross-file lookup."""
 
-node Symbol {
-    has name: str;
-    has kind: str;
+node File {
+    has cid: str;
     has uri: str;
+    has ast_hash: str;
 }
 
-node FileUnit {
-    has uri: str;
-    has gen: int = 0;
+node Project {
+    has pid: str;
+    has legacy_retired: bool = False;
 }
 
-edge DependsOn {}
-edge Defines {}
+edge Depends {}
 
-obj SemanticAnalyzer {
-    # per-file, deterministic fact extraction over supplied identity+text
-    has facts: dict[str, list[dict[str, str]]] = {};
-
-    def analyze(self, uri: str, gen: int, text: str) -> list[dict[str, str]] {
-        syms: list[dict[str, str]] = [];
-        for ln in text.split("\n") {
-            parts: list[str] = ln.split(" ");
-            if len(parts) > 1 and parts[0] == "sub" {
-                s: dict[str, str] = {"name": parts[1], "kind": "sub", "uri": uri, "gen": str(gen)};
-                syms.append(s);
-            } elif len(parts) > 1 and parts[0] == "use" {
-                s2: dict[str, str] = {"name": parts[1], "kind": "dep", "uri": uri, "gen": str(gen)};
-                syms.append(s2);
-            }
-        }
-        self.facts[uri] = syms;
-        return syms;
-    }
-
-    def stale_check(self, uri: str, gen: int) -> bool {
-        # stale generations cannot publish through a legacy cache
-        if uri not in self.facts {
-            return True;
-        }
-        for f in self.facts[uri] {
-            if int(f["gen"]) != gen {
-                return True;
-            }
-        }
-        return False;
-    }
+obj SemanticWorkspace {
+    has graph_root: File | None = None;
+    has files: dict[str, File] = {};
+    has projects: dict[str, Project] = {};
+    has contributions: dict[str, dict[str, any]] = {};
+    has symbol_index: dict[str, list[str]] = {};
 }
 
-def extract_names(facts: list[dict[str, str]]) -> list[str] {
-    ns: list[str] = [];
-    for f in facts {
-        ns.append(f["name"]);
-    }
-    return sorted(ns);
-}
-
-obj ProjectModel {
-    # owns cross-file materialization: files as nodes, deps as edges
-    has touched: dict[str, bool] = {};
-
-    def ingest(self, uri: str, facts: list[dict[str, str]]) -> FileUnit {
-        fu = FileUnit(uri=uri);
-        root ++> fu;
-        for f in facts {
-            if f["kind"] == "sub" {
-                sn = Symbol(name=f["name"], kind="sub", uri=uri);
-                fu +>:Defines:+> sn;
-            } elif f["kind"] == "dep" {
-                dn = Symbol(name=f["name"], kind="dep", uri=uri);
-                fu +>:DependsOn:+> dn;
-            }
-        }
-        self.touched[uri] = True;
-        return fu;
-    }
-
-    def link(self, a: FileUnit, b: FileUnit) {
-        a +>:DependsOn:+> b;
-    }
-
-    def deps_of(self, uri: str) -> list[str] {
-        target: FileUnit | None = None;
-        for c in root --> {
-            fu = c as FileUnit;
-            if fu.uri == uri {
-                target = fu;
-            }
-        }
-        found: list[str] = [];
-        if target is None {
-            return found;
-        }
-        for d in target -->:DependsOn:-> {
-            ds = d as Symbol;
-            if ds.kind == "dep" {
-                found.append(ds.name);
-            }
-        }
-        return sorted(found);
-    }
-}
-
-walker CollectClosure {
-    # cross-file lookup walk over ProjectModel graph; claim-map cycle policy
+walker DepReach {
     has claimed: dict[str, bool] = {};
-    has seen: list[str] = [];
+    has target_cid: str = "";
+    has hit: bool = False;
 
-    can step with FileUnit entry {
-        if here.uri in self.claimed {
+    can walk_file with File entry {
+        if here.cid in self.claimed {
             skip;
         }
-        self.claimed[here.uri] = True;
-        self.seen.append(here.uri);
-        nxt: list[FileUnit] = [];
-        for ch in [here ->:DependsOn:->] {
-            fs = ch as FileUnit | None;
-            if fs is not None {
-                nxt.append(fs);
-            }
+        self.claimed[here.cid] = True;
+        print {"dep_visit": here.cid};
+        if here.cid == self.target_cid {
+            self.hit = True;
         }
-        visit nxt;
-    }
-
-    can note_sym with Symbol entry {
-        print("sym", here.name);
+        kids: list[File] = [here ->:Depends:->][?:File];
+        if len(kids) > 0 {
+            for ch in kids {
+                visit :0: [ch];
+            }
+        } else {
+            disengage;
+        }
     }
 }
 
-walker IndexSymbols {
-    # replaces legacy WorkspaceIndex: per-file symbol materialization
-    has count: int = 0;
+walker InvalidateSweep {
+    has claimed: dict[str, bool] = {};
+    has stale: list[str] = [];
 
-    can step with FileUnit entry {
-        for ch in [here ->:Defines:->] {
-            self.count += 1;
+    can sweep_file with File entry {
+        if here.cid in self.claimed {
+            skip;
         }
-        print("file", here.uri, "count", self.count);
+        self.claimed[here.cid] = True;
+        self.stale.append(here.cid);
+        print {"invalidate": here.cid};
+        kids: list[File] = [here ->:Depends:->][?:File];
+        if len(kids) > 0 {
+            for ch in kids {
+                visit :0: [ch];
+            }
+        } else {
+            disengage;
+        }
     }
+}
+
+def new_workspace -> SemanticWorkspace {
+    return SemanticWorkspace();
+}
+
+def analyze_file(
+    file_id: str,
+    ast_hash: str,
+    symbol_names: list[str],
+    dependency_ids: list[str],
+) -> dict[str, any] {
+    symbols: list[str] = [];
+    for s in symbol_names {
+        symbols.append(s);
+    }
+    symbols = sorted(symbols);
+    deps: list[str] = [];
+    for d in dependency_ids {
+        deps.append(d);
+    }
+    deps = sorted(deps);
+    out: dict[str, any] = {};
+    out["file_id"] = file_id;
+    out["ast_hash"] = ast_hash;
+    out["symbols"] = symbols;
+    out["dependencies"] = deps;
+    out["source_backed"] = True;
+    return out;
+}
+
+def register_file(ws: SemanticWorkspace, cid: str, uri: str, ast_hash: str) -> File {
+    nd = File(cid=cid, uri=uri, ast_hash=ast_hash);
+    if ws.graph_root is None {
+        ws.graph_root = nd;
+        root ++> nd;
+    }
+    ws.files[cid] = nd;
+    return nd;
+}
+
+def link_dependency(ws: SemanticWorkspace, src_cid: str, dst_cid: str) -> bool {
+    if src_cid not in ws.files {
+        return False;
+    }
+    if dst_cid not in ws.files {
+        return False;
+    }
+    src = ws.files[src_cid];
+    dst = ws.files[dst_cid];
+    src +>:Depends:+> dst;
+    return True;
+}
+
+def publish_contribution(ws: SemanticWorkspace, project_id: str, file_id: str, contribution: dict[str, any]) -> bool {
+    if file_id not in ws.files {
+        return False;
+    }
+    if project_id not in ws.projects {
+        pr = Project(pid=project_id);
+        ws.projects[project_id] = pr;
+        if ws.graph_root is not None {
+            ws.graph_root ++> pr;
+        }
+    }
+    ws.contributions[file_id] = contribution;
+    syms = contribution["symbols"] as list[str];
+    for sym in syms {
+        if sym not in ws.symbol_index {
+            ws.symbol_index[sym] = [];
+        }
+        bucket: list[str] = ws.symbol_index[sym];
+        present: bool = False;
+        for existing in bucket {
+            if existing == file_id {
+                present = True;
+            }
+        }
+        if not present {
+            bucket.append(file_id);
+        }
+        ws.symbol_index[sym] = sorted(bucket);
+    }
+    return True;
+}
+
+def lookup_cross_file(ws: SemanticWorkspace, project_id: str, symbol: str) -> list[str] {
+    if project_id not in ws.projects {
+        return [];
+    }
+    if symbol not in ws.symbol_index {
+        return [];
+    }
+    return ws.symbol_index[symbol];
+}
+
+def dependency_reachable(ws: SemanticWorkspace, start_cid: str, target_cid: str) -> bool {
+    if start_cid not in ws.files {
+        return False;
+    }
+    if target_cid not in ws.files {
+        return False;
+    }
+    start = ws.files[start_cid];
+    wk = start spawn DepReach(claimed={}, target_cid=target_cid);
+    print {"reachable": wk.hit, "from": start_cid, "to": target_cid};
+    return wk.hit;
+}
+
+def cascade_invalidate(ws: SemanticWorkspace, origin_cid: str) -> list[str] {
+    if origin_cid not in ws.files {
+        return [];
+    }
+    origin = ws.files[origin_cid];
+    wk = origin spawn InvalidateSweep(claimed={});
+    print {"cascade_origin": origin_cid, "count": len(wk.stale)};
+    out: list[str] = [];
+    for cid in wk.stale {
+        out.append(cid);
+    }
+    return sorted(out);
+}
+
+def disposition_consumers(records: list[dict[str, any]]) -> dict[str, any] {
+    retire: list[str] = [];
+    migrate: list[str] = [];
+    replace: list[str] = [];
+    for rec in records {
+        kind = rec["kind"] as str;
+        name = rec["name"] as str;
+        if kind == "no_production_consumer" {
+            retire.append(name);
+        } elif kind == "workspace_adapter" {
+            migrate.append(name);
+        } else {
+            replace.append(name);
+        }
+    }
+    out: dict[str, any] = {};
+    out["retire"] = sorted(retire);
+    out["migrate"] = sorted(migrate);
+    out["replace"] = sorted(replace);
+    return out;
+}
+
+def retire_legacy_index(ws: SemanticWorkspace, project_id: str) -> bool {
+    if project_id not in ws.projects {
+        return False;
+    }
+    pr = ws.projects[project_id];
+    pr.legacy_retired = True;
+    return True;
+}
+
+def ensure_no_hidden_reparse(contribution: dict[str, any]) -> bool {
+    if "reparsed" in contribution {
+        return False;
+    }
+    return contribution["source_backed"] is True;
 }

@@ -30,8 +30,7 @@ def load_segments(
         if p is not None and c is not None { p +>:ChildSegment:+> c; }
     }
     for (sid, sz) in sizes {
-        nd: Segment | None = store.segments.get(sid, None);
-        if nd is not None { nd.size = sz; }
+        if sid in store.segments { store.segments[sid].size = sz; }
     }
     return store;
 }

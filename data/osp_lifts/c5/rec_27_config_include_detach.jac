@@ -52,7 +52,7 @@ obj ConfigStore {
     }
 
     """Make *name* inherit *base_name*; unknown refs tolerated (refused)."""
-    def include(name: str, base_name: str) -> bool {
+    def `include(name: str, base_name: str) -> bool {
         sec = self.sections.get(name);
         base = self.sections.get(base_name);
         if sec is None or base is None {

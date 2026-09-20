@@ -1,160 +1,264 @@
-# ttttmr/pi-context#26 — DCP-style ranged context compaction
-# A - B - [C - D] - E - F becomes A - B - summary - E - F on the
-# model-facing projection while the original chain stays intact.
+"""ttttmr/pi-context#26 DCP-style ranged context compaction."""
 
-node Msg { has mid: str; has role: str; has text: str; }
-node Summary { has mid: str; has text: str; has covers: list[str] = []; }
-edge Next;
-
-obj Session {
-    has head: Msg | None = None;
-    has tail: Msg | None = None;
-    has by_id: dict[str, Msg] = {};
-    has order: list[str] = [];
-    has sums: list[str] = [];
+node Msg {
+  has mid: str;
+  has body: str;
 }
 
-def find(store: Session, mid: str) -> Msg | None {
-    if mid in store.by_id { return store.by_id[mid]; }
-    return None;
-}
+edge Next {}
 
-def build(store: Session, ids: list[str]) {
-    for i in ids {
-        m = Msg(mid=i, role="user", text="body " + i);
-        if store.head is None { store.head = m; } else { store.tail ++> m; }
-        store.tail = m;
-        store.by_id[i] = m;
-        store.order.append(i);
+walker CollectOrder {
+  has claimed: dict[str, bool] = {};
+  has order: list[str] = [];
+  can walk with Msg entry {
+    if here.mid in self.claimed {
+      skip;
     }
-}
-
-# ranged compaction: validate all ranges first (atomic reject), then splice
-def context_compact_range(store: Session, starts: list[str], ends: list[str], texts: list[str]) -> list[str] {
-    pos: dict[str, int] = {};
-    for i in range(len(store.order)) { pos[store.order[i]] = i; }
-    for k in range(len(starts)) {
-        if starts[k] not in pos or ends[k] not in pos { raise ValueError("unknown range id"); }
-        if pos[starts[k]] >= pos[ends[k]] { raise ValueError("stale range"); }
-        if pos[starts[k]] == 0 { raise ValueError("cannot compact head"); }
+    self.claimed[here.mid] = True;
+    self.order.append(here.mid);
+    print(here.mid);
+    kids: list[Msg] = [];
+    for ch in [here ->:Next:->][?:Msg] {
+      kids.append(ch);
     }
-    for a in range(len(starts)) {
-        for b in range(a + 1, len(starts)) {
-            if pos[starts[b]] <= pos[ends[a]] and pos[ends[b]] >= pos[starts[a]] {
-                raise ValueError("overlapping ranges");
-            }
-        }
+    if kids {
+      visit :0: kids;
     }
-    made: list[str] = [];
-    for k in range(len(starts)) {
-        si = pos[starts[k]];
-        ei = pos[ends[k]];
-        prev = find(store, store.order[si - 1]);
-        after = None;
-        if ei + 1 < len(store.order) { after = find(store, store.order[ei + 1]); }
-        cov: list[str] = [];
-        for j in range(si, ei + 1) { cov.append(store.order[j]); }
-        sm = Summary(mid="summary_" + str(k), text=texts[k], covers=cov);
-        if prev is not None { prev ++> sm; }
-        if after is not None { sm ++> after; }
-        store.sums.append(sm.mid);
-        made.append(sm.mid);
+  }
+}
+
+def index_ids(ids: list[str]) -> dict[str, int] {
+  out: dict[str, int] = {};
+  i = 0;
+  while i < len(ids) {
+    out[ids[i]] = i;
+    i += 1;
+  }
+  return out;
+}
+
+def sort_ranges_by_start(ids: list[str], ranges: list[dict]) -> list[dict] {
+  idx: dict[str, int] = index_ids(ids);
+  n = len(ranges);
+  order: list[int] = [];
+  i = 0;
+  while i < n {
+    order.append(i);
+    i += 1;
+  }
+  i = 0;
+  while i < n {
+    best = i;
+    j = i + 1;
+    while j < n {
+      ri = order[i];
+      rj = order[j];
+      si = idx[ranges[ri]["start"] as str];
+      sj = idx[ranges[rj]["start"] as str];
+      if sj < si {
+        best = j;
+      }
+      j += 1;
     }
-    return made;
-}
-
-walker Project {
-    has seen: dict[str, bool] = {};
-    has covered: dict[str, bool] = {};
-    has out: list[str] = [];
-    can step_m with Msg entry {
-        if here.mid in self.seen { skip; }
-        self.seen[here.mid] = True;
-        if here.mid not in self.covered { self.out.append(here.mid); }
-        for ch in [here ->:Next:->] { visit ch; }
-        disengage;
+    if best != i {
+      tmp = order[i];
+      order[i] = order[best];
+      order[best] = tmp;
     }
-    can step_s with Summary entry {
-        if here.mid in self.seen { skip; }
-        self.seen[here.mid] = True;
-        self.out.append(here.mid);
-        for c in here.covers { self.covered[c] = True; }
-        for ch in [here ->:Next:->] { visit ch; }
-        disengage;
+    i += 1;
+  }
+  out: list[dict] = [];
+  k = 0;
+  while k < n {
+    out.append(ranges[order[k]]);
+    k += 1;
+  }
+  return out;
+}
+
+def make_summary_id(start_id: str, end_id: str) -> str {
+  return "summary:" + start_id + ":" + end_id;
+}
+
+def validate_compaction_ranges(ids: list[str], ranges: list[dict], frontier_protect: int = 2) -> bool {
+  if frontier_protect < 0 {
+    return False;
+  }
+  if len(ranges) == 0 {
+    return True;
+  }
+  idx: dict[str, int] = index_ids(ids);
+  frontier_start = len(ids) - frontier_protect;
+  sorted_rs: list[dict] = sort_ranges_by_start(ids, ranges);
+  prev_end = -1;
+  ri = 0;
+  while ri < len(sorted_rs) {
+    r = sorted_rs[ri];
+    start_id = r["start"] as str;
+    end_id = r["end"] as str;
+    if start_id not in idx {
+      return False;
     }
-}
-
-walker Decompress {
-    has seen: dict[str, bool] = {};
-    has out: list[str] = [];
-    can step_d with Msg entry {
-        if here.mid in self.seen { skip; }
-        self.seen[here.mid] = True;
-        self.out.append(here.mid);
-        for ch in [here ->:Next:->] { visit ch; }
-        disengage;
+    if end_id not in idx {
+      return False;
     }
+    si = idx[start_id];
+    ei = idx[end_id];
+    if si > ei {
+      return False;
+    }
+    if ei >= frontier_start {
+      return False;
+    }
+    if si <= prev_end {
+      return False;
+    }
+    prev_end = ei;
+    ri += 1;
+  }
+  return True;
 }
 
-def context_inspect(store: Session) -> list[str] {
-    return sorted(store.sums);
+def context_compact_range(ids: list[str], ranges: list[dict], frontier_protect: int = 2) -> list[str] {
+  if not validate_compaction_ranges(ids, ranges, frontier_protect) {
+    return ids;
+  }
+  if len(ranges) == 0 {
+    return ids;
+  }
+  idx: dict[str, int] = index_ids(ids);
+  sorted_rs: list[dict] = sort_ranges_by_start(ids, ranges);
+  out: list[str] = [];
+  pos = 0;
+  ri = 0;
+  while pos < len(ids) {
+    applied = False;
+    if ri < len(sorted_rs) {
+      r = sorted_rs[ri];
+      start_id = r["start"] as str;
+      end_id = r["end"] as str;
+      si = idx[start_id];
+      ei = idx[end_id];
+      if pos == si {
+        out.append(make_summary_id(start_id, end_id));
+        pos = ei + 1;
+        ri += 1;
+        applied = True;
+      }
+    }
+    if not applied {
+      out.append(ids[pos]);
+      pos += 1;
+    }
+  }
+  return out;
 }
 
-def context_decompress(store: Session) -> list[str] {
-    w = store.head spawn Decompress();
-    return w.out;
+def build_message_chain(mids: list[str]) -> Msg {
+  nodes: list[Msg] = [];
+  i = 0;
+  while i < len(mids) {
+    nd = Msg(mid=mids[i], body=mids[i]);
+    root ++> nd;
+    nodes.append(nd);
+    i += 1;
+  }
+  j = 0;
+  while j < len(nodes) - 1 {
+    nodes[j] +>:Next:+> nodes[j + 1];
+    j += 1;
+  }
+  return nodes[0];
 }
 
-def context_project(store: Session) -> list[str] {
-    w = store.head spawn Project();
-    return w.out;
+def build_diamond_chain() -> Msg {
+  a = Msg(mid="A", body="A");
+  b = Msg(mid="B", body="B");
+  c = Msg(mid="C", body="C");
+  d = Msg(mid="D", body="D");
+  root ++> a;
+  a +>:Next:+> b;
+  a +>:Next:+> c;
+  b +>:Next:+> d;
+  c +>:Next:+> d;
+  return a;
 }
 
-test "build_and_decompress" {
-    s = Session();
-    build(s, ["a", "b", "c", "d", "e", "f"]);
-    assert context_decompress(s) == ["a", "b", "c", "d", "e", "f"];;
+def collect_message_order(head: Msg) -> list[str] {
+  w = head spawn CollectOrder(claimed={});
+  return w.order;
 }
 
-test "ranged_compaction_projects_summary" {
-    s = Session();
-    build(s, ["a", "b", "c", "d", "e", "f"]);
-    made = context_compact_range(s, ["c"], ["d"], ["mid chunk"]);
-    assert made == ["summary_0"];;
-    assert context_project(s) == ["a", "b", "summary_0", "e", "f"];;
-    assert context_decompress(s) == ["a", "b", "c", "d", "e", "f"];;
-    assert context_inspect(s) == ["summary_0"];;
+with entry {
+  mids: list[str] = ["A", "B", "C", "D", "E", "F"];
+  head = build_message_chain(mids);
+  w = head spawn CollectOrder(claimed={});
+  rs: list[dict] = [];
+  r0: dict = {};
+  r0["start"] = "C";
+  r0["end"] = "D";
+  r0["summary"] = "cd summary";
+  rs.append(r0);
+  print(context_compact_range(w.order, rs, 2));
 }
 
-test "two_disjoint_ranges" {
-    s = Session();
-    build(s, ["a", "b", "c", "d", "e", "f"]);
-    made = context_compact_range(s, ["b", "e"], ["c", "f"], ["x", "y"]);
-    assert sorted(made) == ["summary_0", "summary_1"];;
-    assert context_project(s) == ["a", "summary_0", "summary_1"];;
+test "context_compact_range replaces valid range" {
+  ids: list[str] = ["A", "B", "C", "D", "E", "F"];
+  rs: list[dict] = [];
+  r0: dict = {};
+  r0["start"] = "C";
+  r0["end"] = "D";
+  rs.append(r0);
+  out = context_compact_range(ids, rs, 2);
+  assert out == ["A", "B", "summary:C:D", "E", "F"];;
 }
 
-test "atomic_reject_unknown" {
-    s = Session();
-    build(s, ["a", "b", "c"]);
-    ok = True;
-    try { context_compact_range(s, ["b"], ["zz"], ["t"]); } except { ok = False; }
-    assert not ok;;
-    assert context_project(s) == ["a", "b", "c"];;
+test "empty ranges noop" {
+  ids: list[str] = ["A", "B", "C"];
+  assert context_compact_range(ids, [], 2) == ids;;
 }
 
-test "reject_head_range" {
-    s = Session();
-    build(s, ["a", "b", "c"]);
-    ok = True;
-    try { context_compact_range(s, ["a"], ["b"], ["t"]); } except { ok = False; }
-    assert not ok;;
+test "invalid overlap returns original ids" {
+  ids: list[str] = ["A", "B", "C", "D"];
+  rs: list[dict] = [];
+  r0: dict = {};
+  r0["start"] = "A";
+  r0["end"] = "B";
+  rs.append(r0);
+  r1: dict = {};
+  r1["start"] = "B";
+  r1["end"] = "C";
+  rs.append(r1);
+  assert context_compact_range(ids, rs, 2) == ids;;
 }
 
-test "reject_overlap" {
-    s = Session();
-    build(s, ["a", "b", "c", "d", "e"]);
-    ok = True;
-    try { context_compact_range(s, ["b", "c"], ["d", "e"], ["t1", "t2"]); } except { ok = False; }
-    assert not ok;;
+test "validate rejects frontier violation" {
+  ids: list[str] = ["A", "B", "C", "D"];
+  rs: list[dict] = [];
+  r0: dict = {};
+  r0["start"] = "C";
+  r0["end"] = "D";
+  rs.append(r0);
+  assert validate_compaction_ranges(ids, rs, 2) == False;;
+}
+
+test "chain collect order matches ids" {
+  mids: list[str] = ["A", "B", "C", "D"];
+  head = build_message_chain(mids);
+  order = collect_message_order(head);
+  assert order == mids;;
+}
+
+test "diamond revisit once via claim map" {
+  head = build_diamond_chain();
+  order = collect_message_order(head);
+  assert len(order) == 4;;
+  assert sorted(order) == ["A", "B", "C", "D"];;
+  d_count = 0;
+  for mid in order {
+    if mid == "D" {
+      d_count += 1;
+    }
+  }
+  assert d_count == 1;;
 }

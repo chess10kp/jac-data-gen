@@ -1,68 +1,129 @@
-# Lift of NixOS/nix#6361: infinite recursion detection with a traceable
-# dependency-cycle resolver (stack-trace analog for recursive eval).
+"""
+NixOS/nix#6361 — recursive flake dependency resolution with trace.
+Mirrors meta-repo resolve loops where missing cycle guards yield stack overflow
+and no usable --show-trace output.
+"""
 
-node Pkg {
+node Repo {
+    has cid: str;
     has name: str;
 }
 
 edge Depends {}
 
-# Detect and trace a dependency cycle starting from `start` using a
-# claim-map + explicit stack; returns the cycle path (trace) or [] if none.
-def resolve_dep_trace(deps: dict[str, list[str]], start: str) -> list[str] {
-    trace: list[str] = [];
-    claim: dict[str, bool] = {};
-    stack: list[tuple[str, list[str]]] = [(start, [])];
-    while len(stack) {
-        cur, path = stack.pop();
-        if cur in claim {
-            continue;
-        }
-        claim[cur] = True;
-        nxt_path: list[str] = [];
-        for p in path { nxt_path.append(p); }
-        nxt_path.append(cur);
-        if cur in deps and cur in nxt_path[0:len(nxt_path) - 1] and len(nxt_path) > 1 {
-            return nxt_path;
-        }
-        for child in sorted(deps.get(cur, [])) {
-            if child == start {
-                cyc: list[str] = [];
-                for p in nxt_path { cyc.append(p); }
-                cyc.append(start);
-                return cyc;
-            }
-            if child not in claim {
-                stack.append((child, nxt_path));
-            }
-        }
-    }
-    return trace;
+node GraphHub {
+    has nodes: dict[str, Repo] = {};
 }
 
-# Tolerant lookup: unknown ids resolve to [] instead of raising.
-def trace_or_empty(deps: dict[str, list[str]], start: str) -> list[str] {
-    if start not in deps {
-        return [];
-    }
-    return resolve_dep_trace(deps, start);
-}
+walker TraceResolve {
+    has claimed: dict[str, bool] = {};
+    has on_path: dict[str, bool] = {};
+    has show_trace: bool = True;
+    has trace: list[str] = [];
+    has order: list[str] = [];
+    has status: str = "ok";
+    has depth: int = 0;
+    has depth_limit: int = 64;
 
-walker CheckRecursion {
-    has claim: dict[str, bool] = {};
-    has cycle_at: str = "";
-    has found: bool = False;
-
-    can inspect with Pkg entry {
-        if here.name in self.claim {
-            self.found = True;
-            self.cycle_at = here.name;
-            print("infinite recursion detected at:", here.name);
+    can step with Repo entry {
+        if here.cid in self.on_path {
+            if self.show_trace {
+                self.trace.append(here.cid);
+            }
+            self.status = "cycle";
             skip;
         }
-        self.claim[here.name] = True;
-        print("visiting", here.name);
-        kids: list[Pkg] = [here ->:Depends:->Pkg];
-        visit kids else { disengage; }
+        if here.cid in self.claimed {
+            skip;
+        }
+        self.claimed[here.cid] = True;
+        self.on_path[here.cid] = True;
+        self.depth += 1;
+        self.order.append(here.cid);
+        if self.show_trace {
+            self.trace.append(here.cid);
+        }
+        if self.depth > self.depth_limit {
+            self.status = "overflow";
+            print("overflow", here.cid, self.depth);
+        } else {
+            kids: list[Repo] = [];
+            for ch in [here ->:Depends:->][?:Repo] {
+                kids.append(ch);
+            }
+            kids = sorted(kids, key=lambda x: x.cid);
+            if kids {
+                visit :0: kids;
+            }
+        }
+        self.on_path[here.cid] = False;
     }
+}
+
+def make_repo_graph(edges: dict[str, list[str]]) -> GraphHub {
+    hub = GraphHub();
+    root ++> hub;
+    keys: list[str] = [];
+    for k in edges {
+        keys.append(k);
+    }
+    keys = sorted(keys);
+    for cid in keys {
+        nd = Repo(cid=cid, name=cid);
+        hub.nodes[cid] = nd;
+        root ++> nd;
+    }
+    pair_keys: list[str] = [];
+    for src in edges {
+        dst_list = edges[src];
+        for dst in dst_list {
+            pair_keys.append(src + "\t" + dst);
+        }
+    }
+    pair_keys = sorted(pair_keys);
+    for pk in pair_keys {
+        parts: list[str] = pk.split("\t");
+        src_id = parts[0];
+        dst_id = parts[1];
+        a = hub.nodes[src_id];
+        b = hub.nodes[dst_id];
+        a +>:Depends:+> b;
+    }
+    return hub;
+}
+
+def resolve_with_trace(
+    hub: GraphHub,
+    root_id: str,
+    show_trace: bool = True,
+    depth_limit: int = 64
+) -> dict {
+    empty_trace: list[str] = [];
+    empty_order: list[str] = [];
+    if root_id not in hub.nodes {
+        result: dict = {};
+        result["status"] = "unknown";
+        result["trace"] = empty_trace;
+        result["order"] = empty_order;
+        return result;
+    }
+    nd = hub.nodes[root_id];
+    w = nd spawn TraceResolve(show_trace=show_trace, depth_limit=depth_limit);
+    print("resolve", root_id, w.status, len(w.order));
+    out: dict = {};
+    out["status"] = w.status;
+    out["trace"] = w.trace;
+    out["order"] = w.order;
+    return out;
+}
+
+def format_trace(trace: list[str]) -> str {
+    if len(trace) == 0 {
+        return "";
+    }
+    s = trace[0];
+    for i in range(1, len(trace)) {
+        s = s + " -> " + trace[i];
+    }
+    return s;
 }

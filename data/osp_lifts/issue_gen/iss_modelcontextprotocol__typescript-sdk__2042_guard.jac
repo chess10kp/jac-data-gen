@@ -1,155 +1,266 @@
-// PROGRAM iss_modelcontextprotocol__typescript-sdk__2042.jac
+"""Transitive dependency audit — modelcontextprotocol/typescript-sdk#2042."""
 
-node Package {
+node DepGraph {
+    has pkgs: dict[str, Pkg] = {};
+}
+
+node Pkg {
     has name: str;
     has version: str;
-    has at_risk: bool = False;
-    has fixed: str = "";
-    has closure: list[Package] = [];
-    has findings: list[str] = [];
-    has requirements: dict[str, str] = {};
-    has match: Package | None = None;
+    has severity: str = "none";
 }
 
 edge Depends {}
 
-walker ClosureWalk {
+walker CollectWalker {
     has claimed: dict[str, bool] = {};
-    has origin: Package | None = None;
+    has names: list[str] = [];
 
-    can step with Package entry {
-        if self.origin == None {
-            self.origin = here;
-        }
+    can collect with Pkg entry {
         if here.name in self.claimed {
             skip;
         }
         self.claimed[here.name] = True;
-        self.origin.closure.append(here);
-        print(here.name);
-        for kid in [here ->:Depends:->][?:Package] {
-            visit :0: [kid];
+        self.names.append(here.name);
+        print here.name;
+        kids: list[Pkg] = [];
+        for ch in [here ->:Depends:->][?:Pkg] {
+            kids.append(ch);
         }
+        visit kids;
     }
 }
 
-walker AuditWalk {
+walker PathWalker {
+    has target: str;
     has claimed: dict[str, bool] = {};
-    has origin: Package | None = None;
+    has parent_of: dict[str, str] = {};
+    has found: list[str] = [];
 
-    can step with Package entry {
-        if self.origin == None {
-            self.origin = here;
-        }
-        if here.name in self.claimed {
-            skip;
-        }
-        self.claimed[here.name] = True;
-        if here.at_risk {
-            self.origin.findings.append(here.name);
-            self.origin.requirements[here.name] = here.fixed;
-        }
-        print(here.name);
-        for kid in [here ->:Depends:->][?:Package] {
-            visit :0: [kid];
-        }
-    }
-}
-
-walker FindWalk {
-    has claimed: dict[str, bool] = {};
-    has origin: Package | None = None;
-    has target: str = "";
-
-    can step with Package entry {
-        if self.origin == None {
-            self.origin = here;
-        }
+    can walk with Pkg entry {
         if here.name in self.claimed {
             skip;
         }
         self.claimed[here.name] = True;
         if here.name == self.target {
-            self.origin.match = here;
+            chain: list[str] = [];
+            cur: str = self.target;
+            while cur != "" {
+                chain.append(cur);
+                if cur in self.parent_of {
+                    cur = self.parent_of[cur];
+                } else {
+                    cur = "";
+                }
+            }
+            self.found = reverse_list(chain);
+            print self.found;
+            disengage;
         }
-        print(here.name);
-        for kid in [here ->:Depends:->][?:Package] {
-            visit :0: [kid];
+        kids: list[Pkg] = [];
+        for ch in [here ->:Depends:->][?:Pkg] {
+            if not (ch.name in self.claimed) {
+                self.parent_of[ch.name] = here.name;
+            }
+            kids.append(ch);
+        }
+        if len(kids) == 0 {
+            disengage;
+        } else {
+            visit :0: kids;
         }
     }
 }
 
-def dependency_closure(root: Package) -> list[Package] {
-    root.closure = [];
-    root spawn ClosureWalk;
-    return root.closure;
+walker AuditDemo {
+    can run with DepGraph entry {
+        rn = seed_sdk_vuln_graph(here);
+        fails = audit_fails(here, rn, "high");
+        print fails;
+        disengage;
+    }
 }
 
-def vulnerable_transitives(root: Package) -> list[str] {
-    root.findings = [];
-    root.requirements = {};
-    root spawn AuditWalk;
-    return root.findings;
+def reverse_list(xs: list[str]) -> list[str] {
+    rev: list[str] = [];
+    i = len(xs) - 1;
+    while i >= 0 {
+        rev.append(xs[i]);
+        i = i - 1;
+    }
+    return rev;
 }
 
-def fixed_requirements(root: Package) -> dict[str, str] {
-    root.findings = [];
-    root.requirements = {};
-    root spawn AuditWalk;
-    return root.requirements;
+def severity_rank(sev: str) -> int {
+    if sev == "high" {
+        return 2;
+    }
+    if sev == "moderate" {
+        return 1;
+    }
+    return 0;
 }
 
-def find_package(root: Package, wanted: str) -> Package | None {
-    root.match = None;
-    root spawn FindWalk(target=wanted);
-    return root.match;
+def audit_threshold(level: str) -> int {
+    if level == "high" {
+        return 2;
+    }
+    if level == "moderate" {
+        return 1;
+    }
+    return 0;
 }
 
-test "diamond revisit has once-only closure" {
-    root = Package(name="sdk", version="1.29.0");
-    left = Package(name="left", version="1.0.0");
-    right = Package(name="right", version="1.0.0");
-    shared = Package(name="shared", version="1.0.0");
-    leaf = Package(name="leaf", version="1.0.0");
-    root +>: Depends :+> left;
-    root +>: Depends :+> right;
-    left +>: Depends :+> shared;
-    right +>: Depends :+> shared;
-    shared +>: Depends :+> leaf;
-    got = dependency_closure(root);
-    assert (len(got) == 5);
-    assert (shared in got);
-    assert (leaf in got);
+def new_graph -> DepGraph {
+    g = DepGraph(pkgs={});
+    root ++> g;
+    return g;
 }
 
-test "unknown package is tolerated" {
-    root = Package(name="sdk", version="1.29.0");
-    dep = Package(name="ajv", version="8.18.0");
-    root +>: Depends :+> dep;
-    got = find_package(root, "missing");
-    assert (got == None);
+def get_pkg(g: DepGraph, name: str) -> Pkg | None {
+    if name in g.pkgs {
+        return g.pkgs[name];
+    }
+    return None;
 }
 
-test "vulnerability audit records fixed requirements" {
-    root = Package(name="sdk", version="1.29.0");
-    uri = Package(name="fast-uri", version="3.1.0", at_risk=True, fixed=">=3.1.2");
-    hono = Package(name="hono", version="4.12.14", at_risk=True, fixed=">=4.12.18");
-    root +>: Depends :+> uri;
-    root +>: Depends :+> hono;
-    findings = vulnerable_transitives(root);
-    requirements = fixed_requirements(root);
-    assert (len(findings) == 2);
-    assert ("fast-uri" in findings);
-    assert ("hono" in findings);
-    assert (requirements["fast-uri"] == ">=3.1.2");
-    assert (requirements["hono"] == ">=4.12.18");
+def add_package(g: DepGraph, name: str, version: str, severity: str) -> None {
+    p = Pkg(name=name, version=version, severity=severity);
+    g.pkgs[name] = p;
 }
 
-test "leaf package has no transitive findings" {
-    root = Package(name="sdk", version="1.29.0");
-    got = dependency_closure(root);
-    findings = vulnerable_transitives(root);
-    assert (len(got) == 1);
-    assert (got[0] == root);
-    assert (len(findings) == 0);
+def add_dependency(g: DepGraph, parent: str, child: str) -> None {
+    pp = get_pkg(g, parent);
+    cc = get_pkg(g, child);
+    if pp == None {
+        return;
+    }
+    if cc == None {
+        return;
+    }
+    pp +>:Depends:+> cc;
+}
+
+def seed_sdk_vuln_graph(g: DepGraph) -> str {
+    root_name = "@modelcontextprotocol/sdk";
+    add_package(g, root_name, "1.29.0", "none");
+    add_package(g, "ajv", "8.18.0", "none");
+    add_package(g, "fast-uri", "3.1.0", "high");
+    add_package(g, "hono", "4.12.14", "moderate");
+    add_package(g, "@hono/node-server", "1.19.14", "none");
+    add_package(g, "express-rate-limit", "8.4.0", "moderate");
+    add_package(g, "ip-address", "10.1.0", "moderate");
+    add_dependency(g, root_name, "ajv");
+    add_dependency(g, "ajv", "fast-uri");
+    add_dependency(g, root_name, "hono");
+    add_dependency(g, root_name, "@hono/node-server");
+    add_dependency(g, "@hono/node-server", "hono");
+    add_dependency(g, root_name, "express-rate-limit");
+    add_dependency(g, "express-rate-limit", "ip-address");
+    return root_name;
+}
+
+def transitive_dependencies(g: DepGraph, root_name: str) -> list[str] {
+    rp = get_pkg(g, root_name);
+    if rp == None {
+        return [];
+    }
+    w = rp spawn CollectWalker();
+    out: list[str] = [];
+    for nm in w.names {
+        if nm != root_name {
+            out.append(nm);
+        }
+    }
+    return sorted(out);
+}
+
+def failing_packages(g: DepGraph, root_name: str, audit_level: str) -> list[str] {
+    thr = audit_threshold(audit_level);
+    deps = transitive_dependencies(g, root_name);
+    out: list[str] = [];
+    for nm in deps {
+        p = g.pkgs[nm];
+        if severity_rank(p.severity) >= thr {
+            out.append(nm);
+        }
+    }
+    return sorted(out);
+}
+
+def audit_fails(g: DepGraph, root_name: str, audit_level: str) -> bool {
+    fps = failing_packages(g, root_name, audit_level);
+    return len(fps) > 0;
+}
+
+def dependency_path(g: DepGraph, root_name: str, target_name: str) -> list[str] {
+    if root_name == target_name {
+        if get_pkg(g, root_name) == None {
+            return [];
+        }
+        return [root_name];
+    }
+    rp = get_pkg(g, root_name);
+    tp = get_pkg(g, target_name);
+    if rp == None {
+        return [];
+    }
+    if tp == None {
+        return [];
+    }
+    w = rp spawn PathWalker(target=target_name);
+    return w.found;
+}
+
+with entry {
+    g = new_graph();
+    g spawn AuditDemo();
+}
+
+test "audit_high_fails_on_fast_uri" {
+    g = new_graph();
+    rn = seed_sdk_vuln_graph(g);
+    assert audit_fails(g, rn, "high") == True;
+}
+
+test "high_level_failing_sorted" {
+    g = new_graph();
+    rn = seed_sdk_vuln_graph(g);
+    fps = failing_packages(g, rn, "high");
+    assert fps == ["fast-uri"];
+}
+
+test "moderate_level_failing_sorted" {
+    g = new_graph();
+    rn = seed_sdk_vuln_graph(g);
+    fps = failing_packages(g, rn, "moderate");
+    assert fps == ["express-rate-limit", "fast-uri", "hono", "ip-address"];
+}
+
+test "transitive_dependencies_sorted" {
+    g = new_graph();
+    rn = seed_sdk_vuln_graph(g);
+    deps = transitive_dependencies(g, rn);
+    assert deps == ["@hono/node-server", "ajv", "express-rate-limit", "fast-uri", "hono", "ip-address"];
+}
+
+test "diamond_revisit_first_path" {
+    g = new_graph();
+    add_package(g, "root", "1.0.0", "none");
+    add_package(g, "left", "1.0.0", "none");
+    add_package(g, "right", "1.0.0", "none");
+    add_package(g, "join", "1.0.0", "high");
+    add_dependency(g, "root", "left");
+    add_dependency(g, "root", "right");
+    add_dependency(g, "left", "join");
+    add_dependency(g, "right", "join");
+    p = dependency_path(g, "root", "join");
+    assert p == ["root", "left", "join"];
+}
+
+test "unknown_target_empty_path" {
+    g = new_graph();
+    rn = seed_sdk_vuln_graph(g);
+    p = dependency_path(g, rn, "not-a-real-package");
+    assert p == [];
 }

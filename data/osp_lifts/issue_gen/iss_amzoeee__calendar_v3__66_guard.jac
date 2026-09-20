@@ -1,228 +1,269 @@
-# Lifting amzoeee/calendar_v3#66 — allow subtasks deeper than one level.
-# Hand-rolled recursive CTE / parent-pointer machinery -> idiomatic Jac OSP.
+"""Tasks: allow subtasks deeper than one level — amzoeee/calendar_v3#66."""
+
+glob MAX_TASK_DEPTH: int = 2;
 
 node Task {
-    has tid: str;
-    has title: str;
-    has done: bool = False;
+    has id: str;
     has depth: int = 0;
+    has done: bool = False;
 }
 
-edge PARENT {}
+edge Subtask {}
 
-const MAX_TASK_DEPTH = 3;
-
-def all_tasks(graph_root: Task) -> list[Task] {
-    # BFS over untyped root edges collecting every Task node
-    out: list[Task] = [];
-    claimed: dict[str, bool] = {};
-    queue: list[Task] = [graph_root];
-    while len(queue) > 0 {
-        cur = queue.pop(0);
-        out.append(cur);
-        for nxt in [cur ->] {
-            if nxt isa Task {
-                t = nxt as Task;
-                if t.tid not in claimed {
-                    claimed[t.tid] = True;
-                    queue.append(t);
-                }
-            }
-        }
-    }
-    return out;
-}
-
-def find_task(graph_root: Task, tid: str) -> Task | None {
-    ts: list[Task] = all_tasks(graph_root);
-    for t in ts {
-        if t.tid == tid {
-            return t;
-        }
-    }
-    return None;
-}
-
-def _task_depth(here: Task) -> int {
-    # depth = chain length to root via PARENT edges
-    d: int = 0;
-    cur: Task | None = here;
-    while cur is not None {
-        ups: list[Task] = [cur ->:PARENT:->];
-        if len(ups) == 0 {
-            cur = None;
-        } else {
-            cur = ups[0];
-            d += 1;
-        }
-    }
-    return d;
-}
-
-def create_task(graph_root: Task, tid: str, title: str, parent_tid: str | None = None) -> Task {
-    # unknown parent id is tolerated as a root-level task
-    nd = Task(tid=tid, title=title);
-    par: Task | None = None;
-    if parent_tid is not None {
-        par = find_task(graph_root, parent_tid);
-    }
-    if par is None {
-        graph_root ++> nd;
-        nd.depth = 0;
-    } else {
-        par +>:PARENT:+> nd;
-        nd.depth = _task_depth(nd);
-    }
-    return nd;
-}
-
-def depth_of(graph_root: Task, tid: str) -> int {
-    t: Task | None = find_task(graph_root, tid);
-    if t is None {
-        return -1;
-    }
-    return t.depth;
-}
-
-def can_indent(graph_root: Task, tid: str) -> bool {
-    d: int = depth_of(graph_root, tid);
-    return d >= 0 and d < MAX_TASK_DEPTH;
-}
-
-def subtree_ids(graph_root: Task, tid: str) -> list[str] {
-    # BFS closure over PARENT children, unknown id -> []
-    start: Task | None = find_task(graph_root, tid);
-    out: list[str] = [];
-    if start is None {
-        return out;
-    }
-    claimed: dict[str, bool] = {};
-    queue: list[Task] = [start];
-    while len(queue) > 0 {
-        cur = queue.pop(0);
-        if cur.tid in claimed {
-            continue;
-        }
-        claimed[cur.tid] = True;
-        out.append(cur.tid);
-        kids: list[Task] = [cur ->:PARENT:->];
-        kids.sort(key=lambda k: k.tid);
-        for k in kids {
-            queue.append(k);
-        }
-    }
-    out.sort();
-    return out;
-}
-
-walker CompleteCascade {
+walker FindTask {
+    has sought: str;
+    has hit: Task | None = None;
     has claimed: dict[str, bool] = {};
-    has marked: list[str] = [];
 
-    can step with Task entry {
-        if here.tid in self.claimed {
-            skip;
+    can seek with Task entry {
+        if here.id in self.claimed { skip; }
+        self.claimed[here.id] = True;
+        if here.id == self.sought {
+            self.hit = here;
+            print(here.id);
+            disengage;
         }
-        self.claimed[here.tid] = True;
-        here.done = True;
-        self.marked.append(here.tid);
-        kids: list[Task] = [here ->:PARENT:->];
-        kids.sort(key=lambda k: k.tid);
-        visit kids;
+        kids: list[Task] = [here ->:Subtask:->][?:Task];
+        for kid in kids {
+            visit :0: [kid];
+        }
     }
 }
 
-def complete_cascade(graph_root: Task, tid: str) -> list[str] {
-    start: Task | None = find_task(graph_root, tid);
-    if start is None {
+walker SubtreeCollect {
+    has found: list[str] = [];
+    has claimed: dict[str, bool] = {};
+
+    can gather with Task entry {
+        if here.id in self.claimed { skip; }
+        self.claimed[here.id] = True;
+        self.found.append(here.id);
+        print(here.id);
+        kids: list[Task] = [here ->:Subtask:->][?:Task];
+        for kid in kids {
+            visit :0: [kid];
+        }
+    }
+}
+
+def find_task_node(graph_root: Task, task_id: str) -> Task | None {
+    w = graph_root spawn FindTask(sought=task_id, claimed={});
+    return w.hit;
+}
+
+def max_task_depth -> int {
+    return MAX_TASK_DEPTH;
+}
+
+def can_nest_child(parent_depth: int) -> bool {
+    return parent_depth < MAX_TASK_DEPTH;
+}
+
+def validate_depth(depth: int) -> bool {
+    return depth <= MAX_TASK_DEPTH;
+}
+
+def build_task_graph(rows: list) -> Task {
+    store: dict[str, Task] = {};
+    anchor = Task(id="__root__", depth=-1);
+    root ++> anchor;
+    for row in rows {
+        tid = row["id"];
+        tdepth = row["depth"];
+        nd = Task(id=tid, depth=tdepth);
+        store[tid] = nd;
+    }
+    for row in rows {
+        tid = row["id"];
+        pid = row["parentId"];
+        child = store[tid] as Task;
+        if pid is not None {
+            parent = store[pid] as Task;
+            parent +>:Subtask:+> child;
+        } else {
+            anchor +>:Subtask:+> child;
+        }
+    }
+    return anchor;
+}
+
+def collect_subtree_ids(graph_root: Task, task_id: str) -> list[str] {
+    target = find_task_node(graph_root, task_id);
+    if target is None {
         return [];
     }
-    wk = start spawn CompleteCascade(claimed={}, marked=[]);
-    return sorted(wk.marked);
+    w = target spawn SubtreeCollect(claimed={});
+    out: list[str] = [];
+    for x in w.found {
+        out.append(x);
+    }
+    return sorted(out);
 }
 
-walker MoveValidator {
-    has target_tid: str = "";
-    has ok: bool = False;
+def cascade_complete(graph_root: Task, task_id: str) -> list[str] {
+    ids = collect_subtree_ids(graph_root, task_id);
+    for tid in ids {
+        nd = find_task_node(graph_root, tid);
+        if nd is not None {
+            nd.done = True;
+        }
+    }
+    return ids;
+}
 
-    can step with Task entry {
-        if here.tid == self.target_tid {
-            self.ok = here.depth < MAX_TASK_DEPTH;
+"""Tasks: allow subtasks deeper than one level — amzoeee/calendar_v3#66."""
+
+glob MAX_TASK_DEPTH: int = 2;
+
+node Task {
+    has id: str;
+    has depth: int = 0;
+    has done: bool = False;
+}
+
+edge Subtask {}
+
+walker FindTask {
+    has sought: str;
+    has hit: Task | None = None;
+    has claimed: dict[str, bool] = {};
+
+    can seek with Task entry {
+        if here.id in self.claimed { skip; }
+        self.claimed[here.id] = True;
+        if here.id == self.sought {
+            self.hit = here;
+            print(here.id);
             disengage;
         }
-        kids: list[Task] = [here ->:PARENT:->];
-        visit kids else {
-            disengage;
+        kids: list[Task] = [here ->:Subtask:->][?:Task];
+        for kid in kids {
+            visit :0: [kid];
         }
     }
 }
 
-def can_move(graph_root: Task, tid: str) -> bool {
-    wk = graph_root spawn MoveValidator(target_tid=tid, ok=False);
-    return wk.ok;
+walker SubtreeCollect {
+    has found: list[str] = [];
+    has claimed: dict[str, bool] = {};
+
+    can gather with Task entry {
+        if here.id in self.claimed { skip; }
+        self.claimed[here.id] = True;
+        self.found.append(here.id);
+        print(here.id);
+        kids: list[Task] = [here ->:Subtask:->][?:Task];
+        for kid in kids {
+            visit :0: [kid];
+        }
+    }
 }
 
-test "create_and_depth" {
-    r = Task(tid="r", title="root");
-    a = create_task(r, "a", "A");
-    b = create_task(r, "b", "B", parent_tid="a");
-    c = create_task(r, "c", "C", parent_tid="b");
-    d = create_task(r, "d", "D", parent_tid="zz");
-    assert depth_of(r, "a") == 0;
-    assert depth_of(r, "b") == 1;
-    assert depth_of(r, "c") == 2;
-    assert depth_of(r, "d") == 0;
-    assert depth_of(r, "nope") == -1;
+def find_task_node(graph_root: Task, task_id: str) -> Task | None {
+    w = graph_root spawn FindTask(sought=task_id, claimed={});
+    return w.hit;
 }
 
-test "can_indent_bound" {
-    r = Task(tid="r", title="root");
-    create_task(r, "a", "A");
-    create_task(r, "b", "B", parent_tid="a");
-    create_task(r, "c", "C", parent_tid="b");
-    create_task(r, "d", "D", parent_tid="c");
-    assert can_indent(r, "a") == True;
-    assert can_indent(r, "c") == True;
-    assert can_indent(r, "d") == False;
-    assert can_move(r, "d") == False;
-    assert can_move(r, "c") == True;
+def max_task_depth -> int {
+    return MAX_TASK_DEPTH;
 }
 
-test "subtree_closure" {
-    r = Task(tid="r", title="root");
-    create_task(r, "a", "A");
-    create_task(r, "b", "B", parent_tid="a");
-    create_task(r, "c", "C", parent_tid="a");
-    create_task(r, "d", "D", parent_tid="b");
-    assert subtree_ids(r, "a") == ["a", "b", "c", "d"];
-    assert subtree_ids(r, "b") == ["b", "d"];
-    assert subtree_ids(r, "zz") == [];
+def can_nest_child(parent_depth: int) -> bool {
+    return parent_depth < MAX_TASK_DEPTH;
 }
 
-test "cascade_marks_descendants" {
-    r = Task(tid="r", title="root");
-    create_task(r, "a", "A");
-    create_task(r, "b", "B", parent_tid="a");
-    create_task(r, "c", "C", parent_tid="b");
-    create_task(r, "x", "X");
-    marked = complete_cascade(r, "a");
-    assert marked == ["a", "b", "c"];
-    t = find_task(r, "c");
-    assert t is not None and t.done == True;
-    tx = find_task(r, "x");
-    assert tx is not None and tx.done == False;
+def validate_depth(depth: int) -> bool {
+    return depth <= MAX_TASK_DEPTH;
 }
 
-test "complete_cascade_unknown" {
-    r = Task(tid="r", title="root");
-    create_task(r, "a", "A");
-    assert complete_cascade(r, "zz") == [];
-    assert len(all_tasks(r)) == 2;
+def build_task_graph(rows: list) -> Task {
+    store: dict[str, Task] = {};
+    anchor = Task(id="__root__", depth=-1);
+    root ++> anchor;
+    for row in rows {
+        tid = row["id"];
+        tdepth = row["depth"];
+        nd = Task(id=tid, depth=tdepth);
+        store[tid] = nd;
+    }
+    for row in rows {
+        tid = row["id"];
+        pid = row["parentId"];
+        child = store[tid] as Task;
+        if pid is not None {
+            parent = store[pid] as Task;
+            parent +>:Subtask:+> child;
+        } else {
+            anchor +>:Subtask:+> child;
+        }
+    }
+    return anchor;
 }
 
-test "find_task" {
-    r = Task(tid="r", title="root");
-    create_task(r, "a", "A");
-    assert find_task(r, "a") is not None;
-    assert find_task(r, "zz") is None;
+def collect_subtree_ids(graph_root: Task, task_id: str) -> list[str] {
+    target = find_task_node(graph_root, task_id);
+    if target is None {
+        return [];
+    }
+    w = target spawn SubtreeCollect(claimed={});
+    out: list[str] = [];
+    for x in w.found {
+        out.append(x);
+    }
+    return sorted(out);
+}
+
+def cascade_complete(graph_root: Task, task_id: str) -> list[str] {
+    ids = collect_subtree_ids(graph_root, task_id);
+    for tid in ids {
+        nd = find_task_node(graph_root, tid);
+        if nd is not None {
+            nd.done = True;
+        }
+    }
+    return ids;
+}
+
+test "max_task_depth_is_two" {
+    assert max_task_depth() == 2;
+}
+
+test "can_nest_child_depth_policy" {
+    assert can_nest_child(0) == True;
+    assert can_nest_child(1) == True;
+    assert can_nest_child(2) == False;
+}
+
+test "validate_depth_bounds" {
+    assert validate_depth(0) == True;
+    assert validate_depth(2) == True;
+    assert validate_depth(3) == False;
+}
+
+test "find_task_node_and_collect_subtree" {
+    rows: list = [
+        {"id": "a", "depth": 0, "parentId": None},
+        {"id": "b", "depth": 1, "parentId": "a"},
+        {"id": "c", "depth": 2, "parentId": "b"},
+    ];
+    g = build_task_graph(rows);
+    hit = find_task_node(g, "c");
+    assert hit is not None;
+    assert hit.id == "c";
+    assert collect_subtree_ids(g, "a") == ["a", "b", "c"];
+    assert collect_subtree_ids(g, "missing") == [];
+}
+
+test "cascade_complete_marks_done" {
+    rows: list = [
+        {"id": "a", "depth": 0, "parentId": None},
+        {"id": "b", "depth": 1, "parentId": "a"},
+        {"id": "c", "depth": 2, "parentId": "b"},
+    ];
+    g = build_task_graph(rows);
+    done_ids = cascade_complete(g, "a");
+    assert sorted(done_ids) == ["a", "b", "c"];
+    assert find_task_node(g, "a").done == True;
+    assert find_task_node(g, "b").done == True;
+    assert find_task_node(g, "c").done == True;
 }

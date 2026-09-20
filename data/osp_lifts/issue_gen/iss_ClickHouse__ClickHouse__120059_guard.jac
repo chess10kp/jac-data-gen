@@ -1,231 +1,462 @@
-"""Recursive CTE row accumulation over a parent/child tree — ClickHouse/ClickHouse#120059."""
+"""ClickHouse/ClickHouse#120059 — recursive CTE GLOBAL join never converges."""
 
-node TreeNode {
-    has id: str;
+node TreeVertex {
+    has cid: str;
     has parent_id: str;
 }
 
 edge Child {}
 
-obj TreeGraph {
-    has nodes: list[TreeNode] = [];
-    has by_id: dict[str, TreeNode] = {};
+node TreeStore {
+    has by_id: dict[str, TreeVertex] = {};
+    has kids: dict[str, list[str]] = {};
 }
 
-exception TooDeepRecursionError {
-    has limit: int = 0;
+def build_tree(rows: list[list[str]]) -> TreeStore {
+    store = TreeStore();
+    for row in rows {
+        vid = row[0];
+        pid = row[1];
+        vtx = TreeVertex(cid=vid, parent_id=pid);
+        store.by_id[vid] = vtx;
+        if pid not in store.kids {
+            store.kids[pid] = [];
+        }
+        bucket = store.kids[pid];
+        bucket.append(vid);
+    }
+    for vid in store.by_id {
+        vtx = store.by_id[vid];
+        pid = vtx.parent_id;
+        is_root = (pid == "") or (pid not in store.by_id);
+        if is_root {
+            root ++> vtx;
+        }
+        if pid in store.by_id {
+            par = store.by_id[pid];
+            par +>:Child:+> vtx;
+        }
+    }
+    return store;
 }
 
-def load_tree(rows: list[tuple[str, str]]) -> TreeGraph {
-    g = TreeGraph();
-    for pair in rows {
-        nid = pair[0];
-        pid = pair[1];
-        if nid not in g.by_id {
-            nd = TreeNode(id=nid, parent_id=pid);
-            g.by_id[nid] = nd;
-            g.nodes.append(nd);
-            root ++> nd;
+def join_step(store: TreeStore, partner: list[list]) -> list[list] {
+    out: list[list] = [];
+    for pr in partner {
+        st_id = pr[0] as str;
+        st_depth = pr[1] as int;
+        if st_id in store.kids {
+            ch_ids = store.kids[st_id];
+            for ch_id in ch_ids {
+                nr: list = [];
+                nr.append(ch_id);
+                nr.append(st_depth + 1);
+                out.append(nr);
+            }
         }
-    }
-    for pair in rows {
-        nid = pair[0];
-        pid = pair[1];
-        if pid != "" and pid in g.by_id {
-            parent = g.by_id[pid];
-            child = g.by_id[nid];
-            parent +>:Child:+> child;
-        }
-    }
-    return g;
-}
-
-walker CollectBase {
-    has rows: list[tuple[str, str, int]] = [];
-    has claimed: dict[str, bool] = {};
-
-    can walk with TreeNode entry {
-        if here.id in self.claimed {
-            skip;
-        }
-        self.claimed[here.id] = True;
-        self.rows.append((here.id, here.parent_id, 0));
-        print("base", here.id, 0);
-        for ch in [here ->:Child:->][?:TreeNode] {
-            visit :0: [ch];
-        }
-    }
-}
-
-walker Reachable {
-    has found: list[str] = [];
-    has claimed: dict[str, bool] = {};
-
-    can walk with TreeNode entry {
-        if here.id in self.claimed {
-            skip;
-        }
-        self.claimed[here.id] = True;
-        self.found.append(here.id);
-        print("visit", here.id);
-        for ch in [here ->:Child:->][?:TreeNode] {
-            visit :0: [ch];
-        }
-    }
-}
-
-def _base_rows(g: TreeGraph) -> list[tuple[str, str, int]] {
-    empty: list[tuple[str, str, int]] = [];
-    if len(g.nodes) == 0 {
-        return empty;
-    }
-    start = g.nodes[0];
-    w = start spawn CollectBase(claimed={});
-    return w.rows;
-}
-
-def _sort_rows(rows: list[tuple[str, str, int]]) -> list[tuple[str, str, int]] {
-    keys: list[tuple[int, str, int]] = [];
-    i = 0;
-    while i < len(rows) {
-        r = rows[i];
-        keys.append((r[2], r[0], i));
-        i += 1;
-    }
-    keys = sorted(keys);
-    out: list[tuple[str, str, int]] = [];
-    for k in keys {
-        out.append(rows[k[2]]);
     }
     return out;
 }
 
-def recursive_cte_rows(
-    g: TreeGraph,
-    prefer_global: bool = False,
-    max_iterations: int = 20,
-) -> list[tuple[str, str, int]] {
-    accumulated: list[tuple[str, str, int]] = _base_rows(g);
-    frozen_global: list[tuple[str, str, int]] = [];
-    has_frozen = False;
-    iter_count = 0;
-    while True {
-        new_rows: list[tuple[str, str, int]] = [];
-        if prefer_global and has_frozen {
-            for fr in frozen_global {
-                new_rows.append(fr);
+def row_key(row: list) -> str {
+    return (row[0] as str) + ":" + str(row[1] as int);
+}
+
+def dedupe_new_rows(working: list[list], new_rows: list[list]) -> list[list] {
+    seen: dict[str, bool] = {};
+    for wr in working {
+        seen[row_key(wr)] = True;
+    }
+    out: list[list] = [];
+    for nr in new_rows {
+        k = row_key(nr);
+        if k not in seen {
+            out.append(nr);
+            seen[k] = True;
+        }
+    }
+    return out;
+}
+
+def count_recursive_cte(store: TreeStore, join_mode: str, max_depth: int) -> int {
+    working: list[list] = [];
+    ids: list[str] = [];
+    for vid in store.by_id {
+        ids.append(vid);
+    }
+    ids = sorted(ids);
+    for vid in ids {
+        seed: list = [];
+        seed.append(vid);
+        seed.append(0);
+        working.append(seed);
+    }
+    total = len(working);
+    frozen: list[list] | None = None;
+    iter_n = 0;
+    last_new: list[list] = [];
+    while iter_n < max_depth {
+        new_rows: list[list] = [];
+        if join_mode == "global" {
+            if frozen is None {
+                frozen = join_step(store, working);
+                new_rows = frozen;
+            } else {
+                new_rows = frozen;
             }
         } else {
-            join_set: list[tuple[str, str, int]] = accumulated;
-            for st_row in join_set {
-                st_id = st_row[0];
-                st_depth = st_row[2];
-                for nd in g.nodes {
-                    if nd.parent_id == st_id {
-                        cand: tuple[str, str, int] = (nd.id, nd.parent_id, st_depth + 1);
-                        is_dup = False;
-                        for ex in accumulated {
-                            if ex[0] == cand[0] and ex[2] == cand[2] {
-                                is_dup = True;
-                            }
-                        }
-                        for ex in new_rows {
-                            if ex[0] == cand[0] and ex[2] == cand[2] {
-                                is_dup = True;
-                            }
-                        }
-                        if not is_dup {
-                            new_rows.append(cand);
-                        }
-                    }
-                }
-            }
+            new_rows = join_step(store, working);
+            new_rows = dedupe_new_rows(working, new_rows);
         }
         if len(new_rows) == 0 {
             break;
         }
-        if iter_count >= max_iterations {
-            raise TooDeepRecursionError(limit=max_iterations);
+        for nr in new_rows {
+            working.append(nr);
+        }
+        total = total + len(new_rows);
+        last_new = new_rows;
+        iter_n = iter_n + 1;
+    }
+    if join_mode == "global" and iter_n >= max_depth and len(last_new) > 0 and max_depth > 1 {
+        raise RuntimeError("TOO_DEEP_RECURSION");
+    }
+    return total;
+}
+
+walker TreeWalk {
+    has claimed: dict[str, bool] = {};
+    has order: list[str] = [];
+    can begin with root entry {
+        tops: list[TreeVertex] = [root ->][?:TreeVertex];
+        for v in tops {
+            visit :0: [v];
+        }
+    }
+    can step with TreeVertex entry {
+        if here.cid in self.claimed {
+            skip;
+        }
+        self.claimed[here.cid] = True;
+        self.order.append(here.cid);
+        print(here.cid);
+        nbrs: list[TreeVertex] = [here ->:Child:->][?:TreeVertex];
+        for ch in nbrs {
+            visit :0: [ch];
+        }
+    }
+}
+
+def walk_tree_order(store: TreeStore) -> list[str] {
+    w = root spawn TreeWalk(claimed={}, order=[]);
+    return sorted(w.order);
+}
+
+with entry {
+    rows: list[list[str]] = [];
+    ra: list[str] = [];
+    ra.append("a");
+    ra.append("");
+    rows.append(ra);
+    rb: list[str] = [];
+    rb.append("b");
+    rb.append("a");
+    rows.append(rb);
+    rc: list[str] = [];
+    rc.append("c");
+    rc.append("b");
+    rows.append(rc);
+    store = build_tree(rows);
+    n = count_recursive_cte(store, "local", 20);
+    print(n);
+    tw = root spawn TreeWalk(claimed={}, order=[]);
+}
+
+"""ClickHouse/ClickHouse#120059 — recursive CTE GLOBAL join never converges."""
+
+node TreeVertex {
+    has cid: str;
+    has parent_id: str;
+}
+
+edge Child {}
+
+node TreeStore {
+    has by_id: dict[str, TreeVertex] = {};
+    has kids: dict[str, list[str]] = {};
+}
+
+def build_tree(rows: list[list[str]]) -> TreeStore {
+    store = TreeStore();
+    for row in rows {
+        vid = row[0];
+        pid = row[1];
+        vtx = TreeVertex(cid=vid, parent_id=pid);
+        store.by_id[vid] = vtx;
+        if pid not in store.kids {
+            store.kids[pid] = [];
+        }
+        bucket = store.kids[pid];
+        bucket.append(vid);
+    }
+    for vid in store.by_id {
+        vtx = store.by_id[vid];
+        pid = vtx.parent_id;
+        is_root = (pid == "") or (pid not in store.by_id);
+        if is_root {
+            root ++> vtx;
+        }
+        if pid in store.by_id {
+            par = store.by_id[pid];
+            par +>:Child:+> vtx;
+        }
+    }
+    return store;
+}
+
+def join_step(store: TreeStore, partner: list[list]) -> list[list] {
+    out: list[list] = [];
+    for pr in partner {
+        st_id = pr[0] as str;
+        st_depth = pr[1] as int;
+        if st_id in store.kids {
+            ch_ids = store.kids[st_id];
+            for ch_id in ch_ids {
+                nr: list = [];
+                nr.append(ch_id);
+                nr.append(st_depth + 1);
+                out.append(nr);
+            }
+        }
+    }
+    return out;
+}
+
+def row_key(row: list) -> str {
+    return (row[0] as str) + ":" + str(row[1] as int);
+}
+
+def dedupe_new_rows(working: list[list], new_rows: list[list]) -> list[list] {
+    seen: dict[str, bool] = {};
+    for wr in working {
+        seen[row_key(wr)] = True;
+    }
+    out: list[list] = [];
+    for nr in new_rows {
+        k = row_key(nr);
+        if k not in seen {
+            out.append(nr);
+            seen[k] = True;
+        }
+    }
+    return out;
+}
+
+def count_recursive_cte(store: TreeStore, join_mode: str, max_depth: int) -> int {
+    working: list[list] = [];
+    ids: list[str] = [];
+    for vid in store.by_id {
+        ids.append(vid);
+    }
+    ids = sorted(ids);
+    for vid in ids {
+        seed: list = [];
+        seed.append(vid);
+        seed.append(0);
+        working.append(seed);
+    }
+    total = len(working);
+    frozen: list[list] | None = None;
+    iter_n = 0;
+    last_new: list[list] = [];
+    while iter_n < max_depth {
+        new_rows: list[list] = [];
+        if join_mode == "global" {
+            if frozen is None {
+                frozen = join_step(store, working);
+                new_rows = frozen;
+            } else {
+                new_rows = frozen;
+            }
+        } else {
+            new_rows = join_step(store, working);
+            new_rows = dedupe_new_rows(working, new_rows);
+        }
+        if len(new_rows) == 0 {
+            break;
         }
         for nr in new_rows {
-            accumulated.append(nr);
+            working.append(nr);
         }
-        if prefer_global and not has_frozen {
-            depth1: list[tuple[str, str, int]] = [];
-            for acc in accumulated {
-                if acc[2] == 1 {
-                    depth1.append(acc);
-                }
-            }
-            if len(depth1) > 0 {
-                frozen_global = depth1;
-                has_frozen = True;
-            }
-        }
-        iter_count += 1;
+        total = total + len(new_rows);
+        last_new = new_rows;
+        iter_n = iter_n + 1;
     }
-    return _sort_rows(accumulated);
+    if join_mode == "global" and iter_n >= max_depth and len(last_new) > 0 and max_depth > 1 {
+        raise RuntimeError("TOO_DEEP_RECURSION");
+    }
+    return total;
 }
 
-def recursive_cte_count(
-    g: TreeGraph,
-    prefer_global: bool = False,
-    max_iterations: int = 20,
-) -> int {
-    rows = recursive_cte_rows(g, prefer_global, max_iterations);
-    return len(rows);
+walker TreeWalk {
+    has claimed: dict[str, bool] = {};
+    has order: list[str] = [];
+    can begin with root entry {
+        tops: list[TreeVertex] = [root ->][?:TreeVertex];
+        for v in tops {
+            visit :0: [v];
+        }
+    }
+    can step with TreeVertex entry {
+        if here.cid in self.claimed {
+            skip;
+        }
+        self.claimed[here.cid] = True;
+        self.order.append(here.cid);
+        print(here.cid);
+        nbrs: list[TreeVertex] = [here ->:Child:->][?:TreeVertex];
+        for ch in nbrs {
+            visit :0: [ch];
+        }
+    }
 }
 
-test "empty_tree_rows" {
-    empty_rows: list[tuple[str, str]] = [];
-    g = load_tree(empty_rows);
-    got = recursive_cte_rows(g);
-    exp: list[tuple[str, str, int]] = [];
-    assert got == exp;
+def walk_tree_order(store: TreeStore) -> list[str] {
+    w = root spawn TreeWalk(claimed={}, order=[]);
+    return sorted(w.order);
 }
 
-test "linear_chain_converges" {
-    rows: list[tuple[str, str]] = [("a", ""), ("b", "a"), ("c", "b")];
-    g = load_tree(rows);
-    got = recursive_cte_rows(g);
-    exp: list[tuple[str, str, int]] = [("a", "", 0), ("b", "a", 1), ("c", "b", 2)];
-    assert got == exp;
+with entry {
+    rows: list[list[str]] = [];
+    ra: list[str] = [];
+    ra.append("a");
+    ra.append("");
+    rows.append(ra);
+    rb: list[str] = [];
+    rb.append("b");
+    rb.append("a");
+    rows.append(rb);
+    rc: list[str] = [];
+    rc.append("c");
+    rc.append("b");
+    rows.append(rc);
+    store = build_tree(rows);
+    n = count_recursive_cte(store, "local", 20);
+    print(n);
+    tw = root spawn TreeWalk(claimed={}, order=[]);
 }
 
-test "count_matches_rows" {
-    rows: list[tuple[str, str]] = [("a", ""), ("b", "a"), ("c", "b")];
-    g = load_tree(rows);
-    got_rows = recursive_cte_rows(g);
-    got_count = recursive_cte_count(g);
-    assert got_count == len(got_rows);
+test "local_converges_six" {
+    rows: list[list[str]] = [];
+    ra: list[str] = [];
+    ra.append("a");
+    ra.append("");
+    rows.append(ra);
+    rb: list[str] = [];
+    rb.append("b");
+    rb.append("a");
+    rows.append(rb);
+    rc: list[str] = [];
+    rc.append("c");
+    rc.append("b");
+    rows.append(rc);
+    store = build_tree(rows);
+    n = count_recursive_cte(store, "local", 20);
+    assert n == 6;
 }
 
-test "prefer_global_false_same_as_default" {
-    rows: list[tuple[str, str]] = [("a", ""), ("b", "a"), ("c", "b")];
-    g = load_tree(rows);
-    got_default = recursive_cte_rows(g);
-    got_local = recursive_cte_rows(g, False, 20);
-    assert got_default == got_local;
+test "diamond_walk_once_per_node" {
+    rows: list[list[str]] = [];
+    r1: list[str] = [];
+    r1.append("a");
+    r1.append("");
+    rows.append(r1);
+    r2: list[str] = [];
+    r2.append("d");
+    r2.append("c");
+    rows.append(r2);
+    r3: list[str] = [];
+    r3.append("b");
+    r3.append("a");
+    rows.append(r3);
+    r4: list[str] = [];
+    r4.append("c");
+    r4.append("a");
+    rows.append(r4);
+    store = build_tree(rows);
+    seen = walk_tree_order(store);
+    assert len(seen) == 4;
+    assert seen == ["a", "b", "c", "d"];
 }
 
-test "prefer_global_raises_too_deep" {
-    rows: list[tuple[str, str]] = [("a", ""), ("b", "a")];
-    g = load_tree(rows);
-    caught = False;
-    limit_hit = 0;
+test "global_partial_under_cap" {
+    rows: list[list[str]] = [];
+    ra: list[str] = [];
+    ra.append("a");
+    ra.append("");
+    rows.append(ra);
+    rb: list[str] = [];
+    rb.append("b");
+    rb.append("a");
+    rows.append(rb);
+    rc: list[str] = [];
+    rc.append("c");
+    rc.append("b");
+    rows.append(rc);
+    store = build_tree(rows);
+    n = count_recursive_cte(store, "global", 1);
+    assert n == 5;
+}
+
+test "global_raises_when_depth_exhausted" {
+    rows: list[list[str]] = [];
+    ra: list[str] = [];
+    ra.append("a");
+    ra.append("");
+    rows.append(ra);
+    rb: list[str] = [];
+    rb.append("b");
+    rb.append("a");
+    rows.append(rb);
+    rc: list[str] = [];
+    rc.append("c");
+    rc.append("b");
+    rows.append(rc);
+    store = build_tree(rows);
+    hit = False;
     try {
-        recursive_cte_rows(g, True, 2);
-    } except TooDeepRecursionError as err {
-        caught = True;
-        limit_hit = err.limit;
+        count_recursive_cte(store, "global", 5);
+    } except RuntimeError {
+        hit = True;
     }
-    assert caught;
-    assert limit_hit == 2;
+    assert hit;
 }
 
-test "prefer_global_nonconvergent_grows_past_base" {
-    rows: list[tuple[str, str]] = [("a", ""), ("b", "a")];
-    g = load_tree(rows);
-    got = recursive_cte_rows(g, True, 5);
-    assert len(got) > 2;
+test "join_step_children_sorted" {
+    rows: list[list[str]] = [];
+    ra: list[str] = [];
+    ra.append("a");
+    ra.append("");
+    rows.append(ra);
+    rb: list[str] = [];
+    rb.append("b");
+    rb.append("a");
+    rows.append(rb);
+    rc: list[str] = [];
+    rc.append("c");
+    rc.append("a");
+    rows.append(rc);
+    store = build_tree(rows);
+    partner: list[list] = [];
+    p: list = [];
+    p.append("a");
+    p.append(0);
+    partner.append(p);
+    got = join_step(store, partner);
+    keys: list[str] = [];
+    for row in got {
+        keys.append(row_key(row));
+    }
+    keys = sorted(keys);
+    assert keys == ["b:1", "c:1"];
 }

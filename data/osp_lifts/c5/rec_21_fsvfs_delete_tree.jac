@@ -53,20 +53,20 @@ obj FileSystem {
     }
 
     def mkdir(path: str) -> FsNode {
-        (parent_path, _, name) = path.rpartition("/");
-        holder = self.resolve(parent_path or "/");
+        parts = path.rpartition("/");
+        holder = self.resolve(parts[0] or "/");
         assert holder is not None, f"missing parent for {path}";
-        fresh = FsNode(name=name, key=path, is_dir=True);
+        fresh = FsNode(name=parts[2], key=path, is_dir=True);
         holder +>:Contains:+> fresh;
         self.index[path] = fresh;
         return fresh;
     }
 
     def touch(path: str) -> FsNode {
-        (parent_path, _, name) = path.rpartition("/");
-        holder = self.resolve(parent_path or "/");
+        parts = path.rpartition("/");
+        holder = self.resolve(parts[0] or "/");
         assert holder is not None, f"missing parent for {path}";
-        fresh = FsNode(name=name, key=path);
+        fresh = FsNode(name=parts[2], key=path);
         holder +>:Contains:+> fresh;
         self.index[path] = fresh;
         return fresh;
@@ -102,8 +102,8 @@ obj FileSystem {
         doomed = scan.doomed;
         spared = scan.spared;
 
-        (parent_path, _, _) = path.rpartition("/");
-        holder = self.resolve(parent_path or "/");
+        parts = path.rpartition("/");
+        holder = self.resolve(parts[0] or "/");
         assert holder is not None;
 
         # Phase APPLY -- all mutation happens after the walk has finished.
@@ -146,11 +146,11 @@ obj FileSystem {
     }
 
     def ls(path: str) -> list[str] | None {
-        entry = self.resolve(path);
-        if entry is None {
+        nd = self.resolve(path);
+        if nd is None {
             return None;
         }
-        kids = [entry ->:Contains:->] as list[FsNode];
+        kids = [nd ->:Contains:->] as list[FsNode];
         return sorted(c.name for c in kids);
     }
 

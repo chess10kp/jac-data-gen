@@ -185,7 +185,6 @@ def descendants(h: Hierarchy, name: str) -> list[str] {
     }
     return sorted(out);
 }
-
 test "close cascade reaches the whole subtree once" {
     h = build_tree(["root", "eng", "sci", "ml", "infra", "physics"], [("root", "eng"), ("root", "sci"), ("eng", "ml"), ("eng", "infra"), ("sci", "physics")]);
     assert close_queue(h, "root") == ["eng", "infra", "ml", "physics", "root", "sci"];
@@ -235,9 +234,18 @@ test "corrupt parent cycle terminates" {
     h = build_tree(["x", "y"], []);
     xn = h.resolve("x");
     yn = h.resolve("y");
+    if xn is None or yn is None {
+        assert False, "expected nodes x and y";
+        return;
+    }
     xn +>:Subqueue:+> yn;
     yn +>:Subqueue:+> xn;
-    assert sorted(_subtree_names(h, "x")) == ["x", "y"];
+    sn = _subtree_names(h, "x");
+    if sn is None {
+        assert False, "expected subtree for x";
+        return;
+    }
+    assert sorted(sn) == ["x", "y"];
     w = xn spawn AncestorStates(visited={});
     assert not w.closed_ancestor;
 }

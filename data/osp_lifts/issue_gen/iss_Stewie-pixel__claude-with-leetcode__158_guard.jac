@@ -1,122 +1,268 @@
 """
-Idiomatic OSP lift of Stewie-pixel/claude-with-leetcode#158
-(Reconstruct Itinerary / Hierholzer Eulerian path with lexical greedy).
-
-Python machinery replaced: defaultdict adjacency heaps + explicit stack ->
-Airport nodes whose sorted `dests` lists are consumed in place by the
-iterative Hierholzer loop (pop-min = heap pop).
+Stewie-pixel/claude-with-leetcode#158 — Reconstruct Itinerary / Eulerian path.
 """
+
 node Airport {
     has code: str;
-    has dests: list[str] = [];
+    has remaining: dict[str, int] = {};
 }
 
-# Build the ticket multigraph; each origin keeps a sorted multiset of dests.
-def build_graph(tk: list[tuple[str, str]]) -> dict[str, Airport] {
-    nodes: dict[str, Airport] = {};
-    for t in tk {
-        u: str = t[0];
-        v: str = t[1];
-        if u not in nodes {
-            nd = Airport(code=u);
-            root ++> nd;
-            nodes[u] = nd;
+edge Flight {}
+
+walker HierWalk {
+    has route: list[str] = [];
+    has claimed: dict[str, bool] = {};
+    has code_map: dict[str, Airport] = {};
+
+    can walk with Airport entry {
+        picked: bool = True;
+        while picked {
+            picked = False;
+            best: str = "";
+            for dc in here.remaining {
+                cnt = here.remaining[dc];
+                if cnt > 0 {
+                    claim_key: str = here.code + ">" + dc + ">" + str(cnt);
+                    if claim_key not in self.claimed {
+                        if best == "" or dc < best {
+                            best = dc;
+                            picked = True;
+                        }
+                    }
+                }
+            }
+            if picked {
+                claim_key2: str = here.code + ">" + best + ">" + str(here.remaining[best]);
+                self.claimed[claim_key2] = True;
+                here.remaining[best] -= 1;
+                child = self.code_map[best];
+                visit :0: [child];
+            }
         }
-        if v not in nodes {
-            nd2 = Airport(code=v);
-            root ++> nd2;
-            nodes[v] = nd2;
-        }
-        nodes[u].dests.append(v);
+        self.route.append(here.code);
+        print("hier", here.code, self.route);
     }
-    for code in sorted(nodes.keys()) {
-        nodes[code].dests = sorted(nodes[code].dests);
-    }
-    return nodes;
 }
 
-# Hierholzer: follow smallest lexical unused edge until stuck, pop to path.
-def reconstruct_itinerary(tk: list[tuple[str, str]]) -> list[str] {
-    nodes: dict[str, Airport] = build_graph(tk);
-    start: Airport | None = nodes.get("JFK");
-    if start is None {
-        # Unknown-start tolerance: itinerary is just the fixed origin.
-        return ["JFK"];
-    }
-    stack: list[Airport] = [start];
-    path: list[str] = [];
-    while len(stack) > 0 {
-        cur: Airport = stack[-1];
-        if len(cur.dests) > 0 {
-            nxt_code: str = cur.dests.pop(0);
-            stack.append(nodes[nxt_code]);
-        } else {
-            dead: Airport = stack.pop();
-            path.append(dead.code);
-        }
-    }
-    out: list[str] = [];
-    i: int = len(path) - 1;
-    while i >= 0 {
-        out.append(path[i]);
-        i -= 1;
-    }
-    return out;
-}
+walker DemoWalk {
+    has claimed: dict[str, bool] = {};
 
-# Demo walker: replays a finished itinerary over the graph, printing legs.
-walker Traveler {
-    has itin: list[str] = [];
-    has nodes: dict[str, Airport] = {};
-    has pos: int = 0;
-    can fly with Airport entry {
-        print("leg", self.pos, "->", here.code);
-        self.pos += 1;
-        if self.pos < len(self.itin) {
-            visit self.nodes[self.itin[self.pos]];
+    can probe with Airport entry {
+        if here.code in self.claimed {
+            skip;
+        }
+        self.claimed[here.code] = True;
+        print("demo", here.code);
+        kids: list[Airport] = [here ->:Flight:->][?:Airport];
+        if len(kids) > 0 {
+            visit :0: kids;
         } else {
             disengage;
         }
     }
 }
 
+def eulerian_path(start: str, edges: list[tuple[str, str]]) -> list[str] {
+    code_map: dict[str, Airport] = {};
+    for pair in edges {
+        u = pair[0];
+        v = pair[1];
+        if u not in code_map {
+            nd_u = Airport(code=u);
+            root ++> nd_u;
+            code_map[u] = nd_u;
+        }
+        if v not in code_map {
+            nd_v = Airport(code=v);
+            root ++> nd_v;
+            code_map[v] = nd_v;
+        }
+        src = code_map[u];
+        dst = code_map[v];
+        src +>:Flight:+> dst;
+        if v not in src.remaining {
+            src.remaining[v] = 0;
+        }
+        src.remaining[v] += 1;
+    }
+    if start not in code_map {
+        return [start];
+    }
+    start_node = code_map[start];
+    w = start_node spawn HierWalk(route=[], claimed={}, code_map=code_map);
+    out: list[str] = [];
+    idx = len(w.route) - 1;
+    while idx >= 0 {
+        out.append(w.route[idx]);
+        idx -= 1;
+    }
+    return out;
+}
+
+def find_itinerary(tickets: list[list[str]]) -> list[str] {
+    edges: list[tuple[str, str]] = [];
+    for ticket in tickets {
+        edges.append((ticket[0], ticket[1]));
+    }
+    return eulerian_path("JFK", edges);
+}
+
 with entry {
-    tk: list[tuple[str, str]] = [("JFK", "SFO"), ("JFK", "ATL"), ("SFO", "ATL"), ("ATL", "JFK"), ("ATL", "SFO")];
-    it = reconstruct_itinerary(tk);
-    print("itinerary:", it);
-    nodes = build_graph(tk);
-    st: Airport | None = nodes.get(it[0]);
-    if st is not None {
-        root spawn Traveler(itin=it, nodes=nodes);
+    demo_a = Airport(code="JFK");
+    root ++> demo_a;
+    demo_a spawn DemoWalk(claimed={});
+}
+
+"""
+Stewie-pixel/claude-with-leetcode#158 — Reconstruct Itinerary / Eulerian path.
+"""
+
+node Airport {
+    has code: str;
+    has remaining: dict[str, int] = {};
+}
+
+edge Flight {}
+
+walker HierWalk {
+    has route: list[str] = [];
+    has claimed: dict[str, bool] = {};
+    has code_map: dict[str, Airport] = {};
+
+    can walk with Airport entry {
+        picked: bool = True;
+        while picked {
+            picked = False;
+            best: str = "";
+            for dc in here.remaining {
+                cnt = here.remaining[dc];
+                if cnt > 0 {
+                    claim_key: str = here.code + ">" + dc + ">" + str(cnt);
+                    if claim_key not in self.claimed {
+                        if best == "" or dc < best {
+                            best = dc;
+                            picked = True;
+                        }
+                    }
+                }
+            }
+            if picked {
+                claim_key2: str = here.code + ">" + best + ">" + str(here.remaining[best]);
+                self.claimed[claim_key2] = True;
+                here.remaining[best] -= 1;
+                child = self.code_map[best];
+                visit :0: [child];
+            }
+        }
+        self.route.append(here.code);
+        print("hier", here.code, self.route);
     }
 }
 
-test "lexical_greedy_classic" {
-    tk = [("JFK", "SFO"), ("JFK", "ATL"), ("SFO", "ATL"), ("ATL", "JFK"), ("ATL", "SFO")];
-    assert reconstruct_itinerary(tk) == ["JFK", "ATL", "SFO", "ATL", "JFK", "SFO"];
+walker DemoWalk {
+    has claimed: dict[str, bool] = {};
+
+    can probe with Airport entry {
+        if here.code in self.claimed {
+            skip;
+        }
+        self.claimed[here.code] = True;
+        print("demo", here.code);
+        kids: list[Airport] = [here ->:Flight:->][?:Airport];
+        if len(kids) > 0 {
+            visit :0: kids;
+        } else {
+            disengage;
+        }
+    }
 }
 
-test "splice_backtrack_dead_end" {
-    tk = [("JFK", "KUL"), ("JFK", "NRT"), ("NRT", "JFK")];
-    assert reconstruct_itinerary(tk) == ["JFK", "NRT", "JFK", "KUL"];
+def eulerian_path(start: str, edges: list[tuple[str, str]]) -> list[str] {
+    code_map: dict[str, Airport] = {};
+    for pair in edges {
+        u = pair[0];
+        v = pair[1];
+        if u not in code_map {
+            nd_u = Airport(code=u);
+            root ++> nd_u;
+            code_map[u] = nd_u;
+        }
+        if v not in code_map {
+            nd_v = Airport(code=v);
+            root ++> nd_v;
+            code_map[v] = nd_v;
+        }
+        src = code_map[u];
+        dst = code_map[v];
+        src +>:Flight:+> dst;
+        if v not in src.remaining {
+            src.remaining[v] = 0;
+        }
+        src.remaining[v] += 1;
+    }
+    if start not in code_map {
+        return [start];
+    }
+    start_node = code_map[start];
+    w = start_node spawn HierWalk(route=[], claimed={}, code_map=code_map);
+    out: list[str] = [];
+    idx = len(w.route) - 1;
+    while idx >= 0 {
+        out.append(w.route[idx]);
+        idx -= 1;
+    }
+    return out;
 }
 
-test "parallel_tickets_multigraph" {
-    tk = [("JFK", "A"), ("A", "JFK"), ("JFK", "A")];
-    assert reconstruct_itinerary(tk) == ["JFK", "A", "JFK", "A"];
+def find_itinerary(tickets: list[list[str]]) -> list[str] {
+    edges: list[tuple[str, str]] = [];
+    for ticket in tickets {
+        edges.append((ticket[0], ticket[1]));
+    }
+    return eulerian_path("JFK", edges);
 }
 
-test "unknown_start_tolerant" {
-    tk = [("AAA", "BBB")];
-    assert reconstruct_itinerary(tk) == ["JFK"];
+with entry {
+    demo_a = Airport(code="JFK");
+    root ++> demo_a;
+    demo_a spawn DemoWalk(claimed={});
 }
 
-test "empty_tickets_returns_origin" {
-    tk: list[tuple[str, str]] = [];
-    assert reconstruct_itinerary(tk) == ["JFK"];
+test "empty_tickets" {
+    got = find_itinerary([]);
+    assert got == ["JFK"];
 }
 
-test "build_graph_sorted_multiset" {
-    nodes = build_graph([("JFK", "Z"), ("JFK", "A"), ("JFK", "A")]);
-    assert nodes["JFK"].dests == ["A", "A", "Z"];
+test "single_ticket" {
+    got = find_itinerary([["JFK", "AAA"]]);
+    assert got == ["JFK", "AAA"];
+}
+
+test "classic_three_leg" {
+    tix: list[list[str]] = [["MUC", "LHR"], ["JFK", "MUC"], ["LHR", "SFO"]];
+    got = find_itinerary(tix);
+    assert got == ["JFK", "MUC", "LHR", "SFO"];
+}
+
+test "lex_smallest_eulerian" {
+    tix: list[list[str]] = [
+        ["JFK", "SFO"],
+        ["JFK", "ATL"],
+        ["SFO", "ATL"],
+        ["ATL", "JFK"],
+        ["ATL", "SFO"]
+    ];
+    got = find_itinerary(tix);
+    assert got == ["JFK", "ATL", "JFK", "SFO", "ATL", "SFO"];
+}
+
+test "eulerian_unknown_start" {
+    got = eulerian_path("ZZZ", []);
+    assert got == ["ZZZ"];
+}
+
+test "parallel_edges_lex" {
+    edges: list[tuple[str, str]] = [("A", "B"), ("A", "B"), ("B", "A")];
+    got = eulerian_path("A", edges);
+    assert got == ["A", "B", "A", "B"];
 }

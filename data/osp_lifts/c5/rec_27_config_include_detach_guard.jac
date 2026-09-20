@@ -1,9 +1,19 @@
-"""Guard for rec_27_config_include_detach -- candidate OSP lift inlined
-verbatim (same-prefix sibling imports are unreliable across jac's native
-seam), plus behavioral tests: shared base detached not destroyed,
-exclusive chain removed with snapshots, stale/unknown include tolerance.
-"""
+"""Idiomatic OSP lift: config include-tree cascade removal (category C5).
 
+Two-phase mutation protocol (OSP_IDIOMIZE_TASK.md §5.5):
+
+Phase COLLECT -- `IncludeScan` walks `Includes` edges from the requested
+section and gathers doomed sections plus their resolved parameter maps
+into typed `has` fields. A base still inherited by a surviving section
+(`included_by > 1`) is a shared boundary: it is recorded as detached, not
+destroyed, and never descended past. The seen-guard is the once-only
+diamond guard and the explicit cycle policy; `skip;` preserves siblings.
+
+Phase APPLY -- outside any walk: dying includers release their counts,
+doomed sections are disconnected and destroyed, and one registry sweep
+drops stale include entries. Kept semantics: unknown names are a silent
+no-op; snapshots reflect own-params-win resolution.
+"""
 
 node CfgSection {
     has name: str;
@@ -42,7 +52,7 @@ obj ConfigStore {
     }
 
     """Make *name* inherit *base_name*; unknown refs tolerated (refused)."""
-    def include(name: str, base_name: str) -> bool {
+    def `include(name: str, base_name: str) -> bool {
         sec = self.sections.get(name);
         base = self.sections.get(base_name);
         if sec is None or base is None {
@@ -132,6 +142,7 @@ def load_graph(spec: list[tuple[str, dict[str, str]]],
     }
     return store;
 }
+
 
 test "shared_base_detached_not_destroyed" {
     store = load_graph(

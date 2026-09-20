@@ -1,110 +1,99 @@
-# Lifting rust-lang/rust#69684 — recursive fs::read_dir_all as OSP traversal.
-# Filesystem modeled as a graph: DirEntry nodes, Contains edges, walker does
-# the recursive enumeration with a claim-map for cycle safety.
+"""rust-lang/rust#69684 — recursive directory listing lifted to OSP graph walk."""
 
-node DirEntry {
-    has path: str;
-    has is_dir: bool = False;
+node Dir {
+  has cid: str;
+  has path: str;
 }
 
-edge Contains;
-
-obj FsTree {
-    has index: dict[str, DirEntry] = {};
-
-    def add_node(path: str, is_dir: bool, parent_path: str | None = None) -> DirEntry {
-        nd = DirEntry(path=path, is_dir=is_dir);
-        self.index[path] = nd;
-        if parent_path is not None {
-            par = self.index.get(parent_path, None);
-            if par is not None {
-                par +>:Contains:+> nd;
-            }
-        }
-        return nd;
-    }
-
-    def link(path_a: str, path_b: str) -> bool {
-        # extra edge (cycle/diamond injection for adversarial traversal)
-        a = self.index.get(path_a, None);
-        b = self.index.get(path_b, None);
-        if a is None or b is None {
-            return False;
-        }
-        a +>:Contains:+> b;
-        return True;
-    }
-
-    def get(path: str) -> DirEntry | None {
-        return self.index.get(path, None);
-    }
+node File {
+  has cid: str;
+  has path: str;
 }
 
-# non-recursive counterpart: immediate children, sorted
-def read_dir(tree: FsTree, path: str) -> list[str] {
-    nd = tree.get(path);
-    if nd is None {
-        return [];
-    }
-    kids: list[DirEntry] = [nd ->:Contains:->][?:DirEntry];
-    names: list[str] = [];
-    for ch in kids {
-        names.append(ch.path);
-    }
-    names.sort();
-    return names;
+edge Child {}
+
+def read_dir(root_id: str, store: dict[str, object]) -> list[str] {
+  if root_id not in store {
+    return [];
+  }
+  parent = store[root_id];
+  kids: list[str] = [];
+  for ch in [parent ->:Child:->][?:Dir] {
+    kids.append(ch.path);
+  }
+  for ch in [parent ->:Child:->][?:File] {
+    kids.append(ch.path);
+  }
+  return sorted(kids);
 }
 
-walker ReadAll {
-    has claimed: dict[str, bool] = {};
-    has out: list[str] = [];
+walker ReadDirAllW {
+  has claimed: dict[str, bool] = {};
+  has found: list[str] = [];
+  has root_id: str = "";
 
-    can step with DirEntry entry {
-        if here.path in self.claimed {
-            skip;  # cycle policy: claim-map + skip, never disengage
-        }
-        self.claimed[here.path] = True;
-        self.out.append(here.path);
-        kids: list[DirEntry] = [here ->:Contains:->][?:DirEntry];
-        pairs: list[tuple] = [];
-        for ch in kids {
-            pairs.append((ch.path, ch));
-        }
-        pairs.sort();
-        ordered: list[DirEntry] = [];
-        for pr in pairs {
-            ordered.append(pr[1]);
-        }
-        visit ordered else { disengage; }
+  can walk_dir with Dir entry {
+    if here.cid in self.claimed {
+      skip;
     }
+    self.claimed[here.cid] = True;
+    if here.cid != self.root_id {
+      self.found.append(here.path);
+    }
+    nbrs: list[object] = [];
+    for ch in [here ->:Child:->][?:Dir] {
+      nbrs.append(ch);
+    }
+    for ch in [here ->:Child:->][?:File] {
+      nbrs.append(ch);
+    }
+    if len(nbrs) > 0 {
+      visit :0: nbrs;
+    } else {
+      disengage;
+    }
+  }
+
+  can walk_file with File entry {
+    if here.cid in self.claimed {
+      skip;
+    }
+    self.claimed[here.cid] = True;
+    self.found.append(here.path);
+    disengage;
+  }
 }
 
-# recursive counterpart: full depth-first enumeration of all reachable entries
-def read_dir_all(tree: FsTree, path: str) -> list[str] {
-    nd = tree.get(path);
-    if nd is None {
-        return [];  # unknown-id tolerance matches Python source
-    }
-    w = nd spawn ReadAll(claimed={}, out=[]);
-    res: list[str] = w.out;
-    res.sort();
-    return res;
+def read_dir_all(root_id: str, store: dict[str, object]) -> list[str] {
+  if root_id not in store {
+    return [];
+  }
+  root_node = store[root_id];
+  w = root_node spawn ReadDirAllW(root_id=root_id);
+  print(w.found);
+  return sorted(w.found);
 }
 
-walker Demo {
-    can go with root entry {
-        tree = FsTree();
-        tree.add_node("proj", True, None);
-        tree.add_node("proj/src", True, "proj");
-        tree.add_node("proj/src/lib.rs", False, "proj/src");
-        tree.add_node("proj/readme.md", False, "proj");
-        everything: list[str] = read_dir_all(tree, "proj");
-        print("read_dir_all:", everything);
-        print("read_dir:", read_dir(tree, "proj"));
-        print("missing:", read_dir_all(tree, "nope"));
-    }
+def make_sample_tree -> dict[str, object] {
+  store: dict[str, object] = {};
+  d0 = Dir(cid="d0", path="/proj");
+  d1 = Dir(cid="d1", path="/proj/src");
+  f0 = File(cid="f0", path="/proj/README.md");
+  f1 = File(cid="f1", path="/proj/src/main.rs");
+  root ++> d0;
+  d0 +>:Child:+> d1;
+  d0 +>:Child:+> f0;
+  d1 +>:Child:+> f1;
+  store["d0"] = d0;
+  store["d1"] = d1;
+  store["f0"] = f0;
+  store["f1"] = f1;
+  return store;
 }
 
 with entry {
-    root spawn Demo();
+  st: dict[str, object] = make_sample_tree();
+  w = root spawn ReadDirAllW(root_id="d0");
+  print(w.found);
+  print(read_dir("d0", st));
 }

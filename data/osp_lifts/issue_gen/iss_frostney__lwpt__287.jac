@@ -1,124 +1,164 @@
-"""Idiomatic OSP lift for frostney/lwpt#287."""
-
-node Project {
-    has name: str;
-    has development_root: bool = True;
-    has regular: dict[str, str] = {};
-    has development: dict[str, str] = {};
-}
+"""frostney/lwpt#287 — dev-dependencies local resolver graph."""
 
 node Package {
-    has name: str;
+    has pid: str;
 }
 
-edge Runtime {}
-edge Development {}
-edge Workspace {}
+edge Depends {}
+edge DevDepends {}
 
-def canonical(name: str) -> str {
-    return name.lower();
-}
-
-def new_project(name: str, development_root: bool = True) -> Project {
-    return Project(name=name, development_root=development_root);
-}
-
-def new_package(name: str) -> Package {
-    return Package(name=name);
-}
-
-def attach_workspace(root_project: Project, workspace: Project) -> None {
-    workspace.development_root = True;
-    root_project +>:Workspace:+> workspace;
-}
-
-def attach_runtime(owner: Package, dependency: Package) -> None {
-    owner +>:Runtime:+> dependency;
-}
-
-def manifest_add(project: Project, package: Package, source: str, dev: bool = False) -> None {
-    key = canonical(package.name);
-    if dev {
-        if key in project.regular {
-            del project.regular[key];
-        }
-        project.development[key] = source;
-        project +>:Development:+> package;
-    } else {
-        if key in project.development {
-            del project.development[key];
-        }
-        project.regular[key] = source;
-        project +>:Runtime:+> package;
+def copy_dict(src: dict[str, str]) -> dict[str, str] {
+    out: dict[str, str] = {};
+    for k in src {
+        out[k] = src[k];
     }
+    return out;
 }
 
-def manifest_remove(project: Project, name: str) -> bool {
-    key = canonical(name);
-    if key in project.regular {
-        del project.regular[key];
-        return True;
+def drop_key_insensitive(d: dict[str, str], name: str) -> dict[str, str] {
+    out: dict[str, str] = {};
+    for k in d {
+        if k.lower() != name.lower() {
+            out[k] = d[k];
+        }
     }
-    if key in project.development {
-        del project.development[key];
-        return True;
+    return out;
+}
+
+def names_conflict(runtime: dict[str, str], dev: dict[str, str]) -> bool {
+    seen: dict[str, bool] = {};
+    for k in runtime {
+        key = k.lower();
+        if key in seen {
+            return True;
+        }
+        seen[key] = True;
+    }
+    for k in dev {
+        key = k.lower();
+        if key in seen {
+            return True;
+        }
+        seen[key] = True;
     }
     return False;
 }
 
-walker ResolvePackages {
+def dependency_section(runtime: dict[str, str], dev: dict[str, str], name: str) -> str | None {
+    for k in runtime {
+        if k.lower() == name.lower() {
+            return "runtime";
+        }
+    }
+    for k in dev {
+        if k.lower() == name.lower() {
+            return "dev";
+        }
+    }
+    return None;
+}
+
+def add_dependency(
+    runtime: dict[str, str],
+    dev: dict[str, str],
+    name: str,
+    source: str,
+    is_dev: bool,
+) -> tuple[dict[str, str], dict[str, str]] {
+    rt = drop_key_insensitive(runtime, name);
+    dv = drop_key_insensitive(dev, name);
+    if is_dev {
+        dv[name] = source;
+    } else {
+        rt[name] = source;
+    }
+    return (rt, dv);
+}
+
+def remove_dependency(
+    runtime: dict[str, str],
+    dev: dict[str, str],
+    name: str,
+) -> tuple[dict[str, str], dict[str, str], str | None] {
+    sec = dependency_section(runtime, dev, name);
+    if sec is None {
+        return (runtime, dev, None);
+    }
+    if sec == "runtime" {
+        return (drop_key_insensitive(runtime, name), dev, sec);
+    }
+    return (runtime, drop_key_insensitive(dev, name), sec);
+}
+
+def pkg(pid: str) -> Package {
+    p = Package(pid=pid);
+    root ++> p;
+    return p;
+}
+
+def link_runtime(src: Package, dst: Package) {
+    src +>:Depends:+> dst;
+}
+
+def link_dev(src: Package, dst: Package) {
+    src +>:DevDepends:+> dst;
+}
+
+walker ResolveWalker {
     has claimed: dict[str, bool] = {};
-    has found: list[str] = [];
+    has workspaces: dict[str, bool] = {};
+    has order: list[str] = [];
+    has start: Package;
 
-    can step_project with Project entry {
-        if here.cid in self.claimed {
-            skip;
-        }
-        self.claimed[here.cid] = True;
-        print(here.name);
-
-        for workspace in [here ->:Workspace:->][?:Project] {
-            visit :0: [workspace];
-        }
-        for package in [here ->:Runtime:->][?:Package] {
-            if canonical(package.name) in here.regular {
-                visit :0: [package];
-            }
-        }
-        if here.development_root {
-            for package in [here ->:Development:->][?:Package] {
-                if canonical(package.name) in here.development {
-                    visit :0: [package];
-                }
-            }
-        }
+    can launch with Root entry {
+        visit :0: [self.start];
     }
 
-    can step_package with Package entry {
-        if here.cid in self.claimed {
+    can walk_pkg with Package entry {
+        if here.pid in self.claimed {
             skip;
         }
-        self.claimed[here.cid] = True;
-        self.found.append(here.name);
-        print(here.name);
-
-        for dependency in [here ->:Runtime:->][?:Package] {
-            visit :0: [dependency];
+        self.claimed[here.pid] = True;
+        self.order.append(here.pid);
+        print("visit", here.pid);
+        kids: list[Package] = [];
+        for ch in [here ->:Depends:->][?:Package] {
+            kids.append(ch);
         }
+        if here.pid in self.workspaces {
+            for ch in [here ->:DevDepends:->][?:Package] {
+                kids.insert(0, ch);
+            }
+        }
+        visit :0: kids;
     }
 }
 
-def resolve_packages(root_project: Project) -> list[str] {
-    w = root_project spawn ResolvePackages(claimed={});
-    return sorted(w.found);
-}
-
-walker Demo {
-    can start with entry {
-        print("LWPT development dependency resolver");
+def resolve_local(start: Package, workspace_ids: list[str]) -> list[str] {
+    ws: dict[str, bool] = {};
+    for wid in workspace_ids {
+        ws[wid] = True;
     }
+    w = root spawn ResolveWalker(
+        claimed={},
+        workspaces=ws,
+        order=[],
+        start=start,
+    );
+    return w.order;
 }
 
 with entry {
-    root spawn Demo;
+    graph_root = pkg("root");
+    ws_pkg = pkg("ws");
+    lib_pkg = pkg("lib");
+    test_pkg = pkg("testing");
+    shared_pkg = pkg("shared");
+    link_runtime(graph_root, ws_pkg);
+    link_dev(ws_pkg, test_pkg);
+    link_runtime(lib_pkg, shared_pkg);
+    link_dev(lib_pkg, test_pkg);
+    link_runtime(ws_pkg, lib_pkg);
+    order = resolve_local(graph_root, ["root", "ws"]);
+    print("demo", order);
 }

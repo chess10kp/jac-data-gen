@@ -1,74 +1,178 @@
-# openai/codex#42032 — runaway recursive subagent tree: bounded delegation
-# budget, descendant counting, and cascading cancellation (claim-map cycles).
+"""Recursive subagent lifecycle — openai/codex#42032."""
 
-node AgentTask {
-    has aid: str;
-    has budget: int = 1;
-    has status: str = "running";
+node Agent {
+    has cid: str;
+    has state: str = "running";
+    has quota_used: int = 0;
 }
 
 edge Delegates {}
 
-walker Spawner {
+walker FindAgent {
+    has target: str;
+    has found: Agent | None = None;
     has claimed: dict[str, bool] = {};
-    can spawn_step with AgentTask entry {
-        if here.aid in self.claimed { skip; }
-        self.claimed[here.aid] = True;
-        if here.budget > 0 and here.status == "running" {
-            kid: AgentTask = AgentTask(aid=here.aid + ".c" + str(len(self.claimed)), budget=here.budget - 1);
-            here +>:Delegates:+> kid;
-            visit [kid];
+    can seek with Agent entry {
+        if here.cid in self.claimed { skip; }
+        self.claimed[here.cid] = True;
+        if here.cid == self.target {
+            self.found = here;
+            print("found", here.cid);
+            disengage;
+        }
+        kids: list[Agent] = [here ->:Delegates:->][?:Agent];
+        for ch in kids {
+            visit :0: [ch];
+        }
+        print("seek", here.cid);
+    }
+}
+
+walker CountDesc {
+    has claimed: dict[str, bool] = {};
+    has count: int = 0;
+    can tally with Agent entry {
+        if here.cid in self.claimed { skip; }
+        self.claimed[here.cid] = True;
+        self.count += 1;
+        kids: list[Agent] = [here ->:Delegates:->][?:Agent];
+        for ch in kids {
+            visit :0: [ch];
+        }
+        print("tally", here.cid, self.count);
+    }
+}
+
+walker CollectAgents {
+    has claimed: dict[str, bool] = {};
+    has nodes: list[Agent] = [];
+    can gather with Agent entry {
+        if here.cid in self.claimed { skip; }
+        self.claimed[here.cid] = True;
+        self.nodes.append(here);
+        kids: list[Agent] = [here ->:Delegates:->][?:Agent];
+        for ch in kids {
+            visit :0: [ch];
+        }
+        print("gather", here.cid);
+    }
+}
+
+walker CollectRunning {
+    has claimed: dict[str, bool] = {};
+    has root_id: str = "";
+    has ids: list[str] = [];
+    can harvest with Agent entry {
+        if here.cid in self.claimed { skip; }
+        self.claimed[here.cid] = True;
+        if here.state == "running" and here.cid != self.root_id {
+            self.ids.append(here.cid);
+        }
+        kids: list[Agent] = [here ->:Delegates:->][?:Agent];
+        for ch in kids {
+            visit :0: [ch];
+        }
+        print("harvest", here.cid);
+    }
+}
+
+walker LifecycleDemo {
+    has claimed: dict[str, bool] = {};
+    can start {
+        tops: list[Agent] = [-->][?:Agent];
+        for t in tops {
+            visit :0: [t];
+        }
+    }
+    can demo with Agent entry {
+        if here.cid in self.claimed { skip; }
+        self.claimed[here.cid] = True;
+        print("demo", here.cid, here.state);
+        kids: list[Agent] = [here ->:Delegates:->][?:Agent];
+        for ch in kids {
+            visit :0: [ch];
         }
     }
 }
 
-walker CountTree {
-    has claimed: dict[str, bool] = {};
-    can count_step with AgentTask entry {
-        if here.aid in self.claimed { skip; }
-        self.claimed[here.aid] = True;
-        visit [here ->:Delegates:->][?:AgentTask];
+def find_agent(cid: str) -> Agent | None {
+    tops: list[Agent] = [root -->][?:Agent];
+    for top in tops {
+        w: FindAgent = top spawn FindAgent(target=cid, claimed={});
+        if w.found is not None {
+            return w.found;
+        }
     }
+    return None;
 }
 
-walker CancelTree {
-    has claimed: dict[str, bool] = {};
-    has cancelled: list[str] = [];
-    can cancel_step with AgentTask entry {
-        if here.aid in self.claimed { skip; }
-        self.claimed[here.aid] = True;
-        here.status = "cancelled";
-        self.cancelled.append(here.aid);
-        visit [here ->:Delegates:->][?:AgentTask];
+def create_coordinator(coord_id: str) -> str {
+    coord: Agent = Agent(cid=coord_id);
+    root ++> coord;
+    print("create_coordinator", coord_id);
+    return coord_id;
+}
+
+def delegate(parent_cid: str, child_cid: str) -> bool {
+    parent: Agent | None = find_agent(parent_cid);
+    if parent is None { return False; }
+    existing: Agent | None = find_agent(child_cid);
+    if existing is not None { return False; }
+    child: Agent = Agent(cid=child_cid);
+    parent +>:Delegates:+> child;
+    print("delegate", parent_cid, child_cid);
+    return True;
+}
+
+def complete_agent(cid: str) -> bool {
+    agent: Agent | None = find_agent(cid);
+    if agent is None { return False; }
+    agent.state = "completed";
+    print("complete", cid);
+    return True;
+}
+
+def count_descendants(coord_cid: str) -> int {
+    coord: Agent | None = find_agent(coord_cid);
+    if coord is None { return 0; }
+    w: CountDesc = coord spawn CountDesc(claimed={});
+    return w.count - 1;
+}
+
+def cancel_recursive(coord_cid: str) -> list[str] {
+    coord: Agent | None = find_agent(coord_cid);
+    if coord is None { return []; }
+    w: CollectAgents = coord spawn CollectAgents(claimed={});
+    cancelled: list[str] = [];
+    for nd in w.nodes {
+        if nd.state == "running" {
+            nd.state = "cancelled";
+            cancelled.append(nd.cid);
+        }
     }
+    cancelled.sort();
+    print("cancel_recursive", coord_cid, len(cancelled));
+    return cancelled;
 }
 
-# Launch a review tree: budget bounds total descendants per branch.
-def spawn_review_tree(coordinator: AgentTask, budget: int) -> int {
-    coordinator.budget = budget;
-    wk = coordinator spawn Spawner(claimed={});
-    return len(wk.claimed);
-}
-
-# Count every agent reachable from root, diamonds counted once.
-def count_descendants(root: AgentTask) -> int {
-    wk = root spawn CountTree(claimed={});
-    return len(wk.claimed);
-}
-
-# Emergency stop: cancel the whole descendant tree, return sorted ids.
-def cancel_descendant_tree(root: AgentTask) -> list[str] {
-    wk = root spawn CancelTree(claimed={});
-    return sorted(wk.cancelled);
-}
-
-# Manual delegation: refused when parent exhausted or already cancelled.
-def create_descendant(parent: AgentTask, aid: str) -> AgentTask | None {
-    if parent.budget <= 0 or parent.status != "running" {
-        return None;
+def running_orphans(coord_cid: str) -> list[str] {
+    coord: Agent | None = find_agent(coord_cid);
+    if coord is None { return []; }
+    if coord.state != "completed" { return []; }
+    w: CollectRunning = coord spawn CollectRunning(claimed={}, root_id=coord_cid);
+    out: list[str] = [];
+    for cid in w.ids {
+        out.append(cid);
     }
-    parent.budget = parent.budget - 1;
-    kid: AgentTask = AgentTask(aid=aid, budget=parent.budget);
-    parent +>:Delegates:+> kid;
-    return kid;
+    out.sort();
+    return out;
+}
+
+def within_delegation_budget(coord_cid: str, max_total: int) -> bool {
+    total: int = count_descendants(coord_cid);
+    return total < max_total;
+}
+
+with entry {
+    root spawn LifecycleDemo(claimed={});
 }

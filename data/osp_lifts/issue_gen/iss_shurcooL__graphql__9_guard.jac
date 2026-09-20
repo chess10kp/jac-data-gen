@@ -1,163 +1,252 @@
-# Lift of shurcooL/graphql#9: bounded-depth recursive query rendering.
-# Node graph of query fields; a walker expands children up to a max depth.
+"""Synthetic before-code target: shurcooL/graphql#9."""
+
+glob SCALAR_SET = ["Boolean", "Float", "ID", "Int", "String"];
+
+node GType {
+    has tname: str;
+}
 
 node Field {
-    has name: str;
-    has cid: str;
+    has fname: str;
+    has ftype: str;
 }
 
-edge Child {}
+edge Owns {}
+edge Refs {}
 
-# Render a field subtree as a GraphQL-style query string, bounded by depth.
-def write_query(root: Field, max_depth: int) -> str {
-    return expand_field(root, 0, max_depth);
+def is_scalar_type(ftype: str) -> bool {
+    for s in SCALAR_SET {
+        if ftype == s {
+            return True;
+        }
+    }
+    return False;
 }
 
-# Public: build a small comment tree and render it recursively.
-def build_tree(names: list[str]) -> list[Field] {
-    fields: list[Field] = [];
-    for nm in names {
-        f = Field(name=nm, cid=nm);
-        fields.append(f);
+def sort_fields(items: list[Field]) -> list[Field] {
+    out: list[Field] = list(items);
+    n = len(out);
+    i = 0;
+    while i < n {
+        j = 0;
+        while j + 1 < n {
+            if out[j].fname > out[j + 1].fname {
+                tmp = out[j];
+                out[j] = out[j + 1];
+                out[j + 1] = tmp;
+            }
+            j += 1;
+        }
+        i += 1;
     }
-    for i in range(len(fields) - 1) {
-        fields[i] +>:Child:+> fields[i + 1];
-    }
-    return fields;
+    return out;
 }
 
-# Public: connect children edges from a parent to a list of nodes.
-def link_children(parent: Field, kids: list[Field]) -> None {
-    for k in kids {
-        parent +>:Child:+> k;
+def make_schema(type_fields: dict[str, list[tuple[str, str]]]) -> dict {
+    idx: dict[str, GType] = {};
+    graph_root = GType(tname="__root__");
+    root ++> graph_root;
+    for tname in sorted(type_fields.keys()) {
+        gt = GType(tname=tname);
+        graph_root ++> gt;
+        idx[tname] = gt;
     }
+    for tname in sorted(type_fields.keys()) {
+        gt = idx[tname];
+        pairs = type_fields[tname];
+        for pair in pairs {
+            fname = pair[0];
+            ftype = pair[1];
+            fd = Field(fname=fname, ftype=ftype);
+            gt +>:Owns:+> fd;
+            if not is_scalar_type(ftype) {
+                if ftype in idx {
+                    tgt = idx[ftype];
+                    fd +>:Refs:+> tgt;
+                }
+            }
+        }
+    }
+    store: dict = {};
+    store["root"] = graph_root;
+    store["index"] = idx;
+    return store;
 }
 
-# Public: list direct child names of a field.
-def child_names(f: Field) -> list[str] {
-    out: list[str] = [];
-    for ch in [f ->:Child:->][?:Field] {
-        out.append(ch.name);
-    }
-    return sorted(out);
-}
-
-# Recursive expansion with explicit depth bound (no claim-map needed;
-# depth cap is the termination policy for tree-shaped queries).
-def expand_field(f: Field, depth: int, max_depth: int) -> str {
-    parts: str = f.name;
-    if depth >= max_depth {
-        return parts;
-    }
-    kids: list[Field] = [f ->:Child:->][?:Field];
-    inner: list[str] = [];
-    for ch in kids {
-        inner.append(expand_field(ch, depth + 1, max_depth));
-    }
-    if len(inner) == 0 {
-        return parts;
-    }
-    body: str = "";
-    for i, p in enumerate(inner) {
-        if i > 0 { body += " "; }
-        body += p;
-    }
-    return parts + " { " + body + " }";
-}
-
-walker ExpandQuery {
-    has max_depth: int = 2;
+walker RenderWalker {
     has claimed: dict[str, bool] = {};
-    has visited_order: list[str] = [];
+    has depth: int = 0;
+    has max_depth: int = 1;
+    has buf: list[str] = [];
 
-    can step with Field entry {
+    can render with GType entry {
         if here.cid in self.claimed {
             skip;
         }
         self.claimed[here.cid] = True;
-        self.visited_order.append(here.name);
-        kids: list[Field] = [here ->:Child:->][?:Field];
-        filtered: list[Field] = [];
-        for k in kids {
-            if here.depth_of(k) <= self.max_depth {
-                filtered.append(k);
-            }
-        }
-        if len(filtered) == 0 {
+        if self.depth > self.max_depth {
             disengage;
         }
-        visit filtered;
+        fields: list[Field] = [];
+        for fd in [here ->:Owns:->][?:Field] {
+            fields.append(fd);
+        }
+        fields = sort_fields(fields);
+        for fd in fields {
+            if is_scalar_type(fd.ftype) {
+                self.buf.append(fd.fname);
+            } elif self.depth < self.max_depth {
+                targets: list[GType] = [];
+                for tg in [fd ->:Refs:->][?:GType] {
+                    targets.append(tg);
+                }
+                if len(targets) > 0 {
+                    sub = targets[0] spawn RenderWalker(
+                        claimed={},
+                        depth=self.depth + 1,
+                        max_depth=self.max_depth,
+                        buf=[]
+                    );
+                    inner = " ".join(sub.buf);
+                    if inner != "" {
+                        piece = fd.fname + " { " + inner + " }";
+                        self.buf.append(piece);
+                    }
+                }
+            }
+        }
+        print("render " + here.tname + " d=" + str(self.depth));
     }
+}
 
-    def depth_of(k: Field) -> int {
-        return 1;
+walker PathWalker {
+    has claimed: dict[str, bool] = {};
+    has depth: int = 0;
+    has max_depth: int = 1;
+    has prefix: str = "";
+    has paths: list[str] = [];
+
+    can collect with GType entry {
+        if here.cid in self.claimed {
+            skip;
+        }
+        self.claimed[here.cid] = True;
+        if self.depth > self.max_depth {
+            disengage;
+        }
+        fields: list[Field] = [];
+        for fd in [here ->:Owns:->][?:Field] {
+            fields.append(fd);
+        }
+        fields = sort_fields(fields);
+        for fd in fields {
+            path = fd.fname;
+            if self.prefix != "" {
+                path = self.prefix + "." + fd.fname;
+            }
+            if is_scalar_type(fd.ftype) {
+                self.paths.append(path);
+            } elif self.depth < self.max_depth {
+                targets: list[GType] = [];
+                for tg in [fd ->:Refs:->][?:GType] {
+                    targets.append(tg);
+                }
+                if len(targets) > 0 {
+                    sub = targets[0] spawn PathWalker(
+                        claimed={},
+                        depth=self.depth + 1,
+                        max_depth=self.max_depth,
+                        prefix=path,
+                        paths=[]
+                    );
+                    for p in sub.paths {
+                        self.paths.append(p);
+                    }
+                }
+            }
+        }
+        print("paths " + here.tname + " d=" + str(self.depth));
     }
 }
 
-# Public: bounded-depth walk from a root, returning visit order.
-def walk_bounded(root: Field, max_depth: int) -> list[str] {
-    wk = root spawn ExpandQuery(max_depth=max_depth, claimed={});
-    return wk.visited_order;
+def write_query(store: dict[str, any], root_type: str, max_depth: int = 1) -> str {
+    if max_depth < 0 {
+        max_depth = 0;
+    }
+    idx = store["index"] as dict[str, GType];
+    if root_type not in idx {
+        return "{ }";
+    }
+    gt = idx[root_type];
+    w = gt spawn RenderWalker(claimed={}, depth=0, max_depth=max_depth, buf=[]);
+    inner = " ".join(w.buf);
+    return "{ " + inner + " }";
 }
 
-with entry {
-    f0 = Field(name="root", cid="r0");
-    f1 = Field(name="a", cid="a1");
-    f2 = Field(name="b", cid="b2");
-    link_children(f0, [f1, f2]);
-    print(write_query(f0, 2));
-    print(walk_bounded(f0, 2));
+def selection_paths(store: dict[str, any], root_type: str, max_depth: int = 1) -> list[str] {
+    if max_depth < 0 {
+        max_depth = 0;
+    }
+    idx = store["index"] as dict[str, GType];
+    if root_type not in idx {
+        return [];
+    }
+    gt = idx[root_type];
+    w = gt spawn PathWalker(claimed={}, depth=0, max_depth=max_depth, prefix="", paths=[]);
+    return sorted(w.paths);
 }
 
-test "bounded_depth_stops_recursion" {
-    f0 = Field(name="m", cid="m0");
-    f1 = Field(name="c", cid="c1");
-    link_children(f0, [f1]);
-    link_children(f1, [f0]);
-    assert len(walk_bounded(f0, 1)) == 2;
-    assert len(walk_bounded(f0, 5)) == 2;
+def type_known(store: dict[str, any], type_name: str) -> bool {
+    idx = store["index"] as dict[str, GType];
+    return type_name in idx;
 }
 
-test "diamond_revisit_claim_map" {
-    f0 = Field(name="r", cid="r0");
-    fa = Field(name="a", cid="a0");
-    fb = Field(name="b", cid="b1");
-    fc = Field(name="c", cid="c2");
-    link_children(f0, [fa, fb]);
-    link_children(fa, [fc]);
-    link_children(fb, [fc]);
-    order = walk_bounded(f0, 3);
-    assert sorted(order) == ["a", "b", "c", "r"];
+test "write_query_scalar_fields" {
+    tf: dict[str, list[tuple[str, str]]] = {};
+    tf["Query"] = [("id", "ID"), ("title", "String")];
+    store = make_schema(tf);
+    assert write_query(store, "Query", 1) == "{ id title }";
 }
 
-test "adversarial_order_deep_before_wide" {
-    f0 = Field(name="r", cid="r0");
-    fd = Field(name="deep", cid="d0");
-    fw = Field(name="wide", cid="w0");
-    link_children(f0, [fd]);
-    link_children(fd, [f0]);
-    link_children(f0, [fw]);
-    order = walk_bounded(f0, 2);
-    assert order[0] == "r";
-    assert sorted(order) == ["deep", "r", "wide"];
+test "write_query_unknown_root" {
+    tf: dict[str, list[tuple[str, str]]] = {};
+    tf["Query"] = [("id", "ID")];
+    store = make_schema(tf);
+    assert write_query(store, "Missing", 1) == "{ }";
 }
 
-test "child_names_sorted_multiset" {
-    f0 = Field(name="p", cid="p0");
-    f1 = Field(name="z", cid="z0");
-    f2 = Field(name="a", cid="a0");
-    link_children(f0, [f1, f2]);
-    assert child_names(f0) == ["a", "z"];
+test "selection_paths_depth_two" {
+    tf: dict[str, list[tuple[str, str]]] = {};
+    tf["Query"] = [("user", "User")];
+    tf["User"] = [("name", "String"), ("posts", "Post")];
+    tf["Post"] = [("title", "String")];
+    store = make_schema(tf);
+    got = selection_paths(store, "Query", 2);
+    want: list[str] = ["user.name", "user.posts.title"];
+    assert got == want;
 }
 
-test "leaf_render_has_no_braces" {
-    leaf = Field(name="id", cid="l0");
-    assert write_query(leaf, 2) == "id";
+test "write_query_depth_one" {
+    tf: dict[str, list[tuple[str, str]]] = {};
+    tf["Query"] = [("user", "User")];
+    tf["User"] = [("name", "String"), ("posts", "Post")];
+    tf["Post"] = [("title", "String")];
+    store = make_schema(tf);
+    assert write_query(store, "Query", 1) == "{ user { name } }";
 }
 
-test "depth_zero_returns_name_only" {
-    f0 = Field(name="root", cid="r0");
-    f1 = Field(name="x", cid="x0");
-    link_children(f0, [f1]);
-    assert write_query(f0, 0) == "root";
+test "type_known" {
+    tf: dict[str, list[tuple[str, str]]] = {};
+    tf["Query"] = [("id", "ID")];
+    store = make_schema(tf);
+    assert type_known(store, "Query") == True;
+    assert type_known(store, "Ghost") == False;
+}
+
+test "max_depth_negative_clamps" {
+    tf: dict[str, list[tuple[str, str]]] = {};
+    tf["Query"] = [("user", "User"), ("id", "ID")];
+    tf["User"] = [("name", "String")];
+    store = make_schema(tf);
+    assert write_query(store, "Query", -1) == "{ id user }";
 }

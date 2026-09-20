@@ -1,122 +1,128 @@
-# iss_Stewie-pixel__claude-with-leetcode__157
-# LeetCode 2065: Maximum Path Quality of a Graph
-# A walk starts and ends at node 0 within maxTime; maximize the sum of
-# values of DISTINCT nodes visited. Backtracking: visit counts tell us
-# when a node is first entered (collect value) and left (restore state).
+"""Stewie-pixel/claude-with-leetcode#157 — Maximum Path Quality of a Graph."""
 
-node GNode {
-    has nid: int;
-    has value: int;
+node PQNode {
+    has idx: int = 0;
+    has node_val: int = 0;
 }
 
-edge HasEdge {
-    has cost: int;
+edge PQEdge {
+    has cost: int = 0;
 }
 
-# Build the adjacency graph and run the backtracking exploration.
-# Public API mirrors Python: maximalPathQuality(values, edges, maxTime)
-def maximalPathQuality(values: list[int], edges: list[tuple], max_time: int) -> int {
-    nodes: list[GNode | None] = [];
-    i: int = 0;
-    for i in range(len(values)) {
-        nd = GNode(nid=i, value=values[i]);
-        nodes.append(nd);
-    }
-    for e in edges {
-        u: int = e[0];
-        v: int = e[1];
-        t: int = e[2];
-        if u >= 0 and u < len(nodes) and v >= 0 and v < len(nodes) {
-            un = nodes[u];
-            vn = nodes[v];
-            un +>:HasEdge(cost=t):+> vn;
-            vn +>:HasEdge(cost=t):+> un;
-        }
-    }
-    w = nodes[0] spawn PathExplorer(max_time=max_time, best=values[0], time_used=0, collected=values[0]);
-    return w.best;
-}
-
-walker PathExplorer {
-    has max_time: int;
-    has best: int;
+walker PQSearch {
+    has max_time: int = 0;
     has time_used: int = 0;
     has collected: int = 0;
-    has visit_count: dict[int, int] = {};
-    has time_rem: dict[int, int] = {};
+    has best: int = 0;
+    has start_cid: str = "";
+    has visits: dict[str, int] = {};
+    has claimed: dict[str, bool] = {};
 
-    can explore with GNode entry {
-        nid: int = here.nid;
-        cnt: int = self.visit_count.get(nid, 0);
-        self.visit_count[nid] = cnt + 1;
-        if cnt == 0 and nid != 0 {
-            self.collected = self.collected + here.value;
-        }
-        if nid == 0 {
+    can dfs with PQNode entry {
+        if here.cid == self.start_cid {
             if self.collected > self.best {
                 self.best = self.collected;
             }
         }
-        kids: list[tuple] = [];
-        for e in [here ->:HasEdge:->] {
-            kid = e.target;
-            wgt: int = e.cost;
-            kids.append((kid, wgt));
-        }
-        for pair in kids {
-            kid = pair[0];
-            wgt: int = pair[1];
-            nt: int = self.time_used + wgt;
+        outs: list = [here ->:PQEdge->];
+        for ed in outs {
+            nxt_list: list[PQNode] = [ed ->:PQNode:->];
+            if len(nxt_list) == 0 {
+                continue;
+            }
+            nb = nxt_list[0];
+            ecost = ed.cost;
+            nt = self.time_used + ecost;
             if nt > self.max_time {
                 continue;
             }
+            cid = nb.cid;
+            prev: int = 0;
+            if cid in self.visits {
+                prev = self.visits[cid];
+            }
+            add: int = 0;
+            if prev == 0 {
+                add = nb.node_val;
+            }
+            self.visits[cid] = prev + 1;
+            saved_t = self.time_used;
+            saved_c = self.collected;
             self.time_used = nt;
-            visit :0: [kid];
-            self.time_used = nt - wgt;
+            self.collected = self.collected + add;
+            if cid in self.claimed {
+                skip;
+            }
+            self.claimed[cid] = True;
+            visit :0: [nb];
+            if cid in self.claimed {
+                del self.claimed[cid];
+            }
+            self.visits[cid] = prev;
+            self.time_used = saved_t;
+            self.collected = saved_c;
         }
-        if cnt == 0 and nid != 0 {
-            self.collected = self.collected - here.value;
-        }
-        self.visit_count[nid] = cnt;
-        if cnt == 0 {
-            disengage;
-        }
+        print self.best;
+        disengage;
     }
 }
 
-with entry {
-    vals: list[int] = [0, 32, 10, 43];
-    eds: list[tuple] = [(0, 1, 10), (1, 2, 15), (0, 3, 10)];
-    print(maximalPathQuality(vals, eds, 49));
-    print(maximalPathQuality([5, 10, 15, 20], [(0, 1, 10), (1, 2, 10), (2, 3, 10)], 30));
+def maximalPathQuality(values: list, edges: list, maxTime: int) -> int {
+    by_idx: dict[int, PQNode] = {};
+    i: int = 0;
+    while i < len(values) {
+        nd = PQNode(idx=i, node_val=values[i]);
+        root ++> nd;
+        by_idx[i] = nd;
+        i += 1;
+    }
+    graph_root: PQNode = by_idx[0];
+    for e in edges {
+        u = e[0];
+        v = e[1];
+        t = e[2];
+        a = by_idx[u];
+        b = by_idx[v];
+        a +>:PQEdge(cost=t):+> b;
+        b +>:PQEdge(cost=t):+> a;
+    }
+    init_vis: dict[str, int] = {};
+    init_vis[graph_root.cid] = 1;
+    w = graph_root spawn PQSearch(
+        max_time=maxTime,
+        start_cid=graph_root.cid,
+        collected=values[0],
+        visits=init_vis
+    );
+    return w.best;
 }
 
-test "maximal_path_quality_basic" {
-    q = maximalPathQuality([0, 32, 10, 43], [(0, 1, 10), (1, 2, 15), (0, 3, 10)], 49);
-    assert q == 75;
+test "example1_max_quality_75" {
+    r = maximalPathQuality([0, 32, 10, 43], [[0, 1, 10], [1, 2, 15], [0, 3, 13]], 49);
+    assert r == 75;
 }
 
-test "backtrack_to_zero_only" {
-    q = maximalPathQuality([5, 10, 15, 20], [(0, 1, 10), (1, 2, 10), (2, 3, 10)], 30);
-    assert q == 15;
+test "example2_max_quality_40" {
+    r = maximalPathQuality([5, 10, 15, 20], [[0, 1, 10], [1, 2, 10], [0, 3, 10]], 40);
+    assert r == 40;
 }
 
-test "zero_loop_revisit_updates" {
-    q = maximalPathQuality([25, 1, 2], [(0, 1, 10), (1, 0, 10), (0, 2, 10), (2, 0, 10)], 100);
-    assert q == 28;
+test "example3_no_return_in_time" {
+    r = maximalPathQuality([1, 2, 3, 4], [[0, 1, 10], [1, 2, 11], [2, 3, 12], [1, 3, 13]], 23);
+    assert r == 0;
 }
 
-test "unknown_node_edges_ignored" {
-    q = maximalPathQuality([7, 8], [(0, 99, 5), (0, 1, 10)], 10);
-    assert q == 15;
+test "single_node_start_only" {
+    r = maximalPathQuality([7], [], 0);
+    assert r == 7;
 }
 
-test "no_return_within_time" {
-    q = maximalPathQuality([100, 100], [(0, 1, 10)], 10);
-    assert q == 100;
+test "cannot_reach_extra_node" {
+    r = maximalPathQuality([1, 99], [], 100);
+    assert r == 1;
 }
 
-test "empty_edges_stays_at_root" {
-    q = maximalPathQuality([42], [], 50);
-    assert q == 42;
+test "tight_time_best_is_start_value" {
+    r = maximalPathQuality([3, 50], [[0, 1, 5]], 4);
+    assert r == 3;
 }

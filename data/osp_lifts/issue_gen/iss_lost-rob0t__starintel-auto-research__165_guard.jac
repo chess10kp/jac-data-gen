@@ -1,145 +1,231 @@
-# iss_lost-rob0t__starintel-auto-research__165.jac
+"""OSINT domain-server orchestration gap mapper.
+
+lost-rob0t/starintel-auto-research#165
+"""
 
 node Capability {
-    has name: str;
-    has classification: str;
-    has rationale: str = "";
+    has cid: str;
+    has semantic: str;
+    has classification: str = "unknown";
 }
 
-edge DependsOn {}
+edge Depends {}
 
-def semantic_names() -> list[str] {
-    return [
-        "bounded parallel fan-out over a dynamic provider registry",
-        "bounded recursive pivots with visited-set/cycle control",
-        "declarative playbook composition and result bindings",
-        "conditional/failure branches in playbooks",
-        "dynamic activation of capabilities from newly emitted document types",
-        "persistent provider health/drift state",
-        "circuit breaker / provider demotion semantics",
-        "registry refresh/version pinning",
-        "typed partial-result aggregation across many providers",
-        "provenance-preserving deduplication and multi-source confirmation",
-        "correlation-rule declarations with explanations",
-        "cross-domain invocation preserving cause/provenance",
-        "scan profiles/budgets such as fast/balanced/exhaustive",
-        "proxy/Tor/I2P transport policy as an adapter selection concern",
-        "authenticated session references and expiry without embedding raw credentials in plans",
-        "scheduled/stream ingestor triggers",
-        "change-set generation between repeated runs"
-    ];
-}
-
-def classify_semantic(name: str) -> str {
-    if name not in semantic_names() {
-        return "";
-    }
-    if name in [
-        "declarative playbook composition and result bindings",
-        "correlation-rule declarations with explanations",
-        "cross-domain invocation preserving cause/provenance",
-        "scheduled/stream ingestor triggers"
-    ] {
-        return "StarLang extension needed";
-    }
-    if name == "proxy/Tor/I2P transport policy as an adapter selection concern" {
-        return "Common Lisp adapter needed";
-    }
-    return "expressible now";
-}
-
-def build_catalog() -> dict[str, Capability] {
-    catalog: dict[str, Capability] = {};
-    for name in semantic_names() {
-        cap = Capability(name=name, classification=classify_semantic(name));
-        catalog[name] = cap;
-    }
-    catalog["bounded recursive pivots with visited-set/cycle control"]
-        +>:DependsOn:+> catalog["bounded parallel fan-out over a dynamic provider registry"];
-    catalog["typed partial-result aggregation across many providers"]
-        +>:DependsOn:+> catalog["bounded parallel fan-out over a dynamic provider registry"];
-    catalog["provenance-preserving deduplication and multi-source confirmation"]
-        +>:DependsOn:+> catalog["typed partial-result aggregation across many providers"];
-    catalog["correlation-rule declarations with explanations"]
-        +>:DependsOn:+> catalog["provenance-preserving deduplication and multi-source confirmation"];
-    catalog["change-set generation between repeated runs"]
-        +>:DependsOn:+> catalog["provenance-preserving deduplication and multi-source confirmation"];
-    return catalog;
-}
-
-walker DependencyWalker {
+walker LineageWalker {
     has claimed: dict[str, bool] = {};
+    has max_depth: int = 3;
+    has depth: int = 0;
     has found: list[str] = [];
 
-    can collect with Capability entry {
+    can step with Capability entry {
         if here.cid in self.claimed {
             skip;
         }
+        if self.depth >= self.max_depth {
+            skip;
+        }
         self.claimed[here.cid] = True;
-        self.found.append(here.name);
-        print(here.name);
-        for kid in [here ->:DependsOn:->][?:Capability] {
-            visit :0: [kid];
+        self.found.append(here.cid);
+        print("lineage", here.cid);
+        kids: list[Capability] = [here ->:Depends:->][?:Capability];
+        cids: list[str] = [];
+        for kid in kids {
+            cids.append(kid.cid);
+        }
+        cids = sorted(cids);
+        sorted_kids: list[Capability] = [];
+        for cid in cids {
+            for kid in kids {
+                if kid.cid == cid {
+                    sorted_kids.append(kid);
+                    break;
+                }
+            }
+        }
+        if sorted_kids {
+            self.depth += 1;
+            visit :0: sorted_kids;
         }
     }
 }
 
-def dependency_closure(catalog: dict[str, Capability], name: str) -> list[str] {
-    if name not in catalog {
+walker PivotWalker {
+    has claimed: dict[str, bool] = {};
+    has budget: int = 0;
+    has spent: int = 0;
+    has found: list[str] = [];
+
+    can pivot with Capability entry {
+        if here.cid in self.claimed {
+            skip;
+        }
+        if self.spent >= self.budget {
+            skip;
+        }
+        self.claimed[here.cid] = True;
+        self.spent += 1;
+        self.found.append(here.cid);
+        print("pivot", here.cid);
+        kids: list[Capability] = [here ->:Depends:->][?:Capability];
+        cids: list[str] = [];
+        for kid in kids {
+            cids.append(kid.cid);
+        }
+        cids = sorted(cids);
+        sorted_kids: list[Capability] = [];
+        for cid in cids {
+            for kid in kids {
+                if kid.cid == cid {
+                    sorted_kids.append(kid);
+                    break;
+                }
+            }
+        }
+        if sorted_kids {
+            visit sorted_kids;
+        }
+    }
+}
+
+def _seed_catalog(catalog: dict[str, str]) -> None {
+    catalog["domain-server"] = "already_supported";
+    catalog["wire-dispatcher"] = "already_supported";
+    catalog["runtime-journal"] = "already_supported";
+    catalog["bounded-recursive-pivots"] = "expressible_now";
+    catalog["bounded-parallel-fanout"] = "extension_needed";
+    catalog["circuit-breaker-demotion"] = "extension_needed";
+    catalog["tor-transport-policy"] = "lisp_adapter_needed";
+    catalog["spiderfoot-orchestration"] = "external_process_required";
+}
+
+def _build_research_graph(store: dict[str, Capability]) -> Capability {
+    ds = Capability(
+        cid="domain-server",
+        semantic="domain-server",
+        classification="already_supported",
+    );
+    wd = Capability(
+        cid="wire-dispatcher",
+        semantic="wire-dispatcher",
+        classification="already_supported",
+    );
+    jr = Capability(
+        cid="runtime-journal",
+        semantic="runtime-journal",
+        classification="already_supported",
+    );
+    brp = Capability(
+        cid="bounded-recursive-pivots",
+        semantic="bounded-recursive-pivots",
+        classification="expressible_now",
+    );
+    bpf = Capability(
+        cid="bounded-parallel-fanout",
+        semantic="bounded-parallel-fanout",
+        classification="extension_needed",
+    );
+    root ++> ds;
+    ds +>:Depends:+> wd;
+    ds +>:Depends:+> jr;
+    ds +>:Depends:+> bpf;
+    bpf +>:Depends:+> brp;
+    store["domain-server"] = ds;
+    store["wire-dispatcher"] = wd;
+    store["runtime-journal"] = jr;
+    store["bounded-recursive-pivots"] = brp;
+    store["bounded-parallel-fanout"] = bpf;
+    return ds;
+}
+
+def classify_semantic(semantic_id: str) -> str {
+    catalog: dict[str, str] = {};
+    _seed_catalog(catalog);
+    if semantic_id in catalog {
+        return catalog[semantic_id];
+    }
+    return "extension_needed";
+}
+
+def collect_lineage(root_id: str, max_depth: int) -> list[str] {
+    store: dict[str, Capability] = {};
+    _ = _build_research_graph(store);
+    if root_id not in store {
         return [];
     }
-    graph_root = catalog[name];
-    w = graph_root spawn DependencyWalker(claimed={});
-    return w.found;
+    start = store[root_id] as Capability;
+    w = start spawn LineageWalker(
+        claimed={},
+        max_depth=max_depth,
+        depth=0,
+        found=[],
+    );
+    return sorted(w.found);
 }
 
-def supported_semantics() -> list[str] {
-    result: list[str] = [];
-    for name in semantic_names() {
-        if classify_semantic(name) == "expressible now" {
-            result.append(name);
-        }
+def bounded_pivot(root_id: str, budget: int) -> list[str] {
+    store: dict[str, Capability] = {};
+    _ = _build_research_graph(store);
+    if root_id not in store {
+        return [];
     }
-    return sorted(result);
+    start = store[root_id] as Capability;
+    w = start spawn PivotWalker(
+        claimed={},
+        budget=budget,
+        spent=0,
+        found=[],
+    );
+    return sorted(w.found);
 }
 
-test "diamond revisit is skipped" {
-    graph_root = Capability(name="root", classification="expressible now");
-    left = Capability(name="left", classification="expressible now");
-    right = Capability(name="right", classification="expressible now");
-    shared = Capability(name="leaf", classification="expressible now");
-    catalog: dict[str, Capability] = {};
-    catalog["root"] = graph_root;
-    catalog["left"] = left;
-    catalog["right"] = right;
-    catalog["leaf"] = shared;
-    graph_root +>:DependsOn:+> left;
-    graph_root +>:DependsOn:+> right;
-    left +>:DependsOn:+> shared;
-    right +>:DependsOn:+> shared;
-    assert (sorted(dependency_closure(catalog, "root")) == ["leaf", "left", "right", "root"]);
+with entry {
+    store: dict[str, Capability] = {};
+    _ = _build_research_graph(store);
+    root spawn LineageWalker(claimed={}, max_depth=2, depth=0, found=[]);
 }
 
-test "cyclic pivots terminate" {
-    a = Capability(name="a", classification="expressible now");
-    b = Capability(name="b", classification="expressible now");
-    catalog: dict[str, Capability] = {};
-    catalog["a"] = a;
-    catalog["b"] = b;
-    a +>:DependsOn:+> b;
-    b +>:DependsOn:+> a;
-    assert (sorted(dependency_closure(catalog, "a")) == ["a", "b"]);
+test "classify_semantic_known" {
+    assert classify_semantic("domain-server") == "already_supported";
+    assert classify_semantic("tor-transport-policy") == "lisp_adapter_needed";
+    assert classify_semantic("unknown-widget") == "extension_needed";
 }
 
-test "unknown semantic is tolerated" {
-    assert (classify_semantic("not-in-the-research") == "");
-    catalog = build_catalog();
-    assert (dependency_closure(catalog, "missing") == []);
+test "collect_lineage_full_graph" {
+    got = collect_lineage("domain-server", 5);
+    assert got == [
+        "bounded-parallel-fanout",
+        "bounded-recursive-pivots",
+        "domain-server",
+        "runtime-journal",
+        "wire-dispatcher",
+    ];
 }
 
-test "catalog classifications are deterministic" {
-    catalog = build_catalog();
-    assert (len(catalog) == 17);
-    assert (supported_semantics() == sorted(supported_semantics()));
-    assert (classify_semantic("proxy/Tor/I2P transport policy as an adapter selection concern") == "Common Lisp adapter needed");
+test "lineage_diamond_revisit_counts_sink_once" {
+    apex = Capability(cid="apex", semantic="apex", classification="test");
+    left = Capability(cid="left", semantic="left", classification="test");
+    right = Capability(cid="right", semantic="right", classification="test");
+    sink = Capability(cid="sink", semantic="sink", classification="test");
+    root ++> apex;
+    apex +>:Depends:+> left;
+    apex +>:Depends:+> right;
+    left +>:Depends:+> sink;
+    right +>:Depends:+> sink;
+    w = apex spawn LineageWalker(claimed={}, max_depth=5, depth=0, found=[]);
+    assert sorted(w.found) == ["apex", "left", "right", "sink"];
+}
+
+test "bounded_pivot_respects_budget_cap" {
+    got = bounded_pivot("domain-server", 2);
+    assert got == ["bounded-parallel-fanout", "domain-server"];
+}
+
+test "unknown_root_returns_empty" {
+    assert collect_lineage("missing-node", 3) == [];
+    assert bounded_pivot("missing-node", 2) == [];
+}
+
+test "lineage_depth_cap_stops_expansion" {
+    got = collect_lineage("domain-server", 1);
+    assert got == ["domain-server"];
 }

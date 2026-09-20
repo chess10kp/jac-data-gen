@@ -241,8 +241,6 @@ def entities_of_type(ix: Index, etype: str, root_name: str | None = None) -> lis
     }
     return sorted(ix.versions.keys());
 }
-
-
 test "canonical path and subtree flood" {
     ix = build_index(["project"]);
     add_folder(ix, "assets", "project", {"atlas": True});
@@ -312,8 +310,8 @@ test "attach_chain validates each hop" {
 
 test "corrupt folder cycle terminates" {
     ix = build_index(["x", "y"]);
-    xn = ix.resolve("x");
-    yn = ix.resolve("y");
+    xn = ix.folders["x"];
+    yn = ix.folders["y"];
     xn +>:ChildFolder:+> yn;
     yn +>:ChildFolder:+> xn;
     assert len(subtree_folders(ix, "x")) == 2;

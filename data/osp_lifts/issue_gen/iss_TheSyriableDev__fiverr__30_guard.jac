@@ -94,7 +94,7 @@ def effective_permissions(roles: list[dict], role: str) -> list {
 }
 
 """True iff ``perm`` is an effective grant of ``role``."""
-def can(roles: list[dict], role: str, perm: str) -> bool {
+def `can(roles: list[dict], role: str, perm: str) -> bool {
     return perm in effective_permissions(roles, role);
 }
 
@@ -111,10 +111,10 @@ test "canonical hierarchy inherits grants up the chain" {
     assert effective_permissions(ROLES, "buyer") == ["browse:gigs", "order:create", "order:pay", "read:profile"];
     assert effective_permissions(ROLES, "seller") == ["browse:gigs", "gig:create", "gig:edit", "order:create", "order:manage", "order:pay", "read:profile"];
     assert effective_permissions(ROLES, "superadmin") == ["browse:gigs", "gig:create", "gig:edit", "gig:feature", "order:create", "order:manage", "order:pay", "platform:settings", "read:profile", "user:ban"];
-    assert can(ROLES, "seller", "browse:gigs") == True;
-    assert can(ROLES, "buyer", "gig:create") == False;
-    assert can(ROLES, "guest", "order:create") == False;
-    assert can(ROLES, "superadmin", "user:ban") == True;
+    assert `can(ROLES, "seller", "browse:gigs") == True;
+    assert `can(ROLES, "buyer", "gig:create") == False;
+    assert `can(ROLES, "guest", "order:create") == False;
+    assert `can(ROLES, "superadmin", "user:ban") == True;
 }
 
 test "nearest mention overrides ancestors in both directions" {
@@ -126,14 +126,14 @@ test "nearest mention overrides ancestors in both directions" {
     assert effective_permissions(OVR, "base") == ["cache:warm", "report:export"];
     assert effective_permissions(OVR, "mid") == ["cache:warm"];
     assert effective_permissions(OVR, "top") == ["cache:warm", "report:export"];
-    assert can(OVR, "mid", "report:export") == False;
-    assert can(OVR, "top", "report:export") == True;
+    assert `can(OVR, "mid", "report:export") == False;
+    assert `can(OVR, "top", "report:export") == True;
 }
 
 test "deny beats allow within one role" {
     TIE = [{"id": "solo", "parent_id": None, "permissions": ["a"], "denied": ["a"]}];
     assert effective_permissions(TIE, "solo") == [];
-    assert can(TIE, "solo", "a") == False;
+    assert `can(TIE, "solo", "a") == False;
 }
 
 test "unknown role has no grants" {
@@ -141,7 +141,7 @@ test "unknown role has no grants" {
         {"id": "guest", "parent_id": None, "permissions": ["browse:gigs"], "denied": []},
     ];
     assert effective_permissions(ROLES, "ghost") == [];
-    assert can(ROLES, "ghost", "browse:gigs") == False;
+    assert `can(ROLES, "ghost", "browse:gigs") == False;
 }
 
 test "dangling parent id stops the chain after the role" {

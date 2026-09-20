@@ -42,13 +42,13 @@ obj DerivedCache {
     has store: dict[str, CacheEntry];
 
     def put(key: str, value: int | list[int] | str | bool | None) -> CacheEntry {
-        entry = self.store.get(key);
-        if entry is None {
-            entry = CacheEntry(key=key);
-            self.store[key] = entry;
+        existing = self.store.get(key);
+        if existing is None {
+            existing = CacheEntry(key=key);
+            self.store[key] = existing;
         }
-        entry.value = value;
-        return entry;
+        existing.value = value;
+        return existing;
     }
 
     """Register *dependent_key* as derived from *source_key*.
@@ -85,16 +85,16 @@ obj DerivedCache {
         return removed;
     }
 
-    def has(key: str) -> bool {
+    def contains(key: str) -> bool {
         return key in self.store;
     }
 
     def value_of(key: str) -> int | list[int] | str | bool | None {
-        entry = self.store.get(key);
-        if entry is None {
+        found = self.store.get(key);
+        if found is None {
             return None;
         }
-        return entry.value;
+        return found.value;
     }
 
     def keys -> list[str] {

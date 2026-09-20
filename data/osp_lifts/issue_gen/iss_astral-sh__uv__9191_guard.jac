@@ -1,142 +1,239 @@
-# astral-sh/uv#9191 — cache invalidation on local deps (docker ctime drift)
-# Use checksums (not inode/ctime) for freshness of local dependency graph.
+"""astral-sh/uv#9191 — checksum-based local dependency freshness (Docker ctime workaround)."""
 
 node Package {
+    has pkg_id: str;
     has name: str;
-    has checksum: str;
-    has installed_checksum: str = "";
+    has installed_cs: str = "";
 }
 
-edge DependsOn {}
+edge Depends {}
 
-# build dependency graph: parent depends on children
-def add_dep(parent: Package, child: Package) {
-    parent +>:DependsOn:+> child;
+obj DepGraph {
+    has store: dict[str, Package] = {};
 }
 
-# checksum-based freshness: fresh iff installed checksum matches current
-def is_fresh(pkg: Package) -> bool {
-    return pkg.installed_checksum == pkg.checksum and pkg.installed_checksum != "";
-}
-
-def install(pkg: Package) {
-    pkg.installed_checksum = pkg.checksum;
-}
-
-# memoized stale-closure: mark pkg stale and cascade to all dependents
-walker Invalidate {
-    has claimed: dict[str, bool] = {};
-    has invalidated: list[str] = [];
-
-    can sweep with Package entry {
-        if here.name in self.claimed { skip; }
-        self.claimed[here.name] = True;
-        self.invalidated.append(here.name);
-        here.installed_checksum = "";
-        # move up to dependents (parents that depend on here): incoming DependsOn
-        visit [here <-:DependsOn:-];
+def _spec_installed_cs(spec: dict) -> str {
+    if "installed_cs" in spec {
+        return str(spec["installed_cs"]);
     }
+    return "";
 }
 
-def mark_stale(pkg: Package) -> list[str] {
-    wk = pkg spawn Invalidate(claimed={});
-    return sorted(wk.invalidated);
+def _spec_deps(spec: dict) -> list {
+    if "deps" in spec {
+        return spec["deps"];
+    }
+    empty_deps: list = [];
+    return empty_deps;
 }
 
-# memoized fresh closure: all transitive local deps that are fresh
-walker FreshCheck {
-    has claimed: dict[str, bool] = {};
-    has stale: list[str] = [];
-
-    can check with Package entry {
-        if here.name in self.claimed { skip; }
-        self.claimed[here.name] = True;
-        if not is_fresh(here) {
-            self.stale.append(here.name);
+def build_graph(specs: list[dict]) -> DepGraph {
+    g = DepGraph();
+    store: dict[str, Package] = {};
+    for spec in specs {
+        pid = str(spec["pkg_id"]);
+        pkg = Package(
+            pkg_id=pid,
+            name=str(spec["name"]),
+            installed_cs=_spec_installed_cs(spec)
+        );
+        store[pid] = pkg;
+    }
+    for spec in specs {
+        pid = str(spec["pkg_id"]);
+        src = store[pid] as Package;
+        for dep_id in _spec_deps(spec) {
+            dep_key = str(dep_id);
+            if dep_key in store {
+                dst = store[dep_key] as Package;
+                src +>:Depends:+> dst;
+            }
         }
-        visit [here ->:DependsOn:->];
+    }
+    for pid in store {
+        root ++> store[pid] as Package;
+    }
+    g.store = store;
+    return g;
+}
+
+walker AncestorWalker {
+    has claimed: dict[str, bool] = {};
+    has origin_id: str = "";
+    has found: list[str] = [];
+
+    can ascend with Package entry {
+        if here.pkg_id in self.claimed {
+            skip;
+        }
+        self.claimed[here.pkg_id] = True;
+        print("ancestor", here.pkg_id);
+        if here.pkg_id != self.origin_id {
+            self.found.append(here.pkg_id);
+        }
+        ups: list[Package] = [];
+        for dep in [here ->:Depends:->][?:Package] {
+            ups.append(dep);
+        }
+        if len(ups) > 0 {
+            visit :0: ups;
+        }
     }
 }
 
-def stale_closure(pkg: Package) -> list[str] {
-    wk = pkg spawn FreshCheck(claimed={});
-    return sorted(wk.stale);
+walker DependentWalker {
+    has claimed: dict[str, bool] = {};
+    has origin_id: str = "";
+    has touched: list[str] = [];
+
+    can descend with Package entry {
+        if here.pkg_id in self.claimed {
+            skip;
+        }
+        self.claimed[here.pkg_id] = True;
+        print("cascade", here.pkg_id);
+        self.touched.append(here.pkg_id);
+        downs: list[Package] = [];
+        for user in [here <-:Depends:<-][?:Package] {
+            downs.append(user);
+        }
+        if len(downs) > 0 {
+            visit :0: downs;
+        }
+    }
 }
 
-walker Demo {
-    can go with root entry {
-        api = Package(name="api", checksum="c1");
-        lib = Package(name="lib", checksum="c2");
-        core = Package(name="core", checksum="c3");
-        root ++> api; root ++> lib; root ++> core;
-        add_dep(api, lib);
-        add_dep(lib, core);
-        install(api); install(lib); install(core);
-        print(sorted(stale_closure(api)));
-        core.checksum = "c3b";
-        print(sorted(stale_closure(api)));
-        print(mark_stale(core));
-        print(sorted(stale_closure(api)));
+walker DemoWalker {
+    has claimed: dict[str, bool] = {};
+
+    can step with Package entry {
+        if here.pkg_id in self.claimed {
+            skip;
+        }
+        self.claimed[here.pkg_id] = True;
+        print("demo", here.pkg_id, here.installed_cs);
+        kids: list[Package] = [];
+        for dep in [here ->:Depends:->][?:Package] {
+            kids.append(dep);
+        }
+        if len(kids) > 0 {
+            visit :0: kids;
+        }
     }
+}
+
+def memo_ancestors(g: DepGraph, pkg_id: str) -> list[str] {
+    if pkg_id not in g.store {
+        return [];
+    }
+    start = g.store[pkg_id] as Package;
+    w = start spawn AncestorWalker(origin_id=pkg_id, claimed={}, found=[]);
+    return sorted(w.found);
+}
+
+def cascade_invalidation(g: DepGraph, origin_id: str) -> list[str] {
+    if origin_id not in g.store {
+        return [];
+    }
+    start = g.store[origin_id] as Package;
+    w = start spawn DependentWalker(origin_id=origin_id, claimed={}, touched=[]);
+    return sorted(w.touched);
+}
+
+def stale_install_targets(g: DepGraph, manifest_checksums: dict[str, str]) -> list[str] {
+    origins: list[str] = [];
+    for pid in sorted(g.store) {
+        if pid not in manifest_checksums {
+            continue;
+        }
+        pkg = g.store[pid] as Package;
+        if manifest_checksums[pid] != pkg.installed_cs {
+            origins.append(pid);
+        }
+    }
+    marked: dict[str, bool] = {};
+    for origin in origins {
+        part = cascade_invalidation(g, origin);
+        for sid in part {
+            marked[sid] = True;
+        }
+    }
+    out: list[str] = [];
+    for pid in sorted(marked) {
+        out.append(pid);
+    }
+    return out;
 }
 
 with entry {
-    root spawn Demo();
+    demo_specs: list[dict] = [
+        {"pkg_id": "api", "name": "api", "deps": ["lib"], "installed_cs": "a1"},
+        {"pkg_id": "lib", "name": "lib", "deps": [], "installed_cs": "l0"}
+    ];
+    g = build_graph(demo_specs);
+    cs: dict[str, str] = {"lib": "l1"};
+    targets = stale_install_targets(g, cs);
+    print("stale_targets", targets);
+    root spawn DemoWalker(claimed={});
 }
 
-test "fresh_after_install" {
-    api = Package(name="api", checksum="c1");
-    lib = Package(name="lib", checksum="c2");
-    add_dep(api, lib);
-    install(api);
-    install(lib);
-    assert stale_closure(api) == [];
-    assert is_fresh(api);
-    assert is_fresh(lib);
+test "memo_ancestors_diamond_revisit_once" {
+    specs: list[dict] = [
+        {"pkg_id": "core", "name": "core", "deps": []},
+        {"pkg_id": "left", "name": "left", "deps": ["core"]},
+        {"pkg_id": "right", "name": "right", "deps": ["core"]},
+        {"pkg_id": "app", "name": "app", "deps": ["left", "right"]}
+    ];
+    g = build_graph(specs);
+    anc = memo_ancestors(g, "app");
+    assert anc == ["core", "left", "right"];
 }
 
-test "stale_closure_detects_mismatch" {
-    api = Package(name="api", checksum="c1");
-    lib = Package(name="lib", checksum="c2");
-    core = Package(name="core", checksum="c3");
-    add_dep(api, lib);
-    add_dep(lib, core);
-    install(api);
-    install(lib);
-    install(core);
-    core.checksum = "c3b";
-    assert sorted(stale_closure(api)) == ["core"];
+test "cascade_invalidation_adversarial_diamond" {
+    specs: list[dict] = [
+        {"pkg_id": "core", "name": "core", "deps": []},
+        {"pkg_id": "left", "name": "left", "deps": ["core"]},
+        {"pkg_id": "right", "name": "right", "deps": ["core"]},
+        {"pkg_id": "app", "name": "app", "deps": ["left", "right"]}
+    ];
+    g = build_graph(specs);
+    hit = cascade_invalidation(g, "core");
+    assert hit == ["app", "core", "left", "right"];
 }
 
-test "mark_stale_cascades_to_dependents" {
-    api = Package(name="api", checksum="c1");
-    lib = Package(name="lib", checksum="c2");
-    core = Package(name="core", checksum="c3");
-    add_dep(api, lib);
-    add_dep(lib, core);
-    install(api);
-    install(lib);
-    install(core);
-    assert sorted(mark_stale(core)) == ["api", "core", "lib"];
-    assert not is_fresh(core);
-    assert not is_fresh(lib);
-    assert not is_fresh(api);
+test "stale_install_checksum_mismatch_cascades_dependents" {
+    specs: list[dict] = [
+        {"pkg_id": "lib", "name": "lib", "deps": [], "installed_cs": "old"},
+        {"pkg_id": "api", "name": "api", "deps": ["lib"], "installed_cs": "a1"},
+        {"pkg_id": "worker", "name": "worker", "deps": ["api"], "installed_cs": "w1"}
+    ];
+    g = build_graph(specs);
+    cs: dict[str, str] = {"lib": "new"};
+    assert stale_install_targets(g, cs) == ["api", "lib", "worker"];
 }
 
-test "cycle_terminates_via_claim_map" {
-    a = Package(name="a", checksum="ka");
-    b = Package(name="b", checksum="kb");
-    add_dep(a, b);
-    add_dep(b, a);
-    install(a);
-    install(b);
-    assert sorted(mark_stale(a)) == ["a", "b"];
-    assert stale_closure(a) == [];
+test "memo_ancestors_unknown_pkg" {
+    specs: list[dict] = [
+        {"pkg_id": "only", "name": "only", "deps": []}
+    ];
+    g = build_graph(specs);
+    assert memo_ancestors(g, "missing") == [];
 }
 
-test "uninstalled_is_stale" {
-    solo = Package(name="solo", checksum="k1");
-    assert sorted(stale_closure(solo)) == ["solo"];
-    install(solo);
-    assert stale_closure(solo) == [];
+test "cascade_invalidation_unknown_pkg" {
+    specs: list[dict] = [
+        {"pkg_id": "only", "name": "only", "deps": []}
+    ];
+    g = build_graph(specs);
+    assert cascade_invalidation(g, "missing") == [];
+}
+
+test "stale_install_no_mismatch_empty" {
+    specs: list[dict] = [
+        {"pkg_id": "lib", "name": "lib", "deps": [], "installed_cs": "same"},
+        {"pkg_id": "api", "name": "api", "deps": ["lib"], "installed_cs": "a1"}
+    ];
+    g = build_graph(specs);
+    cs: dict[str, str] = {"lib": "same"};
+    assert stale_install_targets(g, cs) == [];
 }

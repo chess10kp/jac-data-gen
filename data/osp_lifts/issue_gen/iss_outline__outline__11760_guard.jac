@@ -196,7 +196,6 @@ def hidden_documents(ws: Workspace) -> list[str] {
     }
     return sorted(out);
 }
-
 test "restrict sweeps descendants and sidebar prunes" {
     ws = build_store([("home", "Home")]);
     add_document(ws, "guide", "Guide", "home");
@@ -235,6 +234,9 @@ test "adversarial diamond order terminates with once-only claims" {
     botn = ws.resolve("bot");
     ln = ws.resolve("l");
     rn = ws.resolve("rr");
+    if topn is None or botn is None or ln is None or rn is None {
+        raise KeyError("missing node");
+    }
     topn +>:ChildOf:+> ln;
     topn +>:ChildOf:+> rn;
     ln +>:ChildOf:+> botn;
@@ -247,6 +249,9 @@ test "corrupt cycle does not hang" {
     ws = build_store([("a", "A"), ("b", "B")]);
     an = ws.resolve("a");
     bn = ws.resolve("b");
+    if an is None or bn is None {
+        raise KeyError("missing node");
+    }
     an +>:ChildOf:+> bn;
     bn +>:ChildOf:+> an;
     assert sorted(_subtree(ws, "a")) == ["a", "b"];

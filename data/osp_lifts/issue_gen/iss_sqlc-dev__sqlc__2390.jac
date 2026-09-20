@@ -1,114 +1,121 @@
-node Node {
-    has nid: str;
+"""Recursive ancestor depth walk — sqlc-dev/sqlc#2390."""
+
+node GraphNode {
+    has cid: str;
     has name: str;
+    has kind: str = "";
 }
 
-node Graph {
-    has gid: str;
-}
-
-edge DependsOn {
+edge DepEdge {
     has ordinal: int = 0;
 }
 
-# Recursive dependency walk mirroring the WITH RECURSIVE ds(id, depth) query:
-# follow DependsOn edges forward (dependents), each hop increments depth.
-walker GetDependentNodes {
-    has start_id: str = "";
-    has depths: dict[str, int] = {};
-    has claimed: dict[str, bool] = {};
-    has depth: int = 0;
+obj GraphHandle {
+    has anchor: GraphNode;
+}
 
-    can step with Node entry {
-        if here.nid in self.claimed { skip; }
-        self.claimed[here.nid] = True;
-        self.depths[here.nid] = self.depth;
-        kids: list[Node] = [];
-        for ch in [here ->:DependsOn:->][?:Node] {
-            if ch.nid not in self.claimed {
-                kids.append(ch);
+walker AncestorWalk {
+    has claimed: dict[str, bool] = {};
+    has rows: list[tuple[str, int]] = [];
+    has node_depth: int = -1;
+
+    can ascend with GraphNode entry {
+        if here.cid in self.claimed { skip; }
+        self.claimed[here.cid] = True;
+
+        record_depth: int = self.node_depth + 1;
+        if self.node_depth < 0 {
+            record_depth = 0;
+        }
+
+        parents: list[GraphNode] = [];
+        for par in [here <-:DepEdge:<-][?:GraphNode] {
+            parents.append(par);
+        }
+
+        for par in parents {
+            if not (par.cid in self.claimed) {
+                self.rows.append((par.cid, record_depth));
             }
         }
-        if len(kids) == 0 {
+
+        next_visits: list[GraphNode] = [];
+        for par in parents {
+            if not (par.cid in self.claimed) {
+                next_visits.append(par);
+            }
+        }
+
+        print("ascend", here.cid, record_depth, len(next_visits));
+
+        if next_visits {
+            self.node_depth = record_depth;
+            visit :0: next_visits;
+        } else {
             disengage;
         }
-        for p in kids {
-            sub = GetDependentNodes(depth=self.depth + 1, depths=self.depths, claimed=self.claimed, start_id=self.start_id);
-            p spawn sub;
-        }
     }
 }
 
-# Reachability probe used to locate a node anywhere in the graph by id.
-walker FindNode {
-    has target: str;
-    has found: list[Node] = [];
-    has claimed: dict[str, bool] = {};
-
-    can step with Node entry {
-        if here.nid in self.claimed { skip; }
-        self.claimed[here.nid] = True;
-        if here.nid == self.target {
-            self.found.append(here);
-        }
-        visit [here ->:DependsOn:->] else { disengage; }
+def sort_rows(rows: list[tuple[str, int]]) -> list[tuple[str, int]] {
+    keyed: list[tuple[int, str]] = [];
+    for row in rows {
+        keyed.append((row[1], row[0]));
     }
-}
-
-def build_graph(gid: str, names: list[str]) -> Graph {
-    g = Graph(gid=gid);
-    root ++> g;
-    for nm in names {
-        nd = Node(nid=nm, name=nm);
-        g +>:DependsOn:+> nd;
-    }
-    return g;
-}
-
-def find_node(g: Graph, nid: str) -> Node | None {
-    anchors: list[Node] = [g ->:DependsOn:->][?:Node];
-    for nd in anchors {
-        if nd.nid == nid {
-            return nd;
-        }
-    }
-    probe = FindNode(target=nid);
-    for nd in anchors {
-        nd spawn probe;
-        if len(probe.found) > 0 {
-            return probe.found[0];
-        }
-    }
-    return None;
-}
-
-def get_dependent_nodes(g: Graph, start_id: str) -> list[tuple[str, int]] {
-    rows: list[tuple[str, int]] = [];
-    start = find_node(g, start_id);
-    if start is None {
-        return rows;
-    }
-    w = GetDependentNodes(start_id=start_id, depth=0);
-    start spawn w;
-    for nid in w.depths.keys() {
-        rows.append((nid, w.depths[nid]));
-    }
+    keyed_sorted = sorted(keyed);
     out: list[tuple[str, int]] = [];
-    for r in sorted(rows) {
-        out.append(r);
+    for k in keyed_sorted {
+        out.append((k[1], k[0]));
     }
     return out;
 }
 
-def connect(g: Graph, parent_id: str, child_id: str, ordinal: int) -> None {
-    p = find_node(g, parent_id);
-    c = find_node(g, child_id);
-    if p is None {
-        return;
+def resolve_node(g: GraphHandle, node_id: str) -> GraphNode | None {
+    found: GraphNode | None = None;
+    for nd in [g.anchor ->][?:GraphNode] {
+        if nd.cid == node_id {
+            found = nd;
+        }
     }
-    if c is None {
-        return;
+    return found;
+}
+
+def build_graph(
+    node_specs: list[tuple[str, str, str]],
+    edge_specs: list[tuple[str, str, int]],
+) -> GraphHandle {
+    graph_root = GraphNode(cid="__graph__", name="graph", kind="meta");
+    root ++> graph_root;
+    nodes: dict[str, GraphNode] = {};
+    for spec in node_specs {
+        cid: str = spec[0];
+        nm: str = spec[1];
+        kd: str = spec[2];
+        nd = GraphNode(cid=cid, name=nm, kind=kd);
+        nodes[cid] = nd;
+        graph_root ++> nd;
     }
-    e = DependsOn(ordinal=ordinal);
-    p +>:e:+> c;
+    for spec in edge_specs {
+        p_id: str = spec[0];
+        c_id: str = spec[1];
+        ordv: int = spec[2];
+        p_nd = nodes[p_id];
+        c_nd = nodes[c_id];
+        p_nd +>:DepEdge(ordinal=ordv):+> c_nd;
+    }
+    return GraphHandle(anchor=graph_root);
+}
+
+def get_node(g: GraphHandle, node_id: str) -> GraphNode | None {
+    return resolve_node(g, node_id);
+}
+
+def get_dependent_nodes(g: GraphHandle, child_id: str) -> list[tuple[str, int]] {
+    start: GraphNode | None = resolve_node(g, child_id);
+    if not start {
+        return [];
+    }
+    w = start spawn AncestorWalk();
+    print("dependent_nodes", child_id, len(w.rows));
+    return sort_rows(w.rows);
 }

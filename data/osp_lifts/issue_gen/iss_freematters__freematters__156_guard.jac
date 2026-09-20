@@ -1,182 +1,285 @@
-"""OSP lift for freematters/freematters#156."""
+"""freematters/freematters#156 — PATH-shadowed fflow hook recursion."""
 
-node Hook {
+node Launcher {
+    has cid: str;
     has name: str;
-    has command: str;
-    has timeout: int = 10;
+    has rank: int = 0;
+    has target: str = "";
 }
 
-node Executable {
-    has path: str;
-    has bundled: bool = False;
-    has recursive: bool = False;
-}
+edge Delegate {}
 
-node Process {
-    has pid: int;
-    has command: str;
-    has alive: bool = True;
-}
-
-edge Resolves {}
-edge Spawns {}
-
-walker ResolvePath {
+walker TraceWalker {
     has claimed: dict[str, bool] = {};
-    has found: str = "";
-    has selected: bool = False;
+    has out: list[str] = [];
 
-    can inspect_hook with Hook entry {
+    can step with Launcher entry {
         if here.cid in self.claimed {
             skip;
         }
         self.claimed[here.cid] = True;
-        print("inspecting hook");
-        for exe in [here ->:Resolves:->][?:Executable] {
-            visit :0: [exe];
+        self.out.append(here.cid);
+        print("trace", here.cid);
+        nxt: list[Launcher] = [];
+        for ch in [here ->:Delegate:->][?:Launcher] {
+            nxt.append(ch);
         }
-    }
-
-    can inspect_executable with Executable entry {
-        if here.cid in self.claimed {
-            skip;
-        }
-        self.claimed[here.cid] = True;
-        print("inspecting executable");
-        if here.recursive == False and here.bundled == True {
-            if self.selected == False {
-                self.found = here.path;
-                self.selected = True;
-            }
-        }
-        for exe in [here ->:Resolves:->][?:Executable] {
-            visit :0: [exe];
+        if nxt {
+            visit :0: nxt;
+        } else {
+            disengage;
         }
     }
 }
 
-walker ProcessSweep {
+walker LoopWalker {
     has claimed: dict[str, bool] = {};
-    has targets: list[Process] = [];
+    has loop: bool = False;
 
-    can sweep_process with Process entry {
+    can probe with Launcher entry {
+        if here.cid in self.claimed {
+            self.loop = True;
+            print("loop", here.cid);
+            skip;
+        }
+        self.claimed[here.cid] = True;
+        print("probe", here.cid);
+        nxt: list[Launcher] = [];
+        for ch in [here ->:Delegate:->][?:Launcher] {
+            nxt.append(ch);
+        }
+        if nxt {
+            visit :0: nxt;
+        } else {
+            disengage;
+        }
+    }
+}
+
+def make_launcher(cid: str, name: str, rank: int, target: str) -> Launcher {
+    return Launcher(cid=cid, name=name, rank=rank, target=target);
+}
+
+def index_launchers(nodes: list[Launcher]) -> dict[str, Launcher] {
+    idx: dict[str, Launcher] = {};
+    for nd in nodes {
+        idx[nd.cid] = nd;
+    }
+    return idx;
+}
+
+def attach_delegate(src: Launcher, dst: Launcher) {
+    src +>:Delegate:+> dst;
+}
+
+def resolve_path(order: list[str], name: str, nodes: list[Launcher]) -> str {
+    idx: dict[str, Launcher] = index_launchers(nodes);
+    for cid in order {
+        if cid not in idx {
+            continue;
+        }
+        nd = idx[cid];
+        if nd.name == name {
+            return nd.cid;
+        }
+    }
+    return "";
+}
+
+def trace_delegation_chain(start: Launcher) -> list[str] {
+    w = start spawn TraceWalker(claimed={});
+    return w.out;
+}
+
+def has_recursive_resolution(start: Launcher) -> bool {
+    w = start spawn LoopWalker(claimed={});
+    return w.loop;
+}
+
+def estimate_process_footprint(start: Launcher, steps: int) -> int {
+    if has_recursive_resolution(start) {
+        return steps * 2;
+    }
+    tr: list[str] = trace_delegation_chain(start);
+    return len(tr);
+}
+
+def build_shadow_fixture -> Launcher {
+    wrap = make_launcher("wrap", "fflow", 0, "npm");
+    glob_node = make_launcher("glob", "fflow", 1, "");
+    npm = make_launcher("npm", "npm_exec", 2, "sh");
+    sh = make_launcher("sh", "sh_c", 3, "fflow");
+    root ++> wrap;
+    root ++> glob_node;
+    root ++> npm;
+    root ++> sh;
+    attach_delegate(wrap, npm);
+    attach_delegate(npm, sh);
+    attach_delegate(sh, wrap);
+    return wrap;
+}
+
+"""freematters/freematters#156 — PATH-shadowed fflow hook recursion."""
+
+node Launcher {
+    has cid: str;
+    has name: str;
+    has rank: int = 0;
+    has target: str = "";
+}
+
+edge Delegate {}
+
+walker TraceWalker {
+    has claimed: dict[str, bool] = {};
+    has out: list[str] = [];
+
+    can step with Launcher entry {
         if here.cid in self.claimed {
             skip;
         }
         self.claimed[here.cid] = True;
-        self.targets.append(here);
-        print("observing process");
-        for child in [here ->:Spawns:->][?:Process] {
-            visit :0: [child];
+        self.out.append(here.cid);
+        print("trace", here.cid);
+        nxt: list[Launcher] = [];
+        for ch in [here ->:Delegate:->][?:Launcher] {
+            nxt.append(ch);
+        }
+        if nxt {
+            visit :0: nxt;
+        } else {
+            disengage;
         }
     }
 }
 
-def resolve_hook_path(hook_node: Hook) -> str {
-    w = hook_node spawn ResolvePath(claimed={});
-    return w.found;
-}
+walker LoopWalker {
+    has claimed: dict[str, bool] = {};
+    has loop: bool = False;
 
-def preflight_hook(hook_node: Hook) -> bool {
-    path = resolve_hook_path(hook_node);
-    return path != "" and hook_node.timeout > 0;
-}
-
-def has_process(process_node: Process, target_pid: int) -> bool {
-    wk = process_node spawn ProcessSweep(claimed={});
-    for item in wk.targets {
-        if item.pid == target_pid {
-            return True;
+    can probe with Launcher entry {
+        if here.cid in self.claimed {
+            self.loop = True;
+            print("loop", here.cid);
+            skip;
+        }
+        self.claimed[here.cid] = True;
+        print("probe", here.cid);
+        nxt: list[Launcher] = [];
+        for ch in [here ->:Delegate:->][?:Launcher] {
+            nxt.append(ch);
+        }
+        if nxt {
+            visit :0: nxt;
+        } else {
+            disengage;
         }
     }
-    return False;
 }
 
-def terminate_process_tree(process_node: Process, target_pid: int) -> list[int] {
-    wk = process_node spawn ProcessSweep(claimed={});
-    ids: list[int] = [];
-    for item in wk.targets {
-        ids.append(item.pid);
+def make_launcher(cid: str, name: str, rank: int, target: str) -> Launcher {
+    return Launcher(cid=cid, name=name, rank=rank, target=target);
+}
+
+def index_launchers(nodes: list[Launcher]) -> dict[str, Launcher] {
+    idx: dict[str, Launcher] = {};
+    for nd in nodes {
+        idx[nd.cid] = nd;
     }
-    if target_pid not in ids {
-        return [];
+    return idx;
+}
+
+def attach_delegate(src: Launcher, dst: Launcher) {
+    src +>:Delegate:+> dst;
+}
+
+def resolve_path(order: list[str], name: str, nodes: list[Launcher]) -> str {
+    idx: dict[str, Launcher] = index_launchers(nodes);
+    for cid in order {
+        if cid not in idx {
+            continue;
+        }
+        nd = idx[cid];
+        if nd.name == name {
+            return nd.cid;
+        }
     }
-    for item in wk.targets {
-        item.alive = False;
+    return "";
+}
+
+def trace_delegation_chain(start: Launcher) -> list[str] {
+    w = start spawn TraceWalker(claimed={});
+    return w.out;
+}
+
+def has_recursive_resolution(start: Launcher) -> bool {
+    w = start spawn LoopWalker(claimed={});
+    return w.loop;
+}
+
+def estimate_process_footprint(start: Launcher, steps: int) -> int {
+    if has_recursive_resolution(start) {
+        return steps * 2;
     }
-    return sorted(ids);
+    tr: list[str] = trace_delegation_chain(start);
+    return len(tr);
 }
 
-test "shadowed recursive launcher uses bundled path" {
-    hook_node = Hook(
-        name="post-tool-use",
-        command="fflow _hook post-tool-use",
-        timeout=10
-    );
-    shadow = Executable(
-        path="/local/fflow",
-        bundled=False,
-        recursive=True
-    );
-    bundled = Executable(
-        path="/plugin/dist/cli.js",
-        bundled=True,
-        recursive=False
-    );
-    hook_node +>:Resolves:+> shadow;
-    hook_node +>:Resolves:+> bundled;
-    shadow +>:Resolves:+> bundled;
-
-    assert (resolve_hook_path(hook_node) == "/plugin/dist/cli.js");
-    assert (preflight_hook(hook_node) == True);
+def build_shadow_fixture -> Launcher {
+    wrap = make_launcher("wrap", "fflow", 0, "npm");
+    glob_node = make_launcher("glob", "fflow", 1, "");
+    npm = make_launcher("npm", "npm_exec", 2, "sh");
+    sh = make_launcher("sh", "sh_c", 3, "fflow");
+    root ++> wrap;
+    root ++> glob_node;
+    root ++> npm;
+    root ++> sh;
+    attach_delegate(wrap, npm);
+    attach_delegate(npm, sh);
+    attach_delegate(sh, wrap);
+    return wrap;
 }
 
-test "unknown process id is tolerated" {
-    process_node = Process(pid=10, command="fflow");
-    child = Process(pid=11, command="npm");
-    process_node +>:Spawns:+> child;
-
-    assert (has_process(process_node, 99) == False);
-    assert (terminate_process_tree(process_node, 99) == []);
-    assert (process_node.alive == True);
-    assert (child.alive == True);
+test "shadow_fixture_has_delegate_cycle" {
+    start = build_shadow_fixture();
+    assert has_recursive_resolution(start);
 }
 
-test "diamond process tree is claimed once and fully terminated" {
-    process_node = Process(pid=1, command="hook");
-    left = Process(pid=2, command="npm");
-    right = Process(pid=3, command="sh");
-    leaf = Process(pid=4, command="fflow");
-    process_node +>:Spawns:+> left;
-    process_node +>:Spawns:+> right;
-    left +>:Spawns:+> leaf;
-    right +>:Spawns:+> leaf;
-
-    killed = terminate_process_tree(process_node, 1);
-
-    assert (killed == [1, 2, 3, 4]);
-    assert (process_node.alive == False);
-    assert (left.alive == False);
-    assert (right.alive == False);
-    assert (leaf.alive == False);
+test "trace_delegation_chain_once_only" {
+    start = build_shadow_fixture();
+    chain = trace_delegation_chain(start);
+    assert chain == ["wrap", "npm", "sh"];
 }
 
-test "missing bundled executable fails closed" {
-    hook_node = Hook(
-        name="post-tool-use",
-        command="fflow _hook post-tool-use",
-        timeout=10
-    );
-    wrapper = Executable(
-        path="/local/fflow",
-        bundled=False,
-        recursive=True
-    );
-    hook_node +>:Resolves:+> wrapper;
+test "resolve_path_prefers_first_shadow_match" {
+    start = build_shadow_fixture();
+    nodes: list[Launcher] = [];
+    for nd in [root -->][?:Launcher] {
+        nodes.append(nd);
+    }
+    order: list[str] = ["wrap", "glob", "npm", "sh"];
+    assert resolve_path(order, "fflow", nodes) == "wrap";
+}
 
-    assert (resolve_hook_path(hook_node) == "");
-    assert (preflight_hook(hook_node) == False);
+test "resolve_path_later_rank_wins_when_first" {
+    a = make_launcher("wrap", "fflow", 0, "npm");
+    b = make_launcher("glob", "fflow", 1, "");
+    nodes: list[Launcher] = [a, b];
+    order: list[str] = ["glob", "wrap"];
+    assert resolve_path(order, "fflow", nodes) == "glob";
+}
 
-    hook_node.timeout = 0;
-    assert (preflight_hook(hook_node) == False);
+test "resolve_path_unknown_name_empty" {
+    start = build_shadow_fixture();
+    nodes: list[Launcher] = [];
+    for nd in [root -->][?:Launcher] {
+        nodes.append(nd);
+    }
+    order: list[str] = ["wrap", "glob", "npm", "sh"];
+    assert resolve_path(order, "missing", nodes) == "";
+}
+
+test "estimate_process_footprint_amplifies_on_loop" {
+    start = build_shadow_fixture();
+    assert estimate_process_footprint(start, 4000) == 8000;
 }

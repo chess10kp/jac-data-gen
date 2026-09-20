@@ -1,7 +1,11 @@
-# stSoftwareAU/NEAT-AI-core#688 — recursively splice IDENTITY neurons after IF rewrite.
+"""stSoftwareAU/NEAT-AI-core#688 — recursive IDENTITY splice after prune/cleanup."""
+
+node GraphRoot {
+    has gid: str = "creature";
+}
 
 node Neuron {
-    has cid: str;
+    has nid: str;
     has kind: str;
     has bias: float = 0.0;
 }
@@ -10,212 +14,250 @@ edge Synapse {
     has weight: float = 1.0;
 }
 
-def new_creature() -> Neuron {
-    graph_root = Neuron(cid="__root__", kind="root", bias=0.0);
-    root ++> graph_root;
-    return graph_root;
+obj PruneOutcome {
+    has removed_neurons: list[str] = [];
+    has synapse_count: int = 0;
 }
 
-def add_neuron(graph_root: Neuron, cid: str, kind: str, bias: float = 0.0) -> Neuron {
-    nd = Neuron(cid=cid, kind=kind, bias=bias);
-    graph_root ++> nd;
-    return nd;
-}
-
-def connect_neurons(src: Neuron, tgt: Neuron, weight: float) {
-    e = src +>:Synapse:+> tgt;
-    e.weight = weight;
-}
-
-def locate_neuron(graph_root: Neuron, cid: str) -> Neuron | None {
-    wk = graph_root spawn SeekNeuron(target=cid, claimed={});
-    return wk.res;
-}
-
-walker SeekNeuron {
-    has target: str;
+walker CollectIdentity {
     has claimed: dict[str, bool] = {};
-    has res: Neuron | None = None;
-    can step with Neuron entry {
-        if here.cid in self.claimed {
+    has found: list[str] = [];
+
+    can root_entry with GraphRoot entry {
+        print("collect_root", here.gid);
+        kids: list[Neuron] = [];
+        for ch in [here ++>][?:Neuron] {
+            kids.append(ch);
+        }
+        visit :0: kids;
+    }
+
+    can collect with Neuron entry {
+        if here.nid in self.claimed {
             skip;
         }
-        self.claimed[here.cid] = True;
-        if here.cid == self.target {
-            self.res = here;
-            print ["seek", here.cid];
+        self.claimed[here.nid] = True;
+        print("collect", here.nid);
+        if here.kind == "IDENTITY" {
+            self.found.append(here.nid);
+        }
+        kids: list[Neuron] = [];
+        for ch in [here ->:Synapse:->][?:Neuron] {
+            kids.append(ch);
+        }
+        if len(kids) > 0 {
+            visit :0: kids;
+        } else {
             disengage;
         }
-        kids: list[Neuron] = [here ->:Synapse:->][?:Neuron];
-        for kid in kids {
-            visit :0: [kid];
-        }
     }
 }
 
-walker FindSpliceable {
+walker FindNeuron {
+    has target: str;
     has claimed: dict[str, bool] = {};
-    has ids: list[str] = [];
-    can step with Neuron entry {
-        if here.cid in self.claimed {
+    has found: Neuron | None = None;
+
+    can root_seek with GraphRoot entry {
+        print("seek_root", here.gid);
+        kids: list[Neuron] = [];
+        for ch in [here ++>][?:Neuron] {
+            kids.append(ch);
+        }
+        visit kids;
+    }
+
+    can neuron_seek with Neuron entry {
+        if here.nid in self.claimed {
             skip;
         }
-        self.claimed[here.cid] = True;
-        ins: list[Neuron] = [<-:Synapse:<- here][?:Neuron];
-        outs: list[Neuron] = [here ->:Synapse:->][?:Neuron];
-        if here.kind == "identity" and len(ins) > 0 and len(outs) > 0 {
-            self.ids.append(here.cid);
-            print ["spliceable", here.cid];
+        self.claimed[here.nid] = True;
+        if here.nid == self.target {
+            self.found = here;
+            print("seek_hit", here.nid);
+            disengage;
         }
-        kids: list[Neuron] = [here ->:Synapse:->][?:Neuron];
-        for kid in kids {
-            visit :0: [kid];
+        kids: list[Neuron] = [];
+        for ch in [here ->:Synapse:->][?:Neuron] {
+            kids.append(ch);
         }
-        backs: list[Neuron] = [<-:Synapse:<- here][?:Neuron];
-        for back in backs {
-            visit :0: [back];
+        if len(kids) > 0 {
+            visit kids;
+        } else {
+            disengage;
         }
     }
 }
 
-def collect_spliceable(graph_root: Neuron) -> list[str] {
-    wk = graph_root spawn FindSpliceable(claimed={});
-    out: list[str] = sorted(wk.ids);
-    return out;
-}
+walker KindMap {
+    has claimed: dict[str, bool] = {};
+    has kinds: dict[str, str] = {};
 
-def edge_weight(src: Neuron, tgt: Neuron) -> float {
-    total: float = 0.0;
-    es: list[Synapse] = [src ->:Synapse:-> tgt][?:Synapse];
-    for e in es {
-        total = total + e.weight;
-    }
-    return total;
-}
-
-def set_edge_weight(src: Neuron, tgt: Neuron, val: float) {
-    es: list[Synapse] = [src ->:Synapse:-> tgt][?:Synapse];
-    if len(es) > 0 {
-        es[0].weight = val;
-    } else {
-        e = src +>:Synapse:+> tgt;
-        e.weight = val;
-    }
-}
-
-def splice_identity_node(graph_root: Neuron, nid: str) -> bool {
-    nd = locate_neuron(graph_root, nid);
-    if nd is None {
-        return False;
-    }
-    if nd.kind != "identity" {
-        return False;
-    }
-    in_ns: list[Neuron] = [<-:Synapse:<- nd][?:Neuron];
-    out_ns: list[Neuron] = [nd ->:Synapse:->][?:Neuron];
-    if len(in_ns) == 0 or len(out_ns) == 0 {
-        return False;
-    }
-    in_ws: list[float] = [];
-    for s in in_ns {
-        syn: list[Synapse] = [s ->:Synapse:-> nd][?:Synapse];
-        wi: float = 0.0;
-        for sy in syn {
-            wi = wi + sy.weight;
+    can root_kinds with GraphRoot entry {
+        print("kinds_root", here.gid);
+        kids: list[Neuron] = [];
+        for ch in [here ++>][?:Neuron] {
+            kids.append(ch);
         }
-        in_ws.append(wi);
+        visit kids;
     }
-    out_ws: list[float] = [];
-    for t in out_ns {
-        syn2: list[Synapse] = [nd ->:Synapse:-> t][?:Synapse];
-        wo: float = 0.0;
-        for sy2 in syn2 {
-            wo = wo + sy2.weight;
+
+    can kind_step with Neuron entry {
+        if here.nid in self.claimed {
+            skip;
         }
-        out_ws.append(wo);
-    }
-    nbias: float = nd.bias;
-    ii: int = 0;
-    for s in in_ns {
-        wi2: float = in_ws[ii];
-        jj: int = 0;
-        for t in out_ns {
-            wo2: float = out_ws[jj];
-            prod: float = wi2 * wo2;
-            old: float = edge_weight(s, t);
-            set_edge_weight(s, t, old + prod);
-            t.bias = t.bias + nbias * wo2;
-            jj = jj + 1;
+        self.claimed[here.nid] = True;
+        print("kind", here.nid);
+        self.kinds[here.nid] = here.kind;
+        kids: list[Neuron] = [];
+        for ch in [here ->:Synapse:->][?:Neuron] {
+            kids.append(ch);
         }
-        ii = ii + 1;
+        visit :0: kids;
     }
-    out_syns: list[Synapse] = [nd ->:Synapse:->][?:Synapse];
-    for sy3 in out_syns {
-        destroy sy3;
-    }
-    in_syns: list[Synapse] = [<-:Synapse:<- nd][?:Synapse];
-    for sy4 in in_syns {
-        destroy sy4;
-    }
-    destroy nd;
-    return True;
 }
 
-def splice_identity_neurons(graph_root: Neuron, enabled: bool = True) -> dict {
-    removed: list[str] = [];
-    cascade: list[str] = [];
-    if not enabled {
-        out0: dict[str, list[str]] = {};
-        out0["removed"] = removed;
-        out0["cascade"] = cascade;
-        return out0;
+def build_creature(
+    neuron_specs: list[tuple[str, str, float]],
+    synapse_specs: list[tuple[str, str, float]],
+) -> GraphRoot {
+    gr = GraphRoot();
+    root ++> gr;
+    registry: dict[str, Neuron] = {};
+    for spec in neuron_specs {
+        nid: str = spec[0];
+        knd: str = spec[1];
+        b: float = spec[2];
+        nd = Neuron(nid=nid, kind=knd, bias=b);
+        registry[nid] = nd;
+        gr ++> nd;
     }
-    changed: bool = True;
-    while changed {
-        changed = False;
-        ids: list[str] = collect_spliceable(graph_root);
-        for nid in ids {
-            if splice_identity_node(graph_root, nid) {
-                removed.append(nid);
-                cascade.append(nid);
-                changed = True;
+    for spec in synapse_specs {
+        src_id: str = spec[0];
+        dst_id: str = spec[1];
+        wt: float = spec[2];
+        src_n = registry[src_id];
+        dst_n = registry[dst_id];
+        src_n +>:Synapse(weight=wt):+> dst_n;
+    }
+    return gr;
+}
+
+def neuron_kinds(graph_root: GraphRoot) -> dict[str, str] {
+    w = graph_root spawn KindMap(claimed={});
+    return w.kinds;
+}
+
+def splice_identity_neuron(target: Neuron) -> int {
+    added: int = 0;
+    bias_delta: dict[str, float] = {};
+    preds: list[Neuron] = [];
+    for p in [target <-:Synapse:<-][?:Neuron] {
+        preds.append(p);
+    }
+    succs: list[Neuron] = [];
+    for s in [target ->:Synapse:->][?:Neuron] {
+        succs.append(s);
+    }
+    for s in succs {
+        out_w: float = 1.0;
+        for e in [target ->:Synapse:-> s] {
+            out_w = e.weight;
+        }
+        key: str = s.nid;
+        cur: float = 0.0;
+        if key in bias_delta {
+            cur = bias_delta[key];
+        }
+        bias_delta[key] = cur + target.bias * out_w;
+    }
+    for p in preds {
+        in_w: float = 1.0;
+        for e in [p ->:Synapse:-> target] {
+            in_w = e.weight;
+            del e;
+        }
+        for s in succs {
+            out_w: float = 1.0;
+            for e in [target ->:Synapse:-> s] {
+                out_w = e.weight;
+            }
+            new_w: float = in_w * out_w;
+            merged: bool = False;
+            for e in [p ->:Synapse:-> s] {
+                e.weight = e.weight + new_w;
+                merged = True;
+            }
+            if not merged {
+                p +>:Synapse(weight=new_w):+> s;
+                added = added + 1;
             }
         }
     }
-    removed = sorted(removed);
-    cascade = sorted(cascade);
-    out1: dict[str, list[str]] = {};
-    out1["removed"] = removed;
-    out1["cascade"] = cascade;
-    return out1;
+    for s in succs {
+        for e in [target ->:Synapse:-> s] {
+            del e;
+        }
+        if s.nid in bias_delta {
+            s.bias = s.bias + bias_delta[s.nid];
+        }
+    }
+    return added;
 }
 
-def prune_neuron(graph_root: Neuron, neuron_id: str, splice_enabled: bool = True) -> dict {
-    nd = locate_neuron(graph_root, neuron_id);
-    if nd is None {
-        bad: dict[str, bool | list[str]] = {};
-        bad["ok"] = False;
-        bad["removed_neurons"] = [];
-        bad["cascade_neurons"] = [];
-        return bad;
+def remove_neuron(neuron_id: str, victim: Neuron, outcome: PruneOutcome) -> None {
+    outcome.removed_neurons.append(neuron_id);
+    preds: list[Neuron] = [];
+    for p in [victim <-:Synapse:<-][?:Neuron] {
+        preds.append(p);
     }
-    if nd.kind == "if" {
-        nd.kind = "identity";
-    } else {
-        out_syns: list[Synapse] = [nd ->:Synapse:->][?:Synapse];
-        for sy in out_syns {
-            destroy sy;
+    for p in preds {
+        for e in [p ->:Synapse:-> victim] {
+            del e;
         }
-        in_syns: list[Synapse] = [<-:Synapse:<- nd][?:Synapse];
-        for sy2 in in_syns {
-            destroy sy2;
-        }
-        destroy nd;
     }
-    outcome = splice_identity_neurons(graph_root, splice_enabled);
-    good: dict[str, bool | list[str]] = {};
-    good["ok"] = True;
-    good["removed_neurons"] = [neuron_id];
-    good["cascade_neurons"] = outcome["cascade"];
-    return good;
+    succs: list[Neuron] = [];
+    for s in [victim ->:Synapse:->][?:Neuron] {
+        succs.append(s);
+    }
+    for s in succs {
+        for e in [victim ->:Synapse:-> s] {
+            del e;
+        }
+    }
+    del victim;
+}
+
+def cleanup_splice(graph_root: GraphRoot, splice_identity: bool) -> PruneOutcome {
+    outcome = PruneOutcome();
+    if not splice_identity {
+        return outcome;
+    }
+    looping: bool = True;
+    while looping {
+        looping = False;
+        collector = graph_root spawn CollectIdentity(claimed={});
+        candidates: list[str] = [];
+        for nid in collector.found {
+            candidates.append(nid);
+        }
+        if len(candidates) == 0 {
+            break;
+        }
+        sorted_cands: list[str] = sorted(candidates);
+        pick: str = sorted_cands[0];
+        picker = graph_root spawn FindNeuron(target=pick, claimed={});
+        if picker.found is None {
+            continue;
+        }
+        id_node = picker.found;
+        if id_node.kind != "IDENTITY" {
+            continue;
+        }
+        added = splice_identity_neuron(id_node);
+        outcome.synapse_count = outcome.synapse_count + added;
+        remove_neuron(id_node.nid, id_node, outcome);
+        looping = True;
+    }
+    return outcome;
 }

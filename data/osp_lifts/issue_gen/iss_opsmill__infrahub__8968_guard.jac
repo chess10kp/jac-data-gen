@@ -96,7 +96,6 @@ def children_of(h: SchemaRoot, kind: str) -> list[str] {
     }
     return sorted(c.name for c in [k <-:Extends:<-]);
 }
-
 test "resolve root and lineage on acyclic profile tree" {
     h = new_hierarchy();
     register_kind(h, "CoreGenericProfile");
@@ -113,6 +112,9 @@ test "self-parent corruption raises SchemaCycleError" {
     h = new_hierarchy();
     register_kind(h, "AristaPortProfile");
     k = _find_kind(h, "AristaPortProfile");
+    if k is None {
+        raise ValueError("test setup failed");
+    }
     k +>:Extends:+> k;
     raised = False;
     try {
@@ -137,6 +139,12 @@ test "multi-hop loop raises SchemaCycleError" {
     register_kind(h, "c", "b");
     a = _find_kind(h, "a");
     c = _find_kind(h, "c");
+    if a is None {
+        raise ValueError("test setup failed");
+    }
+    if c is None {
+        raise ValueError("test setup failed");
+    }
     a del <-:Extends:<- c;
     c +>:Extends:+> a;
     raised = False;

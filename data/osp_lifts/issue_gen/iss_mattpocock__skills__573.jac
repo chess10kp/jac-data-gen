@@ -1,95 +1,141 @@
-# mattpocock/skills#573 — recursive /code-review fan-out guard
-# Agents form a spawn tree; only orchestrator-level invocations may fan out.
-node Agent {
-    has aid: str;
-    has role: str;
-    has spawned: int = 0;
-    has banned: bool = False;
-}
-edge INVOKED {}
+"""Recursive /code-review fan-out guard — mattpocock/skills#573."""
 
-glob registry: dict[str, Agent] = {};
-
-def make_agent(aid: str, role: str) -> Agent {
-    a = Agent(aid=aid, role=role, banned=(role != "orchestrator"));
-    registry[aid] = a;
-    return a;
+node Invoker {
+    has iid: str;
+    has skill: str;
+    has root_owned: bool = False;
 }
 
-def link(parent: str, child: str) {
-    p = registry[parent];
-    c = registry[child];
-    p +>:INVOKED:+> c;
+node Boot {
+    has label: str = "skills573";
 }
 
-def get_agent(aid: str) -> Agent | None {
-    if aid in registry {
-        return registry[aid];
-    }
-    return None;
-}
+edge Delegates {}
 
-def invoke_code_review(root_id: str) -> list[str] {
-    # BFS fan-out from the invoking agent; banned agents cannot delegate.
-    start = get_agent(root_id);
-    if start is None {
-        return [];
-    }
-    claimed: dict[str, bool] = {};
-    order: list[str] = [];
-    frontier: list[Agent] = [start];
-    while len(frontier) > 0 {
-        cur = frontier.pop(0);
-        if cur.aid in claimed {
-            continue;
-        }
-        claimed[cur.aid] = True;
-        for ch in [cur ->:INVOKED:->] {
-            if ch.aid not in claimed {
-                if ch.banned {
-                    order.append(ch.aid);
-                } else {
-                    cur.spawned += 1;
-                    order.append(ch.aid);
-                    frontier.append(ch);
-                }
-            }
-        }
-    }
-    return sorted(order);
-}
-
-walker Audit {
+walker TraverseWalk {
     has claimed: dict[str, bool] = {};
-    has delegates: int = 0;
-    can step with Agent entry {
-        if here.aid in self.claimed {
+    has order: list[str] = [];
+    has blocked: int = 0;
+
+    can step with Invoker entry {
+        if here.iid in self.claimed {
+            if here.skill == "code-review" {
+                self.blocked += 1;
+            }
             skip;
         }
-        self.claimed[here.aid] = True;
-        if here.spawned > 0 {
-            self.delegates += 1;
-        }
-        kids: list[Agent] = [];
-        for ch in [here ->:INVOKED:->] {
+        self.claimed[here.iid] = True;
+        self.order.append(here.iid);
+        kids: list[Invoker] = [];
+        for ch in [here ->:Delegates:->][?:Invoker] {
             kids.append(ch);
         }
-        if len(kids) == 0 {
-            visit [] else { disengage; }
-        }
-        visit kids;
+        visit :0: kids else { disengage; }
     }
+}
+
+walker DemoWalk {
+    can show with Boot entry {
+        print("skills573 code-review fanout guard");
+        disengage;
+    }
+}
+
+def build_review_mesh(specs: list[list[str]]) -> object {
+    nodes: dict[str, Invoker] = {};
+    for row in specs {
+        pid = row[0];
+        cid = row[1];
+        skill = row[2];
+        if pid not in nodes {
+            pn = Invoker(iid=pid, skill="orchestrator", root_owned=False);
+            nodes[pid] = pn;
+            root ++> pn;
+        }
+        if cid not in nodes {
+            cn = Invoker(iid=cid, skill=skill, root_owned=False);
+            nodes[cid] = cn;
+            root ++> cn;
+        } else {
+            cn = nodes[cid];
+            cn.skill = skill;
+        }
+        par = nodes[pid];
+        chn = nodes[cid];
+        par +>:Delegates:+> chn;
+    }
+    store: dict[str, object] = {};
+    store["nodes"] = nodes;
+    return store;
+}
+
+def mark_root(mesh: object, root_iid: str) -> None {
+    store = mesh as dict[str, object];
+    nodes = store["nodes"] as dict[str, Invoker];
+    if root_iid not in nodes {
+        return;
+    }
+    rn = nodes[root_iid];
+    rn.skill = "code-review";
+    rn.root_owned = True;
+}
+
+def traverse_invocations(mesh: object, start_iid: str) -> list[str] {
+    store = mesh as dict[str, object];
+    nodes = store["nodes"] as dict[str, Invoker];
+    if start_iid not in nodes {
+        return [];
+    }
+    start = nodes[start_iid];
+    w = start spawn TraverseWalk(claimed={});
+    return w.order;
+}
+
+def blocked_reinvokes(mesh: object, start_iid: str) -> int {
+    store = mesh as dict[str, object];
+    nodes = store["nodes"] as dict[str, Invoker];
+    if start_iid not in nodes {
+        return 0;
+    }
+    start = nodes[start_iid];
+    w = start spawn TraverseWalk(claimed={});
+    return w.blocked;
+}
+
+def allowed_fanout(mesh: object, root_iid: str) -> list[str] {
+    store = mesh as dict[str, object];
+    nodes = store["nodes"] as dict[str, Invoker];
+    if root_iid not in nodes {
+        return [];
+    }
+    root_nd = nodes[root_iid];
+    if not root_nd.root_owned {
+        return [];
+    }
+    ids: list[str] = [];
+    for ch in [root_nd ->:Delegates:->][?:Invoker] {
+        if ch.skill == "standards" or ch.skill == "spec" {
+            ids.append(ch.iid);
+        }
+    }
+    return sorted(ids);
+}
+
+def may_invoke_review(mesh: object, actor_iid: str, skill: str) -> bool {
+    if skill != "code-review" {
+        return True;
+    }
+    store = mesh as dict[str, object];
+    nodes = store["nodes"] as dict[str, Invoker];
+    if actor_iid not in nodes {
+        return False;
+    }
+    actor = nodes[actor_iid];
+    return actor.root_owned;
 }
 
 with entry {
-    top = make_agent("top", "orchestrator");
-    st = make_agent("standards", "reviewer");
-    sp = make_agent("spec", "reviewer");
-    link("top", "standards");
-    link("top", "spec");
-    out = invoke_code_review("top");
-    print("spawned:", out);
-    au = top spawn Audit(claimed={});
-    print("delegating nodes:", au.delegates);
-    print("unknown:", invoke_code_review("ghost"));
+    boot = Boot();
+    root ++> boot;
+    boot spawn DemoWalk();
 }

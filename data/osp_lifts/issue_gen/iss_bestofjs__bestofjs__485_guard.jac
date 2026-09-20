@@ -302,7 +302,6 @@ def rollup_count(tx: Taxonomy, tag: str) -> int {
     }
     return count;
 }
-
 test "effective membership closes over ancestors" {
     tx = build_taxonomy([]);
     add_tag(tx, "react");
@@ -367,8 +366,20 @@ test "legal reparent rewires and sweep stays clean" {
 test "adversarial diamond terminates once-only" {
     tx = build_taxonomy(["top", "l", "r"]);
     tn = tx.resolve_tag("top");
+    if tn is None {
+        assert False;
+        return;
+    }
     ln = tx.resolve_tag("l");
+    if ln is None {
+        assert False;
+        return;
+    }
     rn = tx.resolve_tag("r");
+    if rn is None {
+        assert False;
+        return;
+    }
     bot = TagNode(name="bot");
     root ++> bot;
     tx.tags["bot"] = bot;
@@ -377,5 +388,9 @@ test "adversarial diamond terminates once-only" {
     ln +>:ChildTag:+> bot;
     rn +>:ChildTag:+> bot;
     desc = _descendants(tx, "top");
+    if desc is None {
+        assert False;
+        return;
+    }
     assert sorted(desc) == ["bot", "l", "r"];
 }

@@ -1,167 +1,161 @@
-"""sgaunet/s3xplorer#79 - Fix N+1 query pattern in ensureParentFolders."""
+"""sgaunet/s3xplorer#79 — batch parent folder creation (N+1 elimination)."""
 
-node Part {
-    has name: str;
+node FolderStore {
+    has existing: dict[str, bool] = {};
+}
+
+node PathRoot {
+    has bucket_id: str;
+    has object_key: str;
+}
+
+node Segment {
+    has part: str;
     has depth: int;
-    has cid: str;
+    has folder_key: str;
+    has sid: str;
 }
 
-node BucketStore {
-    has bid: str;
-    has folder_keys: dict[str, bool] = {};
-    has query_count: int = 0;
-}
+edge seg_next {}
 
-edge Step {}
-
-walker CollectFolders {
+walker ParentRowCollector {
     has claimed: dict[str, bool] = {};
-    has keys: list[str] = [];
-    has prefix: str = "";
+    has bucket_id: str = "";
+    has rows: list[dict] = {};
 
-    can walk with Part entry {
-        if here.cid in self.claimed {
+    can anchor_entry with PathRoot entry {
+        rk = here.object_key;
+        if rk in self.claimed {
             skip;
         }
-        self.claimed[here.cid] = True;
-        self.prefix = self.prefix + here.name + "/";
-        self.keys.append(self.prefix);
-        kids: list[Part] = [here ->:Step:->][?:Part];
-        i: int = 0;
-        while i < len(kids) {
-            j: int = i + 1;
-            while j < len(kids) {
-                if kids[j].cid < kids[i].cid {
-                    tmp = kids[i];
-                    kids[i] = kids[j];
-                    kids[j] = tmp;
-                }
-                j = j + 1;
-            }
-            i = i + 1;
-        }
+        self.claimed[rk] = True;
+        self.bucket_id = here.bucket_id;
+        print here.object_key;
+        kids: list[Segment] = [here ->:seg_next:->][?:Segment];
         if len(kids) > 0 {
-            for ch in kids {
-                visit [ch];
-            }
+            visit :0: kids;
+        } else {
+            disengage;
+        }
+    }
+
+    can seg_entry with Segment entry {
+        sid = here.sid;
+        if sid in self.claimed {
+            skip;
+        }
+        self.claimed[sid] = True;
+        row: dict[str, str | int] = {};
+        row["bucket_id"] = self.bucket_id;
+        row["key"] = here.folder_key;
+        row["prefix"] = folder_prefix(here.folder_key);
+        row["depth"] = here.depth;
+        self.rows.append(row);
+        print here.folder_key;
+        nxt: list[Segment] = [here ->:seg_next:->][?:Segment];
+        if len(nxt) > 0 {
+            visit :0: nxt;
         } else {
             disengage;
         }
     }
 }
 
-def split_key_parts(object_key: str) -> list[str] {
-    raw: list[str] = object_key.split("/");
+def split_object_key(object_key: str) -> list[str] {
     parts: list[str] = [];
-    for seg in raw {
-        if seg != "" {
-            parts.append(seg);
+    if object_key == "" {
+        return parts;
+    }
+    token: str = "";
+    for ch in object_key {
+        if ch == "/" {
+            if token != "" {
+                parts.append(token);
+                token = "";
+            }
+        } else {
+            token = token + ch;
         }
     }
-    if len(parts) == 0 {
-        return [];
-    }
-    if not object_key.endswith("/") {
-        trimmed: list[str] = [];
-        i: int = 0;
-        last: int = len(parts) - 1;
-        while i < last {
-            trimmed.append(parts[i]);
-            i = i + 1;
-        }
-        parts = trimmed;
+    if token != "" {
+        parts.append(token);
     }
     return parts;
 }
 
-def parent_folder_keys(parts: list[str]) -> list[str] {
-    keys: list[str] = [];
-    prefix: str = "";
-    for part in parts {
-        prefix = prefix + part + "/";
-        keys.append(prefix);
+def folder_prefix(folder_key: str) -> str {
+    parts: list[str] = split_object_key(folder_key);
+    if len(parts) <= 1 {
+        return "";
     }
-    return keys;
+    out: str = parts[0];
+    for i in range(1, len(parts) - 1) {
+        out = out + "/" + parts[i];
+    }
+    return out;
 }
 
-def build_part_chain(parts: list[str]) -> Part | None {
-    if len(parts) == 0 {
-        return None;
-    }
-    head: Part | None = None;
-    prev: Part | None = None;
-    depth: int = 0;
-    for part in parts {
-        depth = depth + 1;
-        cid: str = str(depth) + ":" + part;
-        nd = Part(name=part, depth=depth, cid=cid);
-        if head is None {
-            head = nd;
+def build_linear_chain(anchor: PathRoot, object_key: str) {
+    parts: list[str] = split_object_key(object_key);
+    prev_seg: Segment | None = None;
+    built: str = "";
+    for i in range(len(parts) - 1) {
+        part = parts[i];
+        depth = i + 1;
+        if built == "" {
+            fk = part;
+        } else {
+            fk = built + "/" + part;
         }
-        if prev is not None {
-            prev +>:Step:+> nd;
+        seg = Segment(part=part, depth=depth, folder_key=fk, sid=fk);
+        root ++> seg;
+        if prev_seg is None {
+            anchor +>:seg_next:+> seg;
+        } else {
+            prev_seg +>:seg_next:+> seg;
         }
-        prev = nd;
+        prev_seg = seg;
+        built = fk;
     }
-    return head;
 }
 
-def build_diamond_parts() -> Part {
-    a = Part(name="a", depth=1, cid="a");
-    b = Part(name="b", depth=2, cid="b");
-    c = Part(name="c", depth=2, cid="c_alt");
-    d = Part(name="d", depth=3, cid="d");
-    a +>:Step:+> b;
-    a +>:Step:+> c;
-    b +>:Step:+> d;
-    c +>:Step:+> d;
-    return a;
+def collect_parent_folder_records(bucket_id: str, object_key: str) -> list[dict] {
+    rows: list[dict] = [];
+    if object_key == "" {
+        return rows;
+    }
+    parts: list[str] = split_object_key(object_key);
+    if len(parts) <= 1 {
+        return rows;
+    }
+    anchor = PathRoot(bucket_id=bucket_id, object_key=object_key);
+    root ++> anchor;
+    build_linear_chain(anchor, object_key);
+    claimed: dict[str, bool] = {};
+    w = anchor spawn ParentRowCollector(claimed=claimed, bucket_id=bucket_id, rows=rows);
+    out: list[dict] = [];
+    for r in w.rows {
+        out.append(r);
+    }
+    return out;
 }
 
-def collect_folder_keys(graph_root: Part) -> list[str] {
-    w = graph_root spawn CollectFolders(claimed={}, keys=[], prefix="");
-    print("collect_folder_keys=" + str(w.keys));
-    return w.keys;
-}
-
-def ensure_parent_folders(store: BucketStore, bucket_id: str, object_key: str) -> list[str] {
-    if store.bid != bucket_id {
-        return [];
-    }
-    parts = split_key_parts(object_key);
-    if len(parts) == 0 {
-        return [];
-    }
-    graph_root = build_part_chain(parts);
-    if graph_root is None {
-        return [];
-    }
-    w = graph_root spawn CollectFolders(claimed={}, keys=[], prefix="");
-    print("ensure_parent_folders batch keys=" + str(w.keys));
+def insert_folder_batch(store: FolderStore, bucket_id: str, records: list[dict]) -> list[str] {
     created: list[str] = [];
-    store.query_count = store.query_count + 1;
-    for key in w.keys {
-        if key not in store.folder_keys {
-            store.folder_keys[key] = True;
-            created.append(key);
+    for rec in records {
+        key = rec["key"];
+        full_id = bucket_id + ":" + key;
+        if full_id in store.existing {
+            continue;
         }
+        store.existing[full_id] = True;
+        created.append(key);
     }
-    return sorted(created);
+    return created;
 }
 
-def ensure_parent_folders_n_plus_one(store: BucketStore, bucket_id: str, object_key: str) -> list[str] {
-    if store.bid != bucket_id {
-        return [];
-    }
-    parts = split_key_parts(object_key);
-    keys = parent_folder_keys(parts);
-    created: list[str] = [];
-    for key in keys {
-        store.query_count = store.query_count + 1;
-        if key not in store.folder_keys {
-            store.folder_keys[key] = True;
-            created.append(key);
-        }
-    }
-    return sorted(created);
+def ensure_parent_folders(bucket_id: str, object_key: str, store: FolderStore) -> list[str] {
+    records: list[dict] = collect_parent_folder_records(bucket_id, object_key);
+    created: list[str] = insert_folder_batch(store, bucket_id, records);
+    return created;
 }

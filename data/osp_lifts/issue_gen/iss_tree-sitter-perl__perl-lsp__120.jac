@@ -1,134 +1,196 @@
-# iss_tree-sitter-perl__perl-lsp__120.jac
-# tree-sitter-perl/perl-lsp#120 — Session B iterative builder walk (depth-gated CST collect)
+"""Parallel cloud session coordination — tree-sitter-perl/perl-lsp#120."""
 
-node CstNode {
-    has cid: str;
-    has kind: str;
-    has depth: int = 0;
+node Module {
+    has mid: str;
+    has depth_gate: int = 0;
 }
 
-edge Child {}
-
-walker BuilderW {
-    has claimed: dict[str, bool] = {};
-    has depth_limit: int = 0;
-    has kinds: list[str] = [];
-
-    can walk with CstNode entry {
-        if here.cid in self.claimed {
-            skip;
-        }
-        self.claimed[here.cid] = True;
-        if here.depth <= self.depth_limit {
-            self.kinds.append(here.kind);
-        }
-        log: list[str] = [];
-        log.append("builder");
-        log.append(here.cid);
-        depth_s: str = f"{here.depth}";
-        log.append(depth_s);
-        print log;
-        if here.depth >= self.depth_limit {
-            disengage;
-        }
-        kids: list[CstNode] = [here ->:Child:->][?:CstNode];
-        ri: int = len(kids) - 1;
-        while ri >= 0 {
-            visit :0: [kids[ri]];
-            ri -= 1;
-        }
-    }
+node Seam {
+    has sid: str;
 }
 
-walker OrderW {
+edge Depends {}
+edge Invalidates {}
+
+walker BuildOrder {
     has claimed: dict[str, bool] = {};
     has order: list[str] = [];
 
-    can walk with CstNode entry {
-        if here.cid in self.claimed {
-            skip;
+    can visit_mod with Module entry {
+        if here.mid in self.claimed { skip; }
+        self.claimed[here.mid] = True;
+        self.order.append(here.mid);
+        print(here.mid);
+        kids: list[Module] = [here ->:Depends:->][?:Module];
+        mids: list[str] = [];
+        for k in kids {
+            mids.append(k.mid);
         }
-        self.claimed[here.cid] = True;
-        self.order.append(here.cid);
-        log: list[str] = [];
-        log.append("order");
-        log.append(here.cid);
-        print log;
-        kids: list[CstNode] = [here ->:Child:->][?:CstNode];
-        ri: int = len(kids) - 1;
-        while ri >= 0 {
-            visit :0: [kids[ri]];
-            ri -= 1;
+        mids = sorted(mids);
+        for mid in mids {
+            for k in kids {
+                if k.mid == mid {
+                    visit :0: [k];
+                }
+            }
         }
     }
 }
 
-walker MarkPruneW {
+walker CascadeInvalidate {
     has claimed: dict[str, bool] = {};
-    has drop_kinds: dict[str, bool] = {};
-    has mark_nodes: list[CstNode] = [];
+    has invalidated: list[str] = [];
 
-    can walk with CstNode entry {
-        if here.cid in self.claimed {
-            skip;
+    can visit_seam with Seam entry {
+        if here.sid in self.claimed { skip; }
+        self.claimed[here.sid] = True;
+        self.invalidated.append(here.sid);
+        print(here.sid);
+        mods: list[Module] = [here ->:Invalidates:->][?:Module];
+        for m in mods {
+            visit [m];
         }
-        self.claimed[here.cid] = True;
-        if here.kind in self.drop_kinds {
-            self.mark_nodes.append(here);
+    }
+
+    can visit_mod with Module entry {
+        if here.mid in self.claimed { skip; }
+        self.claimed[here.mid] = True;
+        self.invalidated.append(here.mid);
+        print(here.mid);
+        deps: list[Module] = [here ->:Depends:->][?:Module];
+        dmids: list[str] = [];
+        for d in deps {
+            dmids.append(d.mid);
         }
-        log: list[str] = [];
-        log.append("mark");
-        log.append(here.cid);
-        print log;
-        kids: list[CstNode] = [here ->:Child:->][?:CstNode];
-        for ch in kids {
-            visit [ch];
+        dmids = sorted(dmids);
+        for dmid in dmids {
+            for d in deps {
+                if d.mid == dmid {
+                    visit [d];
+                }
+            }
         }
     }
 }
 
-def mk_drop_map(kinds: list[str]) -> dict[str, bool] {
-    out: dict[str, bool] = {};
-    for k in kinds {
-        out[k] = True;
+def make_module(mid: str, depth_gate: int) -> Module {
+    return Module(mid=mid, depth_gate=depth_gate);
+}
+
+def connect_dep(parent: Module, child: Module) {
+    parent +>:Depends:+> child;
+}
+
+def build_index_modules(edges: list[list[str]], depths: dict[str, int] | None) -> Module | None {
+    nodes: dict[str, Module] = {};
+    depth_map: dict[str, int] = {};
+    if depths is not None {
+        depth_map = depths;
     }
-    return out;
+    for pair in edges {
+        a: str = pair[0];
+        b: str = pair[1];
+        if a not in nodes {
+            dg: int = 0;
+            if a in depth_map { dg = depth_map[a]; }
+            nodes[a] = make_module(a, dg);
+        }
+        if b not in nodes {
+            dg2: int = 0;
+            if b in depth_map { dg2 = depth_map[b]; }
+            nodes[b] = make_module(b, dg2);
+        }
+        connect_dep(nodes[a], nodes[b]);
+    }
+    if len(edges) == 0 {
+        return None;
+    }
+    graph_root: Module = nodes[edges[0][0]];
+    root ++> graph_root;
+    return graph_root;
 }
 
-def builder_index(graph_root: CstNode, depth_limit: int) -> list[str] {
-    w = graph_root spawn BuilderW(depth_limit=depth_limit, claimed={});
-    return w.kinds;
-}
-
-def builder_order(graph_root: CstNode) -> list[str] {
-    w = graph_root spawn OrderW(claimed={});
+def iterative_build_order(edges: list[list[str]], depths: dict[str, int] | None) -> list[str] {
+    graph_root = build_index_modules(edges, depths);
+    if graph_root is None {
+        return [];
+    }
+    w = graph_root spawn BuildOrder(claimed={});
     return w.order;
 }
 
-def find_by_cid(graph_root: CstNode, target_cid: str) -> str | None {
-    w = graph_root spawn OrderW(claimed={});
-    for cid in w.order {
-        if cid == target_cid {
-            return cid;
+def cascade_invalidate(seam_id: str, invalidates: list[list[str]], deps: list[list[str]]) -> list[str] {
+    seams: dict[str, Seam] = {};
+    modules: dict[str, Module] = {};
+    s = Seam(sid=seam_id);
+    seams[seam_id] = s;
+    root ++> s;
+    for pair in invalidates {
+        sid: str = pair[0];
+        mid: str = pair[1];
+        if sid not in seams {
+            seams[sid] = Seam(sid=sid);
+            root ++> seams[sid];
         }
+        if mid not in modules {
+            modules[mid] = make_module(mid, 0);
+            root ++> modules[mid];
+        }
+        seams[sid] +>:Invalidates:+> modules[mid];
     }
-    return None;
+    for pair in deps {
+        a: str = pair[0];
+        b: str = pair[1];
+        if a not in modules {
+            modules[a] = make_module(a, 0);
+            root ++> modules[a];
+        }
+        if b not in modules {
+            modules[b] = make_module(b, 0);
+            root ++> modules[b];
+        }
+        modules[a] +>:Depends:+> modules[b];
+    }
+    w = s spawn CascadeInvalidate(claimed={});
+    return sorted(w.invalidated);
 }
 
-def cascade_prune_kinds(graph_root: CstNode, kinds: list[str] | None = None) -> list[str] {
-    use_kinds: list[str] = [];
-    if kinds is not None {
-        use_kinds = kinds;
+def session_task(letter: str) -> str {
+    board: dict[str, str] = {};
+    board["A"] = "narrow-seam-cache-indexcore";
+    board["B"] = "iterative-builder-walk";
+    board["C"] = "inc-single-provider-tier";
+    if letter in board {
+        return board[letter];
     }
-    dk = mk_drop_map(use_kinds);
-    w = graph_root spawn MarkPruneW(drop_kinds=dk, claimed={});
-    pruned: list[str] = [];
-    for nd in w.mark_nodes {
-        pruned.append(nd.cid);
+    return "";
+}
+
+def seam_conflicts(ownership: dict[str, list[str]], seam: str) -> list[str] {
+    owners: list[str] = [];
+    keys: list[str] = sorted(ownership);
+    for k in keys {
+        files: list[str] = ownership[k];
+        for f in files {
+            if f == seam {
+                owners.append(k);
+            }
+        }
     }
-    pruned = sorted(pruned);
-    for nd in w.mark_nodes {
-        destroy nd;
+    return sorted(owners);
+}
+
+def scale_baseline_ok(unit: int, gold: int, fail: int) -> bool {
+    return unit == 1511 and gold == 491 and fail == 0;
+}
+
+with entry {
+    demo_edges: list[list[str]] = [];
+    demo_edges.append(["IndexCore", "Builder"]);
+    demo_edges.append(["Builder", "CST"]);
+    gr = build_index_modules(demo_edges, None);
+    if gr is not None {
+        gr spawn BuildOrder(claimed={});
     }
-    return pruned;
+    print(session_task("B"));
 }

@@ -1,123 +1,213 @@
-# ansible/ansible#17806 - hostvars[host][variable] recursive templating
-# Hand-rolled var-resolution graph lifted to idiomatic OSP:
-# Var nodes carry raw template strings; refs edges point at dependencies.
-# Resolution is a recursive traversal with claim-map (resolve-once + skip on
-# revisit) so diamond dependency graphs terminate.
+"""ansible/ansible#17806 — recursive hostvar templating."""
 
-node Var {
-    has host: str;
-    has name: str;
-    has raw: str;
-    has value: str = "";
-    has resolved: bool = False;
+node Host {
+    has host_id: str;
+    has vars: dict[str, str] = {};
 }
 
-edge Refs {}
+node Inventory {}
 
-# split "{{ expr }}" -> inner expression, or None if literal
-def template_refs(raw: str) -> list[str] | None {
-    xs: list[str] = [];
-    depth: int = 0;
-    cur: str = "";
-    for ch in raw {
-        if ch == "{" {
-            depth += 1;
-            if depth == 2 { cur = ""; continue; }
-        } else if ch == "}" {
-            depth -= 1;
-            if depth == 0 { xs.append(cur); cur = ""; continue; }
-        }
-        if depth >= 2 { cur += ch; }
-    }
-    return xs;
-}
+edge HostLink {}
 
-# build the hostvars graph: one Var node per (host, key); refs edges to deps
-def build_hostvars(hostvars: dict[str, dict[str, str]]) -> dict[str, Var] {
-    idx: dict[str, Var] = {};
-    for hname in sorted(hostvars.keys()) {
-        for vname in sorted(hostvars[hname].keys()) {
-            nd = Var(host=hname, name=vname, raw=hostvars[hname][vname]);
-            idx[hname + "." + vname] = nd;
-        }
-    }
-    # wire dependency edges after all nodes exist (diamond-safe)
-    for key in sorted(idx.keys()) {
-        refs = template_refs(idx[key].raw);
-        if refs != None {
-            for r in refs {
-                if r in idx {
-                    idx[key] +>:Refs:+> idx[r];
-                }
-            }
-        }
-    }
-    return idx;
-}
-
-walker Resolve {
-    has idx: dict[str, Var] = {};
+walker ReachWalker {
     has claimed: dict[str, bool] = {};
+    has ids: list[str] = [];
 
-    can step with Var entry {
-        if here.host + "." + here.name in self.claimed { skip; }
-        self.claimed[here.host + "." + here.name] = True;
-        refs = template_refs(here.raw);
-        if refs == None {
-            here.value = here.raw;
-        } else {
-            # resolve dependencies first, then interpolate recursively
-            kids: list[Var] = [];
-            for dep in [here ->:Refs:->][?:Var] {
-                kids.append(dep);
-            }
-            visit kids;
-            out: str = here.raw;
-            for dep in [here ->:Refs:->][?:Var] {
-                out = out.replace("{{ " + dep.name + " }}", dep.value);
-                out = out.replace("{{" + dep.name + "}}", dep.value);
-            }
-            here.value = out;
+    can start with Inventory entry {
+        kids: list[Host] = [];
+        for ch in [here ->:HostLink:->][?:Host] {
+            kids.append(ch);
         }
-        here.resolved = True;
+        print("reach inventory");
+        if kids {
+            visit :0: kids;
+        } else {
+            disengage;
+        }
+    }
+
+    can walk with Host entry {
+        if here.host_id in self.claimed {
+            skip;
+        }
+        self.claimed[here.host_id] = True;
+        self.ids.append(here.host_id);
+        print("reach ", here.host_id);
+        kids: list[Host] = [];
+        for ch in [here ->:HostLink:->][?:Host] {
+            kids.append(ch);
+        }
+        if kids {
+            visit :0: kids;
+        } else {
+            disengage;
+        }
     }
 }
 
-def resolve_all(hostvars: dict[str, dict[str, str]]) -> dict[str, dict[str, str]] {
-    idx = build_hostvars(hostvars);
-    anchor = Var(host="__anchor__", name="__anchor__", raw="");
-    root ++> anchor;
-    for key in sorted(idx.keys()) {
-        anchor +>:Refs:+> idx[key];
+def is_tmpl(raw: str) -> bool {
+    return "{{" in raw and "}}" in raw;
+}
+
+def tmpl_inner(raw: str) -> str {
+    start = raw.find("{{") + 2;
+    end = raw.find("}}");
+    return raw[start:end].strip();
+}
+
+def tmpl_kind(inner: str) -> str {
+    colon = inner.find(":");
+    if colon < 0 {
+        return "LIT";
     }
-    wk = anchor spawn Resolve(idx=idx, claimed={});
-    out: dict[str, dict[str, str]] = {};
-    for key in sorted(idx.keys()) {
-        h = idx[key].host;
-        if h not in out {
-            out[h] = {};
+    return inner[:colon];
+}
+
+def tmpl_arg(inner: str) -> str {
+    colon = inner.find(":");
+    if colon < 0 {
+        return inner;
+    }
+    return inner[colon + 1:];
+}
+
+def ref_host(payload: str) -> str {
+    colon = payload.find(":");
+    if colon < 0 {
+        return payload;
+    }
+    return payload[:colon];
+}
+
+def ref_key(payload: str) -> str {
+    colon = payload.find(":");
+    if colon < 0 {
+        return "";
+    }
+    return payload[colon + 1:];
+}
+
+def index_hosts(inv: Inventory) -> dict[str, Host] {
+    table: dict[str, Host] = {};
+    for h in [inv ->:HostLink:->][?:Host] {
+        table[h.host_id] = h;
+    }
+    return table;
+}
+
+def host_order(inv: Inventory) -> list[str] {
+    order: list[str] = [];
+    for h in [inv ->:HostLink:->][?:Host] {
+        order.append(h.host_id);
+    }
+    return order;
+}
+
+def resolve_core(
+    table: dict[str, Host],
+    order: list[str],
+    host_id: str,
+    key: str,
+    claim: dict[str, bool]
+) -> str | list[str] {
+    token = host_id + ":" + key;
+    if token in claim {
+        return "";
+    }
+    claim[token] = True;
+    if host_id not in table {
+        return "";
+    }
+    host = table[host_id];
+    if key not in host.vars {
+        return "";
+    }
+    raw = host.vars[key];
+    if not is_tmpl(raw) {
+        return raw;
+    }
+    inner = tmpl_inner(raw);
+    kind = tmpl_kind(inner);
+    arg = tmpl_arg(inner);
+    if kind == "EXTRACT" {
+        vals: list[str] = [];
+        for hid in order {
+            item = resolve_core(table, order, hid, arg, claim);
+            vals.append(item as str);
         }
-        out[h][idx[key].name] = idx[key].value;
+        return vals;
+    }
+    if kind == "REF" {
+        rh = ref_host(arg);
+        rk = ref_key(arg);
+        return resolve_core(table, order, rh, rk, claim);
+    }
+    return raw;
+}
+
+def create_inventory(host_ids: list[str]) -> Inventory {
+    inv = Inventory();
+    root ++> inv;
+    for hid in host_ids {
+        h = Host(host_id=hid);
+        inv +>: HostLink :+> h;
+    }
+    return inv;
+}
+
+def set_host_var(inv: Inventory, host_id: str, key: str, value: str) {
+    table = index_hosts(inv);
+    if host_id in table {
+        table[host_id].vars[key] = value;
+    }
+}
+
+def broadcast_var(inv: Inventory, key: str, value: str) {
+    table = index_hosts(inv);
+    order = host_order(inv);
+    for hid in order {
+        if hid in table {
+            table[hid].vars[key] = value;
+        }
+    }
+}
+
+def resolve_var(inv: Inventory, host_id: str, key: str) -> str | list[str] {
+    table = index_hosts(inv);
+    order = host_order(inv);
+    claim: dict[str, bool] = {};
+    return resolve_core(table, order, host_id, key, claim);
+}
+
+def lookup_hostvar(inv: Inventory, host_id: str, key: str) -> str | list[str] {
+    return resolve_var(inv, host_id, key);
+}
+
+def extract_vars(inv: Inventory, host_ids: list[str], key: str) -> list[str] {
+    out: list[str] = [];
+    for hid in host_ids {
+        item = resolve_var(inv, hid, key);
+        out.append(item as str);
     }
     return out;
 }
 
-walker demo {
-    can go with Var entry {
-        res = resolve_all(
-            {
-                "localhost": {"test_var": "this is localhost",
-                              "groupvar": "{{ test_var }}"},
-                "otherhost": {"test_var": "this is otherhost"}
-            }
-        );
-        print(res);
-        self.disengage;
+def wire_hosts(inv: Inventory, parent_id: str, child_id: str) {
+    table = index_hosts(inv);
+    if parent_id in table {
+        if child_id in table {
+            p = table[parent_id];
+            c = table[child_id];
+            p +>: HostLink :+> c;
+        }
     }
 }
 
-with entry {
-    n = Var(host="boot", name="boot", raw="x");
-    root ++> n;
-    root spawn demo();
+def reachable_host_ids(inv: Inventory) -> list[str] {
+    w = inv spawn ReachWalker(claimed={});
+    out: list[str] = [];
+    for hid in w.ids {
+        out.append(hid);
+    }
+    return sorted(out);
 }

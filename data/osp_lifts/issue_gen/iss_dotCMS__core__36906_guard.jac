@@ -219,7 +219,6 @@ def orphaned_categories(cat: Catalog) -> list[str] {
     }
     return out;
 }
-
 test "deep delete removes every level and keeps join integrity" {
     cat = build_catalog(["products", "hardware", "software"], [("products", "hardware"), ("products", "software")]);
     add_category(cat, "laptops", "hardware", 0);
@@ -260,17 +259,7 @@ test "level structure pinned on wider tree" {
 }
 
 test "adversarial diamond terminates once-only" {
-    cat = build_catalog(["top", "l", "rr"], []);
-    tn = cat.resolve("top");
-    ln = cat.resolve("l");
-    rn = cat.resolve("rr");
-    bot = CategoryNode(name="bot");
-    root ++> bot;
-    cat.cats["bot"] = bot;
-    ln +>:ChildCategory:+> bot;
-    rn +>:ChildCategory:+> bot;
-    tn +>:ChildCategory:+> ln;
-    tn +>:ChildCategory:+> rn;
+    cat = build_catalog(["top", "l", "rr", "bot"], [("top", "l"), ("top", "rr"), ("l", "bot"), ("rr", "bot")]);
     rep = delete_category_deep(cat, "top");
     assert rep == (4, [1, 2, 1]), rep;
     assert orphaned_categories(cat) == [];

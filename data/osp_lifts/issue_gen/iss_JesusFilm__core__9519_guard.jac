@@ -93,7 +93,6 @@ def available_languages(store: VideoStore, vid: str) -> list[str] {
     if not (vid in store.vids) { return []; }
     return sorted(store.vids[vid].langs);
 }
-
 test "recompute union" {
     store = make_store();
     add_video(store, "parent", None, "container", {"en"});
@@ -124,14 +123,16 @@ test "cleanup removes empty only" {
 test "shared lookup restricts to container" {
     store = make_store();
     add_video(store, "leaf", None, "leaf", {"en"});
-    add_video(store, "c", "leaf", "variant", {});
+    empty_langs: set[str] = set();
+    add_video(store, "c", "leaf", "variant", empty_langs);
     assert _shared_parent_lookup(store, "c") == None;
     assert check_and_remove_empty_parent_variant(store, "c") == False;
 }
 
 test "diamond closure" {
     store = make_store();
-    add_video(store, "root", None, "container", {});
+    empty_langs: set[str] = set();
+    add_video(store, "root", None, "container", empty_langs);
     add_video(store, "a", "root", "variant", {"en"});
     add_video(store, "b", "root", "variant", {"es"});
     assert recompute_available(store, "root") == {"en", "es"};

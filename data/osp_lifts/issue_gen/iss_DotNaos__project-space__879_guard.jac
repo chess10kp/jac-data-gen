@@ -30,8 +30,7 @@ def load_change_tree(
         if p is not None and c is not None { p +>:Contains:+> c; }
     }
     for (pid, state) in states {
-        nd: ChangePiece | None = tree.pieces.get(pid, None);
-        if nd is not None { nd.state = state; }
+        if pid in tree.pieces { tree.pieces[pid].state = state; }
     }
     return tree;
 }
@@ -99,8 +98,7 @@ def partition_accounting(tree: ChangeTree) -> dict[str, int] {
 
 def review_complete(tree: ChangeTree) -> bool {
     return partition_accounting(tree)["deferred"] == 0;
-}
-test "change tree accounting" {
+}test "change tree accounting" {
     t = load_change_tree(
         ["feat", "backend", "frontend", "auth", "ui"],
         [("feat", "backend"), ("feat", "frontend"), ("backend", "auth"), ("frontend", "ui")],

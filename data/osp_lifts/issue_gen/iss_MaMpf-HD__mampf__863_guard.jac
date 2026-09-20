@@ -164,7 +164,6 @@ def mark_fresh(g: Graph, entity: str) {
     }
     g.stale.discard(n.cache_key);
 }
-
 test "one event invalidates the downstream closure once" {
     g = build_graph([("tag", "k_tag"), ("lecture", "k_lec"), ("course", "k_course"), ("lesson", "k_les"), ("exercise", "k_ex")]);
     add_dependency(g, "lesson", "lecture");
@@ -215,9 +214,17 @@ test "link rejection" {
 test "imported dependency cycle terminates" {
     g = build_graph([("a", "ka"), ("b", "kb")]);
     an = g.resolve("a");
-    bn = g.resolve("b");
-    # a reads b AND b reads a (imported corruption)
-    an +>:Feeds:+> bn;
-    bn +>:Feeds:+> an;
-    assert publish_change(g, "b") == ["ka"];
+    if an is None {
+        assert False;
+    } else {
+        bn = g.resolve("b");
+        if bn is None {
+            assert False;
+        } else {
+            # a reads b AND b reads a (imported corruption)
+            an +>:Feeds:+> bn;
+            bn +>:Feeds:+> an;
+            assert publish_change(g, "b") == ["ka"];
+        }
+    }
 }

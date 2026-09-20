@@ -30,8 +30,7 @@ def load_segments(
         if p is not None and c is not None { p +>:ChildSegment:+> c; }
     }
     for (sid, sz) in sizes {
-        nd: Segment | None = store.segments.get(sid, None);
-        if nd is not None { nd.size = sz; }
+        if sid in store.segments { store.segments[sid].size = sz; }
     }
     return store;
 }
@@ -77,8 +76,7 @@ def split_candidates(store: SegmentStore, seg_id: str) -> list[str] {
         if sz > base { hits.append(desc); }
     }
     return sorted(hits);
-}
-test "segment closure and split candidates" {
+}test "segment closure and split candidates" {
     s = load_segments(
         ["root", "a", "b", "c"],
         [("root", "a"), ("root", "b"), ("a", "c")],

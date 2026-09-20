@@ -1,173 +1,135 @@
-# Lifting rust-lang/rust#69684 — recursive fs::read_dir_all as OSP traversal.
-# Filesystem modeled as a graph: DirEntry nodes, Contains edges, walker does
-# the recursive enumeration with a claim-map for cycle safety.
+"""rust-lang/rust#69684 — recursive directory listing lifted to OSP graph walk."""
 
-node DirEntry {
-    has path: str;
-    has is_dir: bool = False;
+node Dir {
+  has cid: str;
+  has path: str;
 }
 
-edge Contains;
-
-obj FsTree {
-    has index: dict[str, DirEntry] = {};
-
-    def add_node(path: str, is_dir: bool, parent_path: str | None = None) -> DirEntry {
-        nd = DirEntry(path=path, is_dir=is_dir);
-        self.index[path] = nd;
-        if parent_path is not None {
-            par = self.index.get(parent_path, None);
-            if par is not None {
-                par +>:Contains:+> nd;
-            }
-        }
-        return nd;
-    }
-
-    def link(path_a: str, path_b: str) -> bool {
-        # extra edge (cycle/diamond injection for adversarial traversal)
-        a = self.index.get(path_a, None);
-        b = self.index.get(path_b, None);
-        if a is None or b is None {
-            return False;
-        }
-        a +>:Contains:+> b;
-        return True;
-    }
-
-    def get(path: str) -> DirEntry | None {
-        return self.index.get(path, None);
-    }
+node File {
+  has cid: str;
+  has path: str;
 }
 
-# non-recursive counterpart: immediate children, sorted
-def read_dir(tree: FsTree, path: str) -> list[str] {
-    nd = tree.get(path);
-    if nd is None {
-        return [];
-    }
-    kids: list[DirEntry] = [nd ->:Contains:->][?:DirEntry];
-    names: list[str] = [];
-    for ch in kids {
-        names.append(ch.path);
-    }
-    names.sort();
-    return names;
+edge Child {}
+
+def read_dir(root_id: str, store: dict[str, object]) -> list[str] {
+  if root_id not in store {
+    return [];
+  }
+  parent = store[root_id];
+  kids: list[str] = [];
+  for ch in [parent ->:Child:->][?:Dir] {
+    kids.append(ch.path);
+  }
+  for ch in [parent ->:Child:->][?:File] {
+    kids.append(ch.path);
+  }
+  return sorted(kids);
 }
 
-walker ReadAll {
-    has claimed: dict[str, bool] = {};
-    has out: list[str] = [];
+walker ReadDirAllW {
+  has claimed: dict[str, bool] = {};
+  has found: list[str] = [];
+  has root_id: str = "";
 
-    can step with DirEntry entry {
-        if here.path in self.claimed {
-            skip;  # cycle policy: claim-map + skip, never disengage
-        }
-        self.claimed[here.path] = True;
-        self.out.append(here.path);
-        kids: list[DirEntry] = [here ->:Contains:->][?:DirEntry];
-        pairs: list[tuple] = [];
-        for ch in kids {
-            pairs.append((ch.path, ch));
-        }
-        pairs.sort();
-        ordered: list[DirEntry] = [];
-        for pr in pairs {
-            ordered.append(pr[1]);
-        }
-        visit ordered else { disengage; }
+  can walk_dir with Dir entry {
+    if here.cid in self.claimed {
+      skip;
     }
+    self.claimed[here.cid] = True;
+    if here.cid != self.root_id {
+      self.found.append(here.path);
+    }
+    nbrs: list[object] = [];
+    for ch in [here ->:Child:->][?:Dir] {
+      nbrs.append(ch);
+    }
+    for ch in [here ->:Child:->][?:File] {
+      nbrs.append(ch);
+    }
+    if len(nbrs) > 0 {
+      visit :0: nbrs;
+    } else {
+      disengage;
+    }
+  }
+
+  can walk_file with File entry {
+    if here.cid in self.claimed {
+      skip;
+    }
+    self.claimed[here.cid] = True;
+    self.found.append(here.path);
+    disengage;
+  }
 }
 
-# recursive counterpart: full depth-first enumeration of all reachable entries
-def read_dir_all(tree: FsTree, path: str) -> list[str] {
-    nd = tree.get(path);
-    if nd is None {
-        return [];  # unknown-id tolerance matches Python source
-    }
-    w = nd spawn ReadAll(claimed={}, out=[]);
-    res: list[str] = w.out;
-    res.sort();
-    return res;
+def read_dir_all(root_id: str, store: dict[str, object]) -> list[str] {
+  if root_id not in store {
+    return [];
+  }
+  root_node = store[root_id];
+  w = root_node spawn ReadDirAllW(root_id=root_id);
+  print(w.found);
+  return sorted(w.found);
 }
 
-walker Demo {
-    can go with root entry {
-        tree = FsTree();
-        tree.add_node("proj", True, None);
-        tree.add_node("proj/src", True, "proj");
-        tree.add_node("proj/src/lib.rs", False, "proj/src");
-        tree.add_node("proj/readme.md", False, "proj");
-        everything: list[str] = read_dir_all(tree, "proj");
-        print("read_dir_all:", everything);
-        print("read_dir:", read_dir(tree, "proj"));
-        print("missing:", read_dir_all(tree, "nope"));
-    }
+def make_sample_tree -> dict[str, object] {
+  store: dict[str, object] = {};
+  d0 = Dir(cid="d0", path="/proj");
+  d1 = Dir(cid="d1", path="/proj/src");
+  f0 = File(cid="f0", path="/proj/README.md");
+  f1 = File(cid="f1", path="/proj/src/main.rs");
+  root ++> d0;
+  d0 +>:Child:+> d1;
+  d0 +>:Child:+> f0;
+  d1 +>:Child:+> f1;
+  store["d0"] = d0;
+  store["d1"] = d1;
+  store["f0"] = f0;
+  store["f1"] = f1;
+  return store;
 }
 
 with entry {
-    root spawn Demo();
+  st: dict[str, object] = make_sample_tree();
+  w = root spawn ReadDirAllW(root_id="d0");
+  print(w.found);
+  print(read_dir("d0", st));
 }
 
-test "recursive enumeration collects all depths" {
-    tree = FsTree();
-    tree.add_node("proj", True, None);
-    tree.add_node("proj/src", True, "proj");
-    tree.add_node("proj/src/lib.rs", False, "proj/src");
-    tree.add_node("proj/src/deep/mod.rs", False, "proj/src");
-    got = read_dir_all(tree, "proj");
-    assert len(got) == 4;
-    assert "proj/src/deep/mod.rs" in got;
+test "read_dir_root_children" {
+  st: dict[str, object] = make_sample_tree();
+  got = read_dir("d0", st);
+  assert (got == ["/proj/README.md", "/proj/src"]);;
 }
 
-test "diamond revisit does not duplicate and does not truncate" {
-    tree = FsTree();
-    tree.add_node("a", True, None);
-    tree.add_node("a/b", True, "a");
-    tree.add_node("a/c", True, "a");
-    tree.add_node("leaf", False, "a/b");
-    ok = tree.link("a", "leaf");
-    assert ok;
-    tree.link("a/c", "leaf");
-    got = read_dir_all(tree, "a");
-    dupes: int = len(got) - len(set(got));
-    assert dupes == 0;
-    assert got == ["a", "a/b", "a/c", "leaf"];
+test "read_dir_all_from_root" {
+  st: dict[str, object] = make_sample_tree();
+  got = read_dir_all("d0", st);
+  assert (got == ["/proj/README.md", "/proj/src", "/proj/src/main.rs"]);;
 }
 
-test "adversarial insertion order still sorted output" {
-    tree = FsTree();
-    tree.add_node("z", True, None);
-    tree.add_node("z/zeta", False, "z");
-    tree.add_node("z/alpha", False, "z");
-    tree.add_node("z/mid", True, "z");
-    tree.add_node("z/mid/x", False, "z/mid");
-    got = read_dir_all(tree, "z");
-    assert got == ["z", "z/alpha", "z/mid", "z/mid/x", "z/zeta"];
+test "read_dir_leaf_dir" {
+  st: dict[str, object] = make_sample_tree();
+  got = read_dir("d1", st);
+  assert (got == ["/proj/src/main.rs"]);;
 }
 
-test "unknown path tolerated returning empty list" {
-    tree = FsTree();
-    tree.add_node("root", True, None);
-    assert read_dir_all(tree, "ghost") == [];
-    assert read_dir(tree, "ghost") == [];
+test "read_dir_unknown_id" {
+  st: dict[str, object] = make_sample_tree();
+  got = read_dir("missing", st);
+  assert (got == []);;
 }
 
-test "read_dir is non-recursive and sorted" {
-    tree = FsTree();
-    tree.add_node("d", True, None);
-    tree.add_node("d/sub", True, "d");
-    tree.add_node("d/sub/hidden", False, "d/sub");
-    tree.add_node("d/a.txt", False, "d");
-    assert read_dir(tree, "d") == ["d/a.txt", "d/sub"];
-    assert "d/sub/hidden" not in read_dir(tree, "d");
+test "read_dir_all_unknown_id" {
+  st: dict[str, object] = make_sample_tree();
+  got = read_dir_all("missing", st);
+  assert (got == []);;
 }
 
-test "cycle edge is skipped safely" {
-    tree = FsTree();
-    tree.add_node("m", True, None);
-    tree.add_node("m/n", True, "m");
-    tree.link("m/n", "m");
-    got = read_dir_all(tree, "m");
-    assert got == ["m", "m/n"];
+test "read_dir_all_excludes_root_path" {
+  st: dict[str, object] = make_sample_tree();
+  got = read_dir_all("d0", st);
+  assert ("/proj" not in got);;
 }

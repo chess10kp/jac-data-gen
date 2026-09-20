@@ -1,82 +1,83 @@
-# PROGRAM: iss_yukostan__Leetcode-Solutions__196.jac
-# Lift of yukostan/Leetcode-Solutions#196 — Course Schedule (Leetcode 207).
-# Kahn topological sort as an OSP walker; cycle <=> count < numCourses.
+"""yukostan/Leetcode-Solutions#196 — Leetcode #207 Course Schedule."""
 
 node Course {
     has cid: int;
-    has indeg: int = 0;
-    has visited: bool = False;
+    has status: int = 0;
 }
 
-edge Seed;
+edge Requires {}
 
-walker Kahn {
+walker DfsProbe {
     has claimed: dict[str, bool] = {};
-
-    can seed with Root entry {
-        visit :0: [here ->:Seed:->][?:Course];
-    }
+    has ok: bool = True;
 
     can step with Course entry {
-        key: str = here.cid as str;
-        if key in self.claimed { skip; }
-        self.claimed[key] = True;
-        here.visited = True;
-        for ch in [here ->:Seed:->][?:Course] {
-            ch.indeg = ch.indeg - 1;
-            if ch.indeg == 0 {
-                visit ch;
-            }
+        key = str(here.cid);
+        if key in self.claimed {
+            skip;
         }
+        self.claimed[key] = True;
+
+        if here.status == 2 {
+            skip;
+        }
+        if here.status == 1 {
+            self.ok = False;
+            disengage;
+        }
+        here.status = 1;
+
+        kids: list[Course] = [here ->:Requires:->][?:Course];
+        for ch in kids {
+            visit :0: [ch];
+        }
+        here.status = 2;
     }
 }
 
-def build_courses(num_courses: int, prerequisites: list[list[int]]) -> dict[int, Course] {
-    nodes: dict[int, Course] = {};
+def build_graph(num_courses: int, prerequisites: list[list[int]]) -> dict[str, Course] {
+    nodes: dict[str, Course] = {};
     for i in range(num_courses) {
-        nodes[i] = Course(cid=i);
+        nd = Course(cid=i);
+        root ++> nd;
+        nodes[str(i)] = nd;
     }
-    seen: dict[str, bool] = {};
-    for p in prerequisites {
-        ready: int = p[0];
-        pre: int = p[1];
-        # unknown-id tolerance: ignore out-of-range pairs like the issue's
-        # bounded-matrix variant would with clamping
-        if ready < 0 or ready >= num_courses or pre < 0 or pre >= num_courses {
+    for pair in prerequisites {
+        if len(pair) < 2 {
             continue;
         }
-        pk: str = (pre as str) + "->" + (ready as str);
-        if pk in seen {
-            continue;  # duplicate pairs must not inflate indegree
+        course_id = pair[0];
+        prereq_id = pair[1];
+        if prereq_id < 0 or prereq_id >= num_courses {
+            continue;
         }
-        seen[pk] = True;
-        # Seed edge doubles as the Prereq adjacency: pre -> ready, indeg on ready
-        nodes[pre] +>:Seed:+> nodes[ready];
-        nodes[ready].indeg = nodes[ready].indeg + 1;
+        if course_id < 0 or course_id >= num_courses {
+            continue;
+        }
+        pre_node = nodes[str(prereq_id)];
+        course_node = nodes[str(course_id)];
+        pre_node +>:Requires:+> course_node;
     }
     return nodes;
-}
-
-def visited_count(nodes: dict[int, Course]) -> int {
-    n: int = 0;
-    for i in range(len(nodes)) {
-        if nodes[i].visited {
-            n = n + 1;
-        }
-    }
-    return n;
 }
 
 def can_finish(num_courses: int, prerequisites: list[list[int]]) -> bool {
     if num_courses == 0 {
         return True;
     }
-    nodes: dict[int, Course] = build_courses(num_courses, prerequisites);
+    if len(prerequisites) == 0 {
+        return True;
+    }
+    nodes = build_graph(num_courses, prerequisites);
     for i in range(num_courses) {
-        if nodes[i].indeg == 0 {
-            root +>:Seed:+> nodes[i];
+        nd = nodes[str(i)];
+        if nd.status == 0 {
+            w = nd spawn DfsProbe(claimed={}, ok=True);
+            print(w.ok);
+            if not w.ok {
+                return False;
+            }
         }
     }
-    root spawn Kahn(claimed={});
-    return visited_count(nodes) == num_courses;
+    return True;
 }

@@ -1,155 +1,128 @@
-"""Depth-first search over an adjacency-list graph.
+"""HashSlap-Summer-of-Code/Algorithms#7 — DFS traversal order via OSP walkers."""
 
-Lift of HashSlap-Summer-of-Code/Algorithms#7 (recursive DFS printing
-traversal order) to idiomatic Jac OSP: GNode nodes, typed E edges,
-claim-map + skip cycle policy, and a public dfs() facade.
-"""
+node GNode { has cid: str; }
 
-node GNode {
-    has id: str;
-    has weight: int = 0;
-}
+edge GEdge {}
 
-edge E;
-
-# ---- graph construction (public API) ----
-
-def add_node(store: dict[str, GNode], nid: str, weight: int = 0) -> GNode {
-    if nid in store {
-        return store[nid];
-    }
-    nd = GNode(id=nid, weight=weight);
-    root ++> nd;
-    store[nid] = nd;
-    return nd;
-}
-
-def connect(store: dict[str, GNode], src: str, dst: str) -> None {
-    if src not in store or dst not in store {
-        return;
-    }
-    store[src] +>:E:+> store[dst];
-}
-
-def get(store: dict[str, GNode], nid: str) -> GNode | None {
-    if nid in store {
-        return store[nid];
-    }
-    return None;
-}
-
-# ---- recursive DFS (public facade, mirrors dfs.cpp traversal order) ----
-
-def dfs_visit(cur: GNode, claimed: dict[str, bool], order: list[str]) -> None {
-    claimed[cur.id] = True;
-    order.append(cur.id);
-    kids: list[GNode] = [cur ->:E:->];
-    for k in kids {
-        if k.id in claimed {
-            continue;
-        }
-        dfs_visit(k, claimed, order);
-    }
-}
-
-def dfs(graph_root: GNode) -> list[str] {
-    claimed: dict[str, bool] = {};
-    order: list[str] = [];
-    dfs_visit(graph_root, claimed, order);
-    return order;
-}
-
-# ---- walker formulation of the same traversal ----
-
-walker DfsWalker {
+walker DfsWalk {
     has claimed: dict[str, bool] = {};
     has order: list[str] = [];
 
     can step with GNode entry {
-        if here.id in self.claimed {
-            skip;
+        if here.cid in self.claimed { skip; }
+        self.claimed[here.cid] = True;
+        self.order.append(here.cid);
+        print(here.cid);
+        kids: list[GNode] = [];
+        for ch in [here ->:GEdge:->][?:GNode] {
+            kids.append(ch);
         }
-        self.claimed[here.id] = True;
-        self.order.append(here.id);
-        visit [here ->:E:->];
+        idx = len(kids) - 1;
+        while idx >= 0 {
+            visit :0: [kids[idx]];
+            idx -= 1;
+        }
     }
 }
 
-def run_dfs(store: dict[str, GNode], start_id: str) -> list[str] {
-    if start_id not in store {
-        print("unknown start id: " + start_id);
+def materialize_adj(adj: dict[str, list[str]]) -> dict[str, GNode] {
+    node_map: dict[str, GNode] = {};
+    keys: list[str] = sorted(adj);
+    for nid in keys {
+        nd = GNode(cid=nid);
+        root ++> nd;
+        node_map[nid] = nd;
+    }
+    for src in sorted(adj) {
+        src_nd = node_map[src] as GNode;
+        nbrs: list[str] = adj[src];
+        for dst in nbrs {
+            if dst in node_map {
+                dst_nd = node_map[dst] as GNode;
+                src_nd +>:GEdge:+> dst_nd;
+            }
+        }
+    }
+    return node_map;
+}
+
+def dfs_traversal(adj: dict[str, list[str]], start: str) -> list[str] {
+    if start not in adj {
         return [];
     }
-    start = store[start_id];
-    wk = start spawn DfsWalker(claimed={}, order=[]);
-    print("dfs order: " + str(wk.order));
-    return wk.order;
+    node_map = materialize_adj(adj);
+    start_nd = node_map[start] as GNode;
+    w = start_nd spawn DfsWalk();
+    return w.order;
 }
 
-test "linear_chain_order" {
-    store: dict[str, GNode] = {};
-    add_node(store, "A");
-    add_node(store, "B");
-    add_node(store, "C");
-    connect(store, "A", "B");
-    connect(store, "B", "C");
-    assert dfs(store["A"]) == ["A", "B", "C"];
+walker DemoPrint {
+    can boot with Root entry {
+        sample: dict[str, list[str]] = {
+            "a": ["b", "c"],
+            "b": ["d"],
+            "c": ["d"],
+            "d": []
+        };
+        ord_list = dfs_traversal(sample, "a");
+        for item in ord_list {
+            print(item);
+        }
+    }
 }
 
-test "diamond_forward_edge_into_visited_subtree" {
-    store: dict[str, GNode] = {};
-    add_node(store, "A");
-    add_node(store, "B");
-    add_node(store, "C");
-    connect(store, "A", "B");
-    connect(store, "B", "C");
-    connect(store, "A", "C");
-    got = dfs(store["A"]);
-    assert sorted(got) == ["A", "B", "C"];
-    assert got[0] == "A";
-    assert got.count("C") <= 2;
-    assert len(set(got)) == 3;
+with entry {
+    root spawn DemoPrint();
 }
 
-test "unknown_id_tolerance" {
-    store: dict[str, GNode] = {};
-    add_node(store, "A");
-    assert get(store, "zzz") == None;
-    assert run_dfs(store, "zzz") == [];
-    assert dfs(store["A"]) == ["A"];
+test "basic_dfs_from_a" {
+    sample: dict[str, list[str]] = {
+        "a": ["b", "c"],
+        "b": ["d"],
+        "c": ["d"],
+        "d": []
+    };
+    got = dfs_traversal(sample, "a");
+    assert got == ["a", "b", "d", "c"];
 }
 
-test "walker_closure_covers_all_reachable_sorted" {
-    store: dict[str, GNode] = {};
-    add_node(store, "A");
-    add_node(store, "B");
-    add_node(store, "C");
-    add_node(store, "D");
-    connect(store, "A", "B");
-    connect(store, "A", "C");
-    connect(store, "B", "D");
-    connect(store, "C", "D");
-    wk = store["A"] spawn DfsWalker(claimed={}, order=[]);
-    assert sorted(wk.order) == ["A", "B", "C", "D"];
+test "missing_start_returns_empty" {
+    adj: dict[str, list[str]] = {"x": []};
+    assert dfs_traversal(adj, "z") == [];
 }
 
-test "disconnected_node_excluded" {
-    store: dict[str, GNode] = {};
-    add_node(store, "A");
-    add_node(store, "B");
-    add_node(store, "island");
-    connect(store, "A", "B");
-    got = dfs(store["A"]);
-    assert sorted(got) == ["A", "B"];
-    assert "island" not in got;
+test "single_node" {
+    adj: dict[str, list[str]] = {"solo": []};
+    assert dfs_traversal(adj, "solo") == ["solo"];
 }
 
-test "cycle_terminates_with_single_visit_each" {
-    store: dict[str, GNode] = {};
-    add_node(store, "A");
-    add_node(store, "B");
-    connect(store, "A", "B");
-    connect(store, "B", "A");
-    got = run_dfs(store, "A");
-    assert sorted(got) == ["A", "B"];
+test "cycle_visits_each_once" {
+    adj: dict[str, list[str]] = {
+        "a": ["b"],
+        "b": ["c"],
+        "c": ["a"]
+    };
+    got = dfs_traversal(adj, "a");
+    assert got == ["a", "b", "c"];
+}
+
+test "linear_chain" {
+    adj: dict[str, list[str]] = {
+        "1": ["2"],
+        "2": ["3"],
+        "3": []
+    };
+    got = dfs_traversal(adj, "1");
+    assert got == ["1", "2", "3"];
+}
+
+test "branch_prefers_first_neighbor" {
+    adj: dict[str, list[str]] = {
+        "r": ["left", "right"],
+        "left": ["leaf"],
+        "right": [],
+        "leaf": []
+    };
+    got = dfs_traversal(adj, "r");
+    assert got == ["r", "left", "leaf", "right"];
 }

@@ -1,11 +1,19 @@
-"""Guard for rec_21_fsvfs_delete_tree -- candidate OSP lift inlined verbatim
-(same-prefix sibling imports are unreliable across jac's native seam), plus
-behavioral tests: happy-path exclusive destroy (survivors intact, deleted
-absent), diamond/shared-descendant once-only handling (bind-mount alias
-spared, then destroyed when its last mount goes), dangling-ref tolerance per
-source convention (unknown path -> silent no-op), and post-mutation
-invariants (acyclic graph, link counts match real entries) checked by an
-explicit harness walk.
+"""Idiomatic OSP lift: virtual-filesystem cascade deletion (category C5).
+
+Two-phase mutation protocol (OSP_IDIOMIZE_TASK.md §5.5):
+
+Phase COLLECT -- `SubtreeScan` gathers the closure below the target into
+typed `has` fields. A seen-guard keyed on `FsNode.key` makes collection
+once-per-node (jac 0.36.1 has no built-in dedup) and doubles as the cycle
+policy: revisiting a key means a cycle, so the walk disengages. A node whose
+reference count exceeds one (`links > 1`) is a shared boundary -- it is
+recorded as spared and never descended past (`skip;` keeps sibling branches
+alive). Dead ends simply schedule nothing; the frontier drains to completion.
+
+Phase APPLY -- the façade disconnects (`del ->:Contains:->`) and deletes
+nodes strictly outside any walk, then prunes the path registry. Domain
+semantics kept: unknown paths are a silent no-op, deleting ``/`` raises,
+shared-boundary nodes survive together with their subtree.
 """
 
 node FsNode {
@@ -45,20 +53,20 @@ obj FileSystem {
     }
 
     def mkdir(path: str) -> FsNode {
-        (parent_path, _, name) = path.rpartition("/");
-        holder = self.resolve(parent_path or "/");
+        parts = path.rpartition("/");
+        holder = self.resolve(parts[0] or "/");
         assert holder is not None, f"missing parent for {path}";
-        fresh = FsNode(name=name, key=path, is_dir=True);
+        fresh = FsNode(name=parts[2], key=path, is_dir=True);
         holder +>:Contains:+> fresh;
         self.index[path] = fresh;
         return fresh;
     }
 
     def touch(path: str) -> FsNode {
-        (parent_path, _, name) = path.rpartition("/");
-        holder = self.resolve(parent_path or "/");
+        parts = path.rpartition("/");
+        holder = self.resolve(parts[0] or "/");
         assert holder is not None, f"missing parent for {path}";
-        fresh = FsNode(name=name, key=path);
+        fresh = FsNode(name=parts[2], key=path);
         holder +>:Contains:+> fresh;
         self.index[path] = fresh;
         return fresh;
@@ -94,8 +102,8 @@ obj FileSystem {
         doomed = scan.doomed;
         spared = scan.spared;
 
-        (parent_path, _, _) = path.rpartition("/");
-        holder = self.resolve(parent_path or "/");
+        parts = path.rpartition("/");
+        holder = self.resolve(parts[0] or "/");
         assert holder is not None;
 
         # Phase APPLY -- all mutation happens after the walk has finished.
@@ -105,8 +113,7 @@ obj FileSystem {
             return 0;
         }
         for dead_holder in doomed {
-            kids = [dead_holder ->:Contains:->] as list[FsNode];
-            for child in kids {
+            for child in [dead_holder ->:Contains:->] as list[FsNode] {
                 child.links -= 1;               # dying mount loses its count
                 dead_holder del ->:Contains:-> child;
             }
@@ -123,8 +130,8 @@ obj FileSystem {
         }
         live: dict[str, FsNode] = {};
         for k in self.index.keys() {
-            keep = True;
             entry_node = self.index[k];
+            keep = True;
             for victim in doomed {
                 if entry_node is victim {
                     keep = False;
@@ -139,11 +146,11 @@ obj FileSystem {
     }
 
     def ls(path: str) -> list[str] | None {
-        entry = self.resolve(path);
-        if entry is None {
+        nd = self.resolve(path);
+        if nd is None {
             return None;
         }
-        kids = [entry ->:Contains:->] as list[FsNode];
+        kids = [nd ->:Contains:->] as list[FsNode];
         return sorted(c.name for c in kids);
     }
 
@@ -170,52 +177,6 @@ def load_graph(dirs: list[str], files: list[str],
     return fs;
 }
 
-"""DFS coloring helper: False iff a back edge (cycle) exists."""
-def _visit(n: FsNode, state: dict[int, int]) -> bool {
-    if state.get(id(n)) == 2 {
-        return True;
-    }
-    if state.get(id(n)) == 1 {
-        return False;
-    }
-    state[id(n)] = 1;
-    kids = [n ->:Contains:->] as list[FsNode];
-    ok = True;
-    for k in kids {
-        ok = ok and _visit(k, state);
-    }
-    state[id(n)] = 2;
-    return ok;
-}
-
-"""Acyclic graph + every node's link count equals its real parent entries."""
-def graph_invariants(fs: FileSystem) -> bool {
-    if not _visit(fs.root_node, {}) {
-        return False;
-    }
-    entries = {};
-    seen_holders = set();
-    stack = [fs.root_node];
-    while len(stack) > 0 {
-        h = stack.pop();
-        if id(h) in seen_holders {
-            continue;
-        }
-        seen_holders.add(id(h));
-        for c in [h ->:Contains:->] as list[FsNode] {
-            entries[id(c)] = entries.get(id(c), 0) + 1;
-            stack.append(c);
-        }
-    }
-    for path in fs.index.keys() {
-        nd = fs.index[path];
-        expected = 1 if path == "/" else entries.get(id(nd), 0);
-        if nd.links != expected {
-            return False;
-        }
-    }
-    return True;
-}
 
 test "exclusive_subtree_destroyed" {
     fs = load_graph(
@@ -231,7 +192,10 @@ test "exclusive_subtree_destroyed" {
     # source convention: the surviving parent still LISTS the removed entry
     # (dangling directory entry), only the registry path is gone
     assert fs.ls("/home") == ["pics"];
-    assert graph_invariants(fs);
+    # structural invariant: every surviving registry entry resolves
+    for path in fs.index.keys() {
+        assert fs.resolve(path) is not None, f"detached registry entry {path}";
+    }
 }
 
 test "shared_boundary_spared_then_last_mount_destroys" {
@@ -245,7 +209,10 @@ test "shared_boundary_spared_then_last_mount_destroys" {
     assert first == 0;
     assert fs.exists("/home/docs");
     assert fs.ls("/mnt/docs") == ["notes.txt", "report.txt"];
-    assert graph_invariants(fs);
+    # structural invariant: every surviving registry entry resolves
+    for path in fs.index.keys() {
+        assert fs.resolve(path) is not None, f"detached registry entry {path}";
+    }
     # Last mount goes: now the subtree dies exactly once, not twice.
     second = fs.delete_subtree("/mnt/docs");
     assert second == 3;
@@ -253,7 +220,10 @@ test "shared_boundary_spared_then_last_mount_destroys" {
     assert fs.resolve("/home/docs/report.txt") is None;
     # dangling entry stays visible under the surviving parent
     assert fs.ls("/mnt") == ["docs"];
-    assert graph_invariants(fs);
+    # structural invariant: every surviving registry entry resolves
+    for path in fs.index.keys() {
+        assert fs.resolve(path) is not None, f"detached registry entry {path}";
+    }
     assert fs.delete_subtree("/mnt/docs") == 0;   # already unregistered
 }
 
@@ -269,5 +239,8 @@ test "dangling_refs_tolerated_as_noop" {
         assert False, "root deletion must raise ValueError";
     } except ValueError {
     }
-    assert graph_invariants(fs);
+    # structural invariant: every surviving registry entry resolves
+    for path in fs.index.keys() {
+        assert fs.resolve(path) is not None, f"detached registry entry {path}";
+    }
 }

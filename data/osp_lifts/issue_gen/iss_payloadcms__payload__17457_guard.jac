@@ -1,294 +1,349 @@
-"""payloadcms/payload#17457 — nested-docs resaveChildren silent rollback on child validation."""
+"""payloadcms/payload#17457 — nested docs resaveChildren cascade with silent rollback."""
+
+node Catalog {
+    has logs: list[str] = [];
+}
 
 node Page {
     has cid: str;
-    has title: str;
     has updated_at: int = 0;
-    has requires_upload: bool = False;
-    has upload_ok: bool = True;
+    has label: str = "";
+    has valid: bool = True;
 }
 
 edge ChildOf {}
 
-node Store {
-    has by_id: dict[str, Page] = {};
-}
-
-walker DescCollect {
+walker ResaveWalker {
     has claimed: dict[str, bool] = {};
-    has origin: str = "";
-    has ordered: list[str] = [];
-
-    can launch with Store entry {
-        print("desc_collect_launch");
-        root spawn DescCollect(claimed={}, origin=self.origin, ordered=[]);
-        if self.origin in here.by_id {
-            visit [here.by_id[self.origin]];
-        } else {
-            disengage;
-        }
-    }
+    has failed: bool = False;
+    has resave_root: str = "";
 
     can step with Page entry {
-        print("desc_collect_step");
-        root spawn DescCollect(claimed={}, origin=self.origin, ordered=[]);
         if here.cid in self.claimed {
             skip;
         }
         self.claimed[here.cid] = True;
-        if here.cid != self.origin {
-            self.ordered.append(here.cid);
+        if here.cid != self.resave_root {
+            print("resave " + here.cid);
+            here.updated_at = here.updated_at + 1;
+            if here.valid == False {
+                self.failed = True;
+            }
         }
-        kids: list[Page] = [];
-        for ch in [here ->:ChildOf:->][?:Page] {
-            kids.append(ch);
-        }
-        cids: list[str] = [];
+        kids: list[Page] = [here ->:ChildOf:->][?:Page];
         for kid in kids {
-            cids.append(kid.cid);
+            visit :0: [kid];
         }
-        cids.sort();
-        visit_kids: list[Page] = [];
-        for cid in cids {
-            for kid in kids {
-                if kid.cid == cid {
-                    visit_kids.append(kid);
-                }
+    }
+}
+
+def find_page(cid: str) -> Page | None {
+    candidates: list[Page] = [root -->][?:Page];
+    for pg in candidates {
+        if pg.cid == cid {
+            return pg;
+        }
+    }
+    return None;
+}
+
+def make_store() -> Catalog {
+    cat = Catalog();
+    root ++> cat;
+    return cat;
+}
+
+def add_page(store: Catalog, cid: str, parent_cid: str | None, valid: bool) -> bool {
+    if find_page(cid) != None {
+        return False;
+    }
+    pg = Page(cid=cid, valid=valid);
+    root ++> pg;
+    if parent_cid != None {
+        par = find_page(parent_cid);
+        if par == None {
+            return False;
+        }
+        par +>:ChildOf:+> pg;
+    }
+    return True;
+}
+
+def link_child(store: Catalog, parent_cid: str, child_cid: str) -> bool {
+    par = find_page(parent_cid);
+    ch = find_page(child_cid);
+    if par == None or ch == None {
+        return False;
+    }
+    par +>:ChildOf:+> ch;
+    return True;
+}
+
+def set_page_valid(store: Catalog, cid: str, valid: bool) -> bool {
+    pg = find_page(cid);
+    if pg == None {
+        return False;
+    }
+    pg.valid = valid;
+    return True;
+}
+
+def persisted_updated_at(store: Catalog, cid: str) -> int {
+    pg = find_page(cid);
+    if pg == None {
+        return -1;
+    }
+    return pg.updated_at;
+}
+
+def response_logs(store: Catalog) -> list[str] {
+    return store.logs;
+}
+
+def update_parent(store: Catalog, parent_cid: str, label: str) -> dict {
+    result: dict = {};
+    par = find_page(parent_cid);
+    if par == None {
+        result["ok"] = False;
+        result["updated_at"] = 0;
+        return result;
+    }
+    snap_at: dict[str, int] = {};
+    snap_label: dict[str, str] = {};
+    pages: list[Page] = [root -->][?:Page];
+    for pg in pages {
+        snap_at[pg.cid] = pg.updated_at;
+        snap_label[pg.cid] = pg.label;
+    }
+    par.label = label;
+    par.updated_at = par.updated_at + 1;
+    w = par spawn ResaveWalker(claimed={}, resave_root=parent_cid);
+    new_ts = par.updated_at;
+    if w.failed {
+        msg = "Nested Docs plugin encountered an error while re-saving a child document.";
+        store.logs.append(msg);
+        for pg in pages {
+            pg.updated_at = snap_at[pg.cid];
+            pg.label = snap_label[pg.cid];
+        }
+    }
+    result["ok"] = True;
+    result["updated_at"] = new_ts;
+    return result;
+}
+
+with entry {
+    demo_store = make_store();
+    add_page(demo_store, "A", None, True);
+    add_page(demo_store, "B", "A", True);
+    root spawn ResaveWalker(claimed={}, resave_root="");
+}
+
+"""payloadcms/payload#17457 — nested docs resaveChildren cascade with silent rollback."""
+
+node Catalog {
+    has logs: list[str] = [];
+}
+
+node Page {
+    has cid: str;
+    has updated_at: int = 0;
+    has label: str = "";
+    has valid: bool = True;
+}
+
+edge ChildOf {}
+
+walker ResaveWalker {
+    has claimed: dict[str, bool] = {};
+    has failed: bool = False;
+    has resave_root: str = "";
+
+    can step with Page entry {
+        if here.cid in self.claimed {
+            skip;
+        }
+        self.claimed[here.cid] = True;
+        if here.cid != self.resave_root {
+            print("resave " + here.cid);
+            here.updated_at = here.updated_at + 1;
+            if here.valid == False {
+                self.failed = True;
             }
         }
-        if visit_kids {
-            visit :0: visit_kids;
-        } else {
-            disengage;
+        kids: list[Page] = [here ->:ChildOf:->][?:Page];
+        for kid in kids {
+            visit :0: [kid];
         }
     }
 }
 
-def build_store(rows: list[dict]) -> Store {
-    st = Store();
-    for row in rows {
-        pid = row["id"] as str;
-        pg = Page(
-            cid=pid,
-            title=row["title"] as str,
-            updated_at=row["updated_at"] as int,
-            requires_upload=row["requires_upload"] as bool,
-            upload_ok=row["upload_ok"] as bool
-        );
-        st.by_id[pid] = pg;
-    }
-    for row in rows {
-        par_id = row["parent"] as str;
-        if par_id != "" {
-            par = st.by_id[par_id];
-            ch = st.by_id[row["id"] as str];
-            par +>:ChildOf:+> ch;
+def find_page(cid: str) -> Page | None {
+    candidates: list[Page] = [root -->][?:Page];
+    for pg in candidates {
+        if pg.cid == cid {
+            return pg;
         }
     }
-    return st;
+    return None;
 }
 
-def collect_descendant_ids(st: Store, origin: str) -> list[str] {
-    if origin not in st.by_id {
-        return [];
-    }
-    wk = st spawn DescCollect(claimed={}, origin=origin, ordered=[]);
-    out = wk.ordered;
-    out.sort();
-    return out;
+def make_store() -> Catalog {
+    cat = Catalog();
+    root ++> cat;
+    return cat;
 }
 
-def validation_errors(st: Store, page_id: str) -> list[str] {
-    errs: list[str] = [];
-    if page_id not in st.by_id {
-        return errs;
+def add_page(store: Catalog, cid: str, parent_cid: str | None, valid: bool) -> bool {
+    if find_page(cid) != None {
+        return False;
     }
-    pg = st.by_id[page_id];
-    if pg.requires_upload and not pg.upload_ok {
-        msg = "invalid upload: " + page_id;
-        errs.append(msg);
+    pg = Page(cid=cid, valid=valid);
+    root ++> pg;
+    if parent_cid != None {
+        par = find_page(parent_cid);
+        if par == None {
+            return False;
+        }
+        par +>:ChildOf:+> pg;
     }
-    return errs;
+    return True;
 }
 
-def snapshot_store(st: Store) -> dict[str, dict[str, object]] {
-    snap: dict[str, dict[str, object]] = {};
-    ids: list[str] = [];
-    for pid in st.by_id {
-        ids.append(pid);
+def link_child(store: Catalog, parent_cid: str, child_cid: str) -> bool {
+    par = find_page(parent_cid);
+    ch = find_page(child_cid);
+    if par == None or ch == None {
+        return False;
     }
-    ids.sort();
-    for pid in ids {
-        pg = st.by_id[pid];
-        row: dict[str, object] = {};
-        row["title"] = pg.title;
-        row["updated_at"] = pg.updated_at;
-        row["requires_upload"] = pg.requires_upload;
-        row["upload_ok"] = pg.upload_ok;
-        snap[pid] = row;
-    }
-    return snap;
+    par +>:ChildOf:+> ch;
+    return True;
 }
 
-def restore_store(st: Store, snap: dict[str, dict[str, object]]) {
-    for pid in snap {
-        pg = st.by_id[pid];
-        row = snap[pid] as dict[str, object];
-        pg.title = row["title"] as str;
-        pg.updated_at = row["updated_at"] as int;
-        pg.requires_upload = row["requires_upload"] as bool;
-        pg.upload_ok = row["upload_ok"] as bool;
+def set_page_valid(store: Catalog, cid: str, valid: bool) -> bool {
+    pg = find_page(cid);
+    if pg == None {
+        return False;
     }
+    pg.valid = valid;
+    return True;
 }
 
-def read_page(st: Store, page_id: str) -> dict[str, object] | None {
-    if page_id not in st.by_id {
-        return None;
+def persisted_updated_at(store: Catalog, cid: str) -> int {
+    pg = find_page(cid);
+    if pg == None {
+        return -1;
     }
-    pg = st.by_id[page_id];
-    out: dict[str, object] = {};
-    out["id"] = pg.cid;
-    out["title"] = pg.title;
-    out["updated_at"] = pg.updated_at;
-    out["requires_upload"] = pg.requires_upload;
-    out["upload_ok"] = pg.upload_ok;
-    return out;
+    return pg.updated_at;
 }
 
-def update_parent(
-    st: Store,
-    parent_id: str,
-    patch: dict[str, str],
-    loud_fail: bool = False
-) -> dict[str, object] {
-    empty: dict[str, object] = {};
-    empty["ok"] = False;
-    empty["updated_at"] = 0;
-    empty["persisted"] = False;
-    empty["logged_errors"] = [];
-    if parent_id not in st.by_id {
-        return empty;
+def response_logs(store: Catalog) -> list[str] {
+    return store.logs;
+}
+
+def update_parent(store: Catalog, parent_cid: str, label: str) -> dict {
+    result: dict = {};
+    par = find_page(parent_cid);
+    if par == None {
+        result["ok"] = False;
+        result["updated_at"] = 0;
+        return result;
     }
-    snap = snapshot_store(st);
-    parent = st.by_id[parent_id];
-    if "title" in patch {
-        parent.title = patch["title"] as str;
+    snap_at: dict[str, int] = {};
+    snap_label: dict[str, str] = {};
+    pages: list[Page] = [root -->][?:Page];
+    for pg in pages {
+        snap_at[pg.cid] = pg.updated_at;
+        snap_label[pg.cid] = pg.label;
     }
-    parent.updated_at = parent.updated_at + 1;
-    response_at = parent.updated_at;
-    desc_ids = collect_descendant_ids(st, parent_id);
-    logged: list[str] = [];
-    for did in desc_ids {
-        errs = validation_errors(st, did);
-        if len(errs) > 0 {
-            for e in errs {
-                logged.append(e);
-            }
-        } else {
-            child = st.by_id[did];
-            child.updated_at = child.updated_at + 1;
+    par.label = label;
+    par.updated_at = par.updated_at + 1;
+    w = par spawn ResaveWalker(claimed={}, resave_root=parent_cid);
+    new_ts = par.updated_at;
+    if w.failed {
+        msg = "Nested Docs plugin encountered an error while re-saving a child document.";
+        store.logs.append(msg);
+        for pg in pages {
+            pg.updated_at = snap_at[pg.cid];
+            pg.label = snap_label[pg.cid];
         }
     }
-    logged.sort();
-    if len(logged) > 0 {
-        restore_store(st, snap);
-        res: dict[str, object] = {};
-        if loud_fail {
-            res["ok"] = False;
-            res["updated_at"] = response_at;
-            res["persisted"] = False;
-            res["logged_errors"] = logged;
-            return res;
-        }
-        res["ok"] = True;
-        res["updated_at"] = response_at;
-        res["persisted"] = False;
-        res["logged_errors"] = logged;
-        return res;
-    }
-    ok_res: dict[str, object] = {};
-    ok_res["ok"] = True;
-    ok_res["updated_at"] = response_at;
-    ok_res["persisted"] = True;
-    ok_res["logged_errors"] = [];
-    return ok_res;
+    result["ok"] = True;
+    result["updated_at"] = new_ts;
+    return result;
 }
 
-test "collect_descendant_ids_sorted" {
-    rows: list[dict] = [
-        {"id": "root", "title": "Root", "updated_at": 1, "requires_upload": False, "upload_ok": True, "parent": ""},
-        {"id": "c2", "title": "C2", "updated_at": 1, "requires_upload": False, "upload_ok": True, "parent": "root"},
-        {"id": "c1", "title": "C1", "updated_at": 1, "requires_upload": False, "upload_ok": True, "parent": "root"}
-    ];
-    st = build_store(rows);
-    got = collect_descendant_ids(st, "root");
-    assert got == ["c1", "c2"];
+with entry {
+    demo_store = make_store();
+    add_page(demo_store, "A", None, True);
+    add_page(demo_store, "B", "A", True);
+    root spawn ResaveWalker(claimed={}, resave_root="");
 }
 
-test "validation_errors_upload" {
-    rows: list[dict] = [
-        {"id": "bad", "title": "Bad", "updated_at": 1, "requires_upload": True, "upload_ok": False, "parent": ""}
-    ];
-    st = build_store(rows);
-    errs = validation_errors(st, "bad");
-    assert errs == ["invalid upload: bad"];
-}
-
-test "update_parent_persists_when_all_valid" {
-    rows: list[dict] = [
-        {"id": "root", "title": "Root", "updated_at": 1, "requires_upload": False, "upload_ok": True, "parent": ""},
-        {"id": "c1", "title": "C1", "updated_at": 1, "requires_upload": False, "upload_ok": True, "parent": "root"}
-    ];
-    st = build_store(rows);
-    patch: dict[str, str] = {"title": "New Root"};
-    res = update_parent(st, "root", patch);
-    root = read_page(st, "root");
-    child = read_page(st, "c1");
+test "valid_tree_commits_parent_timestamp" {
+    store = make_store();
+    add_page(store, "A", None, True);
+    add_page(store, "B", "A", True);
+    before = persisted_updated_at(store, "A");
+    res = update_parent(store, "A", "root-label");
     assert res["ok"] == True;
-    assert res["persisted"] == True;
-    assert res["logged_errors"] == [];
-    assert root["title"] == "New Root";
-    assert root["updated_at"] == 2;
-    assert child["updated_at"] == 2;
+    assert res["updated_at"] == before + 1;
+    assert persisted_updated_at(store, "A") == before + 1;
+    assert persisted_updated_at(store, "B") == 1;
 }
 
-test "update_parent_silent_rollback_on_child_error" {
-    rows: list[dict] = [
-        {"id": "root", "title": "Root", "updated_at": 1, "requires_upload": False, "upload_ok": True, "parent": ""},
-        {"id": "c1", "title": "C1", "updated_at": 1, "requires_upload": True, "upload_ok": False, "parent": "root"}
-    ];
-    st = build_store(rows);
-    patch: dict[str, str] = {"title": "New Root"};
-    res = update_parent(st, "root", patch);
-    root = read_page(st, "root");
-    child = read_page(st, "c1");
+test "invalid_grandchild_silent_rollback" {
+    store = make_store();
+    add_page(store, "A", None, True);
+    add_page(store, "B", "A", True);
+    add_page(store, "C", "B", False);
+    before = persisted_updated_at(store, "A");
+    pg_a = find_page("A");
+    old_label = pg_a.label;
+    res = update_parent(store, "A", "new-label");
     assert res["ok"] == True;
-    assert res["persisted"] == False;
-    assert res["logged_errors"] == ["invalid upload: c1"];
-    assert root["title"] == "Root";
-    assert root["updated_at"] == 1;
-    assert child["updated_at"] == 1;
+    assert res["updated_at"] == before + 1;
+    assert persisted_updated_at(store, "A") == before;
+    pg_a2 = find_page("A");
+    assert pg_a2.label == old_label;
+    assert persisted_updated_at(store, "B") == 0;
+    assert persisted_updated_at(store, "C") == 0;
+    logs = response_logs(store);
+    assert len(logs) == 1;
 }
 
-test "update_parent_loud_fail" {
-    rows: list[dict] = [
-        {"id": "root", "title": "Root", "updated_at": 1, "requires_upload": False, "upload_ok": True, "parent": ""},
-        {"id": "c1", "title": "C1", "updated_at": 1, "requires_upload": True, "upload_ok": False, "parent": "root"}
-    ];
-    st = build_store(rows);
-    patch: dict[str, str] = {"title": "New Root"};
-    res = update_parent(st, "root", patch, loud_fail=True);
-    assert res["ok"] == False;
-    assert res["persisted"] == False;
-    assert res["logged_errors"] == ["invalid upload: c1"];
-}
-
-test "update_parent_unknown_id" {
-    st = build_store([]);
-    patch: dict[str, str] = {"title": "X"};
-    res = update_parent(st, "missing", patch);
+test "missing_parent_returns_error" {
+    store = make_store();
+    res = update_parent(store, "Z", "x");
     assert res["ok"] == False;
     assert res["updated_at"] == 0;
-    assert res["persisted"] == False;
-    assert res["logged_errors"] == [];
+}
+
+test "valid_deep_tree_cascade" {
+    store = make_store();
+    add_page(store, "A", None, True);
+    add_page(store, "B", "A", True);
+    add_page(store, "C", "B", True);
+    before = persisted_updated_at(store, "A");
+    res = update_parent(store, "A", "deep");
+    assert res["ok"] == True;
+    assert res["updated_at"] == before + 1;
+    assert persisted_updated_at(store, "B") == 1;
+    assert persisted_updated_at(store, "C") == 1;
+}
+
+test "rollback_logs_error_message" {
+    store = make_store();
+    add_page(store, "A", None, True);
+    add_page(store, "B", "A", False);
+    update_parent(store, "A", "lbl");
+    logs = response_logs(store);
+    assert len(logs) == 1;
+    assert logs[0] == "Nested Docs plugin encountered an error while re-saving a child document.";
+}
+
+test "duplicate_add_rejected" {
+    store = make_store();
+    assert add_page(store, "A", None, True) == True;
+    assert add_page(store, "A", None, True) == False;
 }

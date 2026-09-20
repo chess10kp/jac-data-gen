@@ -33,25 +33,25 @@ def build_graph(nodes: list[str], edges: list[tuple[str, str]]) -> Graph {
 walker ReachWalk {
     has claimed: dict[str, bool] = {};
     has out: list[str] = [];
-    has `start: str = "";
+    has start: str = "";
     can step with GraphNode entry {
         if here.name in self.claimed {
             skip;
         }
         self.claimed[here.name] = True;
-        if here.name != self.`start {
+        if here.name != self.start {
             self.out.append(here.name);
         }
         visit [->:Rel:->];
     }
 }
 
-def reachable(g: Graph, `start: str) -> list[str] {
-    nd = g.resolve(`start);
+def reachable(g: Graph, start: str) -> list[str] {
+    nd = g.resolve(start);
     if nd is None {
         return [];
     }
-    w = nd spawn ReachWalk(claimed={}, out=[], `start=`start);
+    w = nd spawn ReachWalk(claimed={}, out=[], start=start);
     return sorted(w.out);
 }
 

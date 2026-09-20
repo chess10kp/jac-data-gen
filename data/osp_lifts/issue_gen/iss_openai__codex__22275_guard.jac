@@ -1,173 +1,267 @@
-node SkillDir {
-    has path: str;
-    has name: str;
-    has is_symlink: bool = False;
-    has resolved: str = "";
+# openai/codex#22275 — symlinked skill packages register nested internal SKILL.md files.
+
+node Dir {
+  has cid: str;
+  has name: str;
+  has is_symlink: bool = False;
 }
 
-node SkillManifest {
-    has path: str;
-    has name: str;
-    has description: str;
-    has depth: int = 0;
+node SkillMd {
+  has cid: str;
+  has skill_name: str;
+  has blurb: str;
 }
 
-edge contains {}
-edge symlink_to {}
-edge registered_from {}
+edge Child {}
+edge Link {}
 
-obj SkillRegistry {
-    has by_name: dict[str, list[SkillManifest]] = {};
+walker DeepCollect {
+  has claimed: dict[str, bool] = {};
+  has found: list[str] = [];
+  has booted: bool = False;
 
-    def register(m: SkillManifest) -> None {
-        if m.name not in self.by_name {
-            self.by_name[m.name] = [];
-        }
-        self.by_name[m.name].append(m);
+  can walk_dir with Dir entry {
+    if not self.booted {
+      self.booted = True;
+      print("deep_collect", here.cid);
     }
-
-    def visible_names() -> list[str] {
-        names: list[str] = [];
-        for k in sorted(self.by_name.keys()) {
-            names.append(k);
-        }
-        return names;
+    if here.cid in self.claimed {
+      skip;
     }
-}
-
-def parse_manifest(path: str, name: str, desc: str, depth: int) -> SkillManifest {
-    return SkillManifest(path=path, name=name, description=desc, depth=depth);
-}
-
-def dedupe_manifests(ms: list[SkillManifest]) -> list[SkillManifest] {
-    out: list[SkillManifest] = [];
-    seen: dict[str, bool] = {};
-    for m in ms {
-        if m.path in seen {
-            continue;
-        }
-        seen[m.path] = True;
-        out.append(m);
+    self.claimed[here.cid] = True;
+    for doc in [here ->:Child:->][?:SkillMd] {
+      self.found.append(doc.skill_name);
     }
-    return out;
-}
-
-walker DiscoverSkills {
-    has claimed: dict[str, bool] = {};
-    has registry: SkillRegistry | None = None;
-
-    can start with SkillDir entry {
-        if here.path in self.claimed {
-            skip;
-        }
-        self.claimed[here.path] = True;
-        if here.resolved != "" {
-            print("resolving symlink", here.name, "->", here.resolved);
-        }
-        kids: list[SkillDir] = [here ->:contains:->][?:SkillDir];
-        kids = sorted(kids, key=lambda k: k.path);
-        visit kids else { disengage; }
+    kids: list[Dir] = [];
+    for ch in [here ->:Child:->][?:Dir] {
+      kids.append(ch);
     }
-
-    can found with SkillManifest entry {
-        if here.path in self.claimed {
-            skip;
-        }
-        self.claimed[here.path] = True;
-        if self.registry is None {
-            self.registry = SkillRegistry();
-        }
-        self.registry.register(here);
-        print("registered", here.name, "at", here.path, "depth", here.depth);
-        parents: list[SkillDir] = [here <-:registered_from:-][?:SkillDir];
-        visit parents else { disengage; }
+    for ch in kids {
+      visit :0: ch;
     }
-}
-
-def build_fixture() -> SkillDir {
-    toolkit = SkillDir(path="/tmp/repro/workflow-toolkit", name="workflow-toolkit");
-    link = SkillDir(path="~/.agents/skills/workflow-toolkit", name="workflow-toolkit", is_symlink=True, resolved="/tmp/repro/workflow-toolkit");
-    root_skill = SkillManifest(path="/tmp/repro/workflow-toolkit/SKILL.md", name="workflow-toolkit", description="Top-level skill");
-    nested_a = SkillManifest(path="/tmp/repro/workflow-toolkit/runtime-sources/app-workflow/skills/apply-log/SKILL.md", name="apply-log", description="app workflow helper");
-    nested_b = SkillManifest(path="/tmp/repro/workflow-toolkit/runtime-sources/writing-workflow/skills/apply-log/SKILL.md", name="apply-log", description="writing workflow helper");
-    nested_c = SkillManifest(path="/tmp/repro/workflow-toolkit/runtime-sources/app-workflow/skills/init-log/SKILL.md", name="init-log", description="app workflow helper");
-    link +>:symlink_to:+> toolkit;
-    toolkit +>:contains:+> root_skill;
-    toolkit +>:contains:+> nested_a;
-    toolkit +>:contains:+> nested_b;
-    toolkit +>:contains:+> nested_c;
-    root_skill +>:registered_from:+> toolkit;
-    nested_a +>:registered_from:+> toolkit;
-    nested_b +>:registered_from:+> toolkit;
-    nested_c +>:registered_from:+> toolkit;
-    return link;
-}
-
-def skills_list() -> dict[str, list[str]] {
-    entry_dir = build_fixture();
-    wk = entry_dir spawn DiscoverSkills(claimed={});
-    reg: SkillRegistry = SkillRegistry();
-    if wk.registry is not None {
-        reg = wk.registry;
+    for tgt in [here ->:Link:->][?:Dir] {
+      visit :0: tgt;
     }
-    by_name: dict[str, list[str]] = {};
-    for nm in sorted(reg.by_name.keys()) {
-        paths: list[str] = [];
-        for m in reg.by_name[nm] {
-            paths.append(m.path);
+  }
+}
+
+walker InstalledCollect {
+  has claimed: dict[str, bool] = {};
+  has found: list[str] = [];
+  has booted: bool = False;
+
+  can scan_root with Dir entry {
+    if not self.booted {
+      self.booted = True;
+      print("installed_collect", here.cid);
+    }
+    if here.cid in self.claimed {
+      skip;
+    }
+    self.claimed[here.cid] = True;
+    if here.cid != "skills" {
+      disengage;
+    }
+    for child_dir in [here ->:Child:->][?:Dir] {
+      for doc in [child_dir ->:Child:->][?:SkillMd] {
+        self.found.append(doc.skill_name);
+      }
+      link_targets: list[Dir] = [];
+      for tgt in [child_dir ->:Link:->][?:Dir] {
+        link_targets.append(tgt);
+      }
+      for tgt in link_targets {
+        for doc in [tgt ->:Child:->][?:SkillMd] {
+          self.found.append(doc.skill_name);
         }
-        by_name[nm] = sorted(paths);
+      }
     }
-    return by_name;
+  }
 }
 
-with entry {
-    listing = skills_list();
-    print("skills:", listing);
+walker FindSkillDoc {
+  has claimed: dict[str, bool] = {};
+  has target_cid: str;
+  has policy: str;
+  has hit: str = "";
+  has booted: bool = False;
+
+  can seek_dir with Dir entry {
+    if not self.booted {
+      self.booted = True;
+      print("find_doc", self.target_cid, self.policy);
+    }
+    if here.cid in self.claimed {
+      skip;
+    }
+    self.claimed[here.cid] = True;
+    for doc in [here ->:Child:->][?:SkillMd] {
+      if doc.cid == self.target_cid {
+        self.hit = doc.skill_name;
+      }
+    }
+    if self.policy == "installed_only" and here.cid != "skills" {
+      kids: list[Dir] = [];
+      for ch in [here ->:Child:->][?:Dir] {
+        kids.append(ch);
+      }
+      for ch in kids {
+        if ch.is_symlink {
+          skip;
+        }
+      }
+      disengage;
+    }
+    next_dirs: list[Dir] = [];
+    for ch in [here ->:Child:->][?:Dir] {
+      next_dirs.append(ch);
+    }
+    for ch in next_dirs {
+      visit ch;
+    }
+    for tgt in [here ->:Link:->][?:Dir] {
+      visit tgt;
+    }
+  }
 }
 
-test "diamond_symlink_revisit" {
-    root spawn Walker;
-    listing = skills_list();
-    assert "apply-log" in listing;
-    assert len(listing["apply-log"]) == 2;
-    assert listing["apply-log"][0] == "/tmp/repro/workflow-toolkit/runtime-sources/app-workflow/skills/apply-log/SKILL.md";
+def build_skill_tree -> Dir {
+  skills = Dir(cid="skills", name="skills");
+  root ++> skills;
+
+  plain = Dir(cid="plain-skill", name="plain-skill");
+  skills +>:Child:+> plain;
+  plain_doc = SkillMd(cid="plain-doc", skill_name="plain-skill", blurb="direct child");
+  plain +>:Child:+> plain_doc;
+
+  toolkit_link = Dir(cid="workflow-toolkit", name="workflow-toolkit", is_symlink=True);
+  skills +>:Child:+> toolkit_link;
+
+  tk_root = Dir(cid="tk-root", name="workflow-toolkit");
+  root ++> tk_root;
+  toolkit_link +>:Link:+> tk_root;
+
+  tk_doc = SkillMd(cid="tk-doc", skill_name="workflow-toolkit", blurb="intended top-level skill");
+  tk_root +>:Child:+> tk_doc;
+
+  runtime = Dir(cid="runtime", name="runtime-sources");
+  tk_root +>:Child:+> runtime;
+
+  app_branch = Dir(cid="app-branch", name="app-workflow");
+  runtime +>:Child:+> app_branch;
+  app_log = Dir(cid="app-log-dir", name="apply-log");
+  app_branch +>:Child:+> app_log;
+  app_doc = SkillMd(cid="app-apply-doc", skill_name="apply-log", blurb="internal app workflow source");
+  app_log +>:Child:+> app_doc;
+
+  write_branch = Dir(cid="write-branch", name="writing-workflow");
+  runtime +>:Child:+> write_branch;
+  write_log = Dir(cid="write-log-dir", name="apply-log");
+  write_branch +>:Child:+> write_log;
+  write_doc = SkillMd(cid="write-apply-doc", skill_name="apply-log", blurb="internal writing workflow source");
+  write_log +>:Child:+> write_doc;
+
+  hub_a = Dir(cid="hub-a", name="hub-a");
+  skills +>:Child:+> hub_a;
+  hub_b = Dir(cid="hub-b", name="hub-b");
+  skills +>:Child:+> hub_b;
+
+  shared = Dir(cid="shared-target", name="shared-target");
+  root ++> shared;
+  hub_a +>:Child:+> shared;
+  hub_b +>:Link:+> shared;
+
+  shared_doc = SkillMd(cid="shared-doc", skill_name="once-skill", blurb="diamond revisit probe");
+  shared +>:Child:+> shared_doc;
+
+  loop_left = Dir(cid="loop-left", name="loop-left");
+  loop_right = Dir(cid="loop-right", name="loop-right");
+  root ++> loop_left;
+  root ++> loop_right;
+  loop_left +>:Link:+> loop_right;
+  loop_right +>:Link:+> loop_left;
+  loop_marker = SkillMd(cid="loop-doc", skill_name="loop-marker", blurb="cycle guard");
+  loop_left +>:Child:+> loop_marker;
+
+  return skills;
 }
 
-test "root_skill_registered_once" {
-    root spawn Walker;
-    listing = skills_list();
-    assert "workflow-toolkit" in listing;
-    assert len(listing["workflow-toolkit"]) == 1;
+def discover_skill_names(skills_root: Dir, policy: str) -> list[str] {
+  names: list[str] = [];
+  if policy == "deep" {
+    w = skills_root spawn DeepCollect(claimed={});
+    names = w.found;
+    print("discover_deep", len(names));
+  } elif policy == "installed_only" {
+    w = skills_root spawn InstalledCollect(claimed={});
+    names = w.found;
+    print("discover_installed", len(names));
+  } else {
+    names = [];
+    print("discover_unknown", 0);
+  }
+  return sorted(names);
 }
 
-test "all_nested_registered" {
-    root spawn Walker;
-    listing = skills_list();
-    assert len(listing["apply-log"]) == 2;
-    assert "init-log" in listing;
-    assert len(listing["init-log"]) == 1;
+def duplicate_name_count(names: list[str]) -> int {
+  tally: dict[str, int] = {};
+  for n in names {
+    if n in tally {
+      tally[n] = tally[n] + 1;
+    } else {
+      tally[n] = 1;
+    }
+  }
+  dups = 0;
+  for k in tally {
+    if tally[k] > 1 {
+      dups = dups + 1;
+    }
+  }
+  print("duplicate_name_count", dups);
+  return dups;
 }
 
-test "names_sorted_and_no_unknown_dupes" {
-    root spawn Walker;
-    listing = skills_list();
-    keys: list[str] = sorted(listing.keys());
-    assert keys == ["apply-log", "init-log", "workflow-toolkit"];
+def skill_doc_name(skills_root: Dir, doc_cid: str, policy: str) -> str {
+  if doc_cid == "" {
+    print("skill_doc_name_missing", doc_cid);
+    return "";
+  }
+  w = skills_root spawn FindSkillDoc(claimed={}, target_cid=doc_cid, policy=policy);
+  print("skill_doc_name", doc_cid, w.hit);
+  return w.hit;
 }
 
-test "claim_map_prevents_infinite_walk" {
-    root spawn Walker;
-    entry_dir = build_fixture();
-    wk = entry_dir spawn DiscoverSkills(claimed={});
-    assert True;
+test "deep_discover_sorted" {
+  skills = build_skill_tree();
+  names = discover_skill_names(skills, "deep");
+  assert (names == ["apply-log", "apply-log", "loop-marker", "once-skill", "plain-skill", "workflow-toolkit"]);;
 }
 
-test "parse_manifest_defaults" {
-    root spawn Walker;
-    m = parse_manifest("/x/SKILL.md", "x", "d", 3);
-    assert m.depth == 3;
-    assert m.description == "d";
-    d = dedupe_manifests([m, m]);
-    assert len(d) == 1;
+test "installed_discover_sorted" {
+  skills = build_skill_tree();
+  names = discover_skill_names(skills, "installed_only");
+  assert (names == ["once-skill", "plain-skill", "workflow-toolkit"]);;
+}
+
+test "deep_duplicate_names" {
+  skills = build_skill_tree();
+  names = discover_skill_names(skills, "deep");
+  assert (duplicate_name_count(names) == 1);;
+}
+
+test "installed_no_duplicates" {
+  skills = build_skill_tree();
+  names = discover_skill_names(skills, "installed_only");
+  assert (duplicate_name_count(names) == 0);;
+}
+
+test "skill_doc_name_deep_nested" {
+  skills = build_skill_tree();
+  assert (skill_doc_name(skills, "app-apply-doc", "deep") == "apply-log");;
+}
+
+test "skill_doc_name_installed_plain" {
+  skills = build_skill_tree();
+  assert (skill_doc_name(skills, "plain-doc", "installed_only") == "plain-skill");;
 }

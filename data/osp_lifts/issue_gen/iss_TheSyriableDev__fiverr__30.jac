@@ -94,6 +94,6 @@ def effective_permissions(roles: list[dict], role: str) -> list {
 }
 
 """True iff ``perm`` is an effective grant of ``role``."""
-def can(roles: list[dict], role: str, perm: str) -> bool {
+def `can(roles: list[dict], role: str, perm: str) -> bool {
     return perm in effective_permissions(roles, role);
 }

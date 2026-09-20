@@ -1,104 +1,112 @@
-"""
-Lift of NousResearch/hermes-agent#70185: desktop sessions silently archived
-via compression-lineage cascade; session_key=NULL breaks resume.
-"""
+# iss_NousResearch__hermes-agent__70185.jac
+# NousResearch/hermes-agent#70185 — compression-lineage CTE cascade + session_key resume.
 
 node Session {
     has sid: str;
-    has source: str = "desktop";
-    has session_key: str | None = None;
-    has archived: bool = False;
-    has audit: list[str] = [];
+    has session_key: str = "";
+    has archived: int = 0;
+    has end_reason: str = "";
+    has chat_id: str = "";
+    has user_id: str = "";
+    has chat_type: str = "";
+    has source: str = "";
 }
 
-edge CompressionLink {}
+edge Compression {}
 
-glob graph_root: dict[str, Session] = {};
-
-def add_session(sid: str, source: str = "desktop", session_key: str | None = None) -> Session {
-    s = Session(sid=sid, source=source, session_key=session_key);
-    graph_root[sid] = s;
-    return s;
+obj SessionStore {
+    has graph_root: Session;
+    has by_sid: dict[str, Session] = {};
 }
 
-def link_compression(prev: Session, nxt: Session) {
-    prev +>:CompressionLink:+> nxt;
-}
-
-# collect the full compression lineage (ancestors + descendants) via claim-map
-walker collect_lineage {
+walker LineageCollect {
     has claimed: dict[str, bool] = {};
-    has lineage: list[str] = [];
+    has found: list[str] = [];
 
     can step with Session entry {
         if here.sid in self.claimed { skip; }
         self.claimed[here.sid] = True;
-        self.lineage.append(here.sid);
+        self.found.append(here.sid);
+        print(here.sid);
         nbrs: list[Session] = [];
-        for nb in [here ->:CompressionLink:->][?:Session] { nbrs.append(nb); }
-        for nb in [here <-:CompressionLink:-][?:Session] { nbrs.append(nb); }
-        visit nbrs;
+        for anc in [<-:Compression:<-][?:Session] {
+            nbrs.append(anc);
+        }
+        for desc in [->:Compression:->][?:Session] {
+            nbrs.append(desc);
+        }
+        if nbrs {
+            visit :0: nbrs;
+        } else {
+            disengage;
+        }
     }
 }
 
-def set_session_archived(sid: str) -> list[str] {
-    if sid not in graph_root {
+def new_store() -> SessionStore {
+    anchor = Session(sid="__anchor__");
+    root ++> anchor;
+    return SessionStore(graph_root=anchor);
+}
+
+def add_session(store: SessionStore, sid: str, session_key: str, archived: int, end_reason: str, chat_id: str, user_id: str, chat_type: str, source: str) -> Session {
+    s = Session(sid=sid, session_key=session_key, archived=archived, end_reason=end_reason, chat_id=chat_id, user_id=user_id, chat_type=chat_type, source=source);
+    store.graph_root ++> s;
+    store.by_sid[sid] = s;
+    return s;
+}
+
+def link_compression(parent: Session, child: Session) {
+    parent +>:Compression:+> child;
+}
+
+def compression_lineage_ids(store: SessionStore, root_sid: str) -> list[str] {
+    if root_sid not in store.by_sid {
         return [];
     }
-    start = graph_root[sid];
-    # two-phase: collect during walk, mutate after
-    wk = start spawn collect_lineage(claimed={});
-    affected: list[str] = [];
-    for s in wk.lineage { affected.append(s); }
-    affected = sorted(affected);
-    for s in affected {
-        # `node` is a reserved keyword; use nd
-        nd = graph_root[s];
-        nd.archived = True;
-        nd.audit.append("archived sid=" + s);
+    nd = store.by_sid[root_sid] as Session;
+    w = nd spawn LineageCollect(claimed={});
+    out: list[str] = [];
+    for x in w.found {
+        out.append(x);
     }
-    return affected;
+    return sorted(out);
 }
 
-def unarchive_desktop_sessions -> int {
-    n: int = 0;
-    for sid in sorted(graph_root.keys()) {
-        s = graph_root[sid];
-        if s.source == "desktop" and s.archived {
-            s.archived = False;
-            n = n + 1;
+def set_session_archived(store: SessionStore, root_sid: str) -> list[str] {
+    ids = compression_lineage_ids(store, root_sid);
+    for sid in ids {
+        s = store.by_sid[sid] as Session;
+        s.archived = 1;
+    }
+    return sorted(ids);
+}
+
+def find_latest_gateway_session_for_peer(store: SessionStore, session_key: str, chat_id: str, user_id: str, chat_type: str) -> str | None {
+    latest: str | None = None;
+    keys: list[str] = [];
+    for k in store.by_sid {
+        keys.append(k);
+    }
+    keys = sorted(keys);
+    if session_key != "" {
+        for sid in keys {
+            s = store.by_sid[sid] as Session;
+            if s.archived != 0 { continue; }
+            if s.session_key == session_key {
+                latest = sid;
+            }
+        }
+        if latest is not None { return latest; }
+    }
+    if chat_id != "" or user_id != "" or chat_type != "" {
+        for sid in keys {
+            s = store.by_sid[sid] as Session;
+            if s.archived != 0 { continue; }
+            if s.chat_id == chat_id and s.user_id == user_id and s.chat_type == chat_type {
+                latest = sid;
+            }
         }
     }
-    return n;
-}
-
-def find_latest_gateway_session_for_peer(session_key: str) -> str | None {
-    best: str | None = None;
-    for sid in sorted(graph_root.keys()) {
-        s = graph_root[sid];
-        if s.session_key == session_key and not s.archived {
-            if best is None or sid > best { best = sid; }
-        }
-    }
-    return best;
-}
-
-def count_archived -> int {
-    n: int = 0;
-    for sid in graph_root.keys() {
-        if graph_root[sid].archived { n = n + 1; }
-    }
-    return n;
-}
-
-with entry {
-    a = add_session("s1", "desktop");
-    b = add_session("s2", "desktop");
-    c = add_session("s3", "desktop", session_key="peerX");
-    link_compression(a, b);
-    link_compression(b, c);
-    hit = set_session_archived("s2");
-    print("cascade archived:", hit);
-    print("resume for peerX:", find_latest_gateway_session_for_peer("peerX"));
-    print("unarchived:", unarchive_desktop_sessions());
+    return latest;
 }

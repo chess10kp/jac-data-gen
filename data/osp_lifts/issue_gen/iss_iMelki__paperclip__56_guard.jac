@@ -1,255 +1,256 @@
-# iss_iMelki__paperclip__56.jac — owned vitest scratch root custody graph
+"""Owned Vitest scratch-root custody, quiescence, and cascade cleanup.
+iMelki/paperclip#56
+"""
 
 node ScratchRoot {
     has cid: str;
-    has caller_tag: str = "";
-    has logical_bytes: int = 0;
-    has removed: bool = False;
+    has tag: str;
+    has bytes: int = 0;
+    has child_count: int = 0;
+    has temp_env: dict[str, str] = {};
+    has cleanup_result: str = "pending";
+    has present: bool = True;
+    has locked: bool = False;
+    has exit_status: int = 0;
+    has duration_ms: int = 0;
 }
 
-node Proc {
-    has pid: str;
-    has state: str = "quiescent";
+node ChildProc {
+    has cid: str;
+    has pid: int;
+    has alive: bool = True;
 }
 
 node Manifest {
+    has cid: str;
     has owner_tag: str;
     has valid: bool = True;
 }
 
 edge Owns {}
-edge Nested {}
+edge Custody {}
 
-walker FindRoot {
-    has want: str;
+walker QuiesceWalk {
     has claimed: dict[str, bool] = {};
-    has hit: ScratchRoot | None = None;
+    has all_dead: bool = True;
 
-    can step with ScratchRoot entry {
-        if here.cid in self.claimed {
-            skip;
-        }
+    can scan_proc with ChildProc entry {
+        if here.cid in self.claimed { skip; }
         self.claimed[here.cid] = True;
-        if here.cid == self.want {
-            self.hit = here;
-        }
-        kids: list[ScratchRoot] = [here ->:Nested:->][?:ScratchRoot];
-        visit :0: kids;
-        print({"find": here.cid, "want": self.want});
+        print ["quiesce_proc", here.cid, here.alive];
+        if here.alive { self.all_dead = False; }
+    }
+
+    can scan_scratch with ScratchRoot entry {
+        if here.cid in self.claimed { skip; }
+        self.claimed[here.cid] = True;
+        print ["quiesce_root", here.cid];
+        proc_kids: list = [];
+        for ch in [here ->:Custody:->][?:ChildProc] { proc_kids.append(ch); }
+        sub_kids: list = [];
+        for sr in [here ->:Owns:->][?:ScratchRoot] { sub_kids.append(sr); }
+        has_more: bool = False;
+        if len(proc_kids) > 0 { visit :0: proc_kids; has_more = True; }
+        if len(sub_kids) > 0 { visit :0: sub_kids; has_more = True; }
+        if not has_more { disengage; }
     }
 }
 
-walker CollectProcs {
+walker CollectRemoveWalk {
     has claimed: dict[str, bool] = {};
-    has found: list[str] = [];
+    has cids: list[str] = [];
 
-    can step with ScratchRoot entry {
-        if here.cid in self.claimed {
-            skip;
-        }
+    can grab_proc with ChildProc entry {
+        if here.cid in self.claimed { skip; }
         self.claimed[here.cid] = True;
-        procs: list[Proc] = [here ->:Owns:->][?:Proc];
-        for p in procs {
-            self.found.append(p.pid);
-        }
-        kids: list[ScratchRoot] = [here ->:Nested:->][?:ScratchRoot];
-        visit :0: kids;
-        print({"collect": here.cid, "count": len(self.found)});
+        self.cids.append(here.cid);
+        print ["collect_proc", here.cid];
+    }
+
+    can grab_scratch with ScratchRoot entry {
+        if here.cid in self.claimed { skip; }
+        self.claimed[here.cid] = True;
+        self.cids.append(here.cid);
+        print ["collect_root", here.cid];
+        proc_kids: list = [];
+        for ch in [here ->:Custody:->][?:ChildProc] { proc_kids.append(ch); }
+        sub_kids: list = [];
+        for sr in [here ->:Owns:->][?:ScratchRoot] { sub_kids.append(sr); }
+        has_more: bool = False;
+        if len(proc_kids) > 0 { visit :0: proc_kids; has_more = True; }
+        if len(sub_kids) > 0 { visit :0: sub_kids; has_more = True; }
+        if not has_more { disengage; }
     }
 }
 
-walker QuiesceCheck {
-    has claimed: dict[str, bool] = {};
-    has blocked: bool = False;
-
-    can step with ScratchRoot entry {
-        if here.cid in self.claimed {
-            skip;
-        }
-        self.claimed[here.cid] = True;
-        procs: list[Proc] = [here ->:Owns:->][?:Proc];
-        for p in procs {
-            if p.state != "quiescent" {
-                self.blocked = True;
-            }
-        }
-        kids: list[ScratchRoot] = [here ->:Nested:->][?:ScratchRoot];
-        visit :0: kids;
-        print({"quiesce": here.cid, "blocked": self.blocked});
+def _find_root(root_id: str) -> ScratchRoot | None {
+    for nd in [root -->] {
+        if nd is ScratchRoot and nd.cid == root_id { return nd; }
     }
+    return None;
 }
 
-def allocate_owned_root(caller_tag: str, stamp: str, nonce: str) -> str {
-    cid = "eph-paperclip-vitest-" + stamp + "-" + nonce;
-    nd = ScratchRoot(cid=cid, caller_tag=caller_tag);
+def allocate_scratch_root(tag: str) -> str {
+    rid: str = "eph-paperclip-vitest-" + tag;
+    nd = ScratchRoot(cid=rid, tag=tag);
     root ++> nd;
-    return cid;
+    return rid;
 }
 
-def normalize_temp_triplet(root_path: str) -> dict[str, str] {
+def normalize_temp_env(root_id: str) -> dict[str, str] {
+    nd = _find_root(root_id);
+    if nd is None { return {}; }
+    path: str = "/owned/" + root_id;
     env: dict[str, str] = {};
-    env["TEMP"] = root_path;
-    env["TMP"] = root_path;
-    env["TMPDIR"] = root_path;
+    env["TEMP"] = path;
+    env["TMP"] = path;
+    env["TMPDIR"] = path;
+    nd.temp_env = env;
     return env;
 }
 
-def write_owner_manifest(root_node: ScratchRoot, owner_tag: str) -> bool {
-    if owner_tag == "" {
-        return False;
-    }
-    mf = Manifest(owner_tag=owner_tag, valid=True);
-    root_node ++> mf;
+def write_ownership_manifest(root_id: str, owner_tag: str) -> bool {
+    nd = _find_root(root_id);
+    if nd is None { return False; }
+    mf = Manifest(cid=root_id + ":manifest", owner_tag=owner_tag, valid=True);
+    nd +>:Owns:+> mf;
     return True;
 }
 
-def validate_manifest(mf: Manifest) -> bool {
-    if not mf.valid {
-        return False;
-    }
-    if mf.owner_tag == "" {
-        return False;
-    }
+def register_child(root_id: str, pid: int, alive: bool) -> bool {
+    nd = _find_root(root_id);
+    if nd is None { return False; }
+    cid: str = root_id + ":pid:" + str(pid);
+    ch = ChildProc(cid=cid, pid=pid, alive=alive);
+    nd +>:Custody:+> ch;
+    nd.child_count = nd.child_count + 1;
     return True;
 }
 
-def attach_proc(root_node: ScratchRoot, pid: str, state: str) -> bool {
-    p = Proc(pid=pid, state=state);
-    root_node +>:Owns:+> p;
-    return True;
+def child_tree_quiescent(root_id: str) -> bool {
+    nd = _find_root(root_id);
+    if nd is None { return True; }
+    w = nd spawn QuiesceWalk(claimed={}, all_dead=True);
+    print ["quiescent", root_id, w.all_dead];
+    return w.all_dead;
 }
 
-def collect_child_pids(root_node: ScratchRoot) -> list[str] {
-    wk = root_node spawn CollectProcs(claimed={}, found=[]);
-    out: list[str] = [];
-    for pid in wk.found {
-        out.append(pid);
-    }
-    return sorted(out);
-}
-
-def collect_child_pids_for_cid(graph_anchor: ScratchRoot, cid: str) -> list[str] {
-    fw = graph_anchor spawn FindRoot(want=cid, claimed={}, hit=None);
-    if fw.hit is None {
-        return [];
-    }
-    wk = fw.hit spawn CollectProcs(claimed={}, found=[]);
-    out: list[str] = [];
-    for pid in wk.found {
-        out.append(pid);
-    }
-    return sorted(out);
-}
-
-def children_quiescent(root_node: ScratchRoot) -> bool {
-    wk = root_node spawn QuiesceCheck(claimed={}, blocked=False);
-    return not wk.blocked;
-}
-
-def remove_owned_root(root_node: ScratchRoot) -> dict[str, str] {
-    result: dict[str, str] = {};
-    if not children_quiescent(root_node) {
-        result["cleanup"] = "EBUSY";
-        result["residual"] = root_node.cid;
-        return result;
-    }
-    root_node.removed = True;
-    result["cleanup"] = "ok";
-    result["residual"] = "";
-    return result;
-}
-
-def verify_absent(cid: str, alive: list[str] | None) -> bool {
-    ids: list[str] = [];
-    if alive is not None {
-        for x in alive {
-            ids.append(x);
+def cascade_remove_root(root_id: str) -> str {
+    nd = _find_root(root_id);
+    if nd is None { return "missing"; }
+    if nd.locked { return "busy"; }
+    if not child_tree_quiescent(root_id) { return "busy"; }
+    w = nd spawn CollectRemoveWalk(claimed={}, cids=[]);
+    collected: list[str] = w.cids;
+    for cid in collected {
+        for item in [root -->] {
+            if item is ScratchRoot and item.cid == cid { item.present = False; }
+            if item is ChildProc and item.cid == cid { item.alive = False; }
         }
     }
-    for x in ids {
-        if x == cid {
-            return False;
-        }
-    }
-    return True;
+    nd.cleanup_result = "removed";
+    return "removed";
 }
 
-def build_terminal_receipt(
-    duration_ms: int,
-    exit_status: int,
-    logical_bytes: int,
-    child_count: int,
-    cleanup: str,
-    residual: str,
-    caller_tag: str
-) -> dict[str, str] {
-    rec: dict[str, str] = {};
-    rec["duration_ms"] = str(duration_ms);
-    rec["exit_status"] = str(exit_status);
-    rec["logical_bytes"] = str(logical_bytes);
-    rec["child_count"] = str(child_count);
-    rec["cleanup"] = cleanup;
-    rec["residual"] = residual;
-    rec["caller_tag"] = caller_tag;
-    return rec;
+def verify_root_absent(root_id: str) -> bool {
+    nd = _find_root(root_id);
+    if nd is None { return True; }
+    return not nd.present;
+}
+
+def build_cleanup_receipt(root_id: str, exit_status: int, duration_ms: int) -> dict[str, str] {
+    receipt: dict[str, str] = {};
+    nd = _find_root(root_id);
+    receipt["exit_status"] = str(exit_status);
+    receipt["duration_ms"] = str(duration_ms);
+    if nd is None {
+        receipt["cleanup_result"] = "missing";
+        receipt["logical_bytes"] = "0";
+        receipt["child_count"] = "0";
+        receipt["caller_tag"] = "";
+        receipt["residual_paths"] = root_id;
+        return receipt;
+    }
+    receipt["logical_bytes"] = str(nd.bytes);
+    receipt["child_count"] = str(nd.child_count);
+    receipt["cleanup_result"] = nd.cleanup_result;
+    receipt["caller_tag"] = nd.tag;
+    residual: str = "";
+    if nd.present { residual = nd.cid; }
+    receipt["residual_paths"] = residual;
+    return receipt;
+}
+
+def cleanup_execution(root_id: str, exit_status: int, duration_ms: int) -> dict[str, str] {
+    normalize_temp_env(root_id);
+    write_ownership_manifest(root_id, "stable-runner");
+    result: str = cascade_remove_root(root_id);
+    nd = _find_root(root_id);
+    if nd is not None {
+        nd.exit_status = exit_status;
+        nd.duration_ms = duration_ms;
+        if nd.cleanup_result == "pending" { nd.cleanup_result = result; }
+    }
+    return build_cleanup_receipt(root_id, exit_status, duration_ms);
 }
 
 test "allocate_and_normalize" {
-    cid = allocate_owned_root("vitest", "20250915", "n1");
-    assert cid == "eph-paperclip-vitest-20250915-n1";
-    env = normalize_temp_triplet("/scratch/vitest");
-    assert env["TEMP"] == "/scratch/vitest";
-    assert env["TMPDIR"] == "/scratch/vitest";
+    rid = allocate_scratch_root("alpha");
+    env = normalize_temp_env(rid);
+    assert env["TEMP"] == "/owned/" + rid;
+    assert env["TMP"] == "/owned/" + rid;
+    assert env["TMPDIR"] == "/owned/" + rid;
+    assert write_ownership_manifest(rid, "stable-runner") == True;
 }
 
-test "manifest_write_validate" {
-    nd = ScratchRoot(cid="r-mf", caller_tag="ct");
-    root ++> nd;
-    assert write_owner_manifest(nd, "") == False;
-    assert write_owner_manifest(nd, "owner-a") == True;
-    mfs: list[Manifest] = [nd ->][?:Manifest];
-    assert len(mfs) == 1;
-    assert validate_manifest(mfs[0]) == True;
+test "cascade_remove_quiescent" {
+    rid = allocate_scratch_root("quiet");
+    assert register_child(rid, 3, False) == True;
+    assert child_tree_quiescent(rid) == True;
+    assert cascade_remove_root(rid) == "removed";
+    assert verify_root_absent(rid) == True;
 }
 
-test "collect_child_pids_sorted" {
-    nd = ScratchRoot(cid="r-col");
-    root ++> nd;
-    attach_proc(nd, "p2", "quiescent");
-    attach_proc(nd, "p1", "quiescent");
-    assert collect_child_pids(nd) == ["p1", "p2"];
+test "cascade_busy_live_child" {
+    rid = allocate_scratch_root("live");
+    assert register_child(rid, 9, True) == True;
+    assert child_tree_quiescent(rid) == False;
+    assert cascade_remove_root(rid) == "busy";
+    assert verify_root_absent(rid) == False;
 }
 
-test "collect_for_nested_cid" {
-    parent = ScratchRoot(cid="r-par");
-    child = ScratchRoot(cid="r-ch");
-    root ++> parent;
-    parent +>:Nested:+> child;
-    attach_proc(child, "cp1", "quiescent");
-    assert collect_child_pids_for_cid(parent, "missing") == [];
-    assert collect_child_pids_for_cid(parent, "r-ch") == ["cp1"];
+test "cascade_nested_tree" {
+    rid = allocate_scratch_root("nested");
+    parent = _find_root(rid);
+    if parent is None { assert False; }
+    left = ScratchRoot(cid=rid + ":left", tag="left");
+    right = ScratchRoot(cid=rid + ":right", tag="right");
+    hot = ChildProc(cid=rid + ":hot", pid=7, alive=False);
+    parent +>:Owns:+> right;
+    parent +>:Owns:+> left;
+    right +>:Custody:+> hot;
+    left +>:Custody:+> hot;
+    assert cascade_remove_root(rid) == "removed";
+    assert verify_root_absent(rid) == True;
 }
 
-test "remove_busy_when_not_quiescent" {
-    nd = ScratchRoot(cid="r-busy");
-    root ++> nd;
-    attach_proc(nd, "px", "running");
-    res = remove_owned_root(nd);
-    assert res["cleanup"] == "EBUSY";
-    assert res["residual"] == "r-busy";
-    assert nd.removed == False;
+test "cascade_locked_busy" {
+    rid = allocate_scratch_root("lock");
+    nd = _find_root(rid);
+    if nd is None { assert False; }
+    nd.locked = True;
+    assert cascade_remove_root(rid) == "busy";
+    assert verify_root_absent(rid) == False;
 }
 
-test "remove_ok_and_receipt" {
-    nd = ScratchRoot(cid="r-ok", caller_tag="tag-z");
-    root ++> nd;
-    attach_proc(nd, "py", "quiescent");
-    res = remove_owned_root(nd);
-    assert res["cleanup"] == "ok";
-    assert res["residual"] == "";
-    assert nd.removed == True;
-    rec = build_terminal_receipt(12, 0, 64, 1, "ok", "", "tag-z");
-    assert rec["child_count"] == "1";
-    assert verify_absent("gone", ["alive"]) == True;
-    assert verify_absent("alive", ["alive"]) == False;
+test "cleanup_execution_receipt" {
+    rid = allocate_scratch_root("exit");
+    assert register_child(rid, 5, False) == True;
+    receipt = cleanup_execution(rid, 1, 42);
+    assert receipt["exit_status"] == "1";
+    assert receipt["duration_ms"] == "42";
+    assert receipt["cleanup_result"] == "removed";
+    assert receipt["caller_tag"] == "exit";
+    assert receipt["child_count"] == "1";
+    assert receipt["residual_paths"] == "";
 }

@@ -1,96 +1,190 @@
-"""OSP lift for open-telemetry/opentelemetry-ebpf-profiler#1603."""
+# open-telemetry/opentelemetry-ebpf-profiler#1603 — NestedClass enclosing walk with cycle guard.
 
 node TypeSpec {
-    has name: str;
-    has enclosing_class: str = "";
-    has full_name: str = "";
-    has chain: list[str] = [];
+    has cid: str;
+    has type_name: str;
 }
 
-edge NestedClass {}
+node Anchor {
+    has tag: str = "boot";
+}
 
-walker EnclosingWalk {
+edge Encloses {}
+edge Nests {}
+
+obj PeIndex {
+    has graph_root: TypeSpec;
+    has nodes_by_id: dict[str, TypeSpec] = {};
+}
+
+def reverse_list(xs: list[str]) -> list[str] {
+    out: list[str] = [];
+    i = len(xs) - 1;
+    while i >= 0 {
+        out.append(xs[i]);
+        i -= 1;
+    }
+    return out;
+}
+
+def join_slash(parts: list[str]) -> str {
+    if len(parts) == 0 {
+        return "";
+    }
+    out = parts[0];
+    i = 1;
+    while i < len(parts) {
+        out += "/" + parts[i];
+        i += 1;
+    }
+    return out;
+}
+
+def make_pe_index(rows: list[tuple[str, str]]) -> PeIndex {
+    store = PeIndex();
+    anchor = TypeSpec(cid="__anchor__", type_name="__anchor__");
+    root ++> anchor;
+    store.graph_root = anchor;
+    for row in rows {
+        cid = row[0];
+        name = row[1];
+        nd = TypeSpec(cid=cid, type_name=name);
+        anchor ++> nd;
+        store.nodes_by_id[cid] = nd;
+    }
+    return store;
+}
+
+def apply_nested_rows(store: PeIndex, pairs: list[tuple[str, str]]) -> None {
+    for pair in pairs {
+        nested_id = pair[0];
+        enclosing_id = pair[1];
+        nested_nd = store.nodes_by_id[nested_id];
+        parent_nd = store.nodes_by_id[enclosing_id];
+        nested_nd +>:Encloses:+> parent_nd;
+        parent_nd +>:Nests:+> nested_nd;
+    }
+}
+
+def apply_nests_edges(store: PeIndex, pairs: list[tuple[str, str]]) -> None {
+    apply_nested_rows(store, pairs);
+}
+
+def resolve_qualified_name(store: PeIndex, start_cid: str) -> str | None {
+    if start_cid not in store.nodes_by_id {
+        return None;
+    }
+    start_nd = store.nodes_by_id[start_cid];
+    w = start_nd spawn ResolveName(claimed={});
+    if w.cycle_hit {
+        return None;
+    }
+    return w.result;
+}
+
+def collect_nested_visit_order(store: PeIndex, start_cid: str) -> list[str] {
+    if start_cid not in store.nodes_by_id {
+        return [];
+    }
+    start_nd = store.nodes_by_id[start_cid];
+    w = start_nd spawn CollectVisit(claimed={});
+    return w.order;
+}
+
+walker ResolveName {
     has claimed: dict[str, bool] = {};
+    has parts: list[str] = [];
+    has cycle_hit: bool = False;
+    has result: str = "";
+
+    can climb with TypeSpec entry {
+        if here.cid in self.claimed {
+            self.cycle_hit = True;
+            print({"resolve": "cycle", "cid": here.cid});
+            skip;
+        }
+        self.claimed[here.cid] = True;
+        self.parts.append(here.type_name);
+        parents: list[TypeSpec] = [here ->:Encloses:->][?:TypeSpec];
+        if parents {
+            visit [parents[0]];
+        } else {
+            rev = reverse_list(self.parts);
+            self.result = join_slash(rev);
+            print({"resolve": self.result});
+        }
+    }
+}
+
+walker CollectVisit {
+    has claimed: dict[str, bool] = {};
+    has order: list[str] = [];
 
     can step with TypeSpec entry {
         if here.cid in self.claimed {
             skip;
         }
         self.claimed[here.cid] = True;
-        print(here.cid);
-
-        for parent in [here ->:NestedClass:->][?:TypeSpec] {
-            if len(parent.chain) == 0 {
-                parent.chain = here.chain;
-                parent.chain.append(parent.cid);
-            }
-            visit :0: [parent];
+        self.order.append(here.cid);
+        kids: list[TypeSpec] = [here ->:Nests:->][?:TypeSpec];
+        print({"visit": here.cid, "kids": len(kids)});
+        for ch in kids {
+            visit [ch];
         }
     }
 }
 
-def link_nested(nested: TypeSpec, enclosing: TypeSpec) {
-    nested.enclosing_class = enclosing.cid;
-    nested +>:NestedClass:+> enclosing;
-}
-
-def find_type(types: list[TypeSpec], wanted: str) -> TypeSpec | None {
-    for item in types {
-        if item.cid == wanted {
-            return item;
-        }
+walker Bootstrap {
+    can boot with Anchor entry {
+        store = make_pe_index([("1", "Inner"), ("2", "Outer")]);
+        apply_nested_rows(store, [("1", "2")]);
+        nm = resolve_qualified_name(store, "1");
+        print({"demo": nm});
     }
-    return None;
 }
 
-def collect_enclosing_ids(start: TypeSpec) -> list[str] {
-    start.chain = [];
-    start.chain.append(start.cid);
-    start spawn EnclosingWalk;
-    return start.chain;
+with entry {
+    boot_nd = Anchor();
+    root ++> boot_nd;
+    boot_nd spawn Bootstrap();
 }
 
-def resolve_method_name(start: TypeSpec) -> str {
-    if start.full_name == "" {
-        start.full_name = start.name;
-    }
-    collect_enclosing_ids(start);
-    return start.full_name;
+test "resolve_enclosing_chain" {
+    store = make_pe_index([("1", "M"), ("2", "O"), ("3", "A")]);
+    apply_nested_rows(store, [("1", "2"), ("2", "3")]);
+    got = resolve_qualified_name(store, "1");
+    assert got == "A/O/M";
 }
 
-test "self cycle terminates" {
-    item = TypeSpec(name="Self");
-    link_nested(item, item);
-    ids = collect_enclosing_ids(item);
-    assert (ids == ["Self"]);
-    assert (resolve_method_name(item) == "Self");
+test "self_nested_class_cycle_returns_none" {
+    store = make_pe_index([("1", "Loop")]);
+    apply_nested_rows(store, [("1", "1")]);
+    got = resolve_qualified_name(store, "1");
+    assert got == None;
 }
 
-test "diamond revisits are claimed once" {
-    leaf = TypeSpec(name="Leaf");
-    left = TypeSpec(name="Left");
-    right = TypeSpec(name="Right");
-    top = TypeSpec(name="Top");
-    link_nested(leaf, left);
-    link_nested(leaf, right);
-    link_nested(left, top);
-    link_nested(right, top);
-    ids = collect_enclosing_ids(leaf);
-    assert (sorted(ids) == sorted([leaf.cid, left.cid, right.cid, top.cid]));
+test "mutual_enclosing_cycle_returns_none" {
+    store = make_pe_index([("1", "A"), ("2", "B")]);
+    apply_nested_rows(store, [("1", "2"), ("2", "1")]);
+    got = resolve_qualified_name(store, "1");
+    assert got == None;
 }
 
-test "unknown type is tolerated" {
-    known = TypeSpec(name="Known");
-    types: list[TypeSpec] = [];
-    types.append(known);
-    missing = find_type(types, "missing");
-    assert (missing == None);
+test "unknown_type_id_returns_none" {
+    store = make_pe_index([("1", "X")]);
+    got = resolve_qualified_name(store, "9");
+    assert got == None;
 }
 
-test "ordinary enclosing name remains stable" {
-    outer = TypeSpec(name="Outer");
-    inner = TypeSpec(name="Inner");
-    link_nested(inner, outer);
-    assert (resolve_method_name(inner) == "Inner");
-    assert (len(collect_enclosing_ids(inner)) == 2);
+test "diamond_revisit_skips_claimed_enclosing" {
+    store = make_pe_index([("1", "Leaf"), ("2", "MidA"), ("3", "MidB"), ("4", "Root")]);
+    apply_nests_edges(store, [("4", "2"), ("4", "3"), ("2", "1"), ("3", "1")]);
+    order = collect_nested_visit_order(store, "4");
+    assert order == ["4", "2", "1", "3"];
+}
+
+test "missing_start_visit_order_empty" {
+    store = make_pe_index([("1", "Only")]);
+    order = collect_nested_visit_order(store, "99");
+    assert order == [];
 }

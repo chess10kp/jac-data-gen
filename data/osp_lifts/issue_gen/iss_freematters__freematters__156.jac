@@ -1,108 +1,120 @@
-"""OSP lift for freematters/freematters#156."""
+"""freematters/freematters#156 — PATH-shadowed fflow hook recursion."""
 
-node Hook {
+node Launcher {
+    has cid: str;
     has name: str;
-    has command: str;
-    has timeout: int = 10;
+    has rank: int = 0;
+    has target: str = "";
 }
 
-node Executable {
-    has path: str;
-    has bundled: bool = False;
-    has recursive: bool = False;
-}
+edge Delegate {}
 
-node Process {
-    has pid: int;
-    has command: str;
-    has alive: bool = True;
-}
-
-edge Resolves {}
-edge Spawns {}
-
-walker ResolvePath {
+walker TraceWalker {
     has claimed: dict[str, bool] = {};
-    has found: str = "";
-    has selected: bool = False;
+    has out: list[str] = [];
 
-    can inspect_hook with Hook entry {
+    can step with Launcher entry {
         if here.cid in self.claimed {
             skip;
         }
         self.claimed[here.cid] = True;
-        print("inspecting hook");
-        for exe in [here ->:Resolves:->][?:Executable] {
-            visit :0: [exe];
+        self.out.append(here.cid);
+        print("trace", here.cid);
+        nxt: list[Launcher] = [];
+        for ch in [here ->:Delegate:->][?:Launcher] {
+            nxt.append(ch);
         }
-    }
-
-    can inspect_executable with Executable entry {
-        if here.cid in self.claimed {
-            skip;
-        }
-        self.claimed[here.cid] = True;
-        print("inspecting executable");
-        if here.recursive == False and here.bundled == True {
-            if self.selected == False {
-                self.found = here.path;
-                self.selected = True;
-            }
-        }
-        for exe in [here ->:Resolves:->][?:Executable] {
-            visit :0: [exe];
+        if nxt {
+            visit :0: nxt;
+        } else {
+            disengage;
         }
     }
 }
 
-walker ProcessSweep {
+walker LoopWalker {
     has claimed: dict[str, bool] = {};
-    has targets: list[Process] = [];
+    has loop: bool = False;
 
-    can sweep_process with Process entry {
+    can probe with Launcher entry {
         if here.cid in self.claimed {
+            self.loop = True;
+            print("loop", here.cid);
             skip;
         }
         self.claimed[here.cid] = True;
-        self.targets.append(here);
-        print("observing process");
-        for child in [here ->:Spawns:->][?:Process] {
-            visit :0: [child];
+        print("probe", here.cid);
+        nxt: list[Launcher] = [];
+        for ch in [here ->:Delegate:->][?:Launcher] {
+            nxt.append(ch);
+        }
+        if nxt {
+            visit :0: nxt;
+        } else {
+            disengage;
         }
     }
 }
 
-def resolve_hook_path(hook_node: Hook) -> str {
-    w = hook_node spawn ResolvePath(claimed={});
-    return w.found;
+def make_launcher(cid: str, name: str, rank: int, target: str) -> Launcher {
+    return Launcher(cid=cid, name=name, rank=rank, target=target);
 }
 
-def preflight_hook(hook_node: Hook) -> bool {
-    path = resolve_hook_path(hook_node);
-    return path != "" and hook_node.timeout > 0;
+def index_launchers(nodes: list[Launcher]) -> dict[str, Launcher] {
+    idx: dict[str, Launcher] = {};
+    for nd in nodes {
+        idx[nd.cid] = nd;
+    }
+    return idx;
 }
 
-def has_process(process_node: Process, target_pid: int) -> bool {
-    wk = process_node spawn ProcessSweep(claimed={});
-    for item in wk.targets {
-        if item.pid == target_pid {
-            return True;
+def attach_delegate(src: Launcher, dst: Launcher) {
+    src +>:Delegate:+> dst;
+}
+
+def resolve_path(order: list[str], name: str, nodes: list[Launcher]) -> str {
+    idx: dict[str, Launcher] = index_launchers(nodes);
+    for cid in order {
+        if cid not in idx {
+            continue;
+        }
+        nd = idx[cid];
+        if nd.name == name {
+            return nd.cid;
         }
     }
-    return False;
+    return "";
 }
 
-def terminate_process_tree(process_node: Process, target_pid: int) -> list[int] {
-    wk = process_node spawn ProcessSweep(claimed={});
-    ids: list[int] = [];
-    for item in wk.targets {
-        ids.append(item.pid);
+def trace_delegation_chain(start: Launcher) -> list[str] {
+    w = start spawn TraceWalker(claimed={});
+    return w.out;
+}
+
+def has_recursive_resolution(start: Launcher) -> bool {
+    w = start spawn LoopWalker(claimed={});
+    return w.loop;
+}
+
+def estimate_process_footprint(start: Launcher, steps: int) -> int {
+    if has_recursive_resolution(start) {
+        return steps * 2;
     }
-    if target_pid not in ids {
-        return [];
-    }
-    for item in wk.targets {
-        item.alive = False;
-    }
-    return sorted(ids);
+    tr: list[str] = trace_delegation_chain(start);
+    return len(tr);
+}
+
+def build_shadow_fixture -> Launcher {
+    wrap = make_launcher("wrap", "fflow", 0, "npm");
+    glob_node = make_launcher("glob", "fflow", 1, "");
+    npm = make_launcher("npm", "npm_exec", 2, "sh");
+    sh = make_launcher("sh", "sh_c", 3, "fflow");
+    root ++> wrap;
+    root ++> glob_node;
+    root ++> npm;
+    root ++> sh;
+    attach_delegate(wrap, npm);
+    attach_delegate(npm, sh);
+    attach_delegate(sh, wrap);
+    return wrap;
 }

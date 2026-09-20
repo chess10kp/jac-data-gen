@@ -164,7 +164,6 @@ def active_descendants(tree: TaskRoot, tid: str) -> list[str] {
     w = t spawn ActiveSweep();
     return sorted(w.actives);
 }
-
 test "cancel cascade revokes active branch but spares fulfilled" {
     tree = new_task_tree();
     root_t = spawn_task(tree);
@@ -174,8 +173,12 @@ test "cancel cascade revokes active branch but spares fulfilled" {
     d = spawn_task(tree, b);
     assert complete(tree, c) == FULFILLED;
     assert cancel(tree, root_t) == 4;
-    assert _find_task(tree, c).state == FULFILLED;
-    assert _find_task(tree, d).state == REVOKED;
+    c_node = _find_task(tree, c);
+    assert c_node is not None;
+    assert c_node.state == FULFILLED;
+    d_node = _find_task(tree, d);
+    assert d_node is not None;
+    assert d_node.state == REVOKED;
     assert active_descendants(tree, root_t) == [];
 }
 

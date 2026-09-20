@@ -1,100 +1,120 @@
+"""nuxt-contrib/vue-bundle-renderer#398 — precomputeDependencies style closure under import cycles."""
+
 node Chunk {
     has cid: str;
-    has file: str;
-    has resourceType: str;
-    has css: list[str] = [];
+    has file: str = "";
+    has resource_type: str = "script";
+    has css_ids: list[str] = [];
 }
 
-edge Import {}
+edge Imports {}
 
-node ManifestGraph {
-    has chunks: dict[str, Chunk] = {};
+node GraphHub {
+    has by_id: dict[str, Chunk] = {};
 }
 
-walker DependencyWalk {
+walker DepStyleWalk {
     has claimed: dict[str, bool] = {};
-    has scripts: dict[str, bool] = {};
     has styles: dict[str, bool] = {};
-    has preload: dict[str, bool] = {};
-    has prefetch: dict[str, bool] = {};
 
-    can step with Chunk entry {
+    can walk with Chunk entry {
         if here.cid in self.claimed {
             skip;
         }
         self.claimed[here.cid] = True;
-
-        if here.resourceType == "script" {
-            self.scripts[here.file] = True;
+        for css_id in here.css_ids {
+            self.styles[css_id] = True;
         }
-        if here.resourceType == "style" {
-            self.styles[here.file] = True;
+        kids: list[Chunk] = [];
+        for ch in [here ->:Imports:->][?:Chunk] {
+            kids.append(ch);
         }
-        for css_file in here.css {
-            self.styles[css_file] = True;
-        }
-        print(here.cid);
-
-        for child in [here ->:Import:->][?:Chunk] {
-            visit :0: [child];
-        }
+        visit :0: kids else {
+            disengage;
+        };
+        print(here.cid, len(self.styles));
     }
 }
 
-def precomputeDependencies(
-    manifest: dict[str, dict[str, any]]
-) -> dict[str, any] {
-    graph_node = ManifestGraph();
+def empty_dep_bundle() -> dict {
+    scripts: dict[str, bool] = {};
+    styles: dict[str, bool] = {};
+    preload: dict[str, bool] = {};
+    prefetch: dict[str, bool] = {};
+    return {
+        "scripts": scripts,
+        "styles": styles,
+        "preload": preload,
+        "prefetch": prefetch,
+    };
+}
 
-    for module_id in manifest {
-        meta: dict[str, any] = manifest[module_id] as dict[str, any];
-        file_name: str = meta["file"] as str;
-        resource_type: str = meta["resourceType"] as str;
-        css_files: list[str] = [];
-        imports: list[str] = [];
-
+def build_graph(manifest: dict) -> GraphHub {
+    hub = GraphHub(by_id={});
+    for cid in manifest {
+        meta = manifest[cid] as dict;
+        file_name: str = "";
+        if "file" in meta {
+            file_name = str(meta["file"]);
+        }
+        rtype: str = "script";
+        if "resourceType" in meta {
+            rtype = str(meta["resourceType"]);
+        }
+        css_ids: list[str] = [];
         if "css" in meta {
-            css_files = meta["css"] as list[str];
+            raw_css = meta["css"] as list;
+            for item in raw_css {
+                css_ids.append(str(item));
+            }
         }
-        if "imports" in meta {
-            imports = meta["imports"] as list[str];
-        }
-
-        chunk = Chunk(
-            cid=module_id,
+        nd = Chunk(
+            cid=str(cid),
             file=file_name,
-            resourceType=resource_type,
-            css=css_files
+            resource_type=rtype,
+            css_ids=css_ids,
         );
-        graph_node.chunks[module_id] = chunk;
+        hub.by_id[str(cid)] = nd;
+        root ++> nd;
     }
-
-    for module_id in manifest {
-        meta: dict[str, any] = manifest[module_id] as dict[str, any];
-        imports: list[str] = [];
-        if "imports" in meta {
-            imports = meta["imports"] as list[str];
+    for cid in manifest {
+        meta = manifest[cid] as dict;
+        if "imports" not in meta {
+            continue;
         }
-
-        source: Chunk = graph_node.chunks[module_id];
-        for imported_id in imports {
-            if imported_id in graph_node.chunks {
-                target: Chunk = graph_node.chunks[imported_id];
-                source +>:Import:+> target;
+        src = hub.by_id[str(cid)];
+        imports_list = meta["imports"] as list;
+        for imp in imports_list {
+            imp_id = str(imp);
+            if imp_id in hub.by_id {
+                dst = hub.by_id[imp_id];
+                src +>:Imports:+> dst;
             }
         }
     }
+    return hub;
+}
 
-    dependencies: dict[str, dict[str, any]] = {};
-    for module_id in manifest {
-        w = graph_node.chunks[module_id] spawn DependencyWalk(claimed={});
-        dependency: dict[str, any] = {};
-        dependency["scripts"] = w.scripts;
-        dependency["styles"] = w.styles;
-        dependency["preload"] = w.preload;
-        dependency["prefetch"] = w.prefetch;
-        dependencies[module_id] = dependency;
+def styles_for_chunk(hub: GraphHub, cid: str) -> dict[str, bool] {
+    if cid not in hub.by_id {
+        return {};
     }
+    start = hub.by_id[cid];
+    w = start spawn DepStyleWalk(claimed={}, styles={});
+    return w.styles;
+}
 
+def precompute_dependencies(manifest: dict) -> dict {
+    hub = build_graph(manifest);
+    dependencies: dict = {};
+    for mid in manifest {
+        bundle = empty_dep_bundle();
+        collected = styles_for_chunk(hub, str(mid));
+        slot = bundle["styles"] as dict[str, bool];
+        for sk in collected {
+            slot[str(sk)] = True;
+        }
+        dependencies[str(mid)] = bundle;
+    }
     return {"dependencies": dependencies};
 }

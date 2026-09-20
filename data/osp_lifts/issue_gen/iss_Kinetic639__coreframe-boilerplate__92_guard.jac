@@ -30,8 +30,7 @@ def load_categories(
         if p is not None and c is not None { p +>:ParentOf:+> c; }
     }
     for (cid, lvl) in levels {
-        nd: Category | None = store.categories.get(cid, None);
-        if nd is not None { nd.level = lvl; }
+        if cid in store.categories { store.categories[cid].level = lvl; }
     }
     return store;
 }
@@ -90,8 +89,7 @@ def update_children_levels(
         }
     }
     return sorted(updated);
-}
-test "category descent and levels" {
+}test "category descent and levels" {
     s = load_categories(
         ["root", "electronics", "phones", "laptops"],
         [("root", "electronics"), ("electronics", "phones"), ("electronics", "laptops")],

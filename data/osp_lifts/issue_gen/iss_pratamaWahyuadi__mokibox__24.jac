@@ -1,143 +1,275 @@
-# pratamaWahyuadi/mokibox#24 — comments with replies and cascade delete
+"""Social comment APIs - pratamaWahyuadi/mokibox#24."""
+
 node Video {
-    has vid: str;
-    has status: str = "READY";
-    has comments_count: int = 0;
+  has vid: str;
+  has owner_id: str;
+  has comments_count: int = 0;
+  has ready: bool = True;
 }
+
 node Comment {
-    has cid: str;
-    has vid: str;
-    has content: str;
-    has author: str;
-    has created_at: int;
-    has deleted: bool = False;
+  has cid: str;
+  has video_id: str;
+  has author_id: str;
+  has content: str;
+  has created_at: int;
+  has parent_id: str;
 }
-node Clock { has n: int = 1; }
-edge REPLY_TO {}
 
-# clock lives on a fresh-per-graph node, not a mutable glob
-def clock_node() -> Clock {
-    for ck in [root ->][?:Clock] {
-        return ck;
+edge OnVideo {}
+edge Reply {}
+
+walker SubtreeTally {
+  has claimed: dict[str, bool] = {};
+  has tally: int = 0;
+
+  can tally with Comment entry {
+    if here.cid in self.claimed {
+      skip;
     }
-    nd = Clock();
-    root ++> nd;
-    return nd;
-}
-
-def now() -> int {
-    ck = clock_node();
-    ck.n += 1;
-    return ck.n - 1;
-}
-
-def find_video(vid: str) -> Video | None {
-    for v in [root ->][?:Video] {
-        if v.vid == vid { return v; }
+    self.claimed[here.cid] = True;
+    self.tally += 1;
+    print({"visit": here.cid, "tally": self.tally});
+    kids: list[Comment] = [];
+    for ch in [here ->:Reply:->][?:Comment] {
+      kids.append(ch);
     }
-    return None;
+    visit :0: kids else {
+      disengage;
+    }
+  }
 }
 
-def find_comment(cid: str) -> Comment | None {
-    for c in [root ->][?:Comment] {
-        if c.cid == cid { return c; }
+walker SubtreeCollect {
+  has claimed: dict[str, bool] = {};
+  has ids: list[str] = [];
+
+  can gather with Comment entry {
+    if here.cid in self.claimed {
+      skip;
     }
-    return None;
+    self.claimed[here.cid] = True;
+    self.ids.append(here.cid);
+    print({"gather": here.cid});
+    kids: list[Comment] = [];
+    for ch in [here ->:Reply:->][?:Comment] {
+      kids.append(ch);
+    }
+    visit :0: kids else {
+      disengage;
+    }
+  }
 }
 
-walker InsertComment {
-    has vid: str;
-    has content: str;
-    has parent_id: str | None = None;
-    has author: str;
-    has out: Comment | None = None;
-    has ok: bool = False;
-
-    can start with root entry {
-        v: Video | None = find_video(self.vid);
-        if v is None or v.status != "READY" { disengage; }
-        if len(self.content) < 1 or len(self.content) > 1000 { disengage; }
-        parent: Comment | None = None;
-        if self.parent_id is not None {
-            parent = find_comment(self.parent_id);
-            if parent is None { disengage; }
-        }
-        c = Comment(cid="c" + str(now()), vid=self.vid, content=self.content,
-                    author=self.author, created_at=now());
-        root ++> c;
-        if parent is not None {
-            parent +>:REPLY_TO:+> c;
-        } else {
-            root +>:REPLY_TO:+> c;
-        }
-        v.comments_count += 1;
-        self.out = c;
-        self.ok = True;
-    }
+obj CommentStore {
+  has anchor: Comment;
+  has videos: dict[str, Video] = {};
+  has comments: dict[str, Comment] = {};
+  has order: list[str] = [];
+  has seq: int = 0;
 }
 
-walker CountSubtree {
-    has claimed: dict[str, bool] = {};
-    has total: int = 0;
-
-    can step with Comment entry {
-        if here.cid in self.claimed { skip; }
-        self.claimed[here.cid] = True;
-        self.total += 1;
-        visit [here ->:REPLY_TO:->];
-    }
+def new_store() -> CommentStore {
+  anchor = Comment(
+    cid="__anchor__",
+    video_id="",
+    author_id="",
+    content="",
+    created_at=0,
+    parent_id=""
+  );
+  root ++> anchor;
+  return CommentStore(anchor=anchor);
 }
 
-walker CascadeDelete {
-    has claimed: dict[str, bool] = {};
-    has removed: list[str] = [];
-
-    can step with Comment entry {
-        if here.cid in self.claimed { skip; }
-        self.claimed[here.cid] = True;
-        here.deleted = True;
-        self.removed.append(here.cid);
-        visit [here ->:REPLY_TO:->];
-    }
+def add_video(store: CommentStore, video_id: str, owner_id: str, ready: bool = True) -> None {
+  v = Video(vid=video_id, owner_id=owner_id, ready=ready);
+  root ++> v;
+  store.videos[video_id] = v;
 }
 
-def insert_comment(vid: str, content: str, author: str,
-                   parent_id: str | None = None) -> Comment | None {
-    w = root spawn InsertComment(vid=vid, content=content,
-                                 parent_id=parent_id, author=author, claimed={});
-    if w.ok { return w.out; }
-    return None;
+def insert_comment(
+  store: CommentStore,
+  video_id: str,
+  author_id: str,
+  content: str,
+  parent_id: str | None = None
+) -> dict[str, object] {
+  if len(content) < 1 or len(content) > 1000 {
+    raise Exception("invalid content");
+  }
+  if video_id not in store.videos {
+    raise Exception("video not found");
+  }
+  vrec = store.videos[video_id];
+  if not vrec.ready {
+    raise Exception("video not ready");
+  }
+  pid = "";
+  if parent_id is not None {
+    pid = parent_id;
+  }
+  if pid != "" {
+    if pid not in store.comments {
+      raise Exception("parent not found");
+    }
+    pnd = store.comments[pid];
+    if pnd.video_id != video_id {
+      raise Exception("video mismatch");
+    }
+  }
+  store.seq += 1;
+  cid = "c" + str(store.seq);
+  ts = store.seq;
+  nd = Comment(
+    cid=cid,
+    video_id=video_id,
+    author_id=author_id,
+    content=content,
+    created_at=ts,
+    parent_id=pid
+  );
+  root ++> nd;
+  vrec +>:OnVideo:+> nd;
+  if pid != "" {
+    pnd = store.comments[pid];
+    pnd +>:Reply:+> nd;
+  }
+  store.comments[cid] = nd;
+  store.order.append(cid);
+  vrec.comments_count += 1;
+  out: dict[str, object] = {};
+  out["cid"] = cid;
+  out["video_id"] = video_id;
+  out["author_id"] = author_id;
+  out["content"] = content;
+  out["created_at"] = ts;
+  out["parent_id"] = pid;
+  return out;
 }
 
-def list_comments(vid: str) -> list[Comment] {
-    res: list[Comment] = [];
-    for c in [root ->][?:Comment] {
-        if c.vid == vid and not c.deleted {
-            res.append(c);
-        }
-    }
-    # insertion sort, newest first
-    out: list[Comment] = [];
-    for c in res {
-        idx: int = 0;
-        for i in range(len(out)) {
-            if out[i].created_at >= c.created_at {
-                idx = i + 1;
-            }
-        }
-        out.insert(idx, c);
-    }
-    return out;
+def reply_to_comment(
+  store: CommentStore,
+  parent_id: str,
+  author_id: str,
+  content: str
+) -> dict[str, object] {
+  if parent_id not in store.comments {
+    raise Exception("parent not found");
+  }
+  par = store.comments[parent_id];
+  return insert_comment(store, par.video_id, author_id, content, parent_id);
 }
 
-def delete_comment(cid: str) -> int {
-    target: Comment | None = find_comment(cid);
-    if target is None or target.deleted { return -1; }
-    cw = target spawn CountSubtree(claimed={});
-    target spawn CascadeDelete(claimed={});
-    v: Video | None = find_video(target.vid);
-    if v is not None {
-        v.comments_count -= cw.total;
+def count_comment_subtree(store: CommentStore, comment_id: str) -> int {
+  if comment_id not in store.comments {
+    return 0;
+  }
+  nd = store.comments[comment_id];
+  w = nd spawn SubtreeTally(claimed={});
+  return w.tally;
+}
+
+def delete_comment(store: CommentStore, comment_id: str, requester_id: str) -> int {
+  if comment_id not in store.comments {
+    return 0;
+  }
+  root_nd = store.comments[comment_id];
+  if root_nd.author_id != requester_id {
+    raise Exception("forbidden");
+  }
+  w = root_nd spawn SubtreeCollect(claimed={});
+  remove_ids: list[str] = sorted(w.ids);
+  removed = 0;
+  for cid in remove_ids {
+    if cid not in store.comments {
+      continue;
     }
-    return cw.total;
+    cm = store.comments[cid];
+    vrec = store.videos[cm.video_id];
+    vrec.comments_count -= 1;
+    del store.comments[cid];
+    removed += 1;
+  }
+  new_order: list[str] = [];
+  for oid in store.order {
+    if oid not in store.comments {
+      continue;
+    }
+    new_order.append(oid);
+  }
+  store.order = new_order;
+  return removed;
+}
+
+def list_comments(
+  store: CommentStore,
+  video_id: str,
+  cursor: int | None = None,
+  limit: int = 20
+) -> list[dict[str, object]] {
+  if video_id not in store.videos {
+    return [];
+  }
+  rows: list[dict[str, object]] = [];
+  for cid in store.order {
+    if cid not in store.comments {
+      continue;
+    }
+    cm = store.comments[cid];
+    if cm.video_id != video_id {
+      continue;
+    }
+    row: dict[str, object] = {};
+    row["cid"] = cm.cid;
+    row["video_id"] = cm.video_id;
+    row["author_id"] = cm.author_id;
+    row["content"] = cm.content;
+    row["created_at"] = cm.created_at;
+    row["parent_id"] = cm.parent_id;
+    rows.append(row);
+  }
+  n = len(rows);
+  i = 0;
+  while i < n {
+    j = i + 1;
+    while j < n {
+      if rows[j]["created_at"] > rows[i]["created_at"] {
+        tmp = rows[i];
+        rows[i] = rows[j];
+        rows[j] = tmp;
+      }
+      j += 1;
+    }
+    i += 1;
+  }
+  out: list[dict[str, object]] = [];
+  t = 0;
+  while t < n and len(out) < limit {
+    row = rows[t];
+    if cursor is None or row["created_at"] < cursor {
+      out.append(row);
+    }
+    t += 1;
+  }
+  return out;
+}
+
+walker BootPrint {
+  has claimed: dict[str, bool] = {};
+
+  can boot_comment with Comment entry {
+    if here.cid == "__anchor__" {
+      print("comment-store-ready");
+      disengage;
+    }
+    skip;
+  }
+}
+
+with entry {
+  st = new_store();
+  add_video(st, "v1", "owner1");
+  insert_comment(st, "v1", "owner1", "seed");
+  root spawn BootPrint(claimed={});
 }

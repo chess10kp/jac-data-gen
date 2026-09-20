@@ -1,166 +1,188 @@
-"""Bind batch lifecycle evidence to a released Context Assertion contract.
-ContextualWisdomLab/pg-llm-batch#318
-"""
+"""Batch lifecycle evidence binding — ContextualWisdomLab/pg-llm-batch#318."""
 
-node CatalogTable {
-    has cid: str;
-    has name: str;
-    has admitted: bool = False;
+node Batch {
+    has bid: str;
+    has contract: str = "";
 }
 
-node Column {
-    has cid: str;
-    has name: str;
-    has atttypmod: int = -1;
-}
-
-node BatchEvidence {
-    has cid: str;
-    has batch_id: str;
-    has evidence_id: str = "";
+node Evidence {
+    has eid: str;
     has bound: bool = False;
 }
 
-node ContractAssertion {
-    has cid: str;
-    has ref: str;
-    has version: str;
-    has released: bool = False;
+node ColumnSpec {
+    has name: str;
+    has atttypmod: int = -1;
+    has not_null: bool = True;
 }
 
-edge Cascade {}
-edge Catalog {}
-edge EvidenceBind {}
+edge Requires {}
+edge Binds {}
+edge Proves {}
 
-walker AuthorityWalker {
-    has table_cid: str = "";
-    has claimed: dict[str, bool] = {};
-    has rejected: list[str] = [];
+glob CANONICAL_COLUMNS = [
+    "evidence_id", "batch_id", "tenant_id", "created_at",
+    "updated_at", "status", "payload_hash", "outbox_seq",
+    "replay_token", "rls_role", "contract_ref", "audit_id",
+    "recovery_flag", "atttypmod_probe"
+];
 
-    can probe_table with CatalogTable entry {
-        if here.cid != self.table_cid {
-            skip;
+def column_index(name: str) -> int {
+    i = 0;
+    for col in CANONICAL_COLUMNS {
+        if col == name {
+            return i;
         }
-        print ["authority_probe", here.name];
-        cols: list[Column] = [here ->:Catalog:->][?:Column];
-        for col in cols {
-            visit :0: [col];
-        }
-        disengage;
+        i += 1;
     }
-
-    can probe_column with Column entry {
-        if here.cid in self.claimed {
-            skip;
-        }
-        self.claimed[here.cid] = True;
-        print ["column_probe", here.name, here.atttypmod];
-        if here.atttypmod != -1 {
-            self.rejected.append(here.name);
-        }
-        kids: list[Column] = [here ->:Cascade:->][?:Column];
-        for kid in kids {
-            visit :0: [kid];
-        }
-        disengage;
-    }
+    return -1;
 }
 
-walker CollectBindWalker {
-    has batch_id: str = "";
-    has evidence_id: str = "";
-    has contract_ref: str = "";
-    has claimed: dict[str, bool] = {};
-    has evidence: BatchEvidence | None = None;
-    has contract: ContractAssertion | None = None;
+def contains_str(xs: list[str], key: str) -> bool {
+    for x in xs {
+        if x == key {
+            return True;
+        }
+    }
+    return False;
+}
 
-    can probe_root with CatalogTable entry {
-        print ["bind_collect", here.cid];
-        evs: list[BatchEvidence] = [here -->][?:BatchEvidence];
+def probe_column_authority(specs: list[ColumnSpec]) -> bool {
+    if len(specs) != 14 {
+        return False;
+    }
+    seen: dict[str, bool] = {};
+    for sp in specs {
+        if column_index(sp.name) < 0 {
+            return False;
+        }
+        if sp.name in seen {
+            return False;
+        }
+        seen[sp.name] = True;
+        if sp.atttypmod != -1 {
+            return False;
+        }
+    }
+    for col in CANONICAL_COLUMNS {
+        if col not in seen {
+            return False;
+        }
+    }
+    return True;
+}
+
+def list_drift_violations(specs: list[ColumnSpec]) -> list[str] {
+    violations: list[str] = [];
+    present: dict[str, bool] = {};
+    for sp in specs {
+        present[sp.name] = True;
+        if column_index(sp.name) < 0 {
+            violations.append("extra:" + sp.name);
+        } elif sp.atttypmod != -1 {
+            violations.append("typmod:" + sp.name);
+        }
+    }
+    for col in CANONICAL_COLUMNS {
+        if col not in present {
+            violations.append("missing:" + col);
+        }
+    }
+    return sorted(violations);
+}
+
+walker BindEvidence {
+    has claimed: dict[str, bool] = {};
+    has contract_version: str = "";
+    has bound_ids: list[str] = [];
+
+    can step_batch with Batch entry {
+        if here.bid in self.claimed {
+            skip;
+        }
+        self.claimed[here.bid] = True;
+        print("bind " + here.bid);
+        evs: list[Evidence] = [here ->:Binds:->][?:Evidence];
         for ev in evs {
-            visit [ev];
-        }
-        cts: list[ContractAssertion] = [here -->][?:ContractAssertion];
-        for ct in cts {
-            visit [ct];
-        }
-        disengage;
-    }
-
-    can probe_evidence with BatchEvidence entry {
-        if here.cid in self.claimed {
-            skip;
-        }
-        self.claimed[here.cid] = True;
-        print ["bind_evidence", here.batch_id, here.evidence_id];
-        if here.batch_id == self.batch_id {
-            if self.evidence_id == "" or here.evidence_id == "" or here.evidence_id == self.evidence_id {
-                self.evidence = here;
+            if self.contract_version != "" {
+                ev.bound = True;
+            }
+            if not contains_str(self.bound_ids, ev.eid) {
+                self.bound_ids.append(ev.eid);
             }
         }
-        disengage;
+        kids: list[Batch] = [here ->:Requires:->][?:Batch];
+        if len(kids) > 0 {
+            visit :0: kids;
+        } else {
+            disengage;
+        }
     }
+}
 
-    can probe_contract with ContractAssertion entry {
-        if here.cid in self.claimed {
+walker ReconcileChain {
+    has claimed: dict[str, bool] = {};
+    has chain: list[str] = [];
+
+    can step_ev with Evidence entry {
+        if here.eid in self.claimed {
             skip;
         }
-        self.claimed[here.cid] = True;
-        print ["bind_contract", here.ref, here.released];
-        if here.ref == self.contract_ref and here.released {
-            self.contract = here;
-        }
-        disengage;
+        self.claimed[here.eid] = True;
+        print("reconcile " + here.eid);
+        self.chain.append(here.eid);
+        kids: list[Evidence] = [here ->:Proves:->][?:Evidence];
+        visit :0: kids;
     }
 }
 
-def _resolve_table(graph_root: CatalogTable, table_cid: str) -> CatalogTable | None {
-    if graph_root.cid == table_cid {
-        return graph_root;
+def make_canonical_specs() -> list[ColumnSpec] {
+    out: list[ColumnSpec] = [];
+    for col in CANONICAL_COLUMNS {
+        sp = ColumnSpec(name=col, atttypmod=-1, not_null=True);
+        out.append(sp);
     }
-    return None;
+    return out;
 }
 
-def verify_column_cascade(graph_root: CatalogTable, table_cid: str) -> list[str] {
-    w = graph_root spawn AuthorityWalker(table_cid=table_cid);
-    out: list[str] = w.rejected;
-    return sorted(out);
+def build_batch_diamond() -> Batch {
+    rb = Batch(bid="b-root");
+    ma = Batch(bid="b-a");
+    mb = Batch(bid="b-b");
+    jn = Batch(bid="b-join");
+    e1 = Evidence(eid="ev-1");
+    e2 = Evidence(eid="ev-2");
+    e3 = Evidence(eid="ev-3");
+    root ++> rb;
+    rb +>:Requires:+> ma;
+    rb +>:Requires:+> mb;
+    ma +>:Requires:+> jn;
+    mb +>:Requires:+> jn;
+    jn +>:Binds:+> e1;
+    jn +>:Binds:+> e2;
+    rb +>:Binds:+> e3;
+    return rb;
 }
 
-def bind_evidence_to_contract(
-    graph_root: CatalogTable,
-    batch_id: str,
-    evidence_id: str,
-    contract_ref: str
-) -> dict[str, object] {
-    w = graph_root spawn CollectBindWalker(
-        batch_id=batch_id,
-        evidence_id=evidence_id,
-        contract_ref=contract_ref
-    );
-    result: dict[str, object] = {};
-    result["batch_id"] = batch_id;
-    result["evidence_id"] = evidence_id;
-    result["contract_ref"] = contract_ref;
-    if w.evidence is None or w.contract is None {
-        result["bound"] = False;
-        return result;
-    }
-    w.evidence.bound = True;
-    w.evidence +>:EvidenceBind:+> w.contract;
-    result["bound"] = True;
-    return result;
+def build_evidence_diamond() -> Evidence {
+    er = Evidence(eid="ev-r");
+    ea = Evidence(eid="ev-a");
+    eb = Evidence(eid="ev-b");
+    ej = Evidence(eid="ev-j");
+    root ++> er;
+    er +>:Proves:+> ea;
+    er +>:Proves:+> eb;
+    ea +>:Proves:+> ej;
+    eb +>:Proves:+> ej;
+    return er;
 }
 
-def admit_runtime_outbox(graph_root: CatalogTable, table_cid: str) -> bool {
-    bad: list[str] = verify_column_cascade(graph_root, table_cid);
-    if len(bad) > 0 {
-        return False;
-    }
-    tbl = _resolve_table(graph_root, table_cid);
-    if tbl is None {
-        return False;
-    }
-    tbl.admitted = True;
-    return True;
+def bind_lifecycle_evidence(graph_root: Batch, contract_version: str) -> list[str] {
+    w = graph_root spawn BindEvidence(claimed={}, contract_version=contract_version);
+    return sorted(w.bound_ids);
+}
+
+def reconcile_evidence_chain(graph_root: Evidence) -> list[str] {
+    w = graph_root spawn ReconcileChain(claimed={});
+    return w.chain;
 }

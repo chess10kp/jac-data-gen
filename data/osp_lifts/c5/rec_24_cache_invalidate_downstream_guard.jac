@@ -1,11 +1,19 @@
-"""Guard for rec_24_cache_invalidate_downstream -- candidate OSP lift
-inlined verbatim (same-prefix sibling imports are unreliable across jac's
-native seam), plus behavioral tests: full-closure diamond invalidation
-dropping shared keys exactly once, unknown-key and stale-reference
-tolerance, leaf invalidation keeping upstream alive, and a survivors-only
-invariant over the store.
-"""
+"""Idiomatic OSP lift: derived-cache downstream invalidation (category C5).
 
+Two-phase mutation protocol (OSP_IDIOMIZE_TASK.md §5.5):
+
+Phase COLLECT -- `InvalidationSweep` walks the `DerivedFrom` edges in the
+dependent direction and gathers the doomed keys into typed `has` fields.
+The seen-guard is both the diamond once-only guard (a key reachable via two
+derivation paths is dropped exactly once) and the explicit cycle policy --
+0.36.1 has no built-in dedup, so a revisited key disengages. Dead ends
+schedule nothing; the frontier drains.
+
+Phase APPLY -- outside any walk, the façade deletes the collected entries
+and prunes them from the store map. The source's deque/queue loop, seen
+dict, and stale-reference skips die; tolerance semantics are kept: unknown
+keys are a silent no-op.
+"""
 
 node CacheEntry {
     has key: str;
@@ -34,13 +42,13 @@ obj DerivedCache {
     has store: dict[str, CacheEntry];
 
     def put(key: str, value: int | list[int] | str | bool | None) -> CacheEntry {
-        entry = self.store.get(key);
-        if entry is None {
-            entry = CacheEntry(key=key);
-            self.store[key] = entry;
+        existing = self.store.get(key);
+        if existing is None {
+            existing = CacheEntry(key=key);
+            self.store[key] = existing;
         }
-        entry.value = value;
-        return entry;
+        existing.value = value;
+        return existing;
     }
 
     """Register *dependent_key* as derived from *source_key*.
@@ -77,16 +85,16 @@ obj DerivedCache {
         return removed;
     }
 
-    def has(key: str) -> bool {
+    def contains(key: str) -> bool {
         return key in self.store;
     }
 
     def value_of(key: str) -> int | list[int] | str | bool | None {
-        entry = self.store.get(key);
-        if entry is None {
+        found = self.store.get(key);
+        if found is None {
             return None;
         }
-        return entry.value;
+        return found.value;
     }
 
     def keys -> list[str] {
@@ -107,6 +115,7 @@ def load_graph(entries: list[tuple[str, int | list[int] | str | bool | None]],
     return cache;
 }
 
+
 test "full_closure_diamond_dropped_once" {
     cache = load_graph(
         entries=[("raw", [1, 2]), ("metrics", [3]), ("agg", 3),
@@ -116,9 +125,9 @@ test "full_closure_diamond_dropped_once" {
     );
     removed = cache.invalidate("raw");
     assert removed == ["agg", "dashboard", "raw", "report"];
-    assert not cache.has("raw") and not cache.has("agg");
-    assert not cache.has("dashboard") and not cache.has("report");
-    assert cache.has("metrics") and cache.has("config");
+    assert not cache.contains("raw") and not cache.contains("agg");
+    assert not cache.contains("dashboard") and not cache.contains("report");
+    assert cache.contains("metrics") and cache.contains("config");
     assert cache.value_of("config") is True;
 }
 
@@ -129,7 +138,7 @@ test "unknown_key_and_stale_refs_tolerated" {
     );
     assert cache.invalidate("nope") == [];
     ok = cache.declare("agg", "ghost");      # dangling declaration refused
-    assert ok is False;
+    assert not ok;      # dangling declaration refused
     assert cache.invalidate("agg") == ["agg", "report"];
     assert cache.keys() == ["raw"];
 }

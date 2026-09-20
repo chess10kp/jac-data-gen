@@ -107,8 +107,8 @@ glob _Dim = namedtuple("Dimension", ["weight", "inplace_update"]);
 def backup_weight(store: PatcherStore, key: str, inplace: bool = False) -> None {
     if key not in store.weights { return; }
     wt = store.weights[key];
-    entry = _Dim(wt, inplace);
-    store.backup[key] = entry;
+    `entry = _Dim(wt, inplace);
+    store.backup[key] = `entry;
 }
 
 def clear_backups(store: PatcherStore) -> None {
@@ -121,8 +121,8 @@ def backup_entry_count(store: PatcherStore) -> int {
 
 def unique_backup_entry_types(store: PatcherStore) -> int {
     seen: dict[str, bool] = {};
-    for entry in store.backup.values() {
-        tn = str(type(entry));
+    for `entry in store.backup.values() {
+        tn = str(type(`entry));
         seen[tn] = True;
     }
     cnt = 0;

@@ -1,82 +1,145 @@
-node Entity {
-    has eid: str;
-    has kind: str;
-}
-node Occurrence {
-    has oid: str;
-    has pos: int = 0;
-}
-node CalcState {
+"""SaltyPatron/Laplace#1401 — forward-pass COUPLE: whole-observation tug across indexed planes."""
+
+node Observation {
     has cid: str;
-    has value: int = 0;
+    has content: str;
+    has scope: str = "";
 }
-edge CONTAINS {}
-edge TUGS {}
-edge ATTESTS {}
-edge COMPUTES {}
 
-walker Couple {
+node Plane {
+    has cid: str;
+    has plane_type: str;
+    has force: int = 0;
+}
+
+node Entity {
+    has cid: str;
+    has label: str = "";
+}
+
+edge CoupleRoute {}
+edge Contains {}
+
+walker CoupleWalker {
     has claimed: dict[str, bool] = {};
-    has scope: list[str] = [];
-    has resp: dict[str, list[str]] = {};
+    has responses: list[dict[str, any]] = {};
+    has scope: str = "";
+    has min_force: int = 0;
 
-    can step with Entity entry {
-        if here.eid in self.claimed { skip; }
-        self.claimed[here.eid] = True;
-        if here.kind in self.scope {
-            if here.eid not in self.resp { self.resp[here.eid] = []; }
-            self.resp[here.eid].append("structure");
-        }
-        kids: list[Entity] = [];
-        for e in [here ->:CONTAINS:->][?:Entity] { kids.append(e); }
-        for e in [here ->:TUGS:->][?:Entity] { kids.append(e); }
-        visit kids;
+    can tug_obs with Observation entry {
+        print ["couple", here.cid, self.scope];
+        key = here.cid;
+        if key in self.claimed { skip; }
+        self.claimed[key] = True;
+        planes: list[Plane] = [];
+        for pl in [here ->:CoupleRoute:->][?:Plane] { planes.append(pl); }
+        ents: list[Entity] = [];
+        for ent in [here ->:Contains:->][?:Entity] { ents.append(ent); }
+        if planes { visit :0: planes; }
+        if ents { visit :0: ents; }
+        if not planes and not ents { disengage; }
     }
-    can step_occ with Occurrence entry {
-        if here.oid in self.claimed { skip; }
-        self.claimed[here.oid] = True;
-        if "occurrence" in self.scope {
-            if here.oid not in self.resp { self.resp[here.oid] = []; }
-            self.resp[here.oid].append("occurrence");
+
+    can tug_plane with Plane entry {
+        print ["plane", here.cid, here.plane_type];
+        key = here.cid;
+        if key in self.claimed { skip; }
+        self.claimed[key] = True;
+        if here.force >= self.min_force {
+            resp: dict[str, any] = {};
+            resp["obs_route"] = "couple";
+            resp["plane_id"] = here.cid;
+            resp["plane_type"] = here.plane_type;
+            resp["force"] = here.force;
+            self.responses.append(resp);
         }
+        planes: list[Plane] = [];
+        for pl in [here ->:CoupleRoute:->][?:Plane] { planes.append(pl); }
+        ents: list[Entity] = [];
+        for ent in [here ->:Contains:->][?:Entity] { ents.append(ent); }
+        if planes { visit :0: planes; }
+        if ents { visit :0: ents; }
+        if not planes and not ents { disengage; }
     }
-    can step_calc with CalcState entry {
-        if here.cid in self.claimed { skip; }
-        self.claimed[here.cid] = True;
-        if "calc" in self.scope {
-            if here.cid not in self.resp { self.resp[here.cid] = []; }
-            self.resp[here.cid].append("calc");
-        }
-        for t in [here ->:COMPUTES:->][?:Entity] { visit [t]; }
+
+    can tug_ent with Entity entry {
+        print ["entity", here.cid];
+        key = here.cid;
+        if key in self.claimed { skip; }
+        self.claimed[key] = True;
+        planes: list[Plane] = [];
+        for pl in [here ->:CoupleRoute:->][?:Plane] { planes.append(pl); }
+        if planes { visit :0: planes; } else { disengage; }
     }
 }
 
-def couple_observation(root_entity: Entity, scope: list[str] | None = None) -> dict[str, list[str]] {
-    if scope is None { scope = ["structure", "occurrence", "calc"]; }
-    w = root_entity spawn Couple(claimed={}, scope=scope, resp={});
-    return w.resp;
+walker DemoWalker {
+    can boot with Observation entry {
+        print ["forward_pass", "couple", here.cid];
+        wk = here spawn CoupleWalker(scope=here.scope, min_force=0);
+        print ["responses", len(wk.responses)];
+        disengage;
+    }
+}
+
+def scope_min_force(scope: str) -> int {
+    if scope == "high" { return 3; }
+    return 0;
+}
+
+def sort_responses(items: list[dict[str, any]]) -> list[dict[str, any]] {
+    ids: list[str] = [];
+    for it in items { ids.append(it["plane_id"]); }
+    ids = sorted(ids);
+    out: list[dict[str, any]] = [];
+    for pid in ids {
+        for it in items {
+            if it["plane_id"] == pid { out.append(it); break; }
+        }
+    }
+    return out;
+}
+
+def resolve_observation(graph_root: Observation, obs_id: str) -> dict[str, str] | None {
+    if graph_root.cid != obs_id { return None; }
+    out: dict[str, str] = {};
+    out["cid"] = graph_root.cid;
+    out["content"] = graph_root.content;
+    out["scope"] = graph_root.scope;
+    return out;
+}
+
+def couple_observation(graph_root: Observation, obs_id: str, scope: str) -> list[dict[str, any]] {
+    if graph_root.cid != obs_id { return []; }
+    mf = scope_min_force(scope);
+    wk = graph_root spawn CoupleWalker(scope=scope, min_force=mf);
+    return sort_responses(wk.responses);
+}
+
+def forward_pass_couple(graph_root: Observation, obs_id: str, scope: str) -> list[dict[str, any]] {
+    if resolve_observation(graph_root, obs_id) is None { return []; }
+    return couple_observation(graph_root, obs_id, scope);
+}
+
+def build_couple_fixture -> Observation {
+    o = Observation(cid="o1", content="whole-observation", scope="global");
+    root ++> o;
+    pa = Plane(cid="phys", plane_type="physicality", force=3);
+    pb = Plane(cid="test", plane_type="testimony", force=5);
+    shared = Entity(cid="ent", label="spider-colony");
+    pc = Plane(cid="calc", plane_type="calculation", force=2);
+    pd = Plane(cid="disc", plane_type="discourse", force=4);
+    o +>:CoupleRoute:+> pb;
+    o +>:CoupleRoute:+> pa;
+    pb +>:Contains:+> shared;
+    pa +>:Contains:+> shared;
+    shared +>:CoupleRoute:+> pc;
+    shared +>:CoupleRoute:+> pd;
+    pc +>:CoupleRoute:+> pa;
+    return o;
 }
 
 with entry {
-    core = Entity(eid="core", kind="structure");
-    root ++> core;
-    fork = Entity(eid="fork", kind="structure");
-    test = Entity(eid="test", kind="structure");
-    bank = Entity(eid="bank", kind="structure");
-    occ1 = Occurrence(oid="o1", pos=0);
-    occ2 = Occurrence(oid="o2", pos=1);
-    calc = CalcState(cid="tb1", value=42);
-    core +>:CONTAINS:+> fork;
-    core +>:CONTAINS:+> test;
-    fork +>:TUGS:+> bank;
-    test +>:TUGS:+> bank;
-    core +>:CONTAINS:+> occ1;
-    core +>:CONTAINS:+> occ2;
-    calc +>:COMPUTES:+> bank;
-    core +>:CONTAINS:+> calc;
-
-    resp = couple_observation(core);
-    print(sorted(resp.keys()));
-    w2 = core spawn Couple(claimed={}, scope=["calc"], resp={});
-    print(w2.resp);
+    build_couple_fixture();
+    root spawn DemoWalker;
 }

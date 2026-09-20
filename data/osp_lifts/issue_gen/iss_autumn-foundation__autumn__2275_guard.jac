@@ -199,7 +199,6 @@ def hard_delete_subtree(st: Store, cid: str) -> dict {
     }
     return {"scoped": scoped_n, "total": len(reach), "spill": spill_n, "levels": levels};
 }
-
 test "scoped walk vs unscoped cascade reach" {
     st = build_store();
     add_comment(st, "a1", "(ticket,A)");
@@ -248,7 +247,15 @@ test "adversarial diamond terminates once-only" {
     add_comment(st, "l", "(t,a)", "top");
     add_comment(st, "rr", "(t,a)", "top");
     ln = st.resolve("l");
+    if ln is None {
+        assert False, "expected l node";
+        return;
+    }
     rn = st.resolve("rr");
+    if rn is None {
+        assert False, "expected rr node";
+        return;
+    }
     bot = CommentNode(cid="bot", scope="(t,a)");
     root ++> bot;
     st.comments["bot"] = bot;

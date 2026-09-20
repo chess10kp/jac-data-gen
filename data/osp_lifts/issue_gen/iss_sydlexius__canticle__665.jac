@@ -1,118 +1,271 @@
-# sydlexius/canticle#665 — transactional repository seam for row resets.
-# Node types stand in for the tables; a Resetter seam owns all status /
-# priority / next_attempt_at literals; reset + cache invalidation commit
-# atomically (collect during walk, mutate outside it).
+"""Transactional purge-provenance reset seam — sydlexius/canticle#665."""
 
 node Track {
     has tid: str;
 }
 
 node ScanResult {
-    has sid: str;
+    has rid: int;
     has status: str = "done";
-    has priority: int = 0;
-    has next_attempt_at: str = "";
-    has last_error: str = "";
-    has invalidated: bool = False;
+    has last_error: str = "stale";
 }
 
 node WorkItem {
-    has wid: str;
+    has wid: int;
     has status: str = "done";
-    has priority: int = 0;
-    has next_attempt_at: str = "";
-    has last_error: str = "";
+    has priority: int = 10;
+    has next_attempt_at: str = "1970-01-01T00:00:00Z";
+    has last_error: str = "stale";
 }
 
-edge SCAN_FOR {}
-edge QUEUE_FOR {}
-
-# The seam: constants live ONLY here (acceptance: no literals elsewhere).
-obj Resetter {
-    def reset_scan(r: ScanResult) {
-        r.status = "pending";
-        r.priority = -100;
-        r.next_attempt_at = "1970-01-01T00:00:00Z";
-        r.last_error = "";
-    }
-    def reset_work(w: WorkItem) {
-        w.status = "pending";
-        r_priority_fix(w=w);
-        w.next_attempt_at = "1970-01-01T00:00:00Z";
-        w.last_error = "";
-    }
+node CacheSlot {
+    has key: str;
+    has hit: bool = True;
 }
 
-# helper so the seam owns the priority constant once per shape
-def r_priority_fix(w: WorkItem) {
-    w.priority = -100;
+node Bridge {
+    has bid: str;
 }
 
-# Collect walk: claim-map dedup + skip (never disengage on revisit).
-walker PurgeProvenance {
-    has track_id: str;
+edge Owns {}
+edge Via {}
+
+glob SCAN_STATUS_RESET: str = "pending";
+glob WORK_STATUS_RESET: str = "queued";
+glob WORK_PRIORITY_RESET: int = -100;
+glob WORK_NEXT_ATTEMPT_FMT: str = "now";
+
+walker ResetCollect {
+    has want_scan: list[int] = [];
+    has want_work: list[int] = [];
+    has scans: list[ScanResult] = [];
+    has works: list[WorkItem] = [];
     has claimed: dict[str, bool] = {};
-    has sr_ids: list[str] = [];
-    has wq_ids: list[str] = [];
 
-    can sweep with Track entry {
-        if here.tid != self.track_id { disengage; }
-        for r in [here ->:SCAN_FOR:->][?:ScanResult] {
-            visit [r];
+    can step_track with Track entry {
+        tag: str = "T:" + here.tid;
+        if tag in self.claimed {
+            skip;
         }
-        for w in [here ->:QUEUE_FOR:->][?:WorkItem] {
-            visit [w];
+        self.claimed[tag] = True;
+        kids: list[ScanResult | WorkItem | Bridge | CacheSlot] = [];
+        for ch in [here ->:Owns:->][?:ScanResult] {
+            kids.append(ch);
         }
+        for ch in [here ->:Owns:->][?:WorkItem] {
+            kids.append(ch);
+        }
+        for ch in [here ->:Owns:->][?:Bridge] {
+            kids.append(ch);
+        }
+        for ch in [here ->:Owns:->][?:CacheSlot] {
+            kids.append(ch);
+        }
+        visit :0: kids else {
+            disengage;
+        }
+        print({"reset_collect_track": here.tid});
     }
-    can sweep_sr with ScanResult entry {
-        if here.sid in self.claimed { skip; }
-        self.claimed[here.sid] = True;
-        self.sr_ids.append(here.sid);
-        here.invalidated = True;  # staged cache invalidation
+
+    can step_bridge with Bridge entry {
+        tag: str = "B:" + here.bid;
+        if tag in self.claimed {
+            skip;
+        }
+        self.claimed[tag] = True;
+        kids: list[ScanResult | WorkItem] = [];
+        for ch in [here ->:Via:->][?:ScanResult] {
+            kids.append(ch);
+        }
+        for ch in [here ->:Via:->][?:WorkItem] {
+            kids.append(ch);
+        }
+        visit :0: kids else {
+            disengage;
+        }
+        print({"reset_collect_bridge": here.bid});
     }
-    can sweep_wq with WorkItem entry {
-        if here.wid in self.claimed { skip; }
-        self.claimed[here.wid] = True;
-        self.wq_ids.append(here.wid);
+
+    can step_scan with ScanResult entry {
+        tag: str = "S:" + str(here.rid);
+        if tag in self.claimed {
+            skip;
+        }
+        self.claimed[tag] = True;
+        hit: bool = False;
+        for sid in self.want_scan {
+            if sid == here.rid {
+                hit = True;
+            }
+        }
+        if hit {
+            self.scans.append(here);
+        }
+        print({"reset_collect_scan": here.rid});
+    }
+
+    can step_work with WorkItem entry {
+        tag: str = "W:" + str(here.wid);
+        if tag in self.claimed {
+            skip;
+        }
+        self.claimed[tag] = True;
+        hit: bool = False;
+        for wid in self.want_work {
+            if wid == here.wid {
+                hit = True;
+            }
+        }
+        if hit {
+            self.works.append(here);
+        }
+        print({"reset_collect_work": here.wid});
     }
 }
 
-# Public API: purge track provenance; unknown track ids tolerate as (0, 0).
-# Mutation happens OUTSIDE the walk: collect via walker, then reset here.
-def purge_provenance(root_node: Track, track_id: str, resetter: Resetter) -> tuple {
-    if root_node.tid != track_id {
-        return (0, 0);
-    }
-    wk = root_node spawn PurgeProvenance(track_id=track_id, claimed={}, sr_ids=[], wq_ids=[]);
-    n_sr: int = 0;
-    n_wq: int = 0;
-    for r in [root_node ->:SCAN_FOR:->][?:ScanResult] {
-        if r.sid in wk.sr_ids {
-            resetter.reset_scan(r);
-            r.invalidated = True;
-            n_sr += 1;
+walker PurgeCollect {
+    has target_tid: str;
+    has scans: list[ScanResult] = [];
+    has works: list[WorkItem] = [];
+    has caches: list[CacheSlot] = [];
+    has claimed: dict[str, bool] = {};
+
+    can step_track with Track entry {
+        if here.tid != self.target_tid {
+            disengage;
         }
-    }
-    for w in [root_node ->:QUEUE_FOR:->][?:WorkItem] {
-        if w.wid in wk.wq_ids {
-            resetter.reset_work(w);
-            n_wq += 1;
+        tag: str = "T:" + here.tid;
+        if tag in self.claimed {
+            skip;
         }
+        self.claimed[tag] = True;
+        kids: list[ScanResult | WorkItem | Bridge | CacheSlot] = [];
+        for ch in [here ->:Owns:->][?:ScanResult] {
+            kids.append(ch);
+        }
+        for ch in [here ->:Owns:->][?:WorkItem] {
+            kids.append(ch);
+        }
+        for ch in [here ->:Owns:->][?:Bridge] {
+            kids.append(ch);
+        }
+        for ch in [here ->:Owns:->][?:CacheSlot] {
+            kids.append(ch);
+        }
+        visit :0: kids else {
+            disengage;
+        }
+        print({"purge_collect_track": here.tid});
     }
-    return (n_sr, n_wq);
+
+    can step_bridge with Bridge entry {
+        tag: str = "B:" + here.bid;
+        if tag in self.claimed {
+            skip;
+        }
+        self.claimed[tag] = True;
+        kids: list[ScanResult | WorkItem] = [];
+        for ch in [here ->:Via:->][?:ScanResult] {
+            kids.append(ch);
+        }
+        for ch in [here ->:Via:->][?:WorkItem] {
+            kids.append(ch);
+        }
+        visit :0: kids else {
+            disengage;
+        }
+        print({"purge_collect_bridge": here.bid});
+    }
+
+    can step_scan with ScanResult entry {
+        tag: str = "S:" + str(here.rid);
+        if tag in self.claimed {
+            skip;
+        }
+        self.claimed[tag] = True;
+        self.scans.append(here);
+        print({"purge_collect_scan": here.rid});
+    }
+
+    can step_work with WorkItem entry {
+        tag: str = "W:" + str(here.wid);
+        if tag in self.claimed {
+            skip;
+        }
+        self.claimed[tag] = True;
+        self.works.append(here);
+        print({"purge_collect_work": here.wid});
+    }
+
+    can step_cache with CacheSlot entry {
+        tag: str = "C:" + here.key;
+        if tag in self.claimed {
+            skip;
+        }
+        self.claimed[tag] = True;
+        self.caches.append(here);
+        print({"purge_collect_cache": here.key});
+    }
 }
 
-with entry {
-    t = Track(tid="t1");
-    root ++> t;
-    r1 = ScanResult(sid="s1");
-    r2 = ScanResult(sid="s2");
-    w1 = WorkItem(wid="w1");
-    t +>:SCAN_FOR:+> r1;
-    t +>:SCAN_FOR:+> r2;
-    t +>:QUEUE_FOR:+> w1;
-    rs = Resetter();
-    counts = purge_provenance(t, "t1", rs);
-    print(counts);
-    print(purge_provenance(t, "missing", rs));
+def reset_for_refetch(
+    graph_root: Track,
+    scan_result_ids: list[int],
+    work_item_ids: list[int]
+) -> list[int] {
+    w = graph_root spawn ResetCollect(
+        want_scan=scan_result_ids,
+        want_work=work_item_ids,
+        claimed={}
+    );
+    sr_n: int = 0;
+    for sr in w.scans {
+        sr.status = SCAN_STATUS_RESET;
+        sr.last_error = "";
+        sr_n += 1;
+    }
+    wq_n: int = 0;
+    for wi in w.works {
+        wi.status = WORK_STATUS_RESET;
+        wi.priority = WORK_PRIORITY_RESET;
+        wi.next_attempt_at = WORK_NEXT_ATTEMPT_FMT;
+        wi.last_error = "";
+        wq_n += 1;
+    }
+    return [sr_n, wq_n];
+}
+
+def purge_track(
+    graph_root: Track,
+    track_id: str,
+    fail_after_reset: bool = False
+) -> dict[str, int] {
+    out: dict[str, int] = {};
+    w = graph_root spawn PurgeCollect(target_tid=track_id, claimed={});
+    if fail_after_reset {
+        raise ValueError("purge failed after reset");
+    }
+    sr_n: int = 0;
+    for sr in w.scans {
+        sr.status = SCAN_STATUS_RESET;
+        sr.last_error = "";
+        sr_n += 1;
+    }
+    wi_n: int = 0;
+    for wi in w.works {
+        wi.status = WORK_STATUS_RESET;
+        wi.priority = WORK_PRIORITY_RESET;
+        wi.next_attempt_at = WORK_NEXT_ATTEMPT_FMT;
+        wi.last_error = "";
+        wi_n += 1;
+    }
+    cs_n: int = 0;
+    for cs in w.caches {
+        cs.hit = False;
+        cs_n += 1;
+    }
+    out["scans"] = sr_n;
+    out["works"] = wi_n;
+    out["caches"] = cs_n;
+    return out;
 }

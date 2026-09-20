@@ -1,94 +1,154 @@
+"""microsoft/TypeScript#10649 — recursive module root resolution."""
+
+glob MODULE_SEARCH_KINDS: list[str] = ["shared", "node_modules"];
+
+node Store {
+    has paths: dict[str, Dir] = {};
+    has modules: dict[str, bool] = {};
+}
+
 node Dir {
     has path: str;
 }
 
-edge contains_dir {
-}
+edge Up {}
 
-edge module_file {
-    has name: str;
-}
-
-# Module resolver that walks the directory tree upward (like webpack's
-# modulesDirectories) searching each ancestor for a matching module dir,
-# then recursing into it — the recursive module resolution from the issue.
-obj Resolver {
-    has by_path: dict[str, Dir];
-    has shared_dirs: list[str];
-
-    def init(shared_dirs: list) -> None {
-        self.by_path = {};
-        self.shared_dirs = shared_dirs or [];
-    }
-
-    def add_dir(path: str) -> Dir {
-        d: Dir = Dir(path=path);
-        self.by_path[path] = d;
-        return d;
-    }
-
-    def connect(parent_path: str, child_path: str) -> None {
-        p: Dir | None = self.by_path.get(parent_path);
-        c: Dir | None = self.by_path.get(child_path);
-        if p is None or c is None {
-            return;
-        }
-        p +>:contains_dir:+> c;
-    }
-
-    def parent_of(d: Dir) -> Dir | None {
-        ps: list[Dir] = [d ->:contains_dir:->][?:Dir];
-        # edges point parent -> child, so scan registry for the parent
-        for pth in self.by_path {
-            cand: Dir = self.by_path[pth];
-            for ch in [cand ->:contains_dir:->][?:Dir] {
-                if ch.path == d.path {
-                    return cand;
-                }
-            }
-        }
-        return None;
-    }
-
-    def resolve(start_dir: str, module_ref: str) -> str | None {
-        start: Dir | None = self.by_path.get(start_dir);
-        if start is None {
-            return None;
-        }
-        w = start spawn ResolveWalker(shared_dirs=self.shared_dirs, module_ref=module_ref, found=None);
-        return w.found;
-    }
-}
-
-walker ResolveWalker {
-    has shared_dirs: list[str];
-    has module_ref: str;
-    has found: str | None;
+walker ModuleResolve {
     has claimed: dict[str, bool] = {};
+    has specifier: str = "";
+    has modules: dict[str, bool] = {};
+    has kinds: list[str] = [];
+    has hit: str = "";
 
     can step with Dir entry {
         if here.path in self.claimed {
             skip;
         }
         self.claimed[here.path] = True;
-        if self.found is not None {
-            disengage;
-        }
-        # try each configured shared directory under the current dir
-        for sd in self.shared_dirs {
-            cand: str = here.path + "/" + sd;
-            target: str = cand + "/" + self.module_ref;
-            if cand in [here ->:contains_dir:->][?:Dir][0].path or True {
-                # the registry check happens in Resolver; walker probes graph
+        if self.hit == "" {
+            for kind in self.kinds {
+                target: str = here.path + "/" + kind + "/" + self.specifier;
+                if target in self.modules {
+                    if self.modules[target] {
+                        self.hit = target;
+                        print("resolved", target);
+                    }
+                }
             }
         }
-        # walk to all neighbors (children and the parent chain)
-        nbrs: list[Dir] = [here ->:contains_dir:->][?:Dir];
-        for n in nbrs {
-            if self.found is not None {
+        if self.hit != "" {
+            disengage;
+        } else {
+            ups: list[Dir] = [here ->:Up:->][?:Dir];
+            if ups {
+                visit :0: [ups[0]];
+            } else {
                 disengage;
             }
-            visit n;
         }
     }
+}
+
+walker RootCollector {
+    has claimed: dict[str, bool] = {};
+    has kinds: list[str] = [];
+    has results: list[str] = [];
+
+    can step with Dir entry {
+        if here.path in self.claimed {
+            skip;
+        }
+        self.claimed[here.path] = True;
+        for kind in self.kinds {
+            base: str = here.path + "/" + kind;
+            self.results.append(base);
+        }
+        ups: list[Dir] = [here ->:Up:->][?:Dir];
+        if ups {
+            visit :0: [ups[0]];
+        } else {
+            print("roots_done", len(self.results));
+            disengage;
+        }
+    }
+}
+
+walker Demo {
+    can run with root entry {
+        demo_resolution();
+        disengage;
+    }
+}
+
+def make_store() -> Store {
+    s = Store();
+    root ++> s;
+    return s;
+}
+
+def add_directory(store: Store, path: str, parent_path: str) -> None {
+    if path in store.paths {
+        return;
+    }
+    nd = Dir(path=path);
+    store.paths[path] = nd;
+    root ++> nd;
+    if parent_path != "" {
+        if parent_path != path {
+            if parent_path in store.paths {
+                par: Dir = store.paths[parent_path] as Dir;
+                nd +>:Up:+> par;
+            }
+        }
+    }
+}
+
+def register_module(store: Store, module_path: str) -> None {
+    store.modules[module_path] = True;
+}
+
+def resolve_module(store: Store, specifier: str, from_path: str) -> str | None {
+    if from_path not in store.paths {
+        return None;
+    }
+    start: Dir = store.paths[from_path] as Dir;
+    kinds: list[str] = MODULE_SEARCH_KINDS;
+    w = start spawn ModuleResolve(
+        claimed={},
+        specifier=specifier,
+        modules=store.modules,
+        kinds=kinds,
+        hit=""
+    );
+    if w.hit == "" {
+        return None;
+    }
+    return w.hit;
+}
+
+def collect_search_roots(store: Store, from_path: str) -> list[str] {
+    if from_path not in store.paths {
+        empty: list[str] = [];
+        return empty;
+    }
+    start: Dir = store.paths[from_path] as Dir;
+    kinds: list[str] = MODULE_SEARCH_KINDS;
+    w = start spawn RootCollector(claimed={}, kinds=kinds, results=[]);
+    out: list[str] = sorted(w.results);
+    return out;
+}
+
+def demo_resolution() -> None {
+    s = make_store();
+    add_directory(s, "/repo", "");
+    add_directory(s, "/repo/apps", "/repo");
+    add_directory(s, "/repo/apps/web", "/repo/apps");
+    add_directory(s, "/repo/apps/web/src", "/repo/apps/web");
+    register_module(s, "/repo/apps/web/shared/components/Button");
+    hit: str | None = resolve_module(s, "components/Button", "/repo/apps/web/src");
+    print("demo", hit);
+}
+
+with entry {
+    root spawn Demo;
 }

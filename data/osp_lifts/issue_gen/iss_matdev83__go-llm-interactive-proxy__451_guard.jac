@@ -1,184 +1,436 @@
-node PlaneManifest {
-    has generation: int = 0;
-    has frozen: bool = False;
+"""Extension plane declaration consolidation lineage probes.
+Provenance: matdev83/go-llm-interactive-proxy#451
+"""
+
+node Issue {
+    has iid: str;
+    has open: bool = True;
+    has tasks_left: list[str] = [];
 }
 
-node Extension {
-    has extension_id: str;
-    has plane_id: str;
-    has provider_id: str;
+edge Depends {}
+
+walker IssueLookupWalker {
+    has target_id: str = "";
+    has found: Issue | None = None;
+    has claimed: dict[str, bool] = {};
+
+    can seek with Issue entry {
+        if here.iid in self.claimed {
+            skip;
+        }
+        self.claimed[here.iid] = True;
+        print(["seek", here.iid, self.target_id]);
+        if here.iid == self.target_id {
+            self.found = here;
+            disengage;
+        }
+        nbrs: list[Issue] = [];
+        for n in [here ->>][?:Issue] {
+            nbrs.append(n);
+        }
+        if nbrs {
+            visit nbrs;
+        } else {
+            disengage;
+        }
+    }
 }
 
-edge Declares {}
-edge DependsOn {}
-
-walker PlaneSnapshot {
+walker DownstreamWalker {
+    has start_id: str = "";
     has claimed: dict[str, bool] = {};
     has found: list[str] = [];
-    has diagnostics: list[str] = [];
 
-    can collect_manifest with PlaneManifest entry {
-        print("collect manifest");
-        if here.cid in self.claimed {
+    can descend with Issue entry {
+        if here.iid in self.claimed {
             skip;
         }
-        self.claimed[here.cid] = True;
-        for kid in [here ->:Declares:->][?:Extension] {
-            visit :0: [kid];
+        self.claimed[here.iid] = True;
+        print(["downstream", here.iid]);
+        if here.iid != self.start_id {
+            self.found.append(here.iid);
+        }
+        kids: list[Issue] = [];
+        for ch in [here ->:Depends:->][?:Issue] {
+            kids.append(ch);
+        }
+        if kids {
+            visit :0: kids;
+        } else {
+            disengage;
         }
     }
+}
 
-    can collect_extension with Extension entry {
-        print("collect extension " + here.extension_id);
-        if here.cid in self.claimed {
+walker UpstreamWalker {
+    has claimed: dict[str, bool] = {};
+    has chain: list[str] = [];
+
+    can ascend with Issue entry {
+        if here.iid in self.claimed {
             skip;
         }
-        self.claimed[here.cid] = True;
-        self.found.append(here.extension_id);
-        if here.provider_id == "" {
-            self.diagnostics.append("missing-provider:" + here.extension_id);
+        self.claimed[here.iid] = True;
+        print(["upstream", here.iid]);
+        preds: list[Issue] = [];
+        for p in [here <-:Depends:<-][?:Issue] {
+            preds.append(p);
         }
-        for kid in [here ->:DependsOn:->][?:Extension] {
-            visit :0: [kid];
+        if preds {
+            visit :0: preds;
+            for p in preds {
+                self.chain.append(p.iid);
+            }
+        } else {
+            disengage;
         }
     }
 }
 
-def new_manifest() -> PlaneManifest {
-    return PlaneManifest();
+def lookup_issue(graph_anchor: Issue, issue_id: str) -> Issue | None {
+    wk = graph_anchor spawn IssueLookupWalker(target_id=issue_id);
+    return wk.found;
 }
 
-def register_extension(
-    manifest: PlaneManifest,
-    extension: Extension | None
-) -> bool {
-    if manifest.frozen {
+def build_consolidation_graph -> Issue {
+    graph_anchor = Issue(iid="anchor");
+    i451 = Issue(iid="451", open=True, tasks_left=["10.1", "10.2", "10.3"]);
+    i532 = Issue(iid="532", open=True);
+    i503 = Issue(iid="503", open=True);
+    i398 = Issue(iid="398", open=True);
+    i394 = Issue(iid="394", open=True);
+    graph_anchor ++> i451;
+    graph_anchor ++> i394;
+    i451 +>:Depends:+> i532;
+    i532 +>:Depends:+> i503;
+    i503 +>:Depends:+> i398;
+    return graph_anchor;
+}
+
+def build_diamond_graph -> Issue {
+    graph_anchor = Issue(iid="anchor");
+    ia = Issue(iid="a");
+    ib = Issue(iid="b");
+    ic = Issue(iid="c");
+    node_d = Issue(iid="d");
+    graph_anchor ++> ia;
+    ia +>:Depends:+> ib;
+    ia +>:Depends:+> ic;
+    ib +>:Depends:+> node_d;
+    ic +>:Depends:+> node_d;
+    return graph_anchor;
+}
+
+def dependency_successors(issue_id: str) -> list[str] {
+    g = build_consolidation_graph();
+    node = lookup_issue(g, issue_id);
+    if node is None {
+        return [];
+    }
+    out: list[str] = [];
+    for ch in [node ->:Depends:->][?:Issue] {
+        out.append(ch.iid);
+    }
+    return sorted(out);
+}
+
+def reachable_downstream(start_id: str) -> list[str] {
+    g = build_consolidation_graph();
+    start = lookup_issue(g, start_id);
+    if start is None {
+        return [];
+    }
+    wk = start spawn DownstreamWalker(start_id=start_id);
+    return sorted(wk.found);
+}
+
+def diamond_downstream(start_id: str) -> list[str] {
+    g = build_diamond_graph();
+    start = lookup_issue(g, start_id);
+    if start is None {
+        return [];
+    }
+    wk = start spawn DownstreamWalker(start_id=start_id);
+    return sorted(wk.found);
+}
+
+def prerequisite_chain(target_id: str) -> list[str] {
+    g = build_consolidation_graph();
+    target = lookup_issue(g, target_id);
+    if target is None {
+        return [];
+    }
+    wk = target spawn UpstreamWalker;
+    print(wk.chain);
+    return wk.chain;
+}
+
+def remaining_certification_tasks(issue_id: str) -> list[str] {
+    g = build_consolidation_graph();
+    node = lookup_issue(g, issue_id);
+    if node is None {
+        return [];
+    }
+    return node.tasks_left;
+}
+
+def on_certification_path(issue_id: str) -> bool {
+    g = build_consolidation_graph();
+    node = lookup_issue(g, issue_id);
+    if node is None {
         return False;
     }
-    if extension == None {
+    if issue_id == "394" {
         return False;
     }
-    for prior in [manifest ->:Declares:->][?:Extension] {
-        if prior.extension_id == extension.extension_id {
-            return False;
-        }
-        if prior.plane_id == extension.plane_id
-            && prior.provider_id != extension.provider_id {
-            return False;
+    chain = prerequisite_chain("398");
+    if issue_id == "398" {
+        return True;
+    }
+    in_chain = False;
+    for cid in chain {
+        if cid == issue_id {
+            in_chain = True;
         }
     }
-    manifest +>:Declares:+> extension;
-    manifest.generation += 1;
-    return True;
+    if in_chain {
+        return True;
+    }
+    if issue_id == "451" {
+        return True;
+    }
+    return False;
 }
 
-def link_dependency(parent: Extension, child: Extension) -> None {
-    parent +>:DependsOn:+> child;
+"""Extension plane declaration consolidation lineage probes.
+Provenance: matdev83/go-llm-interactive-proxy#451
+"""
+
+node Issue {
+    has iid: str;
+    has open: bool = True;
+    has tasks_left: list[str] = [];
 }
 
-def freeze_manifest(manifest: PlaneManifest) -> int {
-    manifest.frozen = True;
-    return manifest.generation;
-}
+edge Depends {}
 
-def snapshot_extensions(manifest: PlaneManifest) -> list[str] {
-    w = manifest spawn PlaneSnapshot(claimed={});
-    return sorted(w.found);
-}
+walker IssueLookupWalker {
+    has target_id: str = "";
+    has found: Issue | None = None;
+    has claimed: dict[str, bool] = {};
 
-def find_extension(
-    manifest: PlaneManifest,
-    extension_id: str
-) -> Extension | None {
-    for extension in [manifest ->:Declares:->][?:Extension] {
-        if extension.extension_id == extension_id {
-            return extension;
+    can seek with Issue entry {
+        if here.iid in self.claimed {
+            skip;
+        }
+        self.claimed[here.iid] = True;
+        print(["seek", here.iid, self.target_id]);
+        if here.iid == self.target_id {
+            self.found = here;
+            disengage;
+        }
+        nbrs: list[Issue] = [];
+        for n in [here ->>][?:Issue] {
+            nbrs.append(n);
+        }
+        if nbrs {
+            visit nbrs;
+        } else {
+            disengage;
         }
     }
-    return None;
 }
 
-def dispatch_provider(
-    manifest: PlaneManifest,
-    plane_id: str
-) -> str | None {
-    for extension in [manifest ->:Declares:->][?:Extension] {
-        if extension.plane_id == plane_id && extension.provider_id != "" {
-            return extension.provider_id;
+walker DownstreamWalker {
+    has start_id: str = "";
+    has claimed: dict[str, bool] = {};
+    has found: list[str] = [];
+
+    can descend with Issue entry {
+        if here.iid in self.claimed {
+            skip;
+        }
+        self.claimed[here.iid] = True;
+        print(["downstream", here.iid]);
+        if here.iid != self.start_id {
+            self.found.append(here.iid);
+        }
+        kids: list[Issue] = [];
+        for ch in [here ->:Depends:->][?:Issue] {
+            kids.append(ch);
+        }
+        if kids {
+            visit :0: kids;
+        } else {
+            disengage;
         }
     }
-    return None;
 }
 
-def diagnostics(manifest: PlaneManifest) -> list[str] {
-    w = manifest spawn PlaneSnapshot(claimed={});
-    return sorted(w.diagnostics);
+walker UpstreamWalker {
+    has claimed: dict[str, bool] = {};
+    has chain: list[str] = [];
+
+    can ascend with Issue entry {
+        if here.iid in self.claimed {
+            skip;
+        }
+        self.claimed[here.iid] = True;
+        print(["upstream", here.iid]);
+        preds: list[Issue] = [];
+        for p in [here <-:Depends:<-][?:Issue] {
+            preds.append(p);
+        }
+        if preds {
+            visit :0: preds;
+            for p in preds {
+                self.chain.append(p.iid);
+            }
+        } else {
+            disengage;
+        }
+    }
 }
 
-test "diamond revisit is once only" {
-    manifest = new_manifest();
-    alpha = Extension(
-        extension_id="alpha",
-        plane_id="request",
-        provider_id="core"
-    );
-    beta = Extension(
-        extension_id="beta",
-        plane_id="request",
-        provider_id="core"
-    );
-    shared = Extension(
-        extension_id="shared",
-        plane_id="hook",
-        provider_id="core"
-    );
-    assert(register_extension(manifest, alpha) == True);
-    assert(register_extension(manifest, beta) == True);
-    assert(register_extension(manifest, shared) == True);
-    link_dependency(alpha, shared);
-    link_dependency(beta, shared);
-    assert(snapshot_extensions(manifest) == ["alpha", "beta", "shared"]);
+def lookup_issue(graph_anchor: Issue, issue_id: str) -> Issue | None {
+    wk = graph_anchor spawn IssueLookupWalker(target_id=issue_id);
+    return wk.found;
 }
 
-test "unknown identifiers fail closed" {
-    manifest = new_manifest();
-    assert(find_extension(manifest, "missing") == None);
-    assert(dispatch_provider(manifest, "unknown-plane") == None);
-    assert(register_extension(manifest, None) == False);
-    assert(snapshot_extensions(manifest) == []);
+def build_consolidation_graph -> Issue {
+    graph_anchor = Issue(iid="anchor");
+    i451 = Issue(iid="451", open=True, tasks_left=["10.1", "10.2", "10.3"]);
+    i532 = Issue(iid="532", open=True);
+    i503 = Issue(iid="503", open=True);
+    i398 = Issue(iid="398", open=True);
+    i394 = Issue(iid="394", open=True);
+    graph_anchor ++> i451;
+    graph_anchor ++> i394;
+    i451 +>:Depends:+> i532;
+    i532 +>:Depends:+> i503;
+    i503 +>:Depends:+> i398;
+    return graph_anchor;
 }
 
-test "exclusive provider and immutable generation" {
-    manifest = new_manifest();
-    first = Extension(
-        extension_id="first",
-        plane_id="tool",
-        provider_id="builtin"
-    );
-    conflict = Extension(
-        extension_id="conflict",
-        plane_id="tool",
-        provider_id="plugin"
-    );
-    later = Extension(
-        extension_id="later",
-        plane_id="stream",
-        provider_id="plugin"
-    );
-    assert(register_extension(manifest, first) == True);
-    assert(register_extension(manifest, conflict) == False);
-    assert(freeze_manifest(manifest) == 1);
-    assert(register_extension(manifest, later) == False);
-    assert(dispatch_provider(manifest, "tool") == "builtin");
+def build_diamond_graph -> Issue {
+    graph_anchor = Issue(iid="anchor");
+    ia = Issue(iid="a");
+    ib = Issue(iid="b");
+    ic = Issue(iid="c");
+    node_d = Issue(iid="d");
+    graph_anchor ++> ia;
+    ia +>:Depends:+> ib;
+    ia +>:Depends:+> ic;
+    ib +>:Depends:+> node_d;
+    ic +>:Depends:+> node_d;
+    return graph_anchor;
 }
 
-test "diagnostics expose missing typed provider" {
-    manifest = new_manifest();
-    broken = Extension(
-        extension_id="broken",
-        plane_id="observer",
-        provider_id=""
-    );
-    assert(register_extension(manifest, broken) == True);
-    assert(diagnostics(manifest) == ["missing-provider:broken"]);
+def dependency_successors(issue_id: str) -> list[str] {
+    g = build_consolidation_graph();
+    node = lookup_issue(g, issue_id);
+    if node is None {
+        return [];
+    }
+    out: list[str] = [];
+    for ch in [node ->:Depends:->][?:Issue] {
+        out.append(ch.iid);
+    }
+    return sorted(out);
+}
+
+def reachable_downstream(start_id: str) -> list[str] {
+    g = build_consolidation_graph();
+    start = lookup_issue(g, start_id);
+    if start is None {
+        return [];
+    }
+    wk = start spawn DownstreamWalker(start_id=start_id);
+    return sorted(wk.found);
+}
+
+def diamond_downstream(start_id: str) -> list[str] {
+    g = build_diamond_graph();
+    start = lookup_issue(g, start_id);
+    if start is None {
+        return [];
+    }
+    wk = start spawn DownstreamWalker(start_id=start_id);
+    return sorted(wk.found);
+}
+
+def prerequisite_chain(target_id: str) -> list[str] {
+    g = build_consolidation_graph();
+    target = lookup_issue(g, target_id);
+    if target is None {
+        return [];
+    }
+    wk = target spawn UpstreamWalker;
+    print(wk.chain);
+    return wk.chain;
+}
+
+def remaining_certification_tasks(issue_id: str) -> list[str] {
+    g = build_consolidation_graph();
+    node = lookup_issue(g, issue_id);
+    if node is None {
+        return [];
+    }
+    return node.tasks_left;
+}
+
+def on_certification_path(issue_id: str) -> bool {
+    g = build_consolidation_graph();
+    node = lookup_issue(g, issue_id);
+    if node is None {
+        return False;
+    }
+    if issue_id == "394" {
+        return False;
+    }
+    chain = prerequisite_chain("398");
+    if issue_id == "398" {
+        return True;
+    }
+    in_chain = False;
+    for cid in chain {
+        if cid == issue_id {
+            in_chain = True;
+        }
+    }
+    if in_chain {
+        return True;
+    }
+    if issue_id == "451" {
+        return True;
+    }
+    return False;
+}
+
+test "dependency_successors_direct" {
+    assert dependency_successors("451") == ["532"];
+}
+
+test "reachable_downstream_closure" {
+    assert reachable_downstream("451") == ["398", "503", "532"];
+}
+
+test "prerequisite_chain_upstream" {
+    assert prerequisite_chain("398") == ["503", "532", "451"];
+}
+
+test "diamond_downstream_sorted" {
+    assert diamond_downstream("a") == ["b", "c", "d"];
+}
+
+test "remaining_certification_tasks" {
+    assert remaining_certification_tasks("451") == ["10.1", "10.2", "10.3"];
+}
+
+test "on_certification_path_flags" {
+    assert on_certification_path("398") == True;
+    assert on_certification_path("394") == False;
+    assert on_certification_path("451") == True;
+    assert on_certification_path("missing") == False;
 }

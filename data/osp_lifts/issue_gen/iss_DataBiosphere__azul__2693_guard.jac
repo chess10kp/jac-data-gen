@@ -1,152 +1,216 @@
-# Lifting DataBiosphere/azul#2693 — verbatim manifest formats: a Bundle is a
-# complete metadata subgraph; entities link via derived/derives edges; replicas
-# capture verbatim content plus hub ids from the file-derivation closure.
+"""
+Verbatim manifest replica collection for bundle subgraphs.
+DataBiosphere/azul#2693
+"""
+
+glob root;
 
 node Entity {
-    has eid: str;
-    has etype: str;
-    has content: dict[str, any];
+    has cid: str;
+    has entity_type: str;
+    has content: dict;
+    has hub_ids: list[str] = [];
 }
 
-node Bundle {
-    has bid: str;
+edge Fk {}
+
+node FileRef {
+    has fid: str;
 }
 
-edge derives {}      # file -> replica it came from (replica derived FROM file)
-edge references {}   # replica -> file it is derived from
+edge FileHub {}
 
-walker BuildBundle {
-    has bundle_id: str;
+walker ManifestWalker {
+    has root_cid: str;
     has claimed: dict[str, bool] = {};
-    has entities: dict[str, Entity] = {};
+    has found: list[dict] = [];
 
-    can collect with Entity entry {
-        if here.eid in self.claimed {
-            skip;
+    can boot with root entry {
+        print "manifest boot", self.root_cid;
+        target: Entity | None = None;
+        for nd in [here -->][?:Entity] {
+            if nd.cid == self.root_cid {
+                target = nd;
+            }
         }
-        self.claimed[here.eid] = True;
-        self.entities[here.eid] = here;
-        kids: list[Entity] = [];
-        for ch in [here ->:references:->][?:Entity] {
-            kids.append(ch);
-        }
-        for ch in [here <-:derives:<-][?:Entity] {
-            kids.append(ch);
-        }
-        if len(kids) == 0 {
+        if target is not None {
+            visit target;
+        } else {
             disengage;
         }
-        visit [kids];
+    }
+
+    can traverse with Entity entry {
+        if here.cid in self.claimed {
+            skip;
+        }
+        self.claimed[here.cid] = True;
+        doc: dict = {};
+        doc["entity_type"] = here.entity_type;
+        doc["content"] = here.content;
+        hubs: list[str] = [];
+        for h in here.hub_ids {
+            hubs.append(h);
+        }
+        doc["hub_ids"] = sorted(hubs);
+        self.found.append(doc);
+        replica_cid = here.cid;
+        replica_etype = here.entity_type;
+        print "replica", replica_cid, replica_etype;
+        for ch in [here ->:Fk:->][?:Entity] {
+            visit :0: ch;
+        }
     }
 }
 
-def make_bundle(bundle_id: str, seed: Entity) -> Bundle {
-    b = Bundle(bid=bundle_id);
-    root ++> seed;
-    root ++> b;
-    return b;
+def register_entity(cid: str, entity_type: str, content: dict) -> Entity {
+    nd = Entity(cid=cid, entity_type=entity_type, content=content);
+    root ++> nd;
+    return nd;
 }
 
-def collect_bundle(bundle_id: str, seed: Entity) -> dict[str, dict[str, any]] {
-    wk = seed spawn BuildBundle(bundle_id=bundle_id, claimed={});
-    out: dict[str, dict[str, any]] = {};
-    for eid in sorted(wk.entities.keys()) {
-        ent = wk.entities[eid];
-        out[eid] = {"entity_type": ent.etype, "content": ent.content};
+def bind_fk(parent: Entity, child: Entity) {
+    parent +>:Fk:+> child;
+}
+
+def bind_file_hub(entity: Entity, file_id: str) {
+    fr = FileRef(fid=file_id);
+    root ++> fr;
+    entity +>:FileHub:+> fr;
+    present = False;
+    for h in entity.hub_ids {
+        if h == file_id {
+            present = True;
+        }
+    }
+    if not present {
+        entity.hub_ids.append(file_id);
+    }
+}
+
+def replica_document(entity: Entity) -> dict {
+    doc: dict = {};
+    doc["entity_type"] = entity.entity_type;
+    doc["content"] = entity.content;
+    hubs: list[str] = [];
+    for h in entity.hub_ids {
+        hubs.append(h);
+    }
+    doc["hub_ids"] = sorted(hubs);
+    return doc;
+}
+
+def replica_for(entity_cid: str) -> dict | None {
+    for nd in [root -->][?:Entity] {
+        if nd.cid == entity_cid {
+            return replica_document(nd);
+        }
+    }
+    return None;
+}
+
+def sort_manifest(docs: list[dict]) -> list[dict] {
+    out: list[dict] = [];
+    for d in docs {
+        out.append(d);
+    }
+    if len(out) <= 1 {
+        return out;
+    }
+    i = 0;
+    while i < len(out) {
+        j = i + 1;
+        while j < len(out) {
+            ta = out[i]["entity_type"];
+            tb = out[j]["entity_type"];
+            if tb < ta {
+                tmp = out[i];
+                out[i] = out[j];
+                out[j] = tmp;
+            }
+            j += 1;
+        }
+        i += 1;
     }
     return out;
 }
 
-def manifest_entry(entities: dict[str, dict[str, any]], eid: str) -> dict[str, any] {
-    # unknown ids tolerated: verbatim empty entry rather than KeyError
-    if eid not in entities {
-        return {"entity_type": "unknown", "content": {}, "hub_ids": []};
+def collect_verbatim_manifest(root_cid: str) -> list[dict] {
+    w = root spawn ManifestWalker(root_cid=root_cid, claimed={}, found=[]);
+    out: list[dict] = [];
+    for item in w.found {
+        out.append(item);
     }
-    ent = entities[eid];
-    return {"entity_type": ent["entity_type"], "content": ent["content"], "hub_ids": []};
+    return sort_manifest(out);
 }
 
-walker HubClosurer {
-    has claimed: dict[str, bool] = {};
-    has hubs: list[str] = [];
+test "replica_for_single_entity" {
+    root ++> Entity(cid="__purge__", entity_type="purge", content={});
+    a = register_entity("a1", "Analysis", {"k": 1});
+    got = replica_for("a1");
+    assert got is not None;
+    assert got["entity_type"] == "Analysis";
+    assert got["content"]["k"] == 1;
+    assert got["hub_ids"] == [];
+}
 
-    can walk with Entity entry {
-        if here.eid in self.claimed {
-            skip;
-        }
-        self.claimed[here.eid] = True;
-        if here.etype == "file" {
-            self.hubs.append(here.eid);
-        }
-        for ch in [here ->:references:->][?:Entity] {
-            visit [ch];
-        }
-        for ch in [here <-:derives:<-][?:Entity] {
-            visit [ch];
-        }
+test "collect_verbatim_manifest_fk_sort" {
+    root ++> Entity(cid="__purge__", entity_type="purge", content={});
+    root_nd = register_entity("root", "Bundle", {"name": "b"});
+    child_b = register_entity("b", "Sample", {"s": 2});
+    child_a = register_entity("a", "Analysis", {"x": 1});
+    bind_fk(root_nd, child_b);
+    bind_fk(root_nd, child_a);
+    docs = collect_verbatim_manifest("root");
+    assert len(docs) == 3;
+    types: list[str] = [];
+    for d in docs {
+        types.append(d["entity_type"]);
     }
+    assert types == ["Analysis", "Bundle", "Sample"];
 }
 
-def hub_ids(seed: Entity) -> list[str] {
-    wk = seed spawn HubClosurer(claimed={});
-    return sorted(wk.hubs);
+test "bind_file_hub_sorted_hub_ids" {
+    root ++> Entity(cid="__purge__", entity_type="purge", content={});
+    ent = register_entity("e1", "File", {"n": "f"});
+    bind_file_hub(ent, "file-z");
+    bind_file_hub(ent, "file-a");
+    doc = replica_document(ent);
+    assert doc["hub_ids"] == ["file-a", "file-z"];
 }
 
-# hidden tests appended to candidate source
-
-def _fixture() -> Entity {
-    f1 = Entity(eid="f1", etype="file", content={"name": "a.bam"});
-    f2 = Entity(eid="f2", etype="file", content={"name": "b.bam"});
-    r1 = Entity(eid="r1", etype="replica", content={"url": "s3://x/a.bam"});
-    r2 = Entity(eid="r2", etype="replica", content={"url": "s3://x/b.bam"});
-    r1 +>:references:+> f1;
-    r2 +>:references:+> f2;
-    f1 +>:derives:+> r1;
-    f2 +>:derives:+> r2;
-    return f1;
+test "replica_for_missing_returns_none" {
+    root ++> Entity(cid="__purge__", entity_type="purge", content={});
+    missing = replica_for("nope");
+    assert missing is None;
 }
 
-test "collect_bundle_closure" {
-    seed = _fixture();
-    got = collect_bundle("b1", seed);
-    assert sorted(got.keys()) == ["f1", "r1"];
-    assert got["f1"]["entity_type"] == "file";
-    assert got["r1"]["content"] == {"url": "s3://x/a.bam"};
+test "collect_skips_cycle_revisit" {
+    root ++> Entity(cid="__purge__", entity_type="purge", content={});
+    a = register_entity("ca", "Analysis", {"v": 1});
+    b = register_entity("cb", "Sample", {"v": 2});
+    c = register_entity("cc", "Bundle", {"v": 3});
+    bind_fk(a, b);
+    bind_fk(b, c);
+    bind_fk(c, a);
+    docs = collect_verbatim_manifest("ca");
+    assert len(docs) == 3;
+    types: list[str] = [];
+    for d in docs {
+        types.append(d["entity_type"]);
+    }
+    assert types == ["Analysis", "Bundle", "Sample"];
 }
 
-test "hub_ids_files_only" {
-    seed = _fixture();
-    assert hub_ids(seed) == ["f1"];
-}
-
-test "manifest_entry_known" {
-    seed = _fixture();
-    ents = collect_bundle("b1", seed);
-    me = manifest_entry(ents, "f1");
-    assert me["entity_type"] == "file";
-    assert me["content"] == {"name": "a.bam"};
-}
-
-test "manifest_entry_unknown_tolerated" {
-    seed = _fixture();
-    ents = collect_bundle("b1", seed);
-    me = manifest_entry(ents, "nope");
-    assert me["entity_type"] == "unknown";
-    assert me["hub_ids"] == [];
-}
-
-test "cycle_tolerance" {
-    a = Entity(eid="fa", etype="file", content={"n": 1});
-    b = Entity(eid="rb", etype="replica", content={"n": 2});
-    b +>:references:+> a;
-    a +>:derives:+> b;
-    b +>:derives:+> a;
-    assert sorted(hub_ids(a)) == ["fa"];
-    assert sorted(collect_bundle("c1", a).keys()) == ["fa", "rb"];
-}
-
-test "make_bundle_node" {
-    seed = _fixture();
-    b = make_bundle("bx", seed);
-    assert b.bid == "bx";
+test "sort_manifest_stable_order" {
+    d1: dict = {"entity_type": "Sample", "content": {}, "hub_ids": []};
+    d2: dict = {"entity_type": "Analysis", "content": {}, "hub_ids": []};
+    d3: dict = {"entity_type": "Bundle", "content": {}, "hub_ids": []};
+    inp: list[dict] = [d1, d2, d3];
+    out = sort_manifest(inp);
+    types: list[str] = [];
+    for d in out {
+        types.append(d["entity_type"]);
+    }
+    assert types == ["Analysis", "Bundle", "Sample"];
 }

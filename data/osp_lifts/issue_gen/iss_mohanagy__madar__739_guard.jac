@@ -1,490 +1,241 @@
-# mohanagy/madar#739 — call graph with static namespace bracket calls
-# preserved: bracket form resolves identically to dot form via import map.
+"""Static namespace bracket call preservation — mohanagy/madar#739."""
 
-import from random { choice }
+node Sym { has sid: str; has label: str; has mid: str; }
+edge Call {}
+edge Bind {}
 
-node Func {
-    has name: str;
-    has module: str;
-    has shadowed: bool = False;
-}
+obj CallGraph {
+    has graph_root: Sym;
+    has by_id: dict[str, Sym] = {};
+    has binds: dict[str, str] = {};
 
-node Module {
-    has name: str;
-}
-
-edge Imports { has source: str = ""; }
-edge Calls { has form: str = "dot"; }   # form: "dot" or "bracket"
-
-obj Registry {
-    has funcs: dict[str, Func];
-    has mods: dict[str, Module];
-
-    def init() {
-        self.funcs = {};
-        self.mods = {};
-    }
-
-    def add_module(name: str) -> Module {
-        m: Module = Module(name=name);
-        root ++> m;
-        self.mods[name] = m;
-        return m;
-    }
-
-    def add_func(mod: str, name: str, shadowed: bool = False) -> Func {
-        f: Func = Func(name=name, module=mod, shadowed=shadowed);
-        m: Module = self.mods[mod];
-        m ++> f;
-        self.funcs[mod + "." + name] = f;
-        return f;
-    }
-
-    def add_import(src: str, dst: str, local: str) {
-        sm: Module = self.mods[src];
-        dm: Module = self.mods[dst];
-        e: Imports = sm +>: Imports(source=local) :+> dm;
-        e.source = local;
-    }
-
-    # bind a call target: receiver resolves through import map;
-    # shadowed receivers and unknown callees bind to nothing
-    def resolve_call(mod: str, receiver: str, callee: str) -> str | None {
-        local_key: str = mod + "." + receiver;
-        if local_key in self.funcs {
-            f: Func = self.funcs[local_key];
-            if f.shadowed { return None; }
-            return mod + "." + callee;
-        }
-        imp_target: str | None = self.resolve_import(mod, receiver, callee);
-        if imp_target is None { return None; }
-        return imp_target;
-    }
-
-    def resolve_import(mod: str, receiver: str, callee: str) -> str | None {
-        m: Module = self.mods[mod];
-        for im in [m ->:Imports:->] {
-            if im.name == receiver {
-                key: str = im.name_of_module() + "." + callee;
-            }
-        }
-        # resolve via module connections
-        for tgt: Module in [m ->:Imports:->]:Module {
-            k: str = tgt.name + "." + callee;
-            if k in self.funcs {
-                return k;
-            }
-        }
+    def get(self, sid: str) -> Sym | None {
+        if sid in self.by_id { return self.by_id[sid]; }
         return None;
     }
 
-    def add_call(src_key: str, dst_key: str, form: str) {
-        a: Func = self.funcs[src_key];
-        b: Func = self.funcs[dst_key];
-        a +>: Calls(form=form) :+> b;
-    }
-
-    def build_call(src: str, receiver: str, callee: str, form: str) -> str | None {
-        dst: str | None = self.resolve_call(src, receiver, callee);
-        if dst is None { return None; }
-        self.add_call(src + "." + receiver if False else src + "." + receiver, dst, form);
-        return dst;
+    def add_sym(self, s: Sym) {
+        self.graph_root ++> s;
+        self.by_id[s.sid] = s;
     }
 }
 
-# helper: dot access of module name off Module node
-def name_of_module(m: Module) -> str {
-    return m.name;
+def dot_callee(g: CallGraph, module_id: str, receiver: str, attr: str) -> str | None {
+    bk: str = module_id + ":" + receiver;
+    if bk not in g.binds { return None; }
+    tsid: str = g.binds[bk];
+    if tsid not in g.by_id { return None; }
+    t = g.by_id[tsid];
+    if attr == t.label { return t.label; }
+    return None;
 }
 
-# node extension for Module to expose name in resolve_import
-def Module.name_of_module() -> str {
-    return self.name;
+def bracket_callee(g: CallGraph, module_id: str, receiver: str, key: str) -> str | None {
+    bk: str = module_id + ":" + receiver;
+    if bk not in g.binds { return None; }
+    tsid: str = g.binds[bk];
+    if tsid not in g.by_id { return None; }
+    t = g.by_id[tsid];
+    if key != t.label { return None; }
+    return t.label;
 }
 
-# walker: enumerate all call chains from a function, claim-map + skip cycles
-walker ChainWalker {
-    has target: str = "";
+def link_callee(g: CallGraph, caller_sid: str, callee_name: str) -> bool {
+    caller = g.get(caller_sid);
+    if caller is None { return False; }
+    callee: Sym | None = None;
+    for sid in g.by_id {
+        s = g.by_id[sid];
+        if s.label == callee_name { callee = s; }
+    }
+    if callee is None { return False; }
+    caller +>:Call:+> callee;
+    print("link " + caller_sid + "->" + callee_name);
+    return True;
+}
+
+def add_dot_call(g: CallGraph, caller_sid: str, receiver: str, attr: str) -> bool {
+    caller = g.get(caller_sid);
+    if caller is None { return False; }
+    callee_name = dot_callee(g, caller.mid, receiver, attr);
+    if callee_name is None { return False; }
+    return link_callee(g, caller_sid, callee_name);
+}
+
+def ensure_static_bracket(g: CallGraph, caller_sid: str, receiver: str, key: str) -> bool {
+    caller = g.get(caller_sid);
+    if caller is None { return False; }
+    callee_name = bracket_callee(g, caller.mid, receiver, key);
+    if callee_name is None { return False; }
+    return link_callee(g, caller_sid, callee_name);
+}
+
+walker ChainWalk {
     has claimed: dict[str, bool] = {};
+    has end_label: str = "";
     has paths: list[list[str]] = [];
-    has path: list[str] = [];
+    has stack: list[str] = [];
 
-    can start with Func entry {
-        if here.name + "|" + here.module in self.claimed { skip; }
-        self.claimed[here.name + "|" + here.module] = True;
-        self.path.append(here.module + "." + here.name);
-        kids: list[Func] = [here ->:Calls:->][?:Func];
-        if len(kids) == 0 {
-            self.paths.append(self.path + []);
+    can walk with Sym entry {
+        if here.sid in self.claimed { skip; }
+        self.claimed[here.sid] = True;
+        self.stack.append(here.label);
+        print("chain " + here.label);
+        if here.label == self.end_label {
+            cp: list[str] = [];
+            for x in self.stack { cp.append(x); }
+            self.paths.append(cp);
         }
-        for kid in kids {
-            visit kid;
-        }
-        self.path.pop();
+        kids: list[Sym] = [here ->:Call:->][?:Sym];
+        if kids { visit kids; } else { disengage; }
     }
 }
 
-# public: full call chain (closure) from a function key, sorted
-def call_chain(reg: Registry, fn_key: str) -> list[list[str]] {
-    if fn_key not in reg.funcs {
-        return [];
+walker CollectWalk {
+    has claimed: dict[str, bool] = {};
+    has labels: list[str] = [];
+
+    can collect with Sym entry {
+        if here.sid in self.claimed { skip; }
+        self.claimed[here.sid] = True;
+        self.labels.append(here.label);
+        print("collect " + here.label);
+        kids: list[Sym] = [here ->:Call:->][?:Sym];
+        idx: int = len(kids) - 1;
+        while idx >= 0 {
+            visit :0: kids[idx];
+            idx -= 1;
+        }
     }
-    w: ChainWalker = reg.funcs[fn_key] spawn ChainWalker(claimed={}, paths=[], path=[], target=fn_key);
-    out: list[list[str]] = [];
-    for p in w.paths {
-        out.append(p);
+}
+
+walker DemoWalk {
+    can run entry {
+        g = make_base_graph();
+        add_dot_call(g, "m1:renderGreeting", "names", "prepareName");
+        ch = call_chain(g, "renderGreeting", "trimName");
+        print("demo chains " + str(len(ch)));
     }
-    return sorted(out);
+}
+
+def norm_paths(ps: list[list[str]]) -> list[list[str]] { return sorted(ps); }
+
+def call_chain(g: CallGraph, start: str, end: str) -> list[list[str]] {
+    start_sym: Sym | None = None;
+    for sid in g.by_id {
+        s = g.by_id[sid];
+        if s.label == start { start_sym = s; }
+    }
+    if start_sym is None { return []; }
+    w = start_sym spawn ChainWalk(end_label=end);
+    return norm_paths(w.paths);
+}
+
+def collect_reach_labels(g: CallGraph, start_sid: str) -> list[str] {
+    st = g.get(start_sid);
+    if st is None { return []; }
+    w = st spawn CollectWalk;
+    return sorted(w.labels);
+}
+
+def make_base_graph -> CallGraph {
+    gr = Sym(sid="groot", label="groot", mid="");
+    g = CallGraph(graph_root=gr, by_id={}, binds={});
+    root ++> gr;
+    rg = Sym(sid="m1:renderGreeting", label="renderGreeting", mid="m1");
+    pn = Sym(sid="m2:prepareName", label="prepareName", mid="m2");
+    tn = Sym(sid="m3:trimName", label="trimName", mid="m3");
+    g.add_sym(rg);
+    g.add_sym(pn);
+    g.add_sym(tn);
+    pn +>:Call:+> tn;
+    g.binds["m1:names"] = "m2:prepareName";
+    return g;
+}
+
+def make_diamond_graph -> CallGraph {
+    gr = Sym(sid="dgroot", label="dgroot", mid="");
+    g = CallGraph(graph_root=gr, by_id={}, binds={});
+    root ++> gr;
+    st = Sym(sid="d:start", label="start", mid="d");
+    a = Sym(sid="d:a", label="a", mid="d");
+    b = Sym(sid="d:b", label="b", mid="d");
+    midn = Sym(sid="d:mid", label="mid", mid="d");
+    deep = Sym(sid="d:deep", label="deep", mid="d");
+    tail = Sym(sid="d:tail", label="tail", mid="d");
+    g.add_sym(st);
+    g.add_sym(a);
+    g.add_sym(b);
+    g.add_sym(midn);
+    g.add_sym(deep);
+    g.add_sym(tail);
+    st +>:Call:+> a;
+    st +>:Call:+> b;
+    a +>:Call:+> midn;
+    a +>:Call:+> deep;
+    b +>:Call:+> midn;
+    midn +>:Call:+> tail;
+    return g;
+}
+
+def path_eq(a: list[str], b: list[str]) -> bool {
+    if len(a) != len(b) { return False; }
+    i: int = 0;
+    while i < len(a) {
+        if a[i] != b[i] { return False; }
+        i += 1;
+    }
+    return True;
 }
 
 with entry {
-    reg: Registry = Registry();
-    reg.add_module("main");
-    reg.add_module("names");
-    reg.add_func("names", "prepareName");
-    reg.add_func("names", "trimName");
-    reg.add_func("main", "renderGreeting");
-    reg.add_import("main", "names", "names");
-    reg.add_call("main.renderGreeting", "names.prepareName", "bracket");
-    reg.add_call("names.prepareName", "names.trimName", "dot");
-    chains: list[list[str]] = call_chain(reg, "main.renderGreeting");
-    print(chains);
+    root spawn DemoWalk;
 }
 
-# mohanagy/madar#739 — default-auto call graph preserving static namespace
-# bracket calls: bracket form binds identically to dot form via import map.
-
-node Module {
-    has name: str;
+test "dot_call_chain" {
+    g = make_base_graph();
+    ok = add_dot_call(g, "m1:renderGreeting", "names", "prepareName");
+    assert ok;
+    got = call_chain(g, "renderGreeting", "trimName");
+    exp: list[list[str]] = [["renderGreeting", "prepareName", "trimName"]];
+    assert got == exp;
 }
 
-node Func {
-    has name: str;
-    has module: str;
-    has shadowed: bool = False;
+test "bracket_call_link" {
+    g = make_base_graph();
+    ok = ensure_static_bracket(g, "m1:renderGreeting", "names", "prepareName");
+    assert ok;
+    got = call_chain(g, "renderGreeting", "trimName");
+    exp: list[list[str]] = [["renderGreeting", "prepareName", "trimName"]];
+    assert got == exp;
 }
 
-edge Imports {
-    has local: str;
+test "unknown_caller_dot" {
+    g = make_base_graph();
+    ok = add_dot_call(g, "m9:missing", "names", "prepareName");
+    assert ok == False;
 }
 
-edge Calls {
-    has form: str = "dot";  # "dot" or "bracket"
+test "diamond_reach_sorted" {
+    g = make_diamond_graph();
+    got = collect_reach_labels(g, "d:start");
+    exp: list[str] = ["a", "b", "deep", "mid", "start", "tail"];
+    assert got == exp;
 }
 
-# public registry: fresh per fixture, no module-level mutable state
-obj Registry {
-    has funcs: dict[str, Func];
-    has mods: dict[str, Module];
-
-    def:__init__ {
-        self.funcs = {};
-        self.mods = {};
-    }
-
-    def add_module(name: str) -> Module {
-        m: Module = Module(name=name);
-        root ++> m;
-        self.mods[name] = m;
-        return m;
-    }
-
-    def add_func(mod: str, name: str, shadowed: bool = False) -> Func {
-        f: Func = Func(name=name, module=mod, shadowed=shadowed);
-        self.mods[mod] ++> f;
-        self.funcs[mod + "." + name] = f;
-        return f;
-    }
-
-    def add_import(src: str, dst: str, local: str) {
-        self.mods[src] +>: Imports(local=local) :+> self.mods[dst];
-    }
-
-    def add_call(src_key: str, dst_key: str, form: str) {
-        self.funcs[src_key] +>: Calls(form=form) :+> self.funcs[dst_key];
-    }
-
-    # public: resolve a call binding; receiver is a local name, a shadowed
-    # receiver or unknown callee resolves to None (no invented relations)
-    def resolve_call(reg_mod: str, receiver: str, callee: str) -> str | None {
-        local_key: str = reg_mod + "." + receiver;
-        if local_key in self.funcs {
-            if self.funcs[local_key].shadowed {
-                return None;
-            }
-            if (reg_mod + "." + callee) in self.funcs {
-                return reg_mod + "." + callee;
-            }
-            return None;
-        }
-        m: Module = self.mods[reg_mod];
-        for tgt: Module in [m ->:Imports:->] {
-            key: str = tgt.name + "." + callee;
-            if key in self.funcs {
-                return key;
-            }
-        }
-        return None;
-    }
-
-    # public: build the call edge for either syntax form;
-    # bracket resolves through the import map exactly as dot does
-    def build_call(reg_mod: str, receiver: str, callee: str, form: str) -> str | None {
-        dst: str | None = self.resolve_call(reg_mod, receiver, callee);
-        if dst is None {
-            return None;
-        }
-        self.add_call(reg_mod + "." + receiver, dst, form);
-        return dst;
-    }
-
-    # public: all call-chain paths reachable from fn_key (closure);
-    # unknown ids tolerate as empty list
-    def call_chain(fn_key: str) -> list[list[str]] {
-        if fn_key not in self.funcs {
-            return [];
-        }
-        w = self.funcs[fn_key] spawn ChainWalker(claimed={}, paths=[], path=[]);
-        out: list[list[str]] = sorted(w.paths);
-        return out;
-    }
+test "diamond_paths_to_tail" {
+    g = make_diamond_graph();
+    got = call_chain(g, "start", "tail");
+    exp: list[list[str]] = [
+        ["start", "a", "mid", "tail"],
+        ["start", "a", "deep"],
+        ["start", "b", "mid", "tail"],
+    ];
+    assert got == exp;
 }
 
-walker ChainWalker {
-    has claimed: dict[str, bool] = {};
-    has paths: list[list[str]] = [];
-    has path: list[str] = [];
-
-    can step with Func entry {
-        key: str = here.module + "." + here.name;
-        if key in self.claimed {
-            skip;  # cycle policy: claim-map, never disengage on revisit
-        }
-        self.claimed[key] = True;
-        self.path.append(key);
-        kids: list[Func] = [here ->:Calls:->][?:Func];
-        if len(kids) == 0 {
-            self.paths.append(self.path + []);
-        }
-        for kid in kids {
-            visit kid;
-        }
-        self.path.pop();
-    }
-}
-
-with entry {
-    reg = Registry();
-    reg.add_module("main");
-    reg.add_module("names");
-    reg.add_func("names", "prepareName");
-    reg.add_func("names", "trimName");
-    reg.add_func("main", "renderGreeting");
-    reg.add_import("main", "names", "names");
-    # bracket form on imported namespace binds like dot form
-    got = reg.build_call("main", "names", "prepareName", "bracket");
-    reg.add_call("names.prepareName", "names.trimName", "dot");
-    chains = reg.call_chain("main.renderGreeting");
-    print(got);
-    print(chains);
-}
-
-# mohanagy/madar#739 — default-auto call graph preserving static namespace
-# bracket calls: bracket form binds identically to dot form via import map.
-
-node Module {
-    has name: str;
-}
-
-node Func {
-    has name: str;
-    has module: str;
-    has shadowed: bool = False;
-}
-
-edge Imports {
-    has local: str;
-}
-
-edge Calls {
-    has form: str = "dot";  # "dot" or "bracket"
-}
-
-# public registry: fresh per fixture, no module-level mutable state
-obj Registry {
-    has funcs: dict[str, Func];
-    has mods: dict[str, Module];
-
-    def:__init__ {
-        self.funcs = {};
-        self.mods = {};
-    }
-
-    def add_module(name: str) -> Module {
-        m: Module = Module(name=name);
-        root ++> m;
-        self.mods[name] = m;
-        return m;
-    }
-
-    def add_func(mod: str, name: str, shadowed: bool = False) -> Func {
-        f: Func = Func(name=name, module=mod, shadowed=shadowed);
-        self.mods[mod] ++> f;
-        self.funcs[mod + "." + name] = f;
-        return f;
-    }
-
-    def add_import(src: str, dst: str, local: str) {
-        self.mods[src] +>: Imports(local=local) :+> self.mods[dst];
-    }
-
-    def add_call(src_key: str, dst_key: str, form: str) {
-        self.funcs[src_key] +>: Calls(form=form) :+> self.funcs[dst_key];
-    }
-
-    # public: resolve call binding; shadowed receiver or unknown callee
-    # resolves to None — no invented import/call relations
-    def resolve_call(reg_mod: str, receiver: str, callee: str) -> str | None {
-        local_key: str = reg_mod + "." + receiver;
-        if local_key in self.funcs {
-            if self.funcs[local_key].shadowed {
-                return None;
-            }
-            if (reg_mod + "." + callee) in self.funcs {
-                return reg_mod + "." + callee;
-            }
-            return None;
-        }
-        m: Module = self.mods[reg_mod];
-        for tgt: Module in [m ->:Imports:->] {
-            key: str = tgt.name + "." + callee;
-            if key in self.funcs {
-                return key;
-            }
-        }
-        return None;
-    }
-
-    # public: build call edge for either syntax form; bracket resolves
-    # through the import map exactly as the dot form does
-    def build_call(reg_mod: str, receiver: str, callee: str, form: str) -> str | None {
-        dst: str | None = self.resolve_call(reg_mod, receiver, callee);
-        if dst is None {
-            return None;
-        }
-        self.add_call(reg_mod + "." + receiver, dst, form);
-        return dst;
-    }
-
-    # public: all call-chain paths reachable from fn_key (closure);
-    # unknown ids tolerated as empty list
-    def call_chain(fn_key: str) -> list[list[str]] {
-        if fn_key not in self.funcs {
-            return [];
-        }
-        w = self.funcs[fn_key] spawn ChainWalker(claimed={}, paths=[], path=[]);
-        return sorted(w.paths);
-    }
-}
-
-walker ChainWalker {
-    has claimed: dict[str, bool] = {};
-    has paths: list[list[str]] = [];
-    has path: list[str] = [];
-
-    can step with Func entry {
-        key: str = here.module + "." + here.name;
-        if key in self.claimed {
-            skip;  # cycle policy: claim-map + skip, never disengage on revisit
-        }
-        self.claimed[key] = True;
-        self.path.append(key);
-        kids: list[Func] = [here ->:Calls:->][?:Func];
-        if len(kids) == 0 {
-            self.paths.append(self.path + []);
-        }
-        for kid in kids {
-            visit kid;
-        }
-        self.path.pop();
-    }
-}
-
-with entry {
-    reg = Registry();
-    reg.add_module("main");
-    reg.add_module("names");
-    reg.add_func("names", "prepareName");
-    reg.add_func("names", "trimName");
-    reg.add_func("main", "renderGreeting");
-    reg.add_import("main", "names", "names");
-    got = reg.build_call("main", "names", "prepareName", "bracket");
-    reg.add_call("names.prepareName", "names.trimName", "dot");
-    chains = reg.call_chain("main.renderGreeting");
-    print(got);
-    print(chains);
-}
-
-test "bracket equals dot through full chain" {
-    reg = Registry();
-    reg.add_module("main");
-    reg.add_module("names");
-    reg.add_func("names", "prepareName");
-    reg.add_func("names", "trimName");
-    reg.add_func("main", "renderGreeting");
-    reg.add_import("main", "names", "names");
-    b = reg.build_call("main", "names", "prepareName", "bracket");
-    d = reg.build_call("main", "names", "prepareName", "dot");
-    assert b == "names.prepareName";
-    assert d == "names.prepareName";
-    reg.add_call("names.prepareName", "names.trimName", "dot");
-    reg.add_call("names.trimName", "main.renderGreeting", "dot");
-    chains = reg.call_chain("main.renderGreeting");
-    assert chains == [["main.renderGreeting", "names.prepareName", "names.trimName", "main.renderGreeting"]];
-}
-
-test "diamond revisit does not truncate closure" {
-    reg = Registry();
-    reg.add_module("m");
-    reg.add_func("m", "a");
-    reg.add_func("m", "b");
-    reg.add_func("m", "c");
-    reg.add_func("m", "d");
-    reg.add_call("m.a", "m.b", "dot");
-    reg.add_call("m.b", "m.d", "dot");
-    reg.add_call("m.a", "m.c", "dot");
-    # adversarial: deep d visited via b, then revisited via c — claim-map keeps closure
-    reg.add_call("m.c", "m.d", "dot");
-    reg.add_call("m.d", "m.a", "dot");
-    chains = reg.call_chain("m.a");
-    assert len(chains) >= 2;
-    assert ["m.a", "m.b", "m.d", "m.a"] in chains;
-    assert ["m.a", "m.c", "m.d", "m.a"] in chains;
-}
-
-test "shadowed receiver binds to nothing" {
-    reg = Registry();
-    reg.add_module("app");
-    reg.add_module("util");
-    reg.add_func("app", "util", shadowed=True);
-    reg.add_func("util", "trim");
-    reg.add_import("app", "util", "util");
-    assert reg.build_call("app", "util", "trim", "bracket") is None;
-    assert reg.build_call("app", "util", "trim", "dot") is None;
-}
-
-test "unresolved dynamic key tolerated" {
-    reg = Registry();
-    reg.add_module("app");
-    reg.add_func("app", "run");
-    reg.add_import("app", "app", "app");
-    assert reg.build_call("app", "app", "nope", "bracket") is None;
-    assert reg.call_chain("app.missing") == [];
-}
-
-test "no invented relations for empty registry" {
-    reg = Registry();
-    reg.add_module("x");
-    assert reg.call_chain("x.anything") == [];
-    assert reg.build_call("x", "nothing", "here", "bracket") is None;
+test "missing_start_chain" {
+    g = make_base_graph();
+    got = call_chain(g, "noSuch", "trimName");
+    assert got == [];
 }

@@ -164,13 +164,13 @@ test "linear order" {
     ord = topological_order(g);
     assert ord is not None;
     # check order property via index search
-    iu = -1; ik = -1; is = -1;
+    iu = -1; ik = -1; `is = -1;
     for i in range(ord.__len__()) {
         if ord[i] == "urine_output" { iu = i; }
         if ord[i] == "kdigo_uo" { ik = i; }
-        if ord[i] == "kdigo_stages" { is = i; }
+        if ord[i] == "kdigo_stages" { `is = i; }
     }
-    assert iu < ik and ik < is;
+    assert iu < ik and ik < `is;
 }
 
 test "diamond independent" {

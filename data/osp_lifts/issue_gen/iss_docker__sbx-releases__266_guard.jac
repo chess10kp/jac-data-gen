@@ -100,9 +100,9 @@ def max_depth(store: DirStore, root_path: str) -> int {
     while len(pending) > 0 {
         (cur, depth) = pending.pop();
         if depth > best { best = depth; }
-        entry = store.entries.get(cur, None);
-        if entry is None { continue; }
-        for ch in [entry ->:Contains:->][?:DirEntry] {
+        `entry = store.entries.get(cur, None);
+        if `entry is None { continue; }
+        for ch in [`entry ->:Contains:->][?:DirEntry] {
             if ch.path not in seen {
                 seen[ch.path] = True;
                 pending.append((ch.path, depth + 1));

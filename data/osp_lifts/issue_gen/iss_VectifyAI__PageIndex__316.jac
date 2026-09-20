@@ -34,8 +34,8 @@ def load_doc(tree: dict) -> Doc {
         d.sections[sid] = s;
     }
     for sid in tree.keys() {
-        entry: dict = tree[sid];
-        kids: list = entry.get("children", []);
+        `entry: dict = tree[sid];
+        kids: list = `entry.get("children", []);
         parent = d.resolve(sid);
         for kid in kids {
             k = d.resolve(kid);

@@ -171,8 +171,6 @@ def is_active(reg: Registry, token_id: str) -> bool {
     }
     return True;
 }
-
-
 test "issue, inheritance, and scope degradation" {
     reg = build_registry([]);
     issue(reg, "sess", ["read", "write", "admin"], {"amr": ["pwd", "otp"], "acr": "urn:mfa:required", "auth_time": 1719708600});
@@ -223,8 +221,20 @@ test "deep chain root revocation and postcondition" {
 test "adversarial diamond revokes once-only via shared child" {
     reg = build_registry([("top", ["read"]), ("l", ["read"]), ("r", ["read"])]);
     tn = reg.resolve("top");
+    if tn is None {
+        assert False, "missing top";
+        return;
+    }
     ln = reg.resolve("l");
+    if ln is None {
+        assert False, "missing l";
+        return;
+    }
     rn = reg.resolve("r");
+    if rn is None {
+        assert False, "missing r";
+        return;
+    }
     bot = TokenNode(token_id="bot", scopes=["read"]);
     root ++> bot;
     reg.tokens["bot"] = bot;
@@ -238,10 +248,22 @@ test "adversarial diamond revokes once-only via shared child" {
 test "corrupt parent cycle terminates" {
     reg = build_registry([("x", []), ("y", [])]);
     xn = reg.resolve("x");
+    if xn is None {
+        assert False, "missing x";
+        return;
+    }
     yn = reg.resolve("y");
+    if yn is None {
+        assert False, "missing y";
+        return;
+    }
     xn +>:ChildToken:+> yn;
     yn +>:ChildToken:+> xn;
     ch = _chain(reg, "x");
+    if ch is None {
+        assert False, "expected chain";
+        return;
+    }
     assert len(ch) == 2;  # x -> y -> x stops on revisit
     assert effective_claims(reg, "x") == {};
 }

@@ -30,8 +30,7 @@ def load_categories(
         if p is not None and c is not None { p +>:ParentOf:+> c; }
     }
     for (cid, lvl) in levels {
-        nd: Category | None = store.categories.get(cid, None);
-        if nd is not None { nd.level = lvl; }
+        if cid in store.categories { store.categories[cid].level = lvl; }
     }
     return store;
 }

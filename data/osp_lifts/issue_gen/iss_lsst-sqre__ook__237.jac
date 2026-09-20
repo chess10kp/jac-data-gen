@@ -51,8 +51,7 @@ def load_entities(
         }
     }
     for (name, role) in roles {
-        nd: Entity | None = store.entities.get(name, None);
-        if nd is not None { nd.role = role; }
+        if name in store.entities { store.entities[name].role = role; }
     }
     for (child, parent) in parent_edges {
         c = store.entities.get(child, None);

@@ -1,175 +1,401 @@
-# chenhong268/cbrain#247 — local graph reasoning layer for CBrain
-# Unified BFS/DFS traversal core with depth limits and provenance-safe
-# local relevance ranking over stored edges.
+"""chenhong268/cbrain#247 - graph traversal as local reasoning layer."""
 
 node Entity {
-    has eid: str;
+    has cid: str;
     has label: str = "";
-    has trust_state: str = "candidate";
 }
 
-edge Rel {
-    has rtype: str = "related";
-    has weight: float = 1.0;
-    has confidence: float = 1.0;
+edge Relates {
+    has rel_type: str = "relates";
 }
 
-graph brain_graph {
-    has entities: dict[str, Entity] = {};
+def sort_entities_by_cid(nodes: list[Entity]) -> list[Entity] {
+    ids: list[str] = [];
+    for nd in nodes {
+        ids.append(nd.cid);
+    }
+    ids = sorted(ids);
+    out: list[Entity] = [];
+    for sid in ids {
+        for nd in nodes {
+            if nd.cid == sid {
+                out.append(nd);
+            }
+        }
+    }
+    return out;
 }
 
-def get_entity(g: brain_graph, eid: str) -> Entity | None {
-    if eid in g.entities {
-        return g.entities[eid];
+def reverse_ids(xs: list[str]) -> list[str] {
+    out: list[str] = [];
+    i = len(xs) - 1;
+    while i >= 0 {
+        out.append(xs[i]);
+        i -= 1;
+    }
+    return out;
+}
+
+def lookup_entity(graph_root: Entity, node_id: str) -> Entity | None {
+    if graph_root.cid == node_id {
+        return graph_root;
+    }
+    claimed: dict[str, bool] = {};
+    stack: list[Entity] = [graph_root];
+    while stack {
+        cur = stack.pop();
+        if cur.cid in claimed {
+            continue;
+        }
+        claimed[cur.cid] = True;
+        if cur.cid == node_id {
+            return cur;
+        }
+        chs: list[Entity] = [cur ->:Relates:->][?:Entity];
+        for ch in chs {
+            stack.append(ch);
+        }
     }
     return None;
 }
 
-def add_entity(g: brain_graph, eid: str, label: str) -> Entity {
-    nd = Entity(eid=eid, label=label);
-    root ++> nd;
-    g.entities[eid] = nd;
-    return nd;
-}
-
-def link(g: brain_graph, src: str, dst: str, rtype: str, weight: float) -> bool {
-    a = get_entity(g, src);
-    b = get_entity(g, dst);
-    if a is None or b is None {
+def add_link(
+    graph_root: Entity,
+    src_id: str,
+    dst_id: str,
+    rel_type: str = "relates",
+) -> bool {
+    src = lookup_entity(graph_root, src_id);
+    dst = lookup_entity(graph_root, dst_id);
+    if src is None or dst is None {
         return False;
     }
-    a +>:Rel(rtype=rtype, weight=weight):+> b;
+    src +>:Relates(rel_type=rel_type):+> dst;
     return True;
 }
 
-walker Bfs {
-    has max_depth: int = 3;
-    has depth: int = 0;
+walker ExplainTrace {
     has claimed: dict[str, bool] = {};
+    has max_depth: int = 10;
+    has depth: int = 0;
     has order: list[str] = [];
 
     can step with Entity entry {
-        if here.eid in self.claimed {
+        if here.cid in self.claimed {
             skip;
         }
-        self.claimed[here.eid] = True;
-        self.order.append(here.eid);
+        self.claimed[here.cid] = True;
+        self.order.append(here.cid);
+        print ["trace", here.cid, self.depth];
         if self.depth >= self.max_depth {
             disengage;
         }
-        kids: list[Entity] = [here ->:Rel:->];
-        kids = sorted(kids, key=lambda k: k.eid);
-        if len(kids) == 0 {
+        kids: list[Entity] = [here ->:Relates:->][?:Entity];
+        sorted_kids: list[Entity] = sort_entities_by_cid(kids);
+        nxt = self.depth + 1;
+        for kid in sorted_kids {
+            kid spawn ExplainTrace(
+                claimed=self.claimed,
+                max_depth=self.max_depth,
+                depth=nxt,
+                order=self.order,
+            );
+        }
+        disengage;
+    }
+}
+
+walker BfsReach {
+    has claimed: dict[str, bool] = {};
+    has max_depth: int = 2;
+    has depth: int = 0;
+    has start_id: str = "";
+    has found: list[str] = [];
+
+    can hop with Entity entry {
+        if here.cid in self.claimed {
+            skip;
+        }
+        self.claimed[here.cid] = True;
+        print ["bfs_visit", here.cid, self.depth];
+        if here.cid != self.start_id {
+            self.found.append(here.cid);
+        }
+        if self.depth >= self.max_depth {
             disengage;
         }
-        self.depth += 1;
+        kids: list[Entity] = [here ->:Relates:->][?:Entity];
+        nxt = self.depth + 1;
+        for kid in kids {
+            kid spawn BfsReach(
+                claimed=self.claimed,
+                max_depth=self.max_depth,
+                depth=nxt,
+                start_id=self.start_id,
+                found=self.found,
+            );
+        }
+        disengage;
+    }
+}
+
+walker ShortestPath {
+    has claimed: dict[str, bool] = {};
+    has max_depth: int = 10;
+    has depth: int = 0;
+    has end_id: str = "";
+    has parent: dict[str, str] = {};
+    has hit: bool = False;
+
+    can hop with Entity entry {
+        if here.cid in self.claimed {
+            skip;
+        }
+        self.claimed[here.cid] = True;
+        print ["path_visit", here.cid, self.depth];
+        if here.cid == self.end_id {
+            self.hit = True;
+            disengage;
+        }
+        if self.depth >= self.max_depth {
+            disengage;
+        }
+        kids: list[Entity] = [here ->:Relates:->][?:Entity];
+        for kid in kids {
+            if kid.cid not in self.parent {
+                self.parent[kid.cid] = here.cid;
+            }
+        }
         visit kids;
     }
 }
 
-def bfs_closure(g: brain_graph, start: str, max_depth: int) -> list[str] {
-    src = get_entity(g, start);
-    if src is None {
-        return [];
-    }
-    w = src spawn Bfs(max_depth=max_depth, claimed={});
-    out: list[str] = [];
-    for x in w.order {
-        out.append(x);
-    }
-    return sorted(out);
-}
-
-walker Dfs {
+walker CascadeRank {
     has claimed: dict[str, bool] = {};
-    has order: list[str] = [];
+    has max_depth: int = 3;
+    has depth: int = 0;
+    has start_id: str = "";
+    has ranks: dict[str, int] = {};
 
-    can step with Entity entry {
-        if here.eid in self.claimed {
+    can rank with Entity entry {
+        if here.cid in self.claimed {
             skip;
         }
-        self.claimed[here.eid] = True;
-        self.order.append(here.eid);
-        kids: list[Entity] = [here ->:Rel:->];
-        kids = sorted(kids, key=lambda k: k.eid);
-        for kid in kids {
-            visit :0: [kid];
+        self.claimed[here.cid] = True;
+        print ["cascade", here.cid, self.depth];
+        if here.cid != self.start_id {
+            old = self.ranks.get(here.cid, 9999);
+            if self.depth < old {
+                self.ranks[here.cid] = self.depth;
+            }
         }
+        if self.depth >= self.max_depth {
+            disengage;
+        }
+        nxt = self.depth + 1;
+        kids: list[Entity] = [here ->:Relates:->][?:Entity];
+        for kid in kids {
+            kid spawn CascadeRank(
+                claimed=self.claimed,
+                max_depth=self.max_depth,
+                depth=nxt,
+                start_id=self.start_id,
+                ranks=self.ranks,
+            );
+        }
+        disengage;
     }
 }
 
-def dfs_closure(g: brain_graph, start: str) -> list[str] {
-    src = get_entity(g, start);
-    if src is None {
+def new_graph() -> Entity {
+    graph_root = Entity(cid="__graph__", label="local");
+    root ++> graph_root;
+    return graph_root;
+}
+
+def ensure_entity(graph_root: Entity, node_id: str, label: str = "") -> Entity {
+    hit = lookup_entity(graph_root, node_id);
+    if hit is not None {
+        return hit;
+    }
+    nd = Entity(cid=node_id, label=label);
+    graph_root ++> nd;
+    return nd;
+}
+
+def seed_graph(
+    graph_root: Entity,
+    edges: list[tuple[str, str, str]] | None = None,
+) -> None {
+    rows: list[tuple[str, str, str]] = edges if edges is not None else [];
+    for row in rows {
+        src_id = row[0];
+        dst_id = row[1];
+        rel_type = row[2];
+        ensure_entity(graph_root, src_id);
+        ensure_entity(graph_root, dst_id);
+        add_link(graph_root, src_id, dst_id, rel_type);
+    }
+}
+
+def explain_trace_order(
+    graph_root: Entity,
+    start_id: str,
+    max_depth: int = 10,
+) -> list[str] {
+    start = lookup_entity(graph_root, start_id);
+    if start is None {
         return [];
     }
-    w = src spawn Dfs(claimed={});
-    return sorted(w.order);
+    w = start spawn ExplainTrace(
+        claimed={},
+        max_depth=max_depth,
+        depth=0,
+        order=[],
+    );
+    print ["trace_done", start_id, len(w.order)];
+    return w.order;
 }
 
-def local_rank(g: brain_graph, start: str, max_depth: int) -> dict[str, float] {
-    src = get_entity(g, start);
-    if src is None {
+def bfs_reachable(
+    graph_root: Entity,
+    start_id: str,
+    max_depth: int = 2,
+) -> list[str] {
+    start = lookup_entity(graph_root, start_id);
+    if start is None {
+        return [];
+    }
+    w = start spawn BfsReach(
+        claimed={},
+        max_depth=max_depth,
+        depth=0,
+        start_id=start_id,
+        found=[],
+    );
+    print ["bfs_done", start_id, len(w.found)];
+    return sorted(w.found);
+}
+
+def shortest_explain_path(
+    graph_root: Entity,
+    start_id: str,
+    end_id: str,
+    max_depth: int = 10,
+) -> list[str] | None {
+    start = lookup_entity(graph_root, start_id);
+    end = lookup_entity(graph_root, end_id);
+    if start is None or end is None {
+        return None;
+    }
+    if start_id == end_id {
+        return [start_id];
+    }
+    w = start spawn ShortestPath(
+        claimed={},
+        max_depth=max_depth,
+        depth=0,
+        end_id=end_id,
+        parent={start_id: start_id},
+        hit=False,
+    );
+    if not w.hit {
+        return None;
+    }
+    path_rev: list[str] = [];
+    cur_id = end_id;
+    while cur_id != start_id {
+        path_rev.append(cur_id);
+        if cur_id not in w.parent {
+            return None;
+        }
+        cur_id = w.parent[cur_id];
+    }
+    path_rev.append(start_id);
+    return reverse_ids(path_rev);
+}
+
+def cascade_rank(
+    graph_root: Entity,
+    start_id: str,
+    max_depth: int = 3,
+) -> dict[str, int] {
+    start = lookup_entity(graph_root, start_id);
+    if start is None {
         return {};
     }
-    scores: dict[str, float] = {};
-    w = src spawn Bfs(max_depth=max_depth, claimed={});
-    # deterministic one-score-per-hop: nearer nodes score higher
-    for i in range(len(w.order)) {
-        eid = w.order[i];
-        if eid != start {
-            scores[eid] = 1.0 / float(i + 1);
-        }
-    }
-    return scores;
+    w = start spawn CascadeRank(
+        claimed={},
+        max_depth=max_depth,
+        depth=0,
+        start_id=start_id,
+        ranks={},
+    );
+    print ["cascade_done", start_id, len(w.ranks)];
+    return w.ranks;
 }
 
-test "bfs_unknown_start" {
-    g = brain_graph();
-    assert bfs_closure(g, "nope", 2) == [];
+test "explain_trace_order_join_tree" {
+    g = new_graph();
+    seed_graph(
+        g,
+        [
+            ("join", "left", "relates"),
+            ("join", "right", "relates"),
+            ("join", "leaf", "relates"),
+        ],
+    );
+    ot = explain_trace_order(g, "join", 5);
+    assert ot == ["join", "leaf", "left", "right"];
 }
 
-test "bfs_depth_limit" {
-    g = brain_graph();
-    add_entity(g, "a", "A");
-    add_entity(g, "b", "B");
-    add_entity(g, "c", "C");
-    add_entity(g, "d", "D");
-    assert link(g, "a", "b", "rel", 1.0);
-    assert link(g, "b", "c", "rel", 1.0);
-    assert link(g, "c", "d", "rel", 1.0);
-    assert bfs_closure(g, "a", 2) == ["a", "b", "c"];
-    assert bfs_closure(g, "a", 5) == ["a", "b", "c", "d"];
-    assert dfs_closure(g, "a") == ["a", "b", "c", "d"];
+test "shortest_path_known_route" {
+    g = new_graph();
+    seed_graph(
+        g,
+        [
+            ("s", "m", "relates"),
+            ("m", "t", "relates"),
+        ],
+    );
+    assert shortest_explain_path(g, "s", "t", 5) == ["s", "m", "t"];
 }
 
-test "bfs_cycle_terminates" {
-    g = brain_graph();
-    add_entity(g, "a", "A");
-    add_entity(g, "b", "B");
-    assert link(g, "a", "b", "rel", 1.0);
-    assert link(g, "b", "a", "rel", 1.0);
-    assert bfs_closure(g, "a", 10) == ["a", "b"];
-    assert dfs_closure(g, "a") == ["a", "b"];
+test "shortest_path_unknown_end_returns_none" {
+    g = new_graph();
+    seed_graph(g, [("s", "m", "relates")]);
+    assert shortest_explain_path(g, "s", "missing", 5) is None;
 }
 
-test "link_unknown_returns_false" {
-    g = brain_graph();
-    add_entity(g, "a", "A");
-    assert link(g, "a", "ghost", "rel", 1.0) == False;
-    assert link(g, "ghost", "a", "rel", 1.0) == False;
+test "cascade_rank_cycle_skips_without_truncating_closure" {
+    g = new_graph();
+    seed_graph(
+        g,
+        [
+            ("a", "b", "relates"),
+            ("b", "a", "relates"),
+            ("a", "c", "relates"),
+        ],
+    );
+    ranks = cascade_rank(g, "a", 3);
+    assert ranks["b"] == 1;
+    assert ranks["c"] == 1;
 }
 
-test "local_rank_scores" {
-    g = brain_graph();
-    add_entity(g, "a", "A");
-    add_entity(g, "b", "B");
-    add_entity(g, "c", "C");
-    assert link(g, "a", "b", "rel", 1.0);
-    assert link(g, "a", "c", "rel", 1.0);
-    r = local_rank(g, "a", 1);
-    assert "a" not in r;
-    assert r["b"] == 0.5 and r["c"] == 0.5;
-    r2 = local_rank(g, "zz", 2);
-    assert len(r2) == 0;
+test "bfs_zero_depth_excludes_neighbors" {
+    g = new_graph();
+    seed_graph(g, [("x", "y", "relates")]);
+    assert bfs_reachable(g, "x", 0) == [];
+}
+
+test "bfs_depth_one_includes_direct_neighbor" {
+    g = new_graph();
+    seed_graph(
+        g,
+        [
+            ("x", "y", "relates"),
+            ("y", "z", "relates"),
+        ],
+    );
+    assert bfs_reachable(g, "x", 1) == ["y"];
 }

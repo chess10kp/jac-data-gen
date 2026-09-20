@@ -51,8 +51,7 @@ def load_entities(
         }
     }
     for (name, role) in roles {
-        nd: Entity | None = store.entities.get(name, None);
-        if nd is not None { nd.role = role; }
+        if name in store.entities { store.entities[name].role = role; }
     }
     for (child, parent) in parent_edges {
         c = store.entities.get(child, None);
@@ -93,8 +92,7 @@ def entity_role(store: EntityStore, name: str) -> str | None {
     nd = store.entities.get(name, None);
     if nd is None { return None; }
     return nd.role;
-}
-test "intersphinx hierarchy" {
+}test "intersphinx hierarchy" {
     store = load_entities(
         ["lsst.afw", "lsst.afw.table", "lsst.afw.table.SourceCatalog"],
         [("lsst.afw.table.SourceCatalog", "class"), ("lsst.afw.table", "module")],

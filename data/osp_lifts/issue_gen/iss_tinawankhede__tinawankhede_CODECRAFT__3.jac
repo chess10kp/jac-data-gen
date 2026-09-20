@@ -1,104 +1,124 @@
-node GraphNode {
-    has id: str;
+"""tinawankhede/tinawankhede_CODECRAFT#3 — DFS on an adjacency-list graph."""
+
+node Vertex {
+    has vid: str;
+    has nbr_ids: list[str] = [];
 }
 
 edge Link {}
 
-# build the sample graph from the issue, returns root node handle
-def build_graph(adj: dict[str, list[str]]) -> GraphNode | None {
-    nodes: dict[str, GraphNode] = {};
-    ids: list[str] = sorted(adj.keys());
-    for k in ids {
-        nodes[k] = GraphNode(id=k);
-    }
-    created: set[tuple] = set();
-    anchor: GraphNode | None = None;
-    for k in ids {
-        if anchor is None {
-            anchor = nodes[k];
+walker DfsWalker {
+    has claimed: dict[str, bool] = {};
+    has order: list[str] = [];
+    has node_map: dict[str, Vertex] = {};
+
+    can step with Vertex entry {
+        if here.vid in self.claimed {
+            skip;
         }
-        for nb in adj[k] {
-            if nodes.get(nb) is None {
-                continue;
-            }
-            pair: tuple = (k, nb);
-            if pair not in created {
-                nodes[k] +>:Link:+> nodes[nb];
-                created.add(pair);
+        self.claimed[here.vid] = True;
+        self.order.append(here.vid);
+        print(here.vid);
+        kids: list[Vertex] = [];
+        for nb_id in here.nbr_ids {
+            if nb_id in self.node_map {
+                ch = self.node_map[nb_id];
+                kids.append(ch);
             }
         }
+        rev: list[Vertex] = [];
+        idx = len(kids) - 1;
+        while idx >= 0 {
+            rev.append(kids[idx]);
+            idx = idx - 1;
+        }
+        visit :0: rev else {
+            disengage;
+        }
     }
-    return anchor;
 }
 
-# public API: DFS traversal order as list of ids, matching issue's dfs()
-def dfs(graph_root: GraphNode, start: str) -> list[str] {
-    starts: list[GraphNode] = [graph_root];
-    match: GraphNode | None = None;
-    for s in starts {
-        if s.id == start {
-            match = s;
+walker BootWalker {
+    can boot with Vertex entry {
+        sample: dict[str, list[str]] = {
+            "A": ["B", "C"],
+            "B": ["A", "D", "E"],
+            "C": ["A", "F"],
+            "D": ["B"],
+            "E": ["B", "F"],
+            "F": ["C", "E"],
+        };
+        print("Depth-First Search starting from vertex A:");
+        dfs(sample, "A");
+        disengage;
+    }
+}
+
+def build_node_map(adj: dict[str, list[str]]) -> dict[str, Vertex] {
+    nodes: dict[str, Vertex] = {};
+    keys: list[str] = sorted(adj.keys());
+    for k in keys {
+        if k not in nodes {
+            nbrs: list[str] = adj[k];
+            nd = Vertex(vid=k, nbr_ids=nbrs);
+            root ++> nd;
+            nodes[k] = nd;
         }
     }
-    if match is None {
+    for k in keys {
+        nbr_list: list[str] = adj[k];
+        for nb in nbr_list {
+            if nb not in nodes {
+                empty: list[str] = [];
+                if nb in adj {
+                    empty = adj[nb];
+                }
+                nd2 = Vertex(vid=nb, nbr_ids=empty);
+                root ++> nd2;
+                nodes[nb] = nd2;
+            }
+        }
+    }
+    for k in keys {
+        src = nodes[k];
+        dst_ids: list[str] = adj[k];
+        for dst_id in dst_ids {
+            if dst_id in nodes {
+                dst = nodes[dst_id];
+                src +>:Link:+> dst;
+            }
+        }
+    }
+    return nodes;
+}
+
+def dfs(
+    graph: dict[str, list[str]],
+    start: str,
+    visited: dict[str, bool] | None = None,
+) -> list[str] {
+    nodes = build_node_map(graph);
+    if start not in nodes {
         return [];
     }
-    w = match spawn GraphWalker(order=[], claimed={});
+    seed: dict[str, bool] = {};
+    if visited is not None {
+        for vk in visited {
+            seed[vk] = visited[vk];
+        }
+    }
+    start_nd = nodes[start];
+    w = start_nd spawn DfsWalker(claimed=seed, node_map=nodes, order=[]);
+    if visited is not None {
+        for ck in w.claimed {
+            visited[ck] = w.claimed[ck];
+        }
+    }
     return w.order;
 }
 
-walker GraphWalker {
-    has order: list[str] = [];
-    has claimed: dict[str, bool] = {};
-
-    can step with GraphNode entry {
-        if here.id in self.claimed {
-            skip;
-        }
-        self.claimed[here.id] = True;
-        self.order.append(here.id);
-        kids: list[GraphNode] = [];
-        for e in [here ->:Link:->] {
-            for t in [e ->] {
-                kids.append(t);
-            }
-        }
-        kids = sort_nodes(kids);
-        if len(kids) == 0 {
-            disengage;
-        }
-        visit kids;
-    }
-}
-
-# deterministic neighbor ordering
-def sort_nodes(ns: list[GraphNode]) -> list[GraphNode] {
-    res: list[GraphNode] = [];
-    keys: list[str] = [];
-    lookup: dict[str, GraphNode] = {};
-    for n in ns {
-        keys.append(n.id);
-        lookup[n.id] = n;
-    }
-    for k in sorted(keys) {
-        res.append(lookup[k]);
-    }
-    return res;
-}
-
 with entry {
-    adj = {
-        "A": ["B", "C"],
-        "B": ["A", "D", "E"],
-        "C": ["A", "F"],
-        "D": ["B"],
-        "E": ["B", "F"],
-        "F": ["C", "E"],
-    };
-    g = build_graph(adj);
-    if g is not None {
-        order = dfs(g, "A");
-        print("Depth-First Search starting from vertex A:");
-        print(" ".join(order));
-    }
+    boot_nd = Vertex(vid="__boot__", nbr_ids=[]);
+    root ++> boot_nd;
+    wk = boot_nd spawn BootWalker;
 }

@@ -1,168 +1,276 @@
+"""nuxt-contrib/vue-bundle-renderer#398 — precomputeDependencies style closure under import cycles."""
+
 node Chunk {
     has cid: str;
-    has file: str;
-    has resourceType: str;
-    has css: list[str] = [];
+    has file: str = "";
+    has resource_type: str = "script";
+    has css_ids: list[str] = [];
 }
 
-edge Import {}
+edge Imports {}
 
-node ManifestGraph {
-    has chunks: dict[str, Chunk] = {};
+node GraphHub {
+    has by_id: dict[str, Chunk] = {};
 }
 
-walker DependencyWalk {
+walker DepStyleWalk {
     has claimed: dict[str, bool] = {};
-    has scripts: dict[str, bool] = {};
     has styles: dict[str, bool] = {};
-    has preload: dict[str, bool] = {};
-    has prefetch: dict[str, bool] = {};
 
-    can step with Chunk entry {
+    can walk with Chunk entry {
         if here.cid in self.claimed {
             skip;
         }
         self.claimed[here.cid] = True;
-
-        if here.resourceType == "script" {
-            self.scripts[here.file] = True;
+        for css_id in here.css_ids {
+            self.styles[css_id] = True;
         }
-        if here.resourceType == "style" {
-            self.styles[here.file] = True;
+        kids: list[Chunk] = [];
+        for ch in [here ->:Imports:->][?:Chunk] {
+            kids.append(ch);
         }
-        for css_file in here.css {
-            self.styles[css_file] = True;
-        }
-        print(here.cid);
-
-        for child in [here ->:Import:->][?:Chunk] {
-            visit :0: [child];
-        }
+        visit :0: kids else {
+            disengage;
+        };
+        print(here.cid, len(self.styles));
     }
 }
 
-def precomputeDependencies(
-    manifest: dict[str, dict[str, any]]
-) -> dict[str, any] {
-    graph_node = ManifestGraph();
+def empty_dep_bundle() -> dict {
+    scripts: dict[str, bool] = {};
+    styles: dict[str, bool] = {};
+    preload: dict[str, bool] = {};
+    prefetch: dict[str, bool] = {};
+    return {
+        "scripts": scripts,
+        "styles": styles,
+        "preload": preload,
+        "prefetch": prefetch,
+    };
+}
 
-    for module_id in manifest {
-        meta: dict[str, any] = manifest[module_id] as dict[str, any];
-        file_name: str = meta["file"] as str;
-        resource_type: str = meta["resourceType"] as str;
-        css_files: list[str] = [];
-        imports: list[str] = [];
-
+def build_graph(manifest: dict) -> GraphHub {
+    hub = GraphHub(by_id={});
+    for cid in manifest {
+        meta = manifest[cid] as dict;
+        file_name: str = "";
+        if "file" in meta {
+            file_name = str(meta["file"]);
+        }
+        rtype: str = "script";
+        if "resourceType" in meta {
+            rtype = str(meta["resourceType"]);
+        }
+        css_ids: list[str] = [];
         if "css" in meta {
-            css_files = meta["css"] as list[str];
+            raw_css = meta["css"] as list;
+            for item in raw_css {
+                css_ids.append(str(item));
+            }
         }
-        if "imports" in meta {
-            imports = meta["imports"] as list[str];
-        }
-
-        chunk = Chunk(
-            cid=module_id,
+        nd = Chunk(
+            cid=str(cid),
             file=file_name,
-            resourceType=resource_type,
-            css=css_files
+            resource_type=rtype,
+            css_ids=css_ids,
         );
-        graph_node.chunks[module_id] = chunk;
+        hub.by_id[str(cid)] = nd;
+        root ++> nd;
     }
-
-    for module_id in manifest {
-        meta: dict[str, any] = manifest[module_id] as dict[str, any];
-        imports: list[str] = [];
-        if "imports" in meta {
-            imports = meta["imports"] as list[str];
+    for cid in manifest {
+        meta = manifest[cid] as dict;
+        if "imports" not in meta {
+            continue;
         }
-
-        source: Chunk = graph_node.chunks[module_id];
-        for imported_id in imports {
-            if imported_id in graph_node.chunks {
-                target: Chunk = graph_node.chunks[imported_id];
-                source +>:Import:+> target;
+        src = hub.by_id[str(cid)];
+        imports_list = meta["imports"] as list;
+        for imp in imports_list {
+            imp_id = str(imp);
+            if imp_id in hub.by_id {
+                dst = hub.by_id[imp_id];
+                src +>:Imports:+> dst;
             }
         }
     }
+    return hub;
+}
 
-    dependencies: dict[str, dict[str, any]] = {};
-    for module_id in manifest {
-        w = graph_node.chunks[module_id] spawn DependencyWalk(claimed={});
-        dependency: dict[str, any] = {};
-        dependency["scripts"] = w.scripts;
-        dependency["styles"] = w.styles;
-        dependency["preload"] = w.preload;
-        dependency["prefetch"] = w.prefetch;
-        dependencies[module_id] = dependency;
+def styles_for_chunk(hub: GraphHub, cid: str) -> dict[str, bool] {
+    if cid not in hub.by_id {
+        return {};
     }
+    start = hub.by_id[cid];
+    w = start spawn DepStyleWalk(claimed={}, styles={});
+    return w.styles;
+}
 
+def precompute_dependencies(manifest: dict) -> dict {
+    hub = build_graph(manifest);
+    dependencies: dict = {};
+    for mid in manifest {
+        bundle = empty_dep_bundle();
+        collected = styles_for_chunk(hub, str(mid));
+        slot = bundle["styles"] as dict[str, bool];
+        for sk in collected {
+            slot[str(sk)] = True;
+        }
+        dependencies[str(mid)] = bundle;
+    }
     return {"dependencies": dependencies};
 }
 
-test "cycle_styles_are_order_independent" {
-    manifest_a: dict[str, dict[str, any]] = {};
-    manifest_a["a.js"] = {"file": "a.js", "resourceType": "script", "css": [], "imports": ["_shared.js"]};
-    manifest_a["_shared.js"] = {"file": "shared.js", "resourceType": "script", "css": ["shared.css"], "imports": ["b.js"]};
-    manifest_a["b.js"] = {"file": "b.js", "resourceType": "script", "css": [], "imports": ["a.js"]};
-    manifest_a["shared.css"] = {"file": "shared.css", "resourceType": "style", "css": [], "imports": []};
-
-    out_a = precomputeDependencies(manifest_a);
-    deps_a: dict[str, dict[str, any]] = out_a["dependencies"] as dict[str, dict[str, any]];
-    assert ("shared.css" in (deps_a["a.js"]["styles"] as dict[str, bool]));
-    assert ("shared.css" in (deps_a["_shared.js"]["styles"] as dict[str, bool]));
-    assert ("shared.css" in (deps_a["b.js"]["styles"] as dict[str, bool]));
-
-    manifest_b: dict[str, dict[str, any]] = {};
-    manifest_b["b.js"] = {"file": "b.js", "resourceType": "script", "css": [], "imports": ["a.js"]};
-    manifest_b["a.js"] = {"file": "a.js", "resourceType": "script", "css": [], "imports": ["_shared.js"]};
-    manifest_b["_shared.js"] = {"file": "shared.js", "resourceType": "script", "css": ["shared.css"], "imports": ["b.js"]};
-    manifest_b["shared.css"] = {"file": "shared.css", "resourceType": "style", "css": [], "imports": []};
-
-    out_b = precomputeDependencies(manifest_b);
-    deps_b: dict[str, dict[str, any]] = out_b["dependencies"] as dict[str, dict[str, any]];
-    assert ("shared.css" in (deps_b["a.js"]["styles"] as dict[str, bool]));
-    assert ("shared.css" in (deps_b["_shared.js"]["styles"] as dict[str, bool]));
-    assert ("shared.css" in (deps_b["b.js"]["styles"] as dict[str, bool]));
+test "cycle_key_order_a_shared_b" {
+    manifest: dict = {};
+    manifest["a.js"] = {
+        "file": "a.js",
+        "resourceType": "script",
+        "imports": ["_shared.js"],
+    };
+    manifest["_shared.js"] = {
+        "file": "shared.js",
+        "resourceType": "script",
+        "css": ["shared.css"],
+        "imports": ["b.js"],
+    };
+    manifest["b.js"] = {
+        "file": "b.js",
+        "resourceType": "script",
+        "imports": ["a.js"],
+    };
+    manifest["shared.css"] = {
+        "file": "shared.css",
+        "resourceType": "style",
+    };
+    out = precompute_dependencies(manifest);
+    deps = out["dependencies"] as dict;
+    b_styles = deps["b.js"]["styles"] as dict;
+    keys: list[str] = [];
+    for k in b_styles {
+        keys.append(str(k));
+    }
+    assert (sorted(keys) == ["shared.css"]);
 }
 
-test "diamond_revisit_keeps_transitive_styles" {
-    manifest: dict[str, dict[str, any]] = {};
-    manifest["root.js"] = {"file": "root.js", "resourceType": "script", "css": [], "imports": ["left.js", "right.js"]};
-    manifest["left.js"] = {"file": "left.js", "resourceType": "script", "css": [], "imports": ["shared.js"]};
-    manifest["right.js"] = {"file": "right.js", "resourceType": "script", "css": [], "imports": ["shared.js", "tail.js"]};
-    manifest["shared.js"] = {"file": "shared.js", "resourceType": "script", "css": ["diamond.css"], "imports": []};
-    manifest["tail.js"] = {"file": "tail.js", "resourceType": "script", "css": ["tail.css"], "imports": []};
-
-    out = precomputeDependencies(manifest);
-    deps: dict[str, dict[str, any]] = out["dependencies"] as dict[str, dict[str, any]];
-    styles: dict[str, bool] = deps["root.js"]["styles"] as dict[str, bool>;
-    assert ("diamond.css" in styles);
-    assert ("tail.css" in styles);
-    assert (len(styles) == 2);
+test "cycle_key_order_b_a_shared" {
+    manifest: dict = {};
+    manifest["b.js"] = {
+        "file": "b.js",
+        "resourceType": "script",
+        "imports": ["a.js"],
+    };
+    manifest["a.js"] = {
+        "file": "a.js",
+        "resourceType": "script",
+        "imports": ["_shared.js"],
+    };
+    manifest["_shared.js"] = {
+        "file": "shared.js",
+        "resourceType": "script",
+        "css": ["shared.css"],
+        "imports": ["b.js"],
+    };
+    manifest["shared.css"] = {
+        "file": "shared.css",
+        "resourceType": "style",
+    };
+    out = precompute_dependencies(manifest);
+    deps = out["dependencies"] as dict;
+    for cid in ["a.js", "_shared.js", "b.js"] {
+        styles = deps[cid]["styles"] as dict;
+        keys: list[str] = [];
+        for k in styles {
+            keys.append(str(k));
+        }
+        assert (sorted(keys) == ["shared.css"]);
+    }
 }
 
-test "unknown_imports_are_ignored" {
-    manifest: dict[str, dict[str, any]] = {};
-    manifest["entry.js"] = {"file": "entry.js", "resourceType": "script", "css": ["entry.css"], "imports": ["missing.js"]};
-
-    out = precomputeDependencies(manifest);
-    deps: dict[str, dict[str, any]] = out["dependencies"] as dict[str, dict[str, any>>;
-    styles: dict[str, bool] = deps["entry.js"]["styles"] as dict[str, bool>;
-    assert (len(deps) == 1);
-    assert ("entry.css" in styles);
+test "diamond_revisit_before_deep_first_visit" {
+    manifest: dict = {};
+    manifest["d0.js"] = {
+        "file": "d0.js",
+        "resourceType": "script",
+        "imports": ["d2.js", "d1.js"],
+    };
+    manifest["d1.js"] = {
+        "file": "d1.js",
+        "resourceType": "script",
+        "imports": ["d3.js"],
+    };
+    manifest["d2.js"] = {
+        "file": "d2.js",
+        "resourceType": "script",
+        "imports": ["d3.js"],
+    };
+    manifest["d3.js"] = {
+        "file": "d3.js",
+        "resourceType": "script",
+        "css": ["d.css"],
+        "imports": [],
+    };
+    out = precompute_dependencies(manifest);
+    deps = out["dependencies"] as dict;
+    d0_styles = deps["d0.js"]["styles"] as dict;
+    keys: list[str] = [];
+    for k in d0_styles {
+        keys.append(str(k));
+    }
+    assert (sorted(keys) == ["d.css"]);
 }
 
-test "empty_and_self_cycle_inputs_are_safe" {
-    empty: dict[str, dict[str, any]] = {};
-    empty_out = precomputeDependencies(empty);
-    empty_deps: dict[str, dict[str, any]] = empty_out["dependencies"] as dict[str, dict[str, any>>;
-    assert (len(empty_deps) == 0);
+test "unknown_import_id_tolerated" {
+    manifest: dict = {};
+    manifest["lonely.js"] = {
+        "file": "lonely.js",
+        "resourceType": "script",
+        "imports": ["missing.js"],
+    };
+    out = precompute_dependencies(manifest);
+    deps = out["dependencies"] as dict;
+    assert ("lonely.js" in deps);
+    lonely = deps["lonely.js"] as dict;
+    styles = lonely["styles"] as dict;
+    assert (len(styles) == 0);
+}
 
-    self_cycle: dict[str, dict[str, any]] = {};
-    self_cycle["loop.js"] = {"file": "loop.js", "resourceType": "script", "css": ["loop.css"], "imports": ["loop.js"]};
-    loop_out = precomputeDependencies(self_cycle);
-    loop_deps: dict[str, dict[str, any]] = loop_out["dependencies"] as dict[str, dict[str, any>>;
-    loop_styles: dict[str, bool] = loop_deps["loop.js"]["styles"] as dict[str, bool>;
-    assert ("loop.css" in loop_styles);
-    assert (len(loop_styles) == 1);
+test "parent_styles_superset_of_each_import" {
+    manifest: dict = {};
+    manifest["a.js"] = {
+        "file": "a.js",
+        "resourceType": "script",
+        "imports": ["_shared.js"],
+    };
+    manifest["_shared.js"] = {
+        "file": "shared.js",
+        "resourceType": "script",
+        "css": ["shared.css"],
+        "imports": ["b.js"],
+    };
+    manifest["b.js"] = {
+        "file": "b.js",
+        "resourceType": "script",
+        "imports": ["a.js"],
+    };
+    manifest["shared.css"] = {
+        "file": "shared.css",
+        "resourceType": "style",
+    };
+    out = precompute_dependencies(manifest);
+    deps = out["dependencies"] as dict;
+    for cid in ["a.js", "_shared.js", "b.js"] {
+        parent_styles = deps[cid]["styles"] as dict;
+        meta = manifest[cid] as dict;
+        imports_list = meta["imports"] as list;
+        for imp in imports_list {
+            imp_id = str(imp);
+            child_styles = deps[imp_id]["styles"] as dict;
+            child_keys: list[str] = [];
+            for ck in child_styles {
+                child_keys.append(str(ck));
+            }
+            for ck in child_keys {
+                assert (ck in parent_styles);
+            }
+        }
+    }
 }

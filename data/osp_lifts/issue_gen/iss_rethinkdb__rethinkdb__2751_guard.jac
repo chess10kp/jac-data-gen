@@ -1,138 +1,395 @@
-# Recursive query lift: rethinkdb/rethinkdb#2751
-# Idiomatic OSP tree build + recursive getChildren traversal.
+"""rethinkdb/rethinkdb#2751 — Recursive queries populate a node tree."""
 
-node Node {
-    has id: int;
-    has name: str;
-    has parent_id: int = 0;
+node NRec {
+    has nid: int;
+    has title: str = "";
 }
 
-edge ChildTo {
-    has parent_id: int;
-}
+edge PEdge {}
 
-# build tree from parent rows; unknown parentId entries are tolerated (dropped)
-def build_tree(rows: list[dict]) -> dict[int, Node] {
-    made: dict[int, Node] = {};
-    for r in rows {
-        made[r["id"]] = Node(id=r["id"], name=r["name"], parent_id=r.get("parentId", 0));
-    }
-    for r in rows {
-        if r.get("parentId") is not None and r["parentId"] in made {
-            made[r["parentId"]] +>:ChildTo(parent_id=r["parentId"]):+> made[r["id"]];
-        }
-    }
-    root ++> made[rows[0]["id"]];
-    return made;
-}
-
-walker GetChildren {
+walker TreePop {
     has claimed: dict[int, bool] = {};
-    has found: list[dict] = [];
+    has built: dict[int, dict] = {};
 
-    can step with Node entry {
-        if here.id in self.claimed {
+    can walk with NRec entry {
+        if here.nid in self.claimed {
             skip;
         }
-        self.claimed[here.id] = True;
-        self.found.append({"id": here.id, "name": here.name, "parent_id": here.parent_id});
-        kids: list[Node] = [here ->:ChildTo:->][?:Node];
-        kids = sorted(kids, key=lambda n: n.id);
-        visit kids;
+        self.claimed[here.nid] = True;
+        ch_nodes: list[NRec] = [here ->:PEdge:->][?:NRec];
+        id_buf: list[int] = [];
+        for cn in ch_nodes {
+            id_buf.append(cn.nid);
+        }
+        id_buf = sorted(id_buf);
+        ordered: list[NRec] = [];
+        for want in id_buf {
+            for cn in ch_nodes {
+                if cn.nid == want {
+                    ordered.append(cn);
+                }
+            }
+        }
+        child_dicts: list[dict] = [];
+        for cn in ordered {
+            if cn.nid in self.built {
+                child_dicts.append(self.built[cn.nid]);
+            } else {
+                wk = cn spawn TreePop(claimed=self.claimed, built=self.built);
+                if cn.nid in self.built {
+                    child_dicts.append(self.built[cn.nid]);
+                }
+            }
+        }
+        row: dict = {};
+        row["id"] = here.nid;
+        row["title"] = here.title;
+        row["children"] = child_dicts;
+        self.built[here.nid] = row;
+        print("populated", here.nid);
     }
 }
 
-# public API: recursively collect node and all descendants (getChildren)
-def get_children(root_node: Node) -> list[dict] {
-    wk = root_node spawn GetChildren(claimed={});
-    out: list[dict] = [];
-    for d in wk.found {
-        out.append(d);
+def make_store(rows: list, extra_links: list | None = None) -> dict {
+    st: dict = {};
+    st["rows"] = rows;
+    links: list = [];
+    if extra_links is not None {
+        links = extra_links;
     }
-    return sorted(out, key=lambda d: d["id"]);
+    st["extra_links"] = links;
+    return st;
 }
 
-# depth-first listing order (parent before children)
-def get_children_dfs(root_node: Node) -> list[int] {
-    wk = root_node spawn GetChildren(claimed={});
-    ids: list[int] = [];
-    for d in wk.found {
-        ids.append(d["id"]);
+def get_node(store: dict, node_id: int) -> dict | None {
+    rows: list = store["rows"] as list;
+    for raw in rows {
+        r: dict = raw as dict;
+        rid: int = r["id"] as int;
+        if rid == node_id {
+            return r;
+        }
     }
-    return ids;
+    return None;
 }
 
-with entry {
-    rows: list[dict] = [
-        {"id": 1, "name": "a", "parentId": None},
-        {"id": 2, "name": "b", "parentId": 1},
-        {"id": 3, "name": "c", "parentId": 1},
-        {"id": 4, "name": "d", "parentId": 2},
-        {"id": 5, "name": "e", "parentId": 3},
-    ];
-    idx = build_tree(rows);
-    wk = idx[1] spawn GetChildren(claimed={});
-    print(sorted(wk.found, key=lambda d: d["id"]));
-}
-
-test "recursive_diamond_revisit" {
-    rows: list[dict] = [
-        {"id": 1, "name": "r", "parentId": None},
-        {"id": 2, "name": "l", "parentId": 1},
-        {"id": 3, "name": "rr", "parentId": 1},
-        {"id": 4, "name": "diamond", "parentId": 2},
-        {"id": 9, "name": "x", "parentId": 9},
-    ];
-    # adversarial: insert diamond child edge late, revisit must not duplicate
-    idx = build_tree(rows);
-    # add extra edge so node 4 reachable from two parents
-    res = get_children(idx[1]);
-    assert len(res) == 4;
-    assert res[0] == {"id": 1, "name": "r", "parent_id": 0} or res[0]["id"] == 1;;
-}
-
-test "adversarial_edge_order_diamond" {
-    rows: list[dict] = [
-        {"id": 1, "name": "r", "parentId": None},
-        {"id": 5, "name": "deep", "parentId": 2},
-        {"id": 2, "name": "a", "parentId": 1},
-        {"id": 3, "name": "b", "parentId": 1},
-        {"id": 5, "name": "deep", "parentId": 3},
-    ];
-    idx = build_tree(rows);
-    # duplicate row for 5: first edge wins, second dropped (dict overwrite)
-    res = get_children_dfs(idx[1]);
-    assert sorted(res) == [1, 2, 3, 5];;
-}
-
-test "leaf_returns_self_only" {
-    rows: list[dict] = [
-        {"id": 7, "name": "solo", "parentId": None},
-    ];
-    idx = build_tree(rows);
-    res = get_children(idx[7]);
-    assert len(res) == 1 and res[0]["id"] == 7;;
-}
-
-test "deep_chain_recursive" {
-    rows: list[dict] = [];
-    rows.append({"id": 1, "name": "n1", "parentId": None});
-    for i in range(2, 6) {
-        rows.append({"id": i, "name": "n" + str(i), "parentId": i - 1});
+def children_of(store: dict, parent_id: int) -> list[int] {
+    rows: list = store["rows"] as list;
+    out: list[int] = [];
+    for raw in rows {
+        r: dict = raw as dict;
+        pid = r["parentId"];
+        if pid is not None {
+            if (pid as int) == parent_id {
+                out.append(r["id"] as int);
+            }
+        }
     }
-    idx = build_tree(rows);
-    res = get_children_dfs(idx[1]);
-    assert res == [1, 2, 3, 4, 5];;
+    links: list = store["extra_links"] as list;
+    for raw in links {
+        lk: list = raw as list;
+        par: int = lk[0] as int;
+        ch: int = lk[1] as int;
+        if par == parent_id {
+            out.append(ch);
+        }
+    }
+    out = sorted(out);
+    return out;
 }
 
-test "orphan_rows_dropped_tolerantly" {
-    rows: list[dict] = [
-        {"id": 1, "name": "root", "parentId": None},
-        {"id": 2, "name": "child", "parentId": 1},
-        {"id": 99, "name": "orphan", "parentId": 42},
+def _materialize(store: dict) -> dict[int, NRec] {
+    rows: list = store["rows"] as list;
+    idx: dict[int, NRec] = {};
+    for raw in rows {
+        r: dict = raw as dict;
+        nid: int = r["id"] as int;
+        t: str = "";
+        if "title" in r {
+            t = r["title"] as str;
+        }
+        nd = NRec(nid=nid, title=t);
+        root ++> nd;
+        idx[nid] = nd;
+    }
+    for raw in rows {
+        r: dict = raw as dict;
+        pid = r["parentId"];
+        if pid is not None {
+            p: int = pid as int;
+            c: int = r["id"] as int;
+            if p in idx {
+                if c in idx {
+                    idx[p] +>:PEdge:+> idx[c];
+                }
+            }
+        }
+    }
+    links: list = store["extra_links"] as list;
+    for raw in links {
+        lk: list = raw as list;
+        p: int = lk[0] as int;
+        c: int = lk[1] as int;
+        if p in idx {
+            if c in idx {
+                idx[p] +>:PEdge:+> idx[c];
+            }
+        }
+    }
+    return idx;
+}
+
+def populate_tree(store: dict, node_id: int) -> dict | None {
+    if get_node(store, node_id) is None {
+        return None;
+    }
+    idx: dict[int, NRec] = _materialize(store);
+    if node_id not in idx {
+        return None;
+    }
+    start = idx[node_id];
+    wk = start spawn TreePop(claimed={}, built={});
+    if node_id in wk.built {
+        return wk.built[node_id];
+    }
+    return None;
+}
+
+"""rethinkdb/rethinkdb#2751 — Recursive queries populate a node tree."""
+
+node NRec {
+    has nid: int;
+    has title: str = "";
+}
+
+edge PEdge {}
+
+walker TreePop {
+    has claimed: dict[int, bool] = {};
+    has built: dict[int, dict] = {};
+
+    can walk with NRec entry {
+        if here.nid in self.claimed {
+            skip;
+        }
+        self.claimed[here.nid] = True;
+        ch_nodes: list[NRec] = [here ->:PEdge:->][?:NRec];
+        id_buf: list[int] = [];
+        for cn in ch_nodes {
+            id_buf.append(cn.nid);
+        }
+        id_buf = sorted(id_buf);
+        ordered: list[NRec] = [];
+        for want in id_buf {
+            for cn in ch_nodes {
+                if cn.nid == want {
+                    ordered.append(cn);
+                }
+            }
+        }
+        child_dicts: list[dict] = [];
+        for cn in ordered {
+            if cn.nid in self.built {
+                child_dicts.append(self.built[cn.nid]);
+            } else {
+                wk = cn spawn TreePop(claimed=self.claimed, built=self.built);
+                if cn.nid in self.built {
+                    child_dicts.append(self.built[cn.nid]);
+                }
+            }
+        }
+        row: dict = {};
+        row["id"] = here.nid;
+        row["title"] = here.title;
+        row["children"] = child_dicts;
+        self.built[here.nid] = row;
+        print("populated", here.nid);
+    }
+}
+
+def make_store(rows: list, extra_links: list | None = None) -> dict {
+    st: dict = {};
+    st["rows"] = rows;
+    links: list = [];
+    if extra_links is not None {
+        links = extra_links;
+    }
+    st["extra_links"] = links;
+    return st;
+}
+
+def get_node(store: dict, node_id: int) -> dict | None {
+    rows: list = store["rows"] as list;
+    for raw in rows {
+        r: dict = raw as dict;
+        rid: int = r["id"] as int;
+        if rid == node_id {
+            return r;
+        }
+    }
+    return None;
+}
+
+def children_of(store: dict, parent_id: int) -> list[int] {
+    rows: list = store["rows"] as list;
+    out: list[int] = [];
+    for raw in rows {
+        r: dict = raw as dict;
+        pid = r["parentId"];
+        if pid is not None {
+            if (pid as int) == parent_id {
+                out.append(r["id"] as int);
+            }
+        }
+    }
+    links: list = store["extra_links"] as list;
+    for raw in links {
+        lk: list = raw as list;
+        par: int = lk[0] as int;
+        ch: int = lk[1] as int;
+        if par == parent_id {
+            out.append(ch);
+        }
+    }
+    out = sorted(out);
+    return out;
+}
+
+def _materialize(store: dict) -> dict[int, NRec] {
+    rows: list = store["rows"] as list;
+    idx: dict[int, NRec] = {};
+    for raw in rows {
+        r: dict = raw as dict;
+        nid: int = r["id"] as int;
+        t: str = "";
+        if "title" in r {
+            t = r["title"] as str;
+        }
+        nd = NRec(nid=nid, title=t);
+        root ++> nd;
+        idx[nid] = nd;
+    }
+    for raw in rows {
+        r: dict = raw as dict;
+        pid = r["parentId"];
+        if pid is not None {
+            p: int = pid as int;
+            c: int = r["id"] as int;
+            if p in idx {
+                if c in idx {
+                    idx[p] +>:PEdge:+> idx[c];
+                }
+            }
+        }
+    }
+    links: list = store["extra_links"] as list;
+    for raw in links {
+        lk: list = raw as list;
+        p: int = lk[0] as int;
+        c: int = lk[1] as int;
+        if p in idx {
+            if c in idx {
+                idx[p] +>:PEdge:+> idx[c];
+            }
+        }
+    }
+    return idx;
+}
+
+def populate_tree(store: dict, node_id: int) -> dict | None {
+    if get_node(store, node_id) is None {
+        return None;
+    }
+    idx: dict[int, NRec] = _materialize(store);
+    if node_id not in idx {
+        return None;
+    }
+    start = idx[node_id];
+    wk = start spawn TreePop(claimed={}, built={});
+    if node_id in wk.built {
+        return wk.built[node_id];
+    }
+    return None;
+}
+
+test "unknown_returns_none" {
+    rows: list = [{"id": 1, "parentId": None, "title": "solo"}];
+    st = make_store(rows);
+    assert populate_tree(st, 99) is None;
+    assert get_node(st, 99) is None;
+}
+
+test "leaf_empty_children" {
+    rows: list = [{"id": 10, "parentId": None, "title": "leaf"}];
+    st = make_store(rows);
+    tree = populate_tree(st, 10);
+    assert tree is not None;
+    assert tree["id"] == 10;
+    assert tree["title"] == "leaf";
+    ch: list = tree["children"] as list;
+    assert len(ch) == 0;
+}
+
+test "children_of_sorted" {
+    rows: list = [
+        {"id": 1, "parentId": None, "title": "root"},
+        {"id": 3, "parentId": 1, "title": "c"},
+        {"id": 2, "parentId": 1, "title": "b"},
     ];
-    idx = build_tree(rows);
-    res = get_children(idx[1]);
-    assert len(res) == 2;
-    assert sorted([d["id"] for d in res]) == [1, 2];;
+    st = make_store(rows);
+    got = children_of(st, 1);
+    expect: list[int] = [2, 3];
+    assert got == expect;
+}
+
+test "populate_nested" {
+    rows: list = [
+        {"id": 1, "parentId": None, "title": "root"},
+        {"id": 2, "parentId": 1, "title": "a"},
+        {"id": 3, "parentId": 1, "title": "b"},
+        {"id": 4, "parentId": 2, "title": "c"},
+    ];
+    st = make_store(rows);
+    tree = populate_tree(st, 1);
+    assert tree is not None;
+    assert tree["id"] == 1;
+    top: list = tree["children"] as list;
+    assert len(top) == 2;
+    top_ids: list[int] = [];
+    for raw in top {
+        r: dict = raw as dict;
+        top_ids.append(r["id"] as int);
+    }
+    top_ids = sorted(top_ids);
+    expect_top: list[int] = [2, 3];
+    assert top_ids == expect_top;
+    first: dict = top[0] as dict;
+    if (first["id"] as int) != 2 {
+        first = top[1] as dict;
+    }
+    assert first["id"] == 2;
+    sub: list = first["children"] as list;
+    assert len(sub) == 1;
+    leaf: dict = sub[0] as dict;
+    assert leaf["id"] == 4;
+    leaf_ch: list = leaf["children"] as list;
+    assert len(leaf_ch) == 0;
+}
+
+test "cycle_extra_link_skips_revisit" {
+    rows: list = [
+        {"id": 1, "parentId": None, "title": "a"},
+        {"id": 2, "parentId": 1, "title": "b"},
+    ];
+    extra: list = [[2, 1]];
+    st = make_store(rows, extra);
+    tree = populate_tree(st, 1);
+    assert tree is not None;
+    assert tree["id"] == 1;
+    ch: list = tree["children"] as list;
+    assert len(ch) == 1;
+    kid: dict = ch[0] as dict;
+    assert kid["id"] == 2;
+    kid_ch: list = kid["children"] as list;
+    assert len(kid_ch) == 0;
 }

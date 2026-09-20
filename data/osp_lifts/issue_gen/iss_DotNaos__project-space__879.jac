@@ -30,8 +30,7 @@ def load_change_tree(
         if p is not None and c is not None { p +>:Contains:+> c; }
     }
     for (pid, state) in states {
-        nd: ChangePiece | None = tree.pieces.get(pid, None);
-        if nd is not None { nd.state = state; }
+        if pid in tree.pieces { tree.pieces[pid].state = state; }
     }
     return tree;
 }

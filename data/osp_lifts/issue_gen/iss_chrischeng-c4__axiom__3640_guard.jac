@@ -238,7 +238,6 @@ def audit_inventory(
     for d in sorted(diag) { out.append(d); }
     return out;
 }
-
 test "diamond adversarial downstream revisit multiset" {
     ids = ["apex", "left", "right", "merge"];
     edges = [
@@ -323,7 +322,7 @@ test "parent_route_chain mid cycle entry stops at revisit" {
 }
 
 test "load_ledger copies rows independently of source mutation" {
-    rows = {
+    rows: dict[str, dict] = {
         "keep": {"disposition": "typed_token", "kind": "consumer"},
         "touch": {"disposition": "private_only", "reified": False},
     };

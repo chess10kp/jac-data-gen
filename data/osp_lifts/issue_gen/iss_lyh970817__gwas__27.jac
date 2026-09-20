@@ -1,111 +1,188 @@
+"""lyh970817/gwas#27 — workflow DAG reachability audit and orphan removal."""
+
 node Component {
-    has name: str;
+    has cid: str;
+    has kind: str;
+    has retain_standalone: bool = False;
+    has test_only: bool = False;
+    has purged: bool = False;
 }
 
-node Catalog {}
+edge Depends {}
+edge References {}
 
-edge Uses {}
-edge Entry {}
-
-walker ReachWalker {
+walker ReachAudit {
     has claimed: dict[str, bool] = {};
     has found: list[str] = [];
 
-    can enter_catalog with Catalog entry {
-        print("audit");
-        for kid in [here ->:Entry:->][?:Component] {
-            visit :0: [kid];
+    can step with Component entry {
+        if here.purged {
+            skip;
         }
-    }
-
-    can enter_component with Component entry {
         if here.cid in self.claimed {
             skip;
         }
         self.claimed[here.cid] = True;
-        self.found.append(here.name);
-        print(here.name);
-        for kid in [here ->:Uses:->][?:Component] {
-            visit :0: [kid];
-        }
-    }
-}
-
-def reachable_components(
-    components: list[str],
-    references: list[tuple[str, str]],
-    production_roots: list[str]
-) -> list[str] {
-    nodes: dict[str, Component] = {};
-    for name in components {
-        component = Component(name=name);
-        nodes[name] = component;
-    }
-
-    for pair in references {
-        if pair[0] in nodes and pair[1] in nodes {
-            source = nodes[pair[0]];
-            target = nodes[pair[1]];
-            source +>:Uses:+> target;
-        }
-    }
-
-    catalog_node = Catalog();
-    for name in production_roots {
-        if name in nodes {
-            start = nodes[name];
-            catalog_node +>:Entry:+> start;
-        }
-    }
-
-    w = catalog_node spawn ReachWalker(claimed={});
-    return sorted(w.found);
-}
-
-def classify_components(
-    components: list[str],
-    references: list[tuple[str, str]],
-    production_roots: list[str],
-    retained: list[str],
-    superseded: list[str]
-) -> dict[str, str] {
-    reachable = reachable_components(
-        components,
-        references,
-        production_roots
-    );
-    result: dict[str, str] = {};
-
-    for name in components {
-        if name in reachable {
-            result[name] = "active production dependency";
-        } elif name in superseded {
-            result[name] = "superseded duplicate";
-        } elif name in retained {
-            result[name] = "standalone reusable component intentionally retained";
-        } else {
-            result[name] = "orphaned";
-        }
-    }
-    return result;
-}
-
-def dead_outputs(
-    outputs: list[str],
-    consumers: list[tuple[str, str]],
-    published: list[str]
-) -> list[str] {
-    dead: list[str] = [];
-    for output in outputs {
-        used = False;
-        for pair in consumers {
-            if pair[0] == output {
-                used = True;
+        self.found.append(here.cid);
+        print("reach ", here.cid);
+        nbrs: list[Component] = [];
+        for dep in [here ->:Depends:->][?:Component] {
+            if not dep.purged {
+                nbrs.append(dep);
             }
         }
-        if not used and output not in published {
-            dead.append(output);
+        for ref in [here ->:References:->][?:Component] {
+            if not ref.purged {
+                nbrs.append(ref);
+            }
+        }
+        if len(nbrs) > 0 {
+            visit :0: nbrs;
+        } else {
+            disengage;
         }
     }
-    return sorted(dead);
+}
+
+def index_components(graph_root: Component) -> dict[str, Component] {
+    store: dict[str, Component] = {};
+    stack: list[Component] = [graph_root];
+    seen: dict[str, bool] = {};
+    while len(stack) > 0 {
+        nd = stack.pop();
+        if nd.cid in seen {
+            continue;
+        }
+        seen[nd.cid] = True;
+        store[nd.cid] = nd;
+        for ch in [nd ->:Depends:->][?:Component] {
+            stack.append(ch);
+        }
+        for ch in [nd ->:References:->][?:Component] {
+            stack.append(ch);
+        }
+    }
+    return store;
+}
+
+def collect_reachable(graph_root: Component, seed_ids: list[str]) -> list[str] {
+    idx = index_components(graph_root);
+    merged: dict[str, bool] = {};
+    for sid in seed_ids {
+        if sid not in idx {
+            continue;
+        }
+        seed = idx[sid];
+        if seed.purged {
+            continue;
+        }
+        w = seed spawn ReachAudit(claimed={}, found=[]);
+        for cid in w.found {
+            merged[cid] = True;
+        }
+    }
+    out: list[str] = [];
+    for cid in merged {
+        out.append(cid);
+    }
+    return sorted(out);
+}
+
+def classify_all(
+    graph_root: Component,
+    seed_ids: list[str],
+    superseded: list[str],
+) -> dict[str, str] {
+    idx = index_components(graph_root);
+    reach_set: dict[str, bool] = {};
+    reach_list = collect_reachable(graph_root, seed_ids);
+    for r in reach_list {
+        reach_set[r] = True;
+    }
+    super_set: dict[str, bool] = {};
+    for s in superseded {
+        super_set[s] = True;
+    }
+    labels: dict[str, str] = {};
+    for cid in idx {
+        nd = idx[cid];
+        if nd.purged {
+            continue;
+        }
+        if cid in super_set {
+            labels[cid] = "superseded_duplicate";
+        elif nd.test_only {
+            labels[cid] = "test_only";
+        elif nd.retain_standalone {
+            labels[cid] = "standalone_reusable";
+        elif cid in reach_set {
+            labels[cid] = "active_production";
+        } else {
+            labels[cid] = "orphaned";
+        }
+    }
+    return labels;
+}
+
+def removable_ids(
+    graph_root: Component,
+    seed_ids: list[str],
+    superseded: list[str],
+) -> list[str] {
+    classes = classify_all(graph_root, seed_ids, superseded);
+    out: list[str] = [];
+    for cid in classes {
+        tag = classes[cid];
+        if tag == "orphaned" or tag == "superseded_duplicate" {
+            out.append(cid);
+        }
+    }
+    return sorted(out);
+}
+
+def apply_removals(graph_root: Component, target_ids: list[str]) -> list[str] {
+    idx = index_components(graph_root);
+    applied: list[str] = [];
+    for tid in sorted(target_ids) {
+        if tid not in idx {
+            continue;
+        }
+        nd = idx[tid];
+        if nd.purged {
+            continue;
+        }
+        nd.purged = True;
+        applied.append(tid);
+    }
+    return applied;
+}
+
+def build_audit_graph -> Component {
+    graph_root = Component(cid="GRAPH_ROOT", kind="root");
+    route_regenie = Component(cid="ROUTE_REGENIE_ASSOCIATIONS", kind="route");
+    route_ldak = Component(cid="ROUTE_LDAK_KVIK_ASSOCIATIONS", kind="route");
+    plink_fit = Component(cid="PLINK_FIT_REGENIE", kind="module");
+    mod_a = Component(cid="MOD_A", kind="module");
+    mod_b = Component(cid="MOD_B", kind="module");
+    shared = Component(cid="SHARED_THIN", kind="module");
+    dup_regenie = Component(cid="plink_gwas_regenie", kind="subworkflow");
+    dup_ldak = Component(cid="plink_association_ldak_kvik", kind="subworkflow");
+    orphan_grms = Component(cid="ldak/addgrms", kind="module");
+    standalone = Component(cid="SUMHER_BUNDLE", kind="module", retain_standalone=True);
+    test_mod = Component(cid="SELF_TEST_MOD", kind="module", test_only=True);
+    graph_root ++> route_regenie;
+    graph_root ++> route_ldak;
+    graph_root ++> dup_regenie;
+    graph_root ++> dup_ldak;
+    graph_root ++> orphan_grms;
+    graph_root ++> standalone;
+    graph_root ++> test_mod;
+    route_regenie +>:Depends:+> plink_fit;
+    route_regenie +>:Depends:+> mod_a;
+    route_ldak +>:Depends:+> mod_b;
+    mod_a +>:Depends:+> shared;
+    mod_b +>:Depends:+> shared;
+    shared +>:References:+> route_regenie;
+    plink_fit +>:Depends:+> shared;
+    return graph_root;
 }

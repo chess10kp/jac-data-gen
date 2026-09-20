@@ -1,90 +1,166 @@
-// iss_multica-ai__multica__1943.jac
+"""Workflow orchestration graph engine — multica-ai/multica#1943."""
 
-node Workflow {
-    has start: str;
-    has tasks: list[Task] = [];
-    has result: list[str] = [];
+node WfNode {
+    has cid: str;
+    has kind: str;
+    has agent: str = "";
 }
 
-node Task {
-    has tid: str;
-    has label: str;
+edge WfNext {}
+
+obj WorkflowEngine {
+    has nodes: dict[str, WfNode] = {};
+    has anchor: WfNode;
 }
 
-edge Contains {}
-edge Depends {}
-
-walker RunWorkflow {
+walker ReachWalker {
     has claimed: dict[str, bool] = {};
-    has owner: Workflow | None = None;
+    has found: list[str] = [];
 
-    can begin with Workflow entry {
-        self.owner = here;
-        print("workflow started");
-        for task in [here ->:Contains:->][?:Task] {
-            if task.tid == here.start {
-                visit [task];
-            }
-        }
-    }
-
-    can step with Task entry {
-        if here.tid in self.claimed {
+    can step with WfNode entry {
+        if here.cid in self.claimed {
             skip;
         }
-        self.claimed[here.tid] = True;
-        if self.owner != None {
-            self.owner.result.append(here.tid);
+        self.claimed[here.cid] = True;
+        self.found.append(here.cid);
+        print {"reach", here.cid};
+        kids: list[WfNode] = [];
+        for ch in [here ->:WfNext:->][?:WfNode] {
+            kids.append(ch);
         }
-        print(here.tid);
-        for kid in [here ->:Depends:->][?:Task] {
-            visit :0: [kid];
+        if kids {
+            visit kids;
+        } else {
+            disengage;
         }
     }
 }
 
-def workflow_order(
-    task_ids: list[str],
-    links: list[list[str]],
-    start: str
-) -> list[str] {
-    flow: Workflow = Workflow(start=start);
-    for tid in task_ids {
-        task: Task = Task(tid=tid, label=tid);
-        flow.tasks.append(task);
-        flow +>:Contains:+> task;
+walker BootWalker {
+    can run entry {
+        print {"workflow", "engine", "ready"};
+        disengage;
     }
+}
 
-    for link in links {
-        if len(link) == 2 {
-            source: Task | None = None;
-            target: Task | None = None;
-            for task in flow.tasks {
-                if task.tid == link[0] {
-                    source = task;
-                }
-                if task.tid == link[1] {
-                    target = task;
-                }
-            }
-            if source != None and target != None {
-                source +>:Depends:+> target;
+def create_engine -> WorkflowEngine {
+    eng = WorkflowEngine();
+    anchor = WfNode(cid="__wf_root__", kind="root", agent="");
+    root ++> anchor;
+    eng.anchor = anchor;
+    return eng;
+}
+
+def add_node(eng: WorkflowEngine, node_id: str, kind: str, agent: str = "") -> bool {
+    if node_id in eng.nodes {
+        return False;
+    }
+    nd = WfNode(cid=node_id, kind=kind, agent=agent);
+    eng.nodes[node_id] = nd;
+    eng.anchor +>:WfNext:+> nd;
+    return True;
+}
+
+def connect(eng: WorkflowEngine, src_id: str, dst_id: str) -> bool {
+    if src_id not in eng.nodes or dst_id not in eng.nodes {
+        return False;
+    }
+    src = eng.nodes[src_id];
+    dst = eng.nodes[dst_id];
+    for t in [src ->:WfNext:->][?:WfNode] {
+        if t.cid == dst.cid {
+            return True;
+        }
+    }
+    src +>:WfNext:+> dst;
+    return True;
+}
+
+def reachable_ids(eng: WorkflowEngine, start_id: str) -> list[str] {
+    if start_id not in eng.nodes {
+        return [];
+    }
+    start = eng.nodes[start_id];
+    claimed: dict[str, bool] = {};
+    w = start spawn ReachWalker(claimed=claimed);
+    return sorted(w.found);
+}
+
+def topo_order(eng: WorkflowEngine) -> list[str] {
+    indeg: dict[str, int] = {};
+    for nid in eng.nodes {
+        indeg[nid] = 0;
+    }
+    for nid in eng.nodes {
+        nd = eng.nodes[nid];
+        for t in [nd ->:WfNext:->][?:WfNode] {
+            if t.cid in eng.nodes {
+                indeg[t.cid] += 1;
             }
         }
     }
-
-    found_start: bool = False;
-    for task in flow.tasks {
-        if task.tid == start {
-            found_start = True;
+    queue: list[str] = [];
+    for nid in eng.nodes {
+        if indeg[nid] == 0 {
+            queue.append(nid);
         }
     }
-    if not found_start {
-        return flow.result;
+    queue.sort();
+    out: list[str] = [];
+    while queue {
+        cur = queue[0];
+        queue = queue[1:];
+        out.append(cur);
+        nd = eng.nodes[cur];
+        for t in [nd ->:WfNext:->][?:WfNode] {
+            if t.cid in eng.nodes {
+                indeg[t.cid] -= 1;
+                if indeg[t.cid] == 0 {
+                    queue.append(t.cid);
+                    queue.sort();
+                }
+            }
+        }
     }
+    if len(out) != len(eng.nodes) {
+        return [];
+    }
+    return out;
+}
 
-    with entry {
-        root spawn RunWorkflow;
+def remove_node(eng: WorkflowEngine, node_id: str) -> bool {
+    if node_id not in eng.nodes {
+        return False;
     }
-    return flow.result;
+    victim = eng.nodes[node_id];
+    src_ids: list[str] = [];
+    for sid in eng.nodes {
+        src_ids.append(sid);
+    }
+    for sid in src_ids {
+        src = eng.nodes[sid];
+        drop: list[WfNode] = [];
+        for t in [src ->:WfNext:->][?:WfNode] {
+            if t.cid == node_id {
+                drop.append(t);
+            }
+        }
+        for t in drop {
+            src del_edge(:WfNext:, t);
+        }
+    }
+    out_drop: list[WfNode] = [];
+    for t in [victim ->:WfNext:->][?:WfNode] {
+        out_drop.append(t);
+    }
+    for t in out_drop {
+        victim del_edge(:WfNext:, t);
+    }
+    eng.anchor del_edge(:WfNext:, victim);
+    del eng.nodes[node_id];
+    return True;
+}
+
+with entry {
+    root spawn BootWalker();
 }
