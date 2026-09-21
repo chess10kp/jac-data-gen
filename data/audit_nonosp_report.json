@@ -1,0 +1,90 @@
+{
+  "jac": "/home/jac/repos/jac_llm_data/vendor/jac/bin/jac",
+  "total_units": 23153,
+  "datasets": {
+    "composer_dataset": {
+      "units": 15144,
+      "no_candidate": 0,
+      "check_pass": 14987,
+      "check_fail": 157,
+      "guard_pass": 0,
+      "guard_fail": 0,
+      "guard_timeout": 0,
+      "guard_skipped": 0,
+      "codes": {
+        "E1055": 102,
+        "E1032": 168,
+        "E1054": 41,
+        "E1053": 47,
+        "E1030": 3,
+        "E1001": 35,
+        "E2055": 1,
+        "E1051": 20,
+        "E1099": 1,
+        "E1040": 2,
+        "E1002": 2,
+        "E1031": 2,
+        "E1110": 2,
+        "E1020": 1,
+        "E1011": 3,
+        "E0013": 1,
+        "E1022": 1
+      }
+    },
+    "farm_dataset": {
+      "units": 1731,
+      "no_candidate": 0,
+      "check_pass": 1723,
+      "check_fail": 8,
+      "guard_pass": 0,
+      "guard_fail": 0,
+      "guard_timeout": 0,
+      "guard_skipped": 0,
+      "codes": {
+        "E0013": 21
+      }
+    },
+    "farm_handler_dataset": {
+      "units": 983,
+      "no_candidate": 0,
+      "check_pass": 982,
+      "check_fail": 1,
+      "guard_pass": 0,
+      "guard_fail": 0,
+      "guard_timeout": 0,
+      "guard_skipped": 0,
+      "codes": {
+        "E0013": 3
+      }
+    },
+    "js2jac_dataset_idiomatic": {
+      "units": 5195,
+      "no_candidate": 0,
+      "check_pass": 5184,
+      "check_fail": 11,
+      "guard_pass": 0,
+      "guard_fail": 0,
+      "guard_timeout": 0,
+      "guard_skipped": 0,
+      "codes": {
+        "E0013": 3,
+        "E1054": 1,
+        "E1001": 2,
+        "E1125": 1,
+        "E1044": 2,
+        "E1053": 1
+      }
+    },
+    "osp_examples": {
+      "units": 100,
+      "no_candidate": 0,
+      "check_pass": 100,
+      "check_fail": 0,
+      "guard_pass": 0,
+      "guard_fail": 0,
+      "guard_timeout": 0,
+      "guard_skipped": 0,
+      "codes": {}
+    }
+  }
+}
