@@ -103,8 +103,11 @@ def build_probe(manifest: dict, tag: str) -> str:
     return "\n".join(lines)
 
 
-def _jac(args: list[str], **kw) -> subprocess.CompletedProcess:
-    return subprocess.run([JAC, *args], capture_output=True, text=True, **kw)
+def _jac(args: list[str], cwd: str | None = None, **kw) -> subprocess.CompletedProcess:
+    """Run jac. Defaults cwd to the system temp dir so jac — and any code it
+    executes — never writes into the caller's cwd."""
+    return subprocess.run([JAC, *args], capture_output=True, text=True,
+                          cwd=cwd or tempfile.gettempdir(), **kw)
 
 
 def run_gate(candidate_src: str, manifest: dict) -> dict:
@@ -118,7 +121,7 @@ def run_gate(candidate_src: str, manifest: dict) -> dict:
     cand_path = _write_tmp(candidate_src)
     comb_path = _write_tmp(combined)
     try:
-        chk = _jac(["check", cand_path])
+        chk = _jac(["check", cand_path], cwd=os.path.dirname(cand_path))
         chk_out = chk.stdout + chk.stderr
         if chk.returncode != 0 or "FAILED" in chk_out:
             return {"ok": False, "stage": "check", "tag": tag,
@@ -126,7 +129,7 @@ def run_gate(candidate_src: str, manifest: dict) -> dict:
 
         # Stage 2: execute candidate+probe; runtime persistence deltas are the gate.
         # (No `-e none`: we want the failing assertion's labelled message to surface.)
-        run = _jac(["run", comb_path])
+        run = _jac(["run", comb_path], cwd=os.path.dirname(comb_path))
         run_out = run.stdout + run.stderr
         if "ROUND-TRIP OK" in run_out and run.returncode == 0:
             return {"ok": True, "stage": "run", "tag": tag,

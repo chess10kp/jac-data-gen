@@ -70,6 +70,7 @@ def py2jac(python_src: str, work_py: Path) -> tuple[bool, str, str]:
         [JAC, "tool", "py2jac", str(work_py)],
         capture_output=True,
         text=True,
+        cwd=str(work_py.parent),
     )
     err = (proc.stderr or proc.stdout)[-2000:]
     return proc.returncode == 0, proc.stdout, err
@@ -80,6 +81,7 @@ def jac_test(jac_path: Path) -> tuple[bool, str]:
         [JAC, "test", str(jac_path)],
         capture_output=True,
         text=True,
+        cwd=str(jac_path.parent),
     )
     return proc.returncode == 0, (proc.stdout + proc.stderr)[-2000:]
 

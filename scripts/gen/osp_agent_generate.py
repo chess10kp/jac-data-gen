@@ -45,6 +45,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -491,7 +492,8 @@ def mech_translate(stem: str) -> str | None:
     """`jac tool jac2py` — mechanical runtime-shim Python of the record's jac."""
     try:
         p = subprocess.run(["jac", "tool", "jac2py", str(IG / f"{stem}.jac")],
-                           capture_output=True, text=True, timeout=120)
+                           capture_output=True, text=True, timeout=120,
+                           cwd=tempfile.gettempdir())
     except subprocess.TimeoutExpired:
         return None
     return p.stdout.strip() if p.returncode == 0 and p.stdout.strip() else None

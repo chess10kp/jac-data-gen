@@ -1,0 +1,3 @@
+{"jac_data_gen_commit": "5222202ac3633479a59cb31f9313d2a10497fc16", "split": "test", "limit": 0,
+ "gen_and_grader_jac_version": "0.16.1", "cross_check_jac_version": "0.36.1",
+ "model": "models/qwen-q4", "adapter": "experiments/08-nitin-new2-ds/adapter", "date": "2026-09-12T02:15:42Z"}

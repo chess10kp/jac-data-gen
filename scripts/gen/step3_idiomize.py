@@ -73,6 +73,7 @@ def load_record(record: dict) -> Record:
 def jac_test(jac_path: Path) -> tuple[bool, str]:
     proc = subprocess.run(
         ["jac", "test", str(jac_path)], capture_output=True, text=True,
+        cwd=str(jac_path.parent),
     )
     return proc.returncode == 0, (proc.stdout + proc.stderr)[-1500:]
 

@@ -1,0 +1,500 @@
+{
+ "08": {
+  "status_counts": {
+   "check_fail": 261,
+   "pass": 219,
+   "test_fail": 265,
+   "tool_crash": 1,
+   "infra_error": 251,
+   "extract_fail": 2,
+   "timeout": 1
+  },
+  "corrected_counts": {
+   "check_fail": 261,
+   "pass": 219,
+   "test_fail": 206,
+   "tool_crash": 1,
+   "infra_error": 310,
+   "extract_fail": 2,
+   "timeout": 1
+  },
+  "status_by_task": {
+   "completion": {
+    "check_fail": 191,
+    "test_fail": 143,
+    "pass": 54,
+    "tool_crash": 1,
+    "infra_error": 108,
+    "extract_fail": 2,
+    "timeout": 1
+   },
+   "translation": {
+    "pass": 165,
+    "check_fail": 70,
+    "test_fail": 122,
+    "infra_error": 143
+   }
+  },
+  "per_track_clean": {
+   "completion": {
+    "graded": 361,
+    "pass": 54,
+    "compile": 168,
+    "test_fail": 112,
+    "check_fail": 191,
+    "extract_fail": 2
+   },
+   "translation": {
+    "graded": 329,
+    "pass": 165,
+    "compile": 259,
+    "test_fail": 94,
+    "check_fail": 70,
+    "extract_fail": 0
+   }
+  },
+  "blocks": [
+   {
+    "start": 0,
+    "graded": 100,
+    "pass": 55,
+    "infra": 0
+   },
+   {
+    "start": 100,
+    "graded": 100,
+    "pass": 48,
+    "infra": 0
+   },
+   {
+    "start": 200,
+    "graded": 79,
+    "pass": 41,
+    "infra": 21
+   },
+   {
+    "start": 300,
+    "graded": 53,
+    "pass": 5,
+    "infra": 47
+   },
+   {
+    "start": 400,
+    "graded": 69,
+    "pass": 0,
+    "infra": 31
+   },
+   {
+    "start": 500,
+    "graded": 26,
+    "pass": 0,
+    "infra": 74
+   },
+   {
+    "start": 600,
+    "graded": 23,
+    "pass": 0,
+    "infra": 77
+   },
+   {
+    "start": 700,
+    "graded": 89,
+    "pass": 50,
+    "infra": 11
+   },
+   {
+    "start": 800,
+    "graded": 83,
+    "pass": 20,
+    "infra": 17
+   },
+   {
+    "start": 900,
+    "graded": 68,
+    "pass": 0,
+    "infra": 32
+   }
+  ],
+  "check_fail_codes": [
+   {
+    "task": "completion",
+    "code": "OTHER/truncated",
+    "n": 88
+   },
+   {
+    "task": "completion",
+    "code": "E0002",
+    "n": 76
+   },
+   {
+    "task": "translation",
+    "code": "OTHER/truncated",
+    "n": 30
+   },
+   {
+    "task": "completion",
+    "code": "E1004",
+    "n": 22
+   },
+   {
+    "task": "translation",
+    "code": "E1001",
+    "n": 12
+   },
+   {
+    "task": "translation",
+    "code": "E1004",
+    "n": 7
+   },
+   {
+    "task": "translation",
+    "code": "E1002",
+    "n": 5
+   },
+   {
+    "task": "translation",
+    "code": "E0013",
+    "n": 5
+   },
+   {
+    "task": "translation",
+    "code": "E1053",
+    "n": 5
+   },
+   {
+    "task": "translation",
+    "code": "E1099",
+    "n": 3
+   },
+   {
+    "task": "completion",
+    "code": "E1002",
+    "n": 2
+   },
+   {
+    "task": "translation",
+    "code": "E0002",
+    "n": 2
+   },
+   {
+    "task": "completion",
+    "code": "E1001",
+    "n": 1
+   },
+   {
+    "task": "completion",
+    "code": "E2084",
+    "n": 1
+   },
+   {
+    "task": "translation",
+    "code": "E1021",
+    "n": 1
+   },
+   {
+    "task": "completion",
+    "code": "E1011",
+    "n": 1
+   }
+  ],
+  "test_fail_pg": 59,
+  "summary": {
+   "task_success_rate": 0.29239,
+   "check_rate": 0.737,
+   "contract_rate": 0.997,
+   "complete": false,
+   "infra_errors": 251,
+   "status_counts": {
+    "check_fail": 261,
+    "extract_fail": 2,
+    "infra_error": 251,
+    "pass": 219,
+    "test_fail": 265,
+    "timeout": 1,
+    "tool_crash": 1
+   },
+   "feature_presence_samples": {
+    "report": 3,
+    "typed_def": 991,
+    "typed_has": 2
+   }
+  },
+  "static": {
+   "feature_rates": {
+    "ability_entry": 0.0,
+    "disengage": 0.0,
+    "edge": 0.0,
+    "graph_connect": 0.0,
+    "graph_reference": 0.0,
+    "no_dynamic_types": 0.912826,
+    "no_import_py": 0.998998,
+    "no_python_syntax": 0.998998,
+    "no_test_blocks": 1.0,
+    "node": 0.0,
+    "obj": 0.0,
+    "report": 0.003006,
+    "spawn": 0.0,
+    "typed_def": 0.992986,
+    "typed_has": 0.002004,
+    "visit": 0.0,
+    "walker": 0.0
+   },
+   "note": "reported independently; no aggregate idiomaticity score",
+   "readability_diagnostics": {
+    "mean_line_length": 34.190732,
+    "mean_long_lines_over_100": 0.162325,
+    "mean_max_brace_depth": 2.184369,
+    "mean_source_lines": 11.763527
+   },
+   "transpiler_residue": {
+    "mean_range_len_loops": 0.04008,
+    "no_embedded_test_blocks_rate": 1.0,
+    "no_import_py_rate": 0.998998,
+    "no_python_syntax_rate": 0.998998
+   },
+   "typing": {
+    "mean_dynamic_type_mentions": 0.211423,
+    "no_dynamic_types_rate": 0.912826,
+    "typed_def_rate": 0.992986
+   }
+  },
+  "pred": {
+   "translation_fences": {
+    "jac": 499,
+    "no fence": 1
+   },
+   "repetition_loops": 333
+  }
+ },
+ "base": {
+  "status_counts": {
+   "check_fail": 812,
+   "extract_fail": 129,
+   "test_fail": 59
+  },
+  "corrected_counts": {
+   "check_fail": 812,
+   "extract_fail": 129,
+   "test_fail": 50,
+   "infra_error": 9
+  },
+  "status_by_task": {
+   "completion": {
+    "check_fail": 317,
+    "extract_fail": 124,
+    "test_fail": 59
+   },
+   "translation": {
+    "check_fail": 495,
+    "extract_fail": 5
+   }
+  },
+  "per_track_clean": {
+   "completion": {
+    "graded": 491,
+    "pass": 0,
+    "compile": 50,
+    "test_fail": 50,
+    "check_fail": 317,
+    "extract_fail": 124
+   },
+   "translation": {
+    "graded": 500,
+    "pass": 0,
+    "compile": 0,
+    "test_fail": 0,
+    "check_fail": 495,
+    "extract_fail": 5
+   }
+  },
+  "blocks": [
+   {
+    "start": 0,
+    "graded": 99,
+    "pass": 0,
+    "infra": 1
+   },
+   {
+    "start": 100,
+    "graded": 99,
+    "pass": 0,
+    "infra": 1
+   },
+   {
+    "start": 200,
+    "graded": 100,
+    "pass": 0,
+    "infra": 0
+   },
+   {
+    "start": 300,
+    "graded": 98,
+    "pass": 0,
+    "infra": 2
+   },
+   {
+    "start": 400,
+    "graded": 99,
+    "pass": 0,
+    "infra": 1
+   },
+   {
+    "start": 500,
+    "graded": 100,
+    "pass": 0,
+    "infra": 0
+   },
+   {
+    "start": 600,
+    "graded": 99,
+    "pass": 0,
+    "infra": 1
+   },
+   {
+    "start": 700,
+    "graded": 99,
+    "pass": 0,
+    "infra": 1
+   },
+   {
+    "start": 800,
+    "graded": 99,
+    "pass": 0,
+    "infra": 1
+   },
+   {
+    "start": 900,
+    "graded": 99,
+    "pass": 0,
+    "infra": 1
+   }
+  ],
+  "check_fail_codes": [
+   {
+    "task": "translation",
+    "code": "E0005",
+    "n": 361
+   },
+   {
+    "task": "completion",
+    "code": "OTHER/truncated",
+    "n": 241
+   },
+   {
+    "task": "translation",
+    "code": "E0030",
+    "n": 111
+   },
+   {
+    "task": "completion",
+    "code": "E0002",
+    "n": 39
+   },
+   {
+    "task": "completion",
+    "code": "E1004",
+    "n": 33
+   },
+   {
+    "task": "translation",
+    "code": "OTHER/truncated",
+    "n": 13
+   },
+   {
+    "task": "translation",
+    "code": "E0107",
+    "n": 5
+   },
+   {
+    "task": "translation",
+    "code": "E0077",
+    "n": 4
+   },
+   {
+    "task": "completion",
+    "code": "E1001",
+    "n": 2
+   },
+   {
+    "task": "completion",
+    "code": "E0030",
+    "n": 1
+   },
+   {
+    "task": "completion",
+    "code": "E0032",
+    "n": 1
+   },
+   {
+    "task": "translation",
+    "code": "E0052",
+    "n": 1
+   }
+  ],
+  "test_fail_pg": 9,
+  "summary": {
+   "task_success_rate": 0.0,
+   "check_rate": 0.059,
+   "contract_rate": 0.592,
+   "complete": true,
+   "infra_errors": 0,
+   "status_counts": {
+    "check_fail": 812,
+    "extract_fail": 129,
+    "test_fail": 59
+   },
+   "feature_presence_samples": {
+    "report": 3,
+    "typed_def": 376,
+    "typed_has": 2,
+    "walker": 2
+   }
+  },
+  "static": {
+   "feature_rates": {
+    "ability_entry": 0.0,
+    "disengage": 0.0,
+    "edge": 0.0,
+    "graph_connect": 0.0,
+    "graph_reference": 0.0,
+    "no_dynamic_types": 0.941447,
+    "no_import_py": 0.998852,
+    "no_python_syntax": 0.680827,
+    "no_test_blocks": 1.0,
+    "node": 0.0,
+    "obj": 0.0,
+    "report": 0.003444,
+    "spawn": 0.0,
+    "typed_def": 0.431688,
+    "typed_has": 0.002296,
+    "visit": 0.0,
+    "walker": 0.002296
+   },
+   "note": "reported independently; no aggregate idiomaticity score",
+   "readability_diagnostics": {
+    "mean_line_length": 33.844284,
+    "mean_long_lines_over_100": 0.163031,
+    "mean_max_brace_depth": 1.752009,
+    "mean_source_lines": 13.731343
+   },
+   "transpiler_residue": {
+    "mean_range_len_loops": 0.058553,
+    "no_embedded_test_blocks_rate": 1.0,
+    "no_import_py_rate": 0.998852,
+    "no_python_syntax_rate": 0.680827
+   },
+   "typing": {
+    "mean_dynamic_type_mentions": 0.15729,
+    "no_dynamic_types_rate": 0.941447,
+    "typed_def_rate": 0.431688
+   }
+  },
+  "pred": {
+   "translation_fences": {
+    "jac": 495,
+    "python": 5
+   },
+   "repetition_loops": 379
+  }
+ }
+}

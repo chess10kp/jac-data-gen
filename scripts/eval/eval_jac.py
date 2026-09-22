@@ -654,7 +654,7 @@ def validate_inputs(
 def jac_version(jac_bin: str) -> str | None:
     try:
         result = subprocess.run(
-            [jac_bin, "--version"], capture_output=True, text=True, timeout=15
+            [jac_bin, "--version"], capture_output=True, text=True, timeout=15  # sandbox-exempt: read-only probe
         )
     except (OSError, subprocess.TimeoutExpired):
         return None

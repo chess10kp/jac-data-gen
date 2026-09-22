@@ -80,13 +80,13 @@ def stage_collect(a) -> int:
         with tempfile.TemporaryDirectory(prefix=f"rp_{rid}_") as t:
             td = Path(t)
             (td / f"{rid}.py").write_text(py_src)
-            rc, o, e = _run([JAC, "tool", "py2jac", str(td / f"{rid}.py")])
+            rc, o, e = _run([JAC, "tool", "py2jac", str(td / f"{rid}.py")], cwd=str(td))
             if rc != 0:
                 r["stage"] = "py2jac_fail"; r["error"] = (e or o)[-200:]; return r
             floor = o
             # compile-error hint: jac check on the floor (fast; no tests)
             chk = td / f"{rid}.jac"; chk.write_text(floor)
-            rc_c, o_c, e_c = _run([JAC, "check", str(chk)], to=60)
+            rc_c, o_c, e_c = _run([JAC, "check", str(chk)], cwd=str(td), to=60)
             r["check_err"] = "" if rc_c == 0 else (e_c or o_c)[-600:]
             r["stage"] = "collected"
             r["python"] = rec["content"]
@@ -221,12 +221,12 @@ def stage_guard(a) -> int:
         td = Path(tempfile.mkdtemp(prefix=f"rg_{rid}_", dir=shared))
         try:
             chk = td / f"{rid}.jac"; chk.write_text(cand.rstrip() + "\n")
-            rc_c, o_c, e_c = _run([JAC, "check", str(chk)], to=60)
+            rc_c, o_c, e_c = _run([JAC, "check", str(chk)], cwd=str(td), to=60)
             if rc_c != 0:
                 return {"id": rid, "outcome": "check_fail", "err": (e_c or o_c)[-200:]}
             g = td / f"{rid}_t.jac"
             g.write_text(cand.rstrip() + "\n\n" + w["test_blocks"] + "\n")
-            rc_t, o_t, e_t = _run([JAC, "test", str(g)], to=a.test_timeout)
+            rc_t, o_t, e_t = _run([JAC, "test", str(g)], cwd=str(td), to=a.test_timeout)
             if rc_t == 0:
                 return {"id": rid, "outcome": "repaired", "jac": cand,
                         "python": w["python"], "entrypoint": w["entrypoint"]}

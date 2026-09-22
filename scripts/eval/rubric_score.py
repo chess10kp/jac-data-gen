@@ -14,7 +14,8 @@ def jac_check(jac: str) -> bool:
     with tempfile.NamedTemporaryFile("w", suffix=".jac", delete=False) as f:
         f.write(jac); p = f.name
     try:
-        r = subprocess.run(["jac", "check", p], capture_output=True, text=True, timeout=60)
+        r = subprocess.run(["jac", "check", p], capture_output=True, text=True,
+                           timeout=60, cwd=os.path.dirname(p) or None)
         return r.returncode == 0
     except Exception:
         return False

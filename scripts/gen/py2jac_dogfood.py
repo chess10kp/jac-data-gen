@@ -141,7 +141,7 @@ def main() -> None:
     # jac provenance for the report
     try:
         v = subprocess.run([args.jac, "--version"], capture_output=True,
-                           text=True, timeout=60).stdout.strip()
+                           text=True, timeout=60).stdout.strip()  # sandbox-exempt: read-only probe
     except Exception as e:  # noqa: BLE001
         v = f"<version probe failed: {e}>"
     try:

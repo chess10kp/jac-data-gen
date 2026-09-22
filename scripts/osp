@@ -1,0 +1,209 @@
+#!/usr/bin/env bash
+# osp — bash front-end for scripts/gen/osp_generate.py (unified OSP generation).
+#
+# Replaces the `python scripts/gen/osp_generate.py ...` incantation with a
+# real shell tool: subcommands, prompt introspection, dataset stats,
+# completion, and one-command install.
+#
+#   osp codegen --backend pi --model gpt-5.6-luna --limit 10
+#   osp idiomize --batch 35 --flow jac-only
+#   osp prompt            # dump the assembled (injected) system prompt
+#   osp prompt --stat     # per-layer injection budget table
+#   osp stats             # dataset + failure counters
+#   osp completion        # emit bash completion for `osp`
+#   osp install           # symlink into ~/.local/bin
+set -euo pipefail
+
+SELF="$(readlink -f "${BASH_SOURCE[0]}")"
+REPO="$(cd "$(dirname "$SELF")/.." && pwd)"
+GEN="$REPO/scripts/gen/osp_generate.py"
+PY="${PYTHON:-python3}"
+
+usage() {
+  cat <<'EOF'
+osp — unified OSP generation tool (backend: pi | cursor | zen | openrouter | zai)
+
+usage:
+  osp <task> [args...]     run a generation task; task is `codegen` or `idiomize`
+  osp dry <task> [args..]  shorthand for <task> ... --dry-run (no API calls)
+  osp prompt [--stat]      print the assembled system prompt (as injected at
+                           import time); --stat shows the per-layer byte budget
+  osp stats                summarize data/osp_dataset.jsonl + failures log
+  osp completion           emit bash completion for `osp`
+  osp install              symlink this tool into ~/.local/bin/osp
+  osp help                 this message
+
+codegen examples:
+  osp codegen --backend pi --model gpt-5.6-luna --limit 10
+  osp codegen --backend zen --model deepseek-v4-flash-free --shards 4 --shard 0
+  osp codegen --dry-run --limit 5
+
+idiomize examples:
+  osp idiomize --batch 35 --flow jac-only
+  osp idiomize --repo owner/name --issue 123
+
+Anything not matching a subcommand is passed through verbatim, e.g.:
+  osp --task codegen --limit 10
+EOF
+}
+
+cmd_prompt() {
+  local stat=0
+  [[ "${1:-}" == "--stat" ]] && stat=1
+  PY_PROMPT_STAT=$stat PY_REPO="$REPO" "$PY" - <<'PYEOF'
+import os, sys
+sys.path.insert(0, os.path.join(os.environ["PY_REPO"], "scripts", "gen"))
+import osp_luna_generate as L
+if os.environ["PY_PROMPT_STAT"] == "1":
+    base = (
+        len(L.SYSTEM)
+        - len(L._SPEC[:4000]) - len(L._SPEC6) - len(L._DEMO)
+        - len(L._FILTER_WARN) - len(L._SKILL_TIER0) - len(L._COMPILER_PITFALLS)
+        - len(L._UNION_NOTE) + len(L._CEILING)
+        - (len(L._REF_PATH.read_text()[:3500]) if L._REF_PATH.exists() else 0)
+        - 60
+    )
+    rows = [
+        ("SYSTEM literal (floor prompt)", base, "kept in place"),
+        ("union-note rule swap (.replace, +net)", len(L._UNION_NOTE) - len(L._CEILING), "one-ability ceiling -> union triggers"),
+        ("spec splice _SPEC[:4000]", len(L._SPEC[:4000]), "docs/OSP_IDIOMIZE_TASK.md head"),
+        ("spec slice '## 6. The model task'", len(L._SPEC6), "task contract section"),
+        ("verified demo _DEMO", len(L._DEMO), "runs clean on jac 0.36.1"),
+        ("filter warning _FILTER_WARN", len(L._FILTER_WARN), "bans pre-0.36 filter syntax"),
+        ("syntax floor _SKILL_TIER0", len(L._SKILL_TIER0), "distilled jac-idiomatic skill"),
+        ("compiler pitfalls", len(L._COMPILER_PITFALLS), "E0013/E0076/E0002/E0004"),
+    ]
+    if L._REF_PATH.exists():
+        rows.append(("reference record", len(L._REF_PATH.read_text()[:3500]), "verified corpus file"))
+    total = len(L.SYSTEM)
+    inj = total - base
+    w = max(len(n) for n, _, _ in rows) + 2
+    print(f"{'layer':<{w}}{'chars':>7}  purpose")
+    print("-" * (w + 60))
+    for name, n, why in rows:
+        print(f"{name:<{w}}{n:>7}  {why}")
+    print("-" * (w + 60))
+    print(f"{'base / final':<{w}}{base:>7}  {total} final chars")
+    print(f"{'injected':<{w}}{inj:>7}  {100*inj/total:.0f}% of final system prompt")
+else:
+    sys.stdout.write(L.SYSTEM)
+    if not L.SYSTEM.endswith("\n"):
+        print()
+PYEOF
+}
+
+cmd_stats() {
+  PY_REPO="$REPO" "$PY" - <<'PYEOF'
+import json, os
+from collections import Counter
+from pathlib import Path
+repo = Path(os.environ["PY_REPO"])
+out = repo / "data" / "osp_dataset.jsonl"
+fails = out.with_name(out.stem + "_failures.jsonl")
+if not out.exists():
+    print(f"no dataset yet: {out.relative_to(repo)}")
+else:
+    rows, gens, bad = [], Counter(), 0
+    for line in out.read_text().splitlines():
+        if not line.strip():
+            continue
+        try:
+            rows.append(json.loads(line))
+        except json.JSONDecodeError:
+            bad += 1
+    for r in rows:
+        gens[r.get("generator_model_id", r.get("generator", "?"))] += 1
+    print(f"{out.relative_to(repo)}: {len(rows)} records ({bad} unreadable lines)")
+    for g, n in gens.most_common():
+        print(f"  {n:>5}  {g}")
+if fails.exists():
+    stages, top = Counter(), Counter()
+    for line in fails.read_text().splitlines():
+        if not line.strip():
+            continue
+        try:
+            r = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        stages[r.get("stage", "?")] += 1
+        top[r.get("error", "?")[:70]] += 1
+    print(f"{fails.relative_to(repo)}: {sum(stages.values())} failure rows")
+    for s, n in stages.most_common():
+        print(f"  stage {s}: {n}")
+    print("  top errors:")
+    for e, n in top.most_common(5):
+        print(f"  {n:>5}  {e}")
+PYEOF
+}
+
+cmd_completion() {
+  cat <<'EOF'
+# bash completion for osp — source this or add to ~/.bashrc:
+#   eval "$(osp completion)"
+_osp_completions() {
+  local cur prev subs flags
+  COMPREPLY=()
+  cur="${COMP_WORDS[COMP_CWORD]}"
+  prev="${COMP_WORDS[COMP_CWORD-1]}"
+  subs="codegen idiomize dry prompt stats completion install help"
+  flags="--task --backend --model --batch --repo --issue --flow --force
+         --offset --limit --chunk --out --problems --shard --shards
+         --dry-run --variants --timeout --tries --fix-tries"
+  if (( COMP_CWORD == 1 )); then
+    COMPREPLY=( $(compgen -W "$subs" -- "$cur") )
+    return 0
+  fi
+  case "$prev" in
+    --backend) COMPREPLY=( $(compgen -W "auto pi cursor zen openrouter zai" -- "$cur") ); return 0;;
+    --flow)    COMPREPLY=( $(compgen -W "py-first jac-first jac-only" -- "$cur") ); return 0;;
+    --task)    COMPREPLY=( $(compgen -W "codegen idiomize" -- "$cur") ); return 0;;
+  esac
+  COMPREPLY=( $(compgen -W "$flags" -- "$cur") )
+  return 0
+}
+complete -F _osp_completions osp
+EOF
+}
+
+cmd_install() {
+  local bin="$HOME/.local/bin"
+  mkdir -p "$bin"
+  ln -sf "$SELF" "$bin/osp"
+  echo "installed: $bin/osp -> $SELF"
+  case ":$PATH:" in
+    *":$bin:"*) ;;
+    *) echo "note: $bin is not on PATH — add it to your shell rc";;
+  esac
+}
+
+main() {
+  if (( $# == 0 )); then
+    usage
+    return 0
+  fi
+  local sub="$1"
+  shift
+  case "$sub" in
+    help|-h|--help) usage ;;
+    prompt)          cmd_prompt "$@" ;;
+    stats)           cmd_stats "$@" ;;
+    completion)      cmd_completion "$@" ;;
+    install)         cmd_install "$@" ;;
+    dry)
+      if (( $# == 0 )); then
+        echo "osp dry: need a task (codegen|idiomize)" >&2
+        return 2
+      fi
+      exec "$PY" "$GEN" --task "$1" --dry-run "${@:2}"
+      ;;
+    codegen|idiomize)
+      exec "$PY" "$GEN" --task "$sub" "$@"
+      ;;
+    *)
+      # passthrough for explicit --task style and future flags
+      exec "$PY" "$GEN" "$sub" "$@"
+      ;;
+  esac
+}
+
+main "$@"

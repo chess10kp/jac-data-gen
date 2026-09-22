@@ -74,7 +74,7 @@ def hole_convert(source_js: str, rel_path: str, timeout: int = 30) -> dict:
     """
     try:
         r = subprocess.run(
-            [BUN, str(HOLECONVERT)],
+            [BUN, str(HOLECONVERT)],  # sandbox-exempt: bun, not jac
             input=json.dumps({"js": source_js, "path": rel_path}),
             capture_output=True, text=True, timeout=timeout,
         )

@@ -29,7 +29,7 @@ T_MASS         = 0.35   # min non-space char ratio Jac/JS
 
 def js_signature(js: str, path: str) -> dict:
     p = subprocess.run([BUN, str(SIG_JS)], input=json.dumps({"js": js, "path": path}),
-                       capture_output=True, text=True, timeout=60)
+                       capture_output=True, text=True, timeout=60)  # sandbox-exempt: bun, not jac
     try:
         return json.loads(p.stdout)
     except Exception:
