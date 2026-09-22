@@ -2,6 +2,7 @@
 
 Updated 2026-09-22. Every dataset in `data/` classified by role. Row counts as of this date.
 Regenerators live in `scripts/gen/`; masters are append-only — never hand-edit.
+Trust check: `python3 scripts/ops/manifest_check.py` (paths exist, everything indexed, counts match).
 
 ## Release datasets (training-ready)
 
@@ -17,6 +18,7 @@ Regenerators live in `scripts/gen/`; masters are append-only — never hand-edit
 | `farm_handler_dataset.jsonl` | 983 | farm master | handler variant | same |
 
 Schema A: `{source, entrypoint, jac, id}` (farm adds `node/archetype/manifest/walkers/gate`).
+Demo bundle: `farm_example.json` + `farm_example.jac` (one record rendered) + `farm_viewer.html` (browser viewer).
 Pipeline diagrams: `docs/{py2jac,js2jac,farm}_pipeline.mmd`; plan `docs/PLAN.md`.
 
 ### B. OSP synthesis (object-spatial programming) — primary active family
@@ -32,7 +34,7 @@ Pipeline diagrams: `docs/{py2jac,js2jac,farm}_pipeline.mmd`; plan `docs/PLAN.md`
 | `osp_minimax_holdouts.jsonl` | — | holdout eval slice |
 | `osp_test_results.jsonl` | 43.9 MB | testgen verdicts (verdict=PASS rows feed repairs) |
 
-Lift working area: `osp_lifts/` (issue_gen `.py/.ref.py/.floor.jac/candidate/guard`, assignments, cost ledger, `_gen_failures`).
+Lift working area: `osp_lifts/` (issue_gen `.py/.ref.py/.floor.jac/candidate/guard`, assignments, cost ledger, `_gen_failures`, `osp_lifts/.sandbox/` — throwaway cwd for jac guard runs).
 Task spec: `docs/OSP_IDIOMIZE_TASK.md`.
 
 ### C. Repair / repair-trace harvests (zero generation cost)
@@ -51,9 +53,10 @@ Details: `osp_repair/README.md`. Packer: `scripts/gen/pack_repair_traces.py`.
 ### D. Human-written Jac corpus (scrape, no LLM in loop)
 
 - `jachacks_all_jac_files_filtered.jsonl` — **1,820 files / 153 repos / 12.2 M chars, training-ready**
-- `jachacks_{sf,spring,2026}_jac_files_filtered.jsonl` — per-edition (752/305/763 files)
-- `jachacks_all_jac_files.jsonl` + per-edition raw — 17,031 files incl. duplicated jaseci (do not train on)
-- `jachacks_{sf,spring,2026}_dataset.jsonl` — repo metadata; `_summary.md` / `_inventory.json`
+- `jachacks_{sf,spring,2026}_jac_files_filtered.jsonl` — per-edition filtered (752/305/763 files)
+- `jachacks_all_jac_files.jsonl`, `jachacks_{sf,spring,2026}_jac_files.jsonl` — raw unfiltered dumps, 17,031 files incl. duplicated jaseci (do not train on; gitignored)
+- `jachacks_{sf,spring,2026}_{dataset,dataset_filtered}.jsonl` + `jachacks_all_dataset_filtered.jsonl` — repo metadata (raw / filtered)
+- `jachacks_{sf,spring,2026}_summary.md` + `jachacks_{sf,spring,2026}_inventory.json` — per-edition summary + inventory
 - `jachacks_{sf,spring,2026}_repos/` — 2.4 GB shallow clones (gitignored)
 - `jachacks_scrape/` — Devpost/GitHub link dumps + inventories (scrape inputs, moved from repo root 2026-09-22)
 - READMEs: `JACHACKS_ALL_README.md`, `JACHACKS_SF_README.md`
@@ -72,27 +75,31 @@ Already harvested into `osp_repair/`, but kept hot as append targets and pairing
 
 ## Inputs (mined/scraped source material, not training data)
 
-- `graph_targets/issues.jsonl` (13,399) + `issues_rescored.jsonl` — GitHub issues mined as task targets for graph-program generation (`scripts/graph_targets/`)
+- `graph_targets/issues.jsonl` (13,399) + `graph_targets/issues_rescored.jsonl` — GitHub issues mined as task targets for graph-program generation (`scripts/graph_targets/`)
 - `samples/python_source_examples.json`, `schema_summary.json` — MultiPL-T source schema notes
 - `run_ledger.sqlite3` — generation run ledger
 
 ## Audit / QC (derived)
 
 - `audit_nonosp_units.jsonl` (23,153) + `audit_nonosp_report.json` — `jac check` audit of composer/farm/js2jac/osp_examples
-- `audit_generated_units.jsonl` + `audit_generated_report.json`, `audit_merged_corpus_postcleanup_units.jsonl` + report
+- `audit_generated_units.jsonl` + `audit_generated_report.json`, `audit_merged_corpus_postcleanup_units.jsonl` + `audit_merged_corpus_postcleanup_report.json`
 
-## Evaluation (outside data/)
+## Repo map — everything outside `data/`
 
-`../fn_eval_preds/` (grading harness + preds), `../runs/function_eval/`, `../evals/`.
+- `../runs/` — run artifacts, not data: wave driver scripts (`wave_*.sh`, `lane*.sh`), per-unit logs (`repair*_NN.log`, `repair2_NN.log`, `lift_NN.log`, `glm_NN.log`), wave/pack/driver logs, audit + validate logs, guard-failure pickles (`guard_fail_{pinned,diag}.pkl`), `toolchain_repro_20260913/`, `function_eval/` per-model dirs (`samples.jsonl`, gen/watchdog logs, `graded/`).
+- `../fn_eval_preds/` — function-eval harness: `eval/eval_jac.py` + `eval/test.jsonl`, `preds/`, `out/`, `report/` (+ `GRADING_REPORT.{md,pdf}`, `provenance.json`), `run.sh`, pinned `bin/jac-0.36.1`. Own README.
+- `../evals/` — eval sets: `function/v1/` (`public/`+`private/` dev+test, `clusters.jsonl`, `denylist_{ids,clusters}.txt`, `manifest.json`, `validation_summary.json`, `repair_report.jsonl`, README), `jac_native/v0/` (`public/dev`, `private/dev`, `exports/`, `schemas/`).
+- `../JacCoder/dataset/` — separate CPT/SFT workspace: `sft/{qa,py2jac,js2jac,code_gen,code_completion}/`, `cpt/{Nitin-js2jac,Nitin-10k-jac-functions,Ayush-ground-truth}/`. See `../JacCoder/README.md`.
+- `../scripts/js2jac_dataset/` — js2jac/FARM pipeline's own masters: `js2jac_dataset.jsonl`, `farm_models.jsonl`, `farm_apps.jsonl` (156 MB, gitignored), `dpo_pairs.jsonl`, `pilot_manifest.json`, `schema.json`, plus `source/` and per-chunk `runs/`. Documented in its README.
+- `../docs/` — task specs (`OSP_IDIOMIZE_TASK.md`, `req_commonlist_migration.md` — JS→Jac migration requirement, moved from repo root 2026-09-22), pipeline diagrams, reports, `PLAN.md`.
+- `../vendor/jac`, `../jaseci/` — compiler checkouts (shared LLVM slice rule: `AGENTS.md`).
+- `../low_resource_paper.pdf` — reference paper.
 
 ## Archived (cold; moved 2026-09-22, paths updated in scripts)
 
 - `../archive/2026-09/data_logs/` — 39 generation/shard logs from data/ root
 - `../archive/2026-09/data_bak/` — 5 master backups (`.bak`, `.bak.<ts>`)
-- `../archive/2026-09/scratch/` — dead experiment scratch: `step2..step4f`, `step4_zen_{b,c}`, `chunks`, `farm_chunks`, `floorfix`, `composer_pending`, `composer_dataset.jsonl.d`, `reguard_*`, `py2jac_dogfood`, `jac_outputs`, `farm_handler`, `tmp`, `holepatch_*`, `graph_shaped_scan.jsonl`, `chunk_probe.jsonl`, `osp_B29_*.jac`
+- `../archive/2026-09/scratch/` — dead experiment scratch: `step2..step4f`, `step4_zen_{b,c}`, `chunks`, `farm_chunks`, `floorfix`, `composer_pending`, `composer_dataset.jsonl.d`, `reguard_*`, `py2jac_dogfood`, `jac_outputs`, `farm_handler`, `tmp`, `holepatch_*`, `../archive/2026-09/scratch/{graph_shaped_scan,chunk_probe}.jsonl`, `../archive/2026-09/scratch/osp_B29_*.jac`
 - `../archive/2026-08/` — earlier retired drivers; `../archive/2026-09/fn_eval_preds.tar.gz` — packaged snapshot (live dir stays at root)
 - Historical drivers/watchers in `scripts/` now point at these archive paths.
-
-## Repo root (non-data, kept in place)
-
-`vendor/jac`, `jaseci/` (compiler checkout — shared LLVM slice, see AGENTS.md), `JacCoder/` (separate CPT/SFT training workspace with its own `dataset/`), `docs/`, `low_resource_paper.pdf`, `fn_eval_preds/`.
+- `../archive/2026-09/root_scratch/` — repo-root test droppings and scratch files (tmp_*.jac, test txt/dyn files, nohup.out), moved off the working tree 2026-09-22.

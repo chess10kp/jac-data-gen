@@ -1,0 +1,53 @@
+%% py2jac fine-tuning data pipeline (see docs/PLAN.md, scripts/gen/step4_full_loop.py)
+%% Horizontal serpentine for slides: row 1 left->right, wraps down, row 2 right->left.
+%% NOTE: no node-level edges cross the subgraph boundaries (mermaid ignores
+%% subgraph direction otherwise); rows connect subgraph-to-subgraph.
+%% Colors: blue=source  green=deterministic  amber=LLM  purple=guard
+%%         teal=output  red=dropped            slate=side path
+%% Render: https://mermaid.live
+flowchart TB
+
+    classDef input fill:#dbeafe,stroke:#2563eb,color:#1e3a8a;
+    classDef det fill:#dcfce7,stroke:#16a34a,color:#14532d;
+    classDef llm fill:#fef3c7,stroke:#d97706,color:#78350f;
+    classDef gate fill:#ede9fe,stroke:#7c3aed,color:#4c1d95;
+    classDef out fill:#ccfbf1,stroke:#0d9488,color:#134e4a,stroke-width:2px;
+    classDef drop fill:#fee2e2,stroke:#dc2626,color:#7f1d1d;
+    classDef side fill:#f1f5f9,stroke:#64748b,color:#334155;
+
+    subgraph R1 ["py2jac pipeline — stage 1..5"]
+        direction LR
+        SRC["nuprl/stack-dedup-python-testgen<br/>starcoder-filter-v2<br/>(tested Python functions)"]
+        COV["coverage >= 90% filter"]
+        P2J["jac tool py2jac<br/>(deterministic transpile)"]
+        FLOOR["floor Jac<br/>(correct by construction,<br/>non-idiomatic)"]
+        FGUARD{{"floor guard:<br/>jac test + hidden tests"}}
+        X1(["dropped"])
+        SRC --> COV --> P2J --> FLOOR --> FGUARD
+        FGUARD -- fail --> X1
+    end
+
+    subgraph R2 ["stage 6..12"]
+        direction RL
+        IDIO["LLM idiomize agent<br/>(composer seam —<br/>only non-deterministic hop)"]
+        CGUARD{{"candidate guard:<br/>jac check + jac test<br/>hidden tests"}}
+        KEEP{"pass?"}
+        FB["fall back to floor Jac"]
+        FMT["jac fmt<br/>(normalize)"]
+        DEDUP["ROUGE-L dedup"]
+        OUT["final py2jac<br/>fine-tuning dataset"]
+        IDIO --> CGUARD --> KEEP
+        KEEP -- no --> FB --> FMT
+        KEEP -- yes --> FMT
+        FMT --> DEDUP --> OUT
+    end
+
+    R1 == "pass" ==> R2
+
+    class SRC input;
+    class COV,P2J,FMT,DEDUP det;
+    class IDIO llm;
+    class FGUARD,CGUARD,KEEP gate;
+    class OUT out;
+    class X1 drop;
+    class FLOOR,FB side;

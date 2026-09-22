@@ -1,0 +1,39 @@
+{
+  "jac": "/home/jac/repos/jac_llm_data/vendor/jac/bin/jac",
+  "total_units": 7842,
+  "datasets": {
+    "osp_merged_corpus": {
+      "units": 7842,
+      "no_candidate": 0,
+      "check_pass": 7813,
+      "check_fail": 29,
+      "guard_pass": 2638,
+      "guard_fail": 33,
+      "guard_timeout": 0,
+      "guard_skipped": 5171,
+      "codes": {
+        "E1110": 5,
+        "E0013": 21,
+        "E1030": 3,
+        "E1094": 1,
+        "E0022": 9,
+        "E0002": 32,
+        "E0006": 10,
+        "E0004": 18,
+        "E1311": 4,
+        "E1055": 2,
+        "E1099": 2,
+        "E0001": 1,
+        "E1001": 9,
+        "E1054": 5,
+        "E1032": 23,
+        "E1097": 1,
+        "E0048": 4,
+        "E1053": 2,
+        "E1096": 2,
+        "E1050": 1,
+        "E1114": 2
+      }
+    }
+  }
+}

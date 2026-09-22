@@ -70,6 +70,13 @@ unit_test.txt
 bc.dyn
 my_bc.dyn
 _format_data_as_table_temp.jac
+nohup.out
+
+# --- root scratch moved to cold archive (2026-09-22) ---
+archive/2026-09/root_scratch/
+
+# --- jac cwd sandboxes (throwaway dirs for jac check/test/run spawns) ---
+data/osp_lifts/.sandbox/
 
 # --- pipeline run artifacts (data, not code) ---
 data/**/*.log
@@ -106,3 +113,24 @@ archive/2026-09/data_logs/
 archive/2026-09/data_bak/
 archive/2026-09/scratch/
 archive/2026-09/fn_eval_preds.tar.gz
+archive/2026-08/js2jac_fresh_regrind_20260822_1401/runs/
+
+# --- over GitHub's 100MB file cap (kept local; indexed in MANIFEST) ---
+data/osp_testgen_failures.jsonl
+data/osp_minimax_failures.jsonl
+
+# --- vendored compiler checkout (like jaseci/) ---
+vendor/
+
+# --- regenerable run artifacts (drivers+logs, not data) ---
+runs/
+fn_eval_preds/bin/
+
+# --- latex build byproducts ---
+docs/osp_prompt_injection_onepager.aux
+docs/osp_prompt_injection_onepager.log
+docs/osp_prompt_injection_onepager.out
+
+# --- local tool state ---
+.pi/
+.jac309shim/

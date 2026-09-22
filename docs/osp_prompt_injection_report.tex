@@ -1,0 +1,276 @@
+\documentclass[11pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[strings]{underscore}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage[colorlinks=true,linkcolor=blue!55!black,urlcolor=blue!55!black]{hyperref}
+
+\definecolor{codebg}{RGB}{248,248,244}
+\definecolor{codeframe}{RGB}{200,200,190}
+\lstset{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{codebg},
+  frame=single, rulecolor=\color{codeframe},
+  breaklines=true, columns=fullflexible, keepspaces=true,
+  showstringspaces=false,
+  keywordstyle=\color{blue!60!black}\bfseries,
+  commentstyle=\color{green!45!black}\itshape,
+  language=Python,
+  aboveskip=0.9em, belowskip=0.9em,
+}
+
+\newcommand{\file}[1]{\texttt{#1}}
+\newcommand{\code}[1]{\texttt{#1}}
+
+\title{\textbf{Prompt Injection as Pipeline Architecture}\\[2mm]
+\large How \file{scripts/gen/osp\_generate.py} steers Jac code generation}
+\author{Technical report --- \file{jac\_llm\_data}}
+\date{September 17, 2026}
+
+\begin{document}
+\maketitle
+
+\section{Executive summary}
+
+\file{scripts/gen/osp\_generate.py} is the unified entrypoint for the OSP
+(object-spatial programming) dataset generation pipeline: one command routes
+\emph{idiomize} (issue $\rightarrow$ Jac lift) and \emph{codegen} (problem
+$\rightarrow$ Jac) jobs across five transports (\code{pi}, \code{cursor},
+\code{zen}, \code{openrouter}, \code{zai}). Its codegen path imports the
+system prompt, user-prompt builders, and validation gates from
+\file{scripts/gen/osp\_luna\_generate.py} (lines 88--91), and it is there that
+the \textbf{prompt injection technique} lives. The term is used here in the
+literal, non-adversarial sense: \emph{the pipeline injects grounding material
+into the model's context at runtime}, from files, distilled skills, verified
+demos, and even from the model's own compiler errors.
+
+There are two distinct injection sites:
+
+\begin{enumerate}
+  \item \textbf{Import-time system-prompt surgery.} At module load,
+  \file{osp\_luna\_generate.py} mutates a 3{,}740-character ``floor'' system
+  prompt through six operations --- an in-place rule \emph{replacement}, two
+  \emph{file splices}, a \emph{verified demo}, a \emph{skill distillation},
+  \emph{error-code-derived bans}, and a \emph{corpus reference record} ---
+  producing a 14{,}077-character payload. \textbf{73\% of the final system
+  prompt is injected}, not written.
+  \item \textbf{Error-conditioned hint injection (runtime).} When a generated
+  program fails a gate, \code{\_fix\_user()} regex-scrapes the validator error
+  (e.g.\ \code{undefined name 'Owner'}) and \emph{injects a targeted repair
+  hint} into the retry prompt, closing a generate--validate--repair loop
+  bounded by \code{fix\_tries} (default 2).
+\end{enumerate}
+
+Measured effect, from the code's own probe (comment at
+\file{osp\_luna\_generate.py:146--149}): ten holdout problems that failed the
+floor prompt three times each went \textbf{0/10 $\rightarrow$ 3/10} once the
+injected context was added.
+
+A containment property worth noting: dataset records persist only the
+\emph{raw} problem and the final code in \code{messages}
+(\file{osp\_generate.py:199--200}). The injected context is never written into
+the training transcript; it is versioned instead through metadata fields
+(\code{source\_prompt\_version}, \code{context\_bundle\_version},
+\code{validator\_version}).
+
+\section{Pipeline overview}
+
+\file{osp\_generate.py} dispatches on \code{--task}:
+
+\begin{itemize}
+  \item \textbf{idiomize} (\file{\_dispatch\_idiomize}, lines 38--79): patches
+  env vars and module globals of \file{osp\_agent\_generate.py}, rewrites
+  \code{sys.argv}, and re-enters that script's \code{main()}. The idiomize
+  path runs its own, parallel injection:
+  \code{load\_spec\_excerpt()} (\file{osp\_agent\_generate.py:198--204})
+  splices \file{data/osp\_examples/GEN\_CONTRACT.md} (first 6{,}000 chars) and
+  \file{docs/OSP\_IDIOMIZE\_TASK.md} (first 8{,}000 chars), and call sites
+  invoke the model with \code{SYSTEM + "\textbackslash n" + spec[:4000]}
+  (lines 643, 746).
+  \item \textbf{codegen} (\file{\_dispatch\_codegen}, lines 82--208): the
+  shared-backend path analyzed below. It selects a transport via
+  \code{get\_backend()} (\file{scripts/lib/llm\_backend.py}), replays the 100
+  hand-written problems in \file{data/osp\_examples/group\_\{A..E\}.jsonl},
+  gates each answer, and appends passing records to
+  \file{data/osp\_dataset.jsonl}.
+\end{itemize}
+
+\section{Injection site 1: import-time system-prompt surgery}
+
+At \file{osp\_luna\_generate.py:146--253}, module top level (executed once at
+\code{import}, which is why \file{osp\_generate.py} inherits it for free):
+
+\begin{lstlisting}[numbers=none]
+SYSTEM = SYSTEM.replace(_CEILING, _UNION_NOTE)          # rule swap
+SYSTEM += "\n\nIDIOMATIZATION CONTRACT ...\n" + _SPEC[:4000] + "\n\n" + _SPEC6
+        + "\n\nVERIFIED IDIOMATIC PATTERN ...\n```jac\n" + _DEMO + "\n```\n" + _FILTER_WARN
+SYSTEM += _SKILL_TIER0        # distilled from the jac-idiomatic skill
+SYSTEM += _COMPILER_PITFALLS  # E0013 / E0076 / E0002 / E0004
+SYSTEM += "\n\nREFERENCE RECORD (from the reference corpus):\n```jac\n"
+        + _REF_PATH.read_text()[:3500] + "\n```"   # verified corpus file
+\end{lstlisting}
+
+Each operation has a distinct mechanism and purpose:
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{@{}p{5.4cm}r p{6.6cm}@{}}
+\toprule
+\textbf{Layer} & \textbf{Chars} & \textbf{Mechanism / purpose} \\
+\midrule
+SYSTEM literal (``floor prompt'') & 3{,}740 & kept in place; output contract, structure rules, reference shape \\
+\code{.replace(_CEILING, _UNION_NOTE)} & +182 & \emph{string surgery on a rule}: swaps the ``one ability per node type'' ceiling for union triggers (\code{can inspect with TypeA | TypeB entry}) \\
+\code{\_SPEC[:4000]} splice & 4{,}000 & first 4k of \file{docs/OSP\_IDIOMIZE\_TASK.md} injected verbatim \\
+\code{\_SPEC6} slice & 1{,}705 & \emph{section-scoped} splice: only ``\#\# 6.\ The model task'' of the same doc \\
+\code{\_DEMO} verified demo & 1{,}031 & a complete Jac program stated to ``run clean on jac 0.36.1''; anchors format and idioms \\
+\code{\_FILTER\_WARN} & 122 & negative constraint: bans pre-0.36 parenthesized filter syntax from stale training data \\
+\code{\_SKILL\_TIER0} syntax floor & 1{,}013 & distilled from the jac-idiomatic skill; brace blocks, semicolons, keyword bans \\
+\code{\_COMPILER\_PITFALLS} & 602 & mined from real failures: \code{report} reserved (E0013), duplicate methods (E0076), bracket balance (E0002), unknown fields (E0004) \\
+\code{REFERENCE RECORD} & 1{,}622 & a real, passing corpus file (\code{ex\_22\_hospital\_union\_staff.jac}), capped at 3{,}500 chars \\
+\midrule
+\textbf{Injected total} & \textbf{10{,}337} & \textbf{73\% of the final 14{,}077 chars} \\
+\bottomrule
+\end{tabular}
+\caption{Import-time injection stack, measured byte budget (\code{osp prompt
+--stat} reproduces this table live).}
+\label{tab:layers}
+\end{table}
+
+The design intent is explicit in the code comments: the small models ``imitate
+reference structure well but never attempt the signature OSP idioms (union
+triggers, typed edges) unless shown them, and ... carry pre-0.36 filter syntax
+from stale training data.'' The injection is therefore
+\emph{exemplar-conditioned}: show the idiom, ban the stale one, prove the demo
+compiles, and quote a corpus record that already passed.
+
+\section{Injection site 2: error-conditioned repair hints}
+
+The second injection is \emph{runtime and data-dependent}. In the per-problem
+loop (\file{osp\_generate.py:162--183}), every gate failure re-enters the
+model with \code{\_fix\_user(problem, prev\_code, last\_error)}
+(\file{osp\_luna\_generate.py:263--282}):
+
+\begin{lstlisting}[numbers=none]
+def _fix_user(problem, code, error):
+    m = re.search(r"undefined name [`'](\w+)", error or "")
+    hint = (
+        f"\n\nThis error means `{m.group(1)}` is used as an edge type in a "
+        "`visit [->:...]` / `[<--:...]` or a `+>:Name:+>` connection but was "
+        f"never declared. Fix: add `edge {m.group(1)} {{ }}` at module level ..."
+        if m else ""
+    )
+    return f"### Problem\n...\n### Validation error\n{error}\n{hint}\n..."
+\end{lstlisting}
+
+The loop, with its gates:
+
+\begin{enumerate}
+  \item \code{extract\_jac()} --- regex-extracts the single \code{```jac}
+  fenced block (a miss is itself a repairable failure).
+  \item \code{jac\_check()} (line 320) --- \code{jac check} (syntax/types),
+  then \code{jac run} in a temp dir, then \emph{stdout must be non-empty}:
+  a silent pass is rejected, because the reference corpus always prints demo
+  output.
+  \item \code{osp\_contract()} (line 365) --- eight regex gates: top-level
+  docstring; no \code{Any}/\code{object}; typed \code{has} fields;
+  \code{visit} after a typed entry; \code{with entry} demo block;
+  a \code{spawn} call; the self-referential ternary trap
+  (\code{x = "a" if c else x;}); no Python \code{\_\_main\_\_} idiom; and no
+  \code{visit} referencing an undefined name.
+  \item On failure: the error is logged to
+  \file{data/osp\_dataset\_failures.jsonl} together with the broken code ---
+  explicitly kept as ``raw material for repair-training pairs'' --- and the
+  \emph{injected-hint repair prompt} fires, at most \code{fix\_tries} (2)
+  times.
+\end{enumerate}
+
+\section{How it works, end to end}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{figures/osp_injection_stack.pdf}
+\caption{Import-time injection stack. Six operations transform the 3{,}740-char
+floor prompt into a 14{,}077-char grounded payload; 73\% of the final system
+prompt is injected from files, skills, demos, and error history.}
+\label{fig:stack}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{figures/osp_runtime_loop.pdf}
+\caption{Runtime loop. The injected SYSTEM rides every call; gate failures
+feed back through \code{\_fix\_user}, which regex-scrapes the compiler error
+and injects a targeted hint --- a second, data-conditioned injection site.}
+\label{fig:loop}
+\end{figure}
+
+\section{Why the technique works}
+
+\begin{itemize}
+  \item \textbf{Negative constraints encode compiler reality, not taste.}
+  Every ban maps to a concrete failure mode (\code{report} $\rightarrow$
+  E0013; duplicate methods $\rightarrow$ E0076; filter syntax $\rightarrow$
+  removed in Jac 0.36). The prompt and the gate agree.
+  \item \textbf{Exemplars beat descriptions for small models.} The verified
+  demo and the reference record anchor output \emph{shape} (single fence,
+  docstring first, \code{with entry} last) that the regex gates then enforce.
+  \item \textbf{The loop makes the injection adaptive.} The static injection
+  covers systematic gaps (idioms, stale syntax); the runtime hint injection
+  covers per-instance failures, converting validator output --- the one signal
+  guaranteed to be fresh --- into prompt content.
+  \item \textbf{Grounding is measured.} The code comment records the A/B:
+  0/10 $\rightarrow$ 3/10 on ten 3$\times$-failed holdouts. All 100 reference
+  records are stated to pass the same gates, so the bar is consistent across
+  generators.
+\end{itemize}
+
+\paragraph{Risks.} (i) \emph{Silent prompt drift}: because 73\% of the prompt
+is read from files at import time, editing \file{docs/OSP\_IDIOMIZE\_TASK.md}
+changes generation behavior without touching the script; the
+\code{context\_bundle\_version} metadata is the only provenance. (ii)
+\emph{Ordering sensitivity}: layers append in fixed order
+(\code{.replace} $\rightarrow$ splice $\rightarrow$ demo $\rightarrow$ bans),
+so reordering changes precedence. (iii) The 3{,}500-char cap on the reference
+record truncates silently mid-file.
+
+\section{The bash tool: \file{scripts/osp}}
+
+The report's companion deliverable wraps the Python entrypoint as a first-class
+shell command (\file{scripts/osp}, bash, self-contained):
+
+\begin{lstlisting}[numbers=none,language=bash]
+osp codegen --backend pi --model gpt-5.6-luna --limit 10   # run a wave
+osp dry codegen --limit 5                                  # plan, no API calls
+osp idiomize --batch 35 --flow jac-only                    # issue-lift wave
+osp prompt                  # dump the assembled (injected) system prompt
+osp prompt --stat           # live per-layer injection budget (Table 1)
+osp stats                   # dataset + failure counters, by generator
+osp completion              # emit bash completion;  osp install  -> ~/.local/bin
+\end{lstlisting}
+
+\code{osp prompt --stat} makes the injection \emph{inspectable from the
+shell} --- the byte budget of Table~\ref{tab:layers} is recomputed live from
+the same module the pipeline uses, so any edit to the spec or corpus files is
+immediately visible as a changed injection budget.
+
+\section{Reproduction}
+
+\begin{lstlisting}[numbers=none,language=bash]
+python3 - <<'EOF'                      # measure the injection stack
+import sys; sys.path.insert(0, 'scripts/gen')
+import osp_luna_generate as L
+print(len(L.SYSTEM))                   # 14077
+EOF
+dot -Tpdf docs/figures/osp_injection_stack.dot -o docs/figures/osp_injection_stack.pdf
+pdflatex -interaction=nonstopmode docs/osp_prompt_injection_report.tex  # this PDF
+./scripts/osp prompt --stat && ./scripts/osp dry codegen --limit 3
+\end{lstlisting}
+
+\end{document}

@@ -1,0 +1,47 @@
+// Figure 2 — runtime loop with error-conditioned hint injection (osp_generate.py --task codegen)
+// Render: dot -Tpdf osp_runtime_loop.dot -o osp_runtime_loop.pdf
+digraph runtime_loop {
+  rankdir=LR;
+  bgcolor="white";
+  pad="0.4";
+  node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=10, penwidth=0.8];
+  edge [fontname="Helvetica", fontsize=9, color="#555555", penwidth=0.8];
+
+  probs [label="problems\ngroup_{A..E}.jsonl\n(100 hand-written)", fillcolor="#eef3fb", color="#5b7db1"];
+
+  user [label="_user(problem)\n“### Problem …\nsingle ```jac fence”", fillcolor="#eef3fb", color="#5b7db1"];
+
+  payload [label="payload =\n injected SYSTEM (14,077)\n ⊕ user prompt", shape=oval, fillcolor="#fff8e1", color="#b58900", fontname="Helvetica-Bold"];
+
+  backend [label="backend.call()\npi · cursor · zen ·\nopenrouter · zai", fillcolor="#eef3fb", color="#5b7db1"];
+
+  extract [label="extract_jac()\nregex ```jac fence", fillcolor="#eef3fb", color="#5b7db1"];
+
+  subgraph cluster_gates {
+    label="Gates (imported from osp_luna_generate)";
+    fontname="Helvetica-Bold"; fontsize=11; color="#7a2e2e"; style="rounded";
+    node [fillcolor="#fdecea", color="#c62828"];
+    jaccheck [label="jac_check()\n`jac check` → `jac run`\n→ stdout must be non-empty"];
+    contract [label="osp_contract()\n8 regex gates: docstring, typed has,\nvisit-after-entry, with entry, spawn,\nself-ref ternary, __main__,\nundefined visit names"];
+  }
+
+  dataset [label="append data/osp_dataset.jsonl\nmessages = RAW problem + code only\n(injected context NOT persisted;\nversioned via context_bundle_version)", shape=folder, fillcolor="#e8f5e9", color="#2e7d32"];
+
+  // runtime injection site
+  fixuser [label="_fix_user()  ← RUNTIME INJECTION\nregex: `undefined name ['X]`\n→ injects targeted hint:\n“add edge X { } at module level\nor use plain -->”", shape=box, style="rounded,filled", fillcolor="#fff3e0", color="#ef6c00", fontname="Helvetica-Bold"];
+
+  fails [label="*_failures.jsonl\n(broken code + error:\nrepair-training material)", shape=note, fillcolor="#f3e5f5", color="#6a1b9a"];
+
+  probs    -> user;
+  user     -> payload;
+  payload  -> backend;
+  backend  -> extract;
+  extract  -> jaccheck;
+  jaccheck -> contract;
+  contract -> dataset [label=" pass"];
+  contract -> fixuser [label=" fail", color="#ef6c00"];
+  jaccheck -> fixuser [label=" fail", color="#ef6c00"];
+  fixuser  -> backend [label=" retry ≤2× (fix_tries)", color="#ef6c00", style=bold, fontname="Helvetica-Bold"];
+  jaccheck -> fails [style=dashed];
+  contract -> fails [style=dashed];
+}

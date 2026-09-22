@@ -1,0 +1,53 @@
+%% js2jac dataset pipeline (see scripts/js2jac_dataset/README.md, pipeline/, gates/)
+%% Horizontal serpentine for slides: row 1 left->right, wraps down, row 2 right->left.
+%% NOTE: no node-level edges cross the subgraph boundaries (mermaid ignores
+%% subgraph direction otherwise); rows connect subgraph-to-subgraph.
+%% Colors: blue=source  green=deterministic  amber=LLM  purple=guard
+%%         teal=output  red=dropped            slate=side path
+%% Render: https://mermaid.live
+flowchart TB
+
+    classDef input fill:#dbeafe,stroke:#2563eb,color:#1e3a8a;
+    classDef det fill:#dcfce7,stroke:#16a34a,color:#14532d;
+    classDef llm fill:#fef3c7,stroke:#d97706,color:#78350f;
+    classDef gate fill:#ede9fe,stroke:#7c3aed,color:#4c1d95;
+    classDef out fill:#ccfbf1,stroke:#0d9488,color:#134e4a,stroke-width:2px;
+    classDef drop fill:#fee2e2,stroke:#dc2626,color:#7f1d1d;
+    classDef side fill:#f1f5f9,stroke:#64748b,color:#334155;
+
+    subgraph R1 ["js2jac pipeline — harvest..guard"]
+        direction LR
+        SRC["GitHub React/TSX repos<br/>(source/candidates.jsonl)"]
+        PREP["prep.py<br/>clone + js2jac project converter<br/>(fail-open), prisma schema lift"]
+        FLOOR["floor Jac per file<br/>+ ORM files marked"]
+        COMPOSER["composer.py — LLM cleanup pass<br/>per strip_policy.json<br/>(cleaned jac | REJECT)"]
+        GUARD{{"guard:<br/>jac check per candidate<br/>ORM records + behavioral gate /<br/>hollowness check"}}
+        X1(["REJECT -> dropped"])
+        SRC --> PREP --> FLOOR --> COMPOSER --> GUARD
+        COMPOSER -- REJECT --> X1
+    end
+
+    subgraph R2 ["keep-or-repair..master"]
+        direction RL
+        KEEP{"guard pass?"}
+        REPAIR["repair pass — model-assisted fix<br/>using compiler error<br/>(JS2JAC_REPAIR=0 to disable)"]
+        FB["floor fallback<br/>(bad idiomization never<br/>destroys a valid record)"]
+        DPO["DPO preference pairs<br/>runs/<TAG>/dpo_pairs.jsonl"]
+        OUT["master append<br/>js2jac_dataset.jsonl<br/>(+ _idiom variant)"]
+        KEEP -- no --> REPAIR
+        REPAIR -- rescued --> OUT
+        REPAIR -- "still failing" --> FB
+        KEEP -- yes --> OUT
+        FB -.-> DPO
+        REPAIR -.-> DPO
+    end
+
+    R1 ==> R2
+
+    class SRC input;
+    class PREP,FLOOR det;
+    class COMPOSER,REPAIR llm;
+    class GUARD,KEEP gate;
+    class OUT out;
+    class X1 drop;
+    class FB,DPO side;

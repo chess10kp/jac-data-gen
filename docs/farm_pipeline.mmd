@@ -1,0 +1,45 @@
+%% FARM burndown pipeline (see scripts/js2jac_dataset/farm.sh, farm/)
+%% Horizontal serpentine for slides: row 1 left->right, wraps down, row 2 right->left.
+%% NOTE: no node-level edges cross the subgraph boundaries (mermaid ignores
+%% subgraph direction otherwise); rows connect subgraph-to-subgraph.
+%% Colors: blue=source  green=deterministic  amber=LLM  purple=guard
+%%         teal=output  red=dropped
+%% Render: https://mermaid.live
+flowchart TB
+
+    classDef input fill:#dbeafe,stroke:#2563eb,color:#1e3a8a;
+    classDef det fill:#dcfce7,stroke:#16a34a,color:#14532d;
+    classDef llm fill:#fef3c7,stroke:#d97706,color:#78350f;
+    classDef gate fill:#ede9fe,stroke:#7c3aed,color:#4c1d95;
+    classDef out fill:#ccfbf1,stroke:#0d9488,color:#134e4a,stroke-width:2px;
+    classDef drop fill:#fee2e2,stroke:#dc2626,color:#7f1d1d;
+
+    subgraph R1 ["FARM pipeline — discover..archetype"]
+        direction LR
+        DISC["discover.py<br/>GitHub code search: Beanie / ODMantic<br/>model files -> farm_models.jsonl<br/>(keep only gate-able lifts)"]
+        LIFT["mongo_odm_to_jac analyze<br/>(deterministic ODM lift)"]
+        PREP["prep.py — one record per NODE TYPE<br/>archetype block + tag_field<br/>+ fully derived behavioral manifest"]
+        ARCH["deterministic node/edge archetype<br/><fileid>::<Node>"]
+        DISC --> LIFT --> PREP --> ARCH
+    end
+
+    subgraph R2 ["walker-gen..gate..master"]
+        direction RL
+        COMPOSER["composer.py — cursor-agent walker-gen<br/>AUTHOR idiomatic CRUD walker-set<br/>(names + entry contract prescribed;<br/>bodies are real generation)"]
+        GATE{{"guard.py — behavioral gate<br/>execution + persistence deltas<br/>(NOT jac check)"}}
+        KEEP{"gate ok?"}
+        X1(["rejected -> dropped"])
+        OUT["master append<br/>farm_dataset.jsonl<br/>(handler variant separate)"]
+        COMPOSER --> GATE --> KEEP
+        KEEP -- no --> X1
+        KEEP -- yes --> OUT
+    end
+
+    R1 ==> R2
+
+    class DISC input;
+    class LIFT,PREP,ARCH det;
+    class COMPOSER llm;
+    class GATE,KEEP gate;
+    class OUT out;
+    class X1 drop;

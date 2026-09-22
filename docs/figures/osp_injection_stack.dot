@@ -1,0 +1,50 @@
+// Figure 1 — import-time system-prompt injection stack (osp_luna_generate.py)
+// Render: dot -Tpdf osp_injection_stack.dot -o osp_injection_stack.pdf
+digraph injection_stack {
+  rankdir=LR;
+  bgcolor="white";
+  pad="0.4";
+  node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=10, penwidth=0.8];
+  edge [fontname="Helvetica", fontsize=9, color="#555555", penwidth=0.8];
+
+  subgraph cluster_sources {
+    label="Grounding sources (read at import time)";
+    fontname="Helvetica-Bold"; fontsize=11; color="#8a8a8a"; style="rounded";
+    node [fillcolor="#eef3fb", color="#5b7db1"];
+    base    [label="SYSTEM literal — “floor” prompt\n(output contract, structure,\nreference shape)\n3,740 chars", fillcolor="#dbe7f7"];
+    spec    [label="docs/OSP_IDIOMIZE_TASK.md\n18,366 chars"];
+    refrec  [label="data/osp_examples/group_B/\nex_22_hospital_union_staff.jac\n1,622 chars (verified corpus)"];
+    skill   [label="jac-idiomatic skill\n(distilled → SYNTAX FLOOR)"];
+    errors  [label="past compiler failures\nE0013 · E0076 · E0002 · E0004"];
+  }
+
+  subgraph cluster_ops {
+    label="Import-time surgery (module top level)";
+    fontname="Helvetica-Bold"; fontsize=11; color="#7a6a2f"; style="rounded";
+    node [fillcolor="#fdf6e3", color="#b58900"];
+    o1 [label="①  SYSTEM.replace(_CEILING,\n_UNION_NOTE)\nrule swap: one-ability-per-type →\nunion triggers  (+182)"];
+    o2 [label="②  append _SPEC[:4000]\n+ “## 6. The model task” slice\nspec splice  (+5,705)"];
+    o3 [label="③  append _DEMO (verified demo\nrunning clean on jac 0.36.1)\n+ _FILTER_WARN  (+1,153)"];
+    o4 [label="④  append _SKILL_TIER0\nnegative-constraint syntax floor  (+1,013)"];
+    o5 [label="⑤  append _COMPILER_PITFALLS\nerror-code-derived bans  (+602)"];
+    o6 [label="⑥  append REFERENCE RECORD\n(corpus file, ≤3,500 chars)  (+1,622)"];
+  }
+
+  out [label="final SYSTEM\n14,077 chars\n73% injected", shape=oval, fillcolor="#e8f5e9", color="#2e7d32", fontsize=12, fontname="Helvetica-Bold"];
+
+  base    -> o1 [label="whole literal"];
+  o1      -> o2;
+  spec    -> o2;
+  o2      -> o3;
+  o3      -> o4;
+  skill   -> o4;
+  o4      -> o5;
+  errors  -> o5;
+  o5      -> o6;
+  refrec  -> o6;
+  o6      -> out;
+
+  note [shape=note, fillcolor="#fff3e0", color="#ef6c00", fontsize=9,
+        label="Measured effect (code comment, osp_luna_generate.py):\n10 holdout problems failing the floor prompt 3× each\nwent 0/10 → 3/10 with this context"];
+  out -> note [style=dashed, arrowhead=none, color="#ef6c00"];
+}

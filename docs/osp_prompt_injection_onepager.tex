@@ -1,0 +1,80 @@
+\documentclass[10pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[strings]{underscore}
+\usepackage[margin=1.4cm]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multicol}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage[colorlinks=true,linkcolor=blue!55!black,urlcolor=blue!55!black]{hyperref}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{3pt}
+\newcommand{\code}[1]{\texttt{\small #1}}
+\newcommand{\file}[1]{\texttt{\small #1}}
+
+\begin{document}
+
+{\Large\bfseries Prompt Injection as Pipeline Architecture --- one-pager}\\[1pt]
+{\small \file{scripts/gen/osp\_generate.py} + \file{osp\_luna\_generate.py} · \file{jac\_llm\_data} · Sept 2026 · full report: \file{docs/osp\_prompt\_injection\_report.pdf}}
+
+\medskip
+The OSP codegen pipeline \textbf{injects grounding material into the model's context at runtime} from files, distilled skills, verified demos, and the model's own compiler errors. Two injection sites:
+
+\begin{minipage}[t]{0.52\textwidth}
+\textbf{Site 1 --- import-time system-prompt surgery} (\file{osp\_luna\_generate.py:146--253}; inherited by \file{osp\_generate.py} via import, lines 88--91):
+six operations transform a 3{,}740-char ``floor'' prompt into the 14{,}077-char payload every call rides on --- \textbf{73\% is injected, not written}.
+
+\smallskip
+{\small
+\begin{tabular}{@{}lr@{}}
+\toprule
+\textbf{Layer} & \textbf{Chars}\\
+\midrule
+SYSTEM literal (floor prompt) & 3{,}740\\
+\code{.replace()}: ability ceiling $\rightarrow$ union triggers & +182\\
+splice \code{\_SPEC[:4000]} (OSP\_IDIOMIZE\_TASK.md) & +4{,}000\\
+slice ``\#\# 6.\ The model task'' & +1{,}705\\
+\code{\_DEMO}: verified demo (runs clean on jac 0.36.1) & +1{,}031\\
+\code{\_FILTER\_WARN}: ban pre-0.36 filter syntax & +122\\
+\code{\_SKILL\_TIER0}: distilled jac-idiomatic skill & +1{,}013\\
+\code{\_COMPILER\_PITFALLS}: E0013/E0076/E0002/E0004 & +602\\
+\code{REFERENCE RECORD}: verified corpus file $\le$3.5k & +1{,}622\\
+\midrule
+\textbf{injected total} & \textbf{10{,}337 (73\%)}\\
+\bottomrule
+\end{tabular}}
+
+\smallskip
+\textbf{Site 2 --- error-conditioned hint injection (runtime).} Every gate failure re-prompts via \code{\_fix\_user()} (line 263): regex-scrape \code{undefined name 'X'} from the validator error and \textbf{inject a targeted repair hint} (\code{add edge X \{ \}} or use plain \code{-->}); retry $\le$ \code{fix\_tries}=2. Failures + broken code log to \file{osp\_dataset\_failures.jsonl} as repair-training material.
+\end{minipage}\hfill
+\begin{minipage}[t]{0.44\textwidth}
+\textbf{Gates} (same bar as the composer-2.5 reference batch):\\
+\code{extract\_jac} --- single \code{```jac} fence\\
+\code{jac\_check} --- \code{jac check} $\rightarrow$ \code{jac run} $\rightarrow$ stdout must be non-empty (silent pass = regression)\\
+\code{osp\_contract} --- 8 regex gates: docstring, no \code{Any}, typed \code{has}, \code{visit} after typed entry, \code{with entry}, \code{spawn}, self-referential ternary, no \code{\_\_main\_\_}, undefined visit names
+
+\smallskip
+\textbf{Measured:} holdout probe --- 10 problems failing the floor prompt 3$\times$ each went \textbf{0/10 $\rightarrow$ 3/10} with the injected context. Dataset: \textbf{7{,}275 records} (m3:free 4{,}970 · composer-2.5 1{,}308 · gpt-5.6-luna 975).
+
+\smallskip
+\textbf{Containment:} records persist only the \emph{raw} problem + final code in \code{messages} --- the injected context never enters the training transcript; provenance rides in metadata (\code{context\_bundle\_version} etc.).
+
+\smallskip
+\textbf{Risks:} file splices mean editing \file{OSP\_IDIOMIZE\_TASK.md} silently changes generation (provenance = one metadata field); layer order is precedence; the 3{,}500-char corpus cap truncates silently.
+
+\smallskip
+\textbf{Inspect live:} \code{osp prompt --stat} recomputes the table from the same module the pipeline uses; \code{osp prompt} dumps the full payload.
+\end{minipage}
+
+\begin{center}
+\includegraphics[width=0.98\textwidth]{figures/osp_injection_stack.pdf}\\[-1mm]
+{\footnotesize Fig.\ 1 --- import-time injection stack.\quad
+\includegraphics[width=0.86\textwidth]{figures/osp_runtime_loop.pdf}\\[-1mm]
+Fig.\ 2 --- generate $\rightarrow$ gate $\rightarrow$ injected-hint repair loop.}
+\end{center}
+
+\end{document}

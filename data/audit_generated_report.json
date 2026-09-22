@@ -1,0 +1,17 @@
+{
+  "jac": "/home/jac/repos/jac_llm_data/vendor/jac/bin/jac",
+  "total_units": 7842,
+  "datasets": {
+    "osp_merged_corpus": {
+      "units": 7842,
+      "no_candidate": 0,
+      "check_pass": 7842,
+      "check_fail": 0,
+      "guard_pass": 2670,
+      "guard_fail": 4,
+      "guard_timeout": 0,
+      "guard_skipped": 5168,
+      "codes": {}
+    }
+  }
+}
