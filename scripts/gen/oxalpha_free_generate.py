@@ -255,7 +255,7 @@ def main():
     ap.add_argument("--min-free-gb", type=float, default=25.0)
     ap.add_argument("--gate", type=float, default=_MUTATION_GATE,
                     help="min mutation score for the hidden-test oracle (0 disables)")
-    ap.add_argument("--out", default="data/step4/oxalpha_free_gen.jsonl")
+    ap.add_argument("--out", default="archive/2026-09/scratch/step4/oxalpha_free_gen.jsonl")
     ap.add_argument("--no-synth-oracle", action="store_true",
                     help="disable test-suite synthesis for weak/thin oracles")
     ap.add_argument("--pg-cap-gb", type=float, default=8.0,

@@ -8,7 +8,7 @@ D2/D3/D4/D6 are heuristic per the rubric's quick-triage signals.
 import json, re, subprocess, sys, tempfile, os
 from collections import Counter
 
-DATA = "data/step4/dataset.jsonl"
+DATA = "archive/2026-09/scratch/step4/dataset.jsonl"
 
 def jac_check(jac: str) -> bool:
     with tempfile.NamedTemporaryFile("w", suffix=".jac", delete=False) as f:
@@ -102,8 +102,8 @@ def main():
         ib = Counter(o["band"] for o in idi)
         print(f"idiomatic-only ({len(idi)}): mean {sum(o['score'] for o in idi)/len(idi):.2f}  bands {dict(ib)}")
     json.dump({"mean_score": round(tot/len(rows),3), "bands": dict(bands), "records": out},
-              open("data/step4/rubric_scores.json","w"), indent=2)
-    print("\nwrote data/step4/rubric_scores.json")
+              open("archive/2026-09/scratch/step4/rubric_scores.json","w"), indent=2)
+    print("\nwrote archive/2026-09/scratch/step4/rubric_scores.json")
 
 if __name__ == "__main__":
     main()

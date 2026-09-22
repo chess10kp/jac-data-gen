@@ -39,6 +39,12 @@ import subprocess
 import sys
 import tempfile
 import uuid
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "scripts" / "lib"))
+from jacresolve import resolve_jac  # noqa: E402
+
+JAC = resolve_jac()
 
 
 def render_value(v) -> str:
@@ -98,7 +104,7 @@ def build_probe(manifest: dict, tag: str) -> str:
 
 
 def _jac(args: list[str], **kw) -> subprocess.CompletedProcess:
-    return subprocess.run(["jac", *args], capture_output=True, text=True, **kw)
+    return subprocess.run([JAC, *args], capture_output=True, text=True, **kw)
 
 
 def run_gate(candidate_src: str, manifest: dict) -> dict:

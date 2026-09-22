@@ -100,3 +100,9 @@ data/jachacks_all_jac_files.jsonl
 data/jachacks_2026_jac_files.jsonl
 data/jachacks_sf_jac_files.jsonl
 data/jachacks_spring_jac_files.jsonl
+
+# --- cold archive (moved from data/ 2026-09-22): kept on disk, not in git ---
+archive/2026-09/data_logs/
+archive/2026-09/data_bak/
+archive/2026-09/scratch/
+archive/2026-09/fn_eval_preds.tar.gz

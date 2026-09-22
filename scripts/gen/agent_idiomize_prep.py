@@ -2,7 +2,7 @@
 """Phase 1 of the agent-idiomize path: prepare work records for Sonnet subagents.
 
 For each MultiPL-T record (coverage >= --min-coverage): py2jac -> floor guard.
-Emits one JSON per surviving record to data/step4/agent_work/<id>.json holding
+Emits one JSON per surviving record to archive/2026-09/scratch/step4/agent_work/<id>.json holding
 everything a subagent needs to idiomize it (python, floor_fn, entrypoint) plus
 what the guard phase needs (test_blocks). py2jac/test failures are dropped and
 tallied. This is deterministic and cheap (~2 rec/s); no model calls here.

@@ -285,5 +285,5 @@ types, not missing code the model can supply. The jac-check gate correctly rejec
 unsound files entered the corpus). Levers to raise rescue: (a) stronger/faster model than deepseek-flash-free
 (would fix the E0002 syntax + timeouts, maybe some E1032 via `any`-cast discipline); (b) ambient/stub `any`
 typings for common Node/lib imports so member access resolves — this attacks E1032 at the root and would ALSO
-unblock a checker-gated factory-const retry. Artifacts: `data/holepatch_pilot.jsonl` (enrichment),
-`data/holepatch_rescue.jsonl` (rescue).
+unblock a checker-gated factory-const retry. Artifacts: `archive/2026-09/scratch/holepatch_pilot.jsonl` (enrichment),
+`archive/2026-09/scratch/holepatch_rescue.jsonl` (rescue).

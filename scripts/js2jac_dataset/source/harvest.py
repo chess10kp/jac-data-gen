@@ -34,6 +34,25 @@ JAC_REPO = Path("/home/jac/repos/jac_llm_data/jaseci/jac")
 HOLECONVERT = Path(__file__).resolve().parent / "holeconvert.mjs"
 BUN = shutil.which("bun") or "bun"
 
+# Run the CHECKOUT's own jac via `python -m jaclang` — see pipeline/guard_lib.py
+# for the full story. Short version: the ambient `jac` binary (0.36.1 frozen
+# install, Aug 31) bootstraps via jaclang.cli.cli_boot, which this checkout
+# predates — from cwd=jac_repo the checkout shadows it and every invocation
+# dies (sometimes silently, exit 0); from a neutral cwd it runs but has no
+# js2jac tool. Source-run is the only path that is both alive and
+# tool-complete, and it pins convert+gate to ONE compiler generation.
+# Needs the bun runtime: the frozen install bundles it, the source tree does
+# not (E7104 'Bundled bun runtime is unavailable' without JAC_BUN).
+JAC_PY = sys.executable
+
+
+def jac_cmd(*args: str) -> list[str]:
+    return [JAC_PY, "-m", "jaclang", *args]
+
+
+def jac_env() -> dict[str, str]:
+    return {"JAC_BUN": os.environ.get("JAC_BUN", "/usr/sbin/bun")}
+
 # Where TS/React client source usually lives. First existing dir wins as root.
 SRC_HINTS = ["src", "app", "client", "frontend", "packages", "."]
 
@@ -72,11 +91,13 @@ def hole_convert(source_js: str, rel_path: str, timeout: int = 30) -> dict:
 def sh(cmd: list[str], cwd: Path | None = None, timeout: int = 300) -> tuple[int, str, str]:
     # jac-family subprocesses get a 3GB address-space cap (Aug 20 OOM freezes;
     # same fix as step4_full_loop._run). git/bun keep their natural limits.
-    if cmd and cmd[0] == "jac":
+    is_jac = cmd[:3] == [JAC_PY, "-m", "jaclang"]
+    if is_jac:
         as_cap = int(os.environ.get("JAC_RLIMIT_AS_GB", "3")) << 30
         cmd = ["prlimit", f"--as={as_cap}", "--", *cmd]
     try:
-        r = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, timeout=timeout)
+        r = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, timeout=timeout,
+                           env={**os.environ, **jac_env()} if is_jac else None)
         return r.returncode, r.stdout, r.stderr
     except subprocess.TimeoutExpired:
         return 124, "", "timeout"
@@ -135,8 +156,8 @@ def convert(root: Path, out_dir: Path, report: Path, fail_open: bool = False) ->
     # root/out_dir/report stay anchored to the caller regardless of how the
     # pipeline invokes us (e.g. js2jac_chunk.sh passes a relative --work-dir).
     root, out_dir, report = (Path(p).resolve() for p in (root, out_dir, report))
-    cmd = ["jac", "tool", "js2jac", "--project", str(root),
-           "--out-dir", str(out_dir), "--write", "--force"]
+    cmd = jac_cmd("tool", "js2jac", "--project", str(root),
+                  "--out-dir", str(out_dir), "--write", "--force")
     if fail_open:
         cmd.append("--fail-open")
     cmd += ["--report", str(report)]
@@ -161,7 +182,7 @@ def check_emitted(out_dir: Path, profile: dict) -> tuple[int, int]:
             if not path_excluded(str(j.relative_to(out_dir)), profile)]
     p = f = 0
     for j in jacs:
-        code, _, _ = sh(["jac", "check", str(j)], cwd=JAC_REPO, timeout=90)
+        code, _, _ = sh(jac_cmd("check", str(j)), cwd=JAC_REPO, timeout=90)
         if code == 0:
             p += 1
         else:

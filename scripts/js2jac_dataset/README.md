@@ -50,14 +50,29 @@ The composer drivers run on `scripts/lib/composer_harness.py`:
 
 ## Quality gates
 
-- guard stage: `jac check` per candidate (3GB prlimit cap), floor-fallback so a
-  bad idiomization never destroys a valid record; ORM records additionally pass
-  the behavioral gate / hollowness check.
+- guard stage: the pinned checkout's jac (`.venv/bin/python -m jaclang`) checks
+  each candidate under a 3GB prlimit cap; floor-fallback means a bad
+  idiomization never destroys a valid record. ORM records additionally pass the
+  behavioral gate / hollowness check. The converter/checker also need Bun;
+  set `JAC_BUN` when it is not `/usr/sbin/bun`.
 - repair pass (step 6): check-failed candidates get a model-assisted fix using
   the compiler error; survivors append as `source=js2jac_repair`.
   Disable with `JS2JAC_REPAIR=0`.
-- DPO preference pairs land in `runs/<TAG>/dpo_pairs.jsonl` from two places:
-  guard floor-fallbacks (chosen=floor) and repair rescues (chosen=repaired).
+- DPO preference pairs land in `runs/<TAG>/dpo_pairs.jsonl` from four places:
+  guard floor-fallbacks (chosen=floor), repair rescues (chosen=repaired),
+  hollow-ORM rejections (chosen=floor; both sides compile — equal-correctness
+  graph-fidelity pairs), and `pipeline/dpo_backfill.py`, which re-derives
+  check-fail/hollow-orm/idiom pairs from existing run artifacts (no generation).
+
+The pipeline does not pip-install Jac. It runs the checked-out js2jac branch
+with `/home/jac/repos/jac_llm_data/.venv/bin/python -m jaclang` from
+`jaseci/jac`; this avoids the incompatible ambient Jac binary. The source checkout requires Bun, normally `/usr/sbin/bun`, and its native
+LLVM shim. Build the shim once from `jaseci/jac`:
+
+```bash
+zig build fetch-llvm
+zig build jacllvm
+```
 
 ## Pilot A corpus
 

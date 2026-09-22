@@ -173,9 +173,9 @@ def main() -> int:
     exhausted = args.offset >= len(cands)  # offset is past the true end of the work list
     cands = cands[args.offset: args.offset + args.limit]
 
-    # Absolute: harvest.convert shells out to `jac` with cwd=JAC_REPO, so any
-    # relative derived path (keep_out/out/report) would resolve against the jac
-    # repo and the report read-back would miss -> 0 files for every repo.
+    # Absolute: harvest.convert runs the checked-out jac with cwd=JAC_REPO, so
+    # any relative derived path (keep_out/out/report) would resolve against the
+    # jac repo and the report read-back would miss -> 0 files for every repo.
     work = Path(args.work_dir).resolve(); work.mkdir(parents=True, exist_ok=True)
     keep_out = work / "_emitted"; keep_out.mkdir(exist_ok=True)
     clones = Path(tempfile.mkdtemp(prefix="js2jac_prep_"))

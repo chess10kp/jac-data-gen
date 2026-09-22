@@ -10,7 +10,7 @@
 #
 # Defaults:
 #   --jac     /home/jac/repos/jaseci/.venv/bin/jac   (editable upstream checkout)
-#   --out-dir <repo>/data/py2jac_dogfood
+#   --out-dir <repo>/archive/2026-09/scratch/py2jac_dogfood
 #
 # Outputs in --out-dir:
 #   failures.jsonl      one record per FAILED sample: id, entrypoint, coverage,

@@ -11,8 +11,8 @@ cd "$ROOT"
 PY="${PY:-python3}"
 MODELS="scripts/js2jac_dataset/farm_models.jsonl"
 APPS="scripts/js2jac_dataset/farm_apps.jsonl"
-DIR="data/farm_handler"
-LOG="data/farm_handler.log"
+DIR="archive/2026-09/scratch/farm_handler"
+LOG="archive/2026-09/data_logs/farm_handler.log"
 mkdir -p "$DIR"
 echo "=== farm handler run start $(date '+%F %T') ===" | tee -a "$LOG"
 
@@ -36,7 +36,7 @@ SIZE="${1:-500}"
 off=0
 while :; do
   tag="hchunk_${off}"
-  W="data/farm_handler/${tag}"
+  W="archive/2026-09/scratch/farm_handler/${tag}"
   if [ -f "$W/.done" ]; then
     off=$((off+SIZE)); continue
   fi

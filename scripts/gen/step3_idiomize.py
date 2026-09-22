@@ -5,7 +5,7 @@ In this step the **Pi agent is the idiomize model** (see
 ``scripts/step3_idiomize_prompt.md`` for the rules it applies). This script is
 the deterministic guard half of the loop:
 
-    data/step3/idiomatic/<id>.jac   (Pi's idiomatic rewrite, function only)
+    archive/2026-09/scratch/step3/idiomatic/<id>.jac   (Pi's idiomatic rewrite, function only)
             +  step-2 test blocks   (already proven to pass against the floor)
             ->  jac test
             ->  keep idiomatic | fall back to the py2jac floor

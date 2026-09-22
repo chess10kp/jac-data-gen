@@ -2,7 +2,7 @@
 # Watch composer_grind (chunk_19000) to completion; notify via notify-send.
 GRIND_PID=310774
 MASTER=data/composer_dataset.jsonl
-LOG=data/composer_grind.log
+LOG=archive/2026-09/data_logs/composer_grind.log
 
 while true; do
     if ! kill -0 "$GRIND_PID" 2>/dev/null; then

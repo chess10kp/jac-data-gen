@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Phase 3 of the agent-idiomize path: guard subagent candidates -> dataset.
 
-Reads prepared work (data/step4/agent_work/<id>.json) and subagent candidates
-(data/step4/agent_candidates.jsonl: {id, candidate}). For each record, applies
+Reads prepared work (archive/2026-09/scratch/step4/agent_work/<id>.json) and subagent candidates
+(archive/2026-09/scratch/step4/agent_candidates.jsonl: {id, candidate}). For each record, applies
 the SAME guard as step4_full_loop:
   1. jac check on the candidate (static gate; skip floor which is untyped)
   2. jac test  on candidate + hidden test_blocks (runtime oracle)

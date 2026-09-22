@@ -110,8 +110,8 @@ def main():
         print(f"  {m:26} response={fenced}/{n}  guard_pass={passed}/{n} "
               f"({100*passed/max(fenced,1):.0f}% of resp)  mean_lat={rows[-1]['mean_latency_s']}s", flush=True)
 
-    Path(REPO / "data/step4/free_model_compare.json").write_text(json.dumps(rows, indent=2) + "\n")
-    print("\nDone. Wrote data/step4/free_model_compare.json")
+    Path(REPO / "archive/2026-09/scratch/step4/free_model_compare.json").write_text(json.dumps(rows, indent=2) + "\n")
+    print("\nDone. Wrote archive/2026-09/scratch/step4/free_model_compare.json")
 
 
 if __name__ == "__main__":

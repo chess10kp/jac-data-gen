@@ -25,7 +25,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "lib"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from composer_harness import run_composer, add_common_args
 
-POLICY_PATH = Path(__file__).resolve().parents[1] / "config" / "strip_policy.json"
+# Lives at the pkg root since the staged-layout refactor (no config/ dir).
+POLICY_PATH = Path(__file__).resolve().parents[1] / "strip_policy.json"
 
 # Deterministic pre-REJECT signals for floor_mode=none records (the LLM's most
 # expensive, lowest-yield input: ~79% of a chunk, ~71% of which it rejects).

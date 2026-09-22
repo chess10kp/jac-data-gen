@@ -29,6 +29,12 @@ import re
 import subprocess
 import sys
 import tempfile
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "scripts" / "lib"))
+from jacresolve import resolve_jac  # noqa: E402
+
+JAC = resolve_jac()
 
 # ---- tiny schema parser (reuse of prisma_to_jac's output shape) -------------
 
@@ -219,7 +225,7 @@ def gate_orm(schema_jac: str, candidate: str, jac_repo: str) -> tuple[str, str]:
     # (Aug 20 OOM freezes).
     as_cap = int(os.environ.get("JAC_RLIMIT_AS_GB", "3")) << 30
     try:
-        p = subprocess.run(["prlimit", f"--as={as_cap}", "--", "jac", "run", path],
+        p = subprocess.run(["prlimit", f"--as={as_cap}", "--", JAC, "run", path],
                            cwd=sandbox,
                            capture_output=True, text=True, timeout=120)
         out = p.stdout + p.stderr

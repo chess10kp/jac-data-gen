@@ -7,7 +7,7 @@
 set -u
 cd "$(dirname "$0")/.."
 PY=.venv/bin/python
-DIR=data/floorfix
+DIR=archive/2026-09/scratch/floorfix
 LOG=$DIR/resume_guard.log
 
 exec 8>/tmp/floorfix_resume.lock

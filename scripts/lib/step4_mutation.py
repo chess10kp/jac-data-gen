@@ -24,7 +24,7 @@ Two ways to consume the score:
 
 Reusable API:  score = mutation_score(floor_fn, test_blocks, ...)
 CLI (calibration):  python scripts/step4_mutation.py [--gate 0.8] [ids...]
-  With no ids, runs over every data/step4/guard/*.jac (the current 23).
+  With no ids, runs over every *.jac in archive/2026-09/scratch/step3/guard/.
 """
 from __future__ import annotations
 import argparse
@@ -33,11 +33,16 @@ import json
 import os
 import re
 import subprocess
+import sys
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO / "scripts" / "lib"))
+from jacresolve import resolve_jac  # noqa: E402
+
+JAC = resolve_jac()
 GUARD_DIR = REPO / "data" / "step4" / "guard"
 
 # --------------------------------------------------------------------------- #
@@ -216,7 +221,7 @@ def _run_test(src: str) -> tuple[int, str]:
             '[build]\ndefault_codespace = "server"\n')  # [placement] is legacy/dropped (2026-08-31 jac rebuild)
         try:
             p = subprocess.run(["prlimit", f"--as={cap}", "--",
-                                "jac", "test", str(f)], capture_output=True,
+                                JAC, "test", str(f)], capture_output=True,
                                text=True, cwd=tmp, timeout=120)
         except subprocess.TimeoutExpired:
             return 1, "timeout"          # a hang counts as caught (killed)

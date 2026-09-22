@@ -23,8 +23,8 @@ echo "[full] discover rc=$rc — models file now: $(wc -l < "$MODELS") files"
 # refresh chunk_0 prep over the (possibly grown) models file; idempotent writes
 python3 scripts/js2jac_dataset/farm/prep.py \
   --models "$MODELS" --offset 0 --limit 500 \
-  --work-dir data/farm_chunks/chunk_0/work
-rm -f data/farm_chunks/chunk_0/.done
+  --work-dir archive/2026-09/scratch/farm_chunks/chunk_0/work
+rm -f archive/2026-09/scratch/farm_chunks/chunk_0/.done
 
 # stage 1+: grind chunks to end of models file
 bash scripts/js2jac_dataset/farm/grind.sh 0 500 "$MODELS"

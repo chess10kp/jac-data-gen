@@ -21,6 +21,8 @@ shrunk atomically so a restart re-runs only the missing records).
 from __future__ import annotations
 import argparse, atexit, json, os, signal, subprocess, sys, threading, time
 from pathlib import Path
+
+import httpx
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Callable
 
@@ -118,6 +120,75 @@ def _invoke(prompt: str, model: str, workspace: str, tmpdir: str,
         return None, "parse_error"
 
 
+# ---- zen chat-completions transport (free-model path) ---------------------- #
+# Same opencode zen gateway idiomize_seam.zen_idiomize uses, but shaped as a
+# drop-in replacement for _invoke so call_agent's retry/ledger logic stays
+# transport-agnostic. Selected automatically for models ending in "-free"
+# (_pick_transport) or explicitly via --transport zen.
+ZEN_BASE = "https://opencode.ai/zen/v1"
+
+
+def _zen_invoke(prompt: str, sysprompt: str, model: str,
+                timeout: float) -> tuple[dict | None, str | None]:
+    """POST to the zen gateway. Returns a cursor-agent-shaped payload
+    ({result, is_error, usage}) or (None, err_kind). Own transient retries
+    (429/5xx/cut stream, 3 attempts); a deterministic failure (4xx) or
+    exhausted retries returns is_error=True so the harness fails fast."""
+    from idiomize_seam import _opencode_key
+    try:
+        key = _opencode_key()
+    except Exception as e:  # noqa: BLE001
+        print(f"[composer] zen auth unavailable: {e}", flush=True)
+        return {"result": "", "is_error": True,
+                "error": f"zen auth: {e}"}, None
+    messages = (([{"role": "system", "content": sysprompt}] if sysprompt else [])
+                + [{"role": "user", "content": prompt}])
+    body = {"model": model, "max_tokens": 16384, "messages": messages}
+    headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
+    last = ""
+    for attempt in range(3):
+        try:
+            r = httpx.post(f"{ZEN_BASE}/chat/completions", headers=headers,
+                           json=body, timeout=timeout)
+            if r.status_code in (429, 500, 502, 503, 504):
+                last = f"zen {r.status_code}"
+                time.sleep(2 ** attempt)
+                continue
+            if 400 <= r.status_code < 500:
+                return {"result": "", "is_error": True,
+                        "error": f"zen client error {r.status_code}: {r.text[:200]}"}, None
+            r.raise_for_status()
+            p = r.json()
+            choice = (p.get("choices") or [{}])[0]
+            content = (choice.get("message") or {}).get("content") or ""
+            finish = choice.get("finish_reason")
+            # empty/cut stream -> retry like a 5xx (idiomize_seam policy)
+            if not content.strip() or finish in (None, "error"):
+                last = "zen empty/cut stream"
+                if attempt == 2:
+                    break
+                time.sleep(1.5 * (attempt + 1))
+                continue
+            u = p.get("usage") or {}
+            return {"result": content, "is_error": False,
+                    "usage": {"inputTokens": int(u.get("prompt_tokens") or 0),
+                              "outputTokens": int(u.get("completion_tokens") or 0)}}, None
+        except Exception as e:  # noqa: BLE001
+            last = f"zen {type(e).__name__}: {str(e)[:120]}"
+            if attempt == 2:
+                break
+            time.sleep(1.5 * (attempt + 1))
+    return {"result": "", "is_error": True, "error": last}, None
+
+
+def _pick_transport(model: str, transport: str) -> str:
+    """auto: free models route to the zen gateway, everything else to
+    cursor-agent (unchanged default behavior)."""
+    if transport != "auto":
+        return transport
+    return "zen" if model.endswith("-free") else "cursor"
+
+
 # Transient = worth a retry with backoff: gateway hiccup, cut stream, OOM-killed
 # child. Mirrors idiomize_seam.zen_idiomize's 429/5xx policy (commit 826ecc7a).
 _TRANSIENT = {"timeout", "parse_error"}
@@ -129,6 +200,7 @@ def call_agent(batch_file: str, *, pipeline: str, model: str, run_id: str,
                parse_result: Callable[[str], dict[str, str]],
                sysprompt_for: Callable[[list[dict]], str] | None = None,
                max_attempts: int = 3, backoff_s: float = 5.0,
+               transport: str = "cursor",
                ) -> tuple[dict[str, str], dict[str, int]]:
     """Compose one batch with retry-on-transient. Returns ({id: candidate}, usage).
 
@@ -147,7 +219,10 @@ def call_agent(batch_file: str, *, pipeline: str, model: str, run_id: str,
     usage_total: dict[str, int] = {}
     last_err = ""
     for attempt in range(max_attempts):
-        d, err = _invoke(prompt, model, workspace, tmpdir, timeout)
+        if transport == "zen":
+            d, err = _zen_invoke(prompt, sysprompt, model, timeout)
+        else:
+            d, err = _invoke(prompt, model, workspace, tmpdir, timeout)
         if err == "spawn":
             record_call(run_id, pipeline=pipeline, status="spawn_error",
                         batch=batch_name, model=model, record_ids=rids,
@@ -252,12 +327,18 @@ def run_composer(pipeline: str, args: argparse.Namespace,
     stats = {"wrote": 0, "empty": 0}
     t0 = time.perf_counter()
 
+    transport = _pick_transport(args.model, getattr(args, "transport", "auto"))
+    if transport == "zen":
+        print(f"[composer] transport=zen gateway {ZEN_BASE} "
+              f"(system prompt sent as system role)", flush=True)
+
     def work(bf: Path) -> None:
         cand, _usage = call_agent(
             str(bf), pipeline=pipeline, model=args.model, run_id=run_id,
             timeout=args.timeout, workspace=workspace, tmpdir=tmpdir,
             build_prompt=build_prompt, parse_result=parse_result,
-            sysprompt_for=sysprompt_for, max_attempts=args.max_attempts)
+            sysprompt_for=sysprompt_for, max_attempts=args.max_attempts,
+            transport=transport)
         with _LOCK:
             for rid, code in cand.items():
                 if rid in done:
@@ -302,3 +383,6 @@ def add_common_args(ap: argparse.ArgumentParser) -> None:
     ap.add_argument("--workspace", default=os.environ.get("CURSOR_WS", "/tmp/cursor_ws"))
     ap.add_argument("--max-attempts", type=int, default=3,
                     help="retries for transient failures (timeout/cut stream)")
+    ap.add_argument("--transport", choices=["auto", "cursor", "zen"], default="auto",
+                    help="model transport; auto routes *-free models to the "
+                         "opencode zen gateway, others to cursor-agent")

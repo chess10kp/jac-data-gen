@@ -23,7 +23,7 @@ Per-edition:
 - `data/jachacks_{sf,spring,2026}_jac_files_filtered.jsonl` — **without any jaseci** (training-ready)
 - `data/jachacks_{sf,spring,2026}_dataset.jsonl` — per-repo metadata
 - `data/jachacks_{sf,spring,2026}_summary.md`, `_inventory.json`
-- `jachacks_{sf,spring,2026}_github.{json,csv,md}` + `_github_links.txt` (repo root)
+- `data/jachacks_scrape/jachacks_{sf,spring,2026}_{github,devpost}_*.{json,csv,md,txt}` (moved from repo root 2026-09-22)
 
 Combined:
 - `data/jachacks_all_jac_files_filtered.jsonl` — 1,820 files (12.2 M chars)

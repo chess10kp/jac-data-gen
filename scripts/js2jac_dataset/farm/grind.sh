@@ -18,13 +18,13 @@ fi
 
 START="${1:-0}"; SIZE="${2:-500}"
 MODELS="${3:-scripts/js2jac_dataset/farm_models.jsonl}"
-LOG="data/farm_grind.log"
+LOG="archive/2026-09/data_logs/farm_grind.log"
 echo "=== farm grind start $(date '+%F %T') from $START size $SIZE ($MODELS) ===" >> "$LOG"
 
 off="$START"
 while true; do
   tag="chunk_${off}"
-  if [ -f "data/farm_chunks/${tag}/.done" ]; then
+  if [ -f "archive/2026-09/scratch/farm_chunks/${tag}/.done" ]; then
     echo "[grind] $tag already done — skip" | tee -a "$LOG"
     off=$((off + SIZE)); continue
   fi
@@ -39,9 +39,9 @@ while true; do
     bash "$HERE/chunk.sh" "$off" "$SIZE" "$MODELS" >> "$LOG" 2>&1 || \
       echo "[grind] $tag failed twice — skipping" | tee -a "$LOG"
   fi
-  touch "data/farm_chunks/${tag}/.done"
+  touch "archive/2026-09/scratch/farm_chunks/${tag}/.done"
   # free per-chunk work/batches; keep candidates + master
-  rm -rf "data/farm_chunks/${tag}/batches" 2>/dev/null || true
+  rm -rf "archive/2026-09/scratch/farm_chunks/${tag}/batches" 2>/dev/null || true
   echo "[grind] master total: $(wc -l < data/farm_dataset.jsonl 2>/dev/null || echo 0)" | tee -a "$LOG"
   off=$((off + SIZE))
 done

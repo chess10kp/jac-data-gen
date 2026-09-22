@@ -7,14 +7,14 @@ set -uo pipefail
 cd "$(dirname "$0")/.."
 PY=.venv/bin/python
 SIZE=2000
-JACTMP="${JACTMP_ROOT:-data/tmp/jactmp}"
+JACTMP="${JACTMP_ROOT:-archive/2026-09/scratch/tmp/jactmp}"
 mkdir -p "$JACTMP"
 prepped() { find "$1" -maxdepth 1 -name '*.json' 2>/dev/null | wc -l; }
 
 for OFFSET in "$@"; do
   TAG="chunk_${OFFSET}"
-  WORK="data/chunks/${TAG}/work"; BATCH="data/chunks/${TAG}/batches"
-  CAND="data/chunks/${TAG}/candidates.jsonl"; TMP="${JACTMP}/${TAG}"
+  WORK="archive/2026-09/scratch/chunks/${TAG}/work"; BATCH="archive/2026-09/scratch/chunks/${TAG}/batches"
+  CAND="archive/2026-09/scratch/chunks/${TAG}/candidates.jsonl"; TMP="${JACTMP}/${TAG}"
   echo "[feed] === $TAG $(date '+%T') ==="
 
   # 1. prep (skip if already prepped)

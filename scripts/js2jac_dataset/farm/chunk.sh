@@ -14,7 +14,7 @@ MODELS="${3:-scripts/js2jac_dataset/farm_models.jsonl}"
 MASTER="${4:-data/farm_dataset.jsonl}"
 PY="${PY:-python3}"
 TAG="chunk_${OFFSET}"
-DIR="data/farm_chunks/${TAG}"
+DIR="archive/2026-09/scratch/farm_chunks/${TAG}"
 WORK="$DIR/work"; BATCH="$DIR/batches"; CAND="$DIR/candidates.jsonl"
 mkdir -p "$WORK" "$BATCH"
 
@@ -53,16 +53,25 @@ for i in range(0, len(files), B):
 print(f"  {len(files)} -> {(len(files)+B-1)//B} batches")
 PYEOF
 
-# 3. composer (skip if complete). Serialized via the shared composer lock.
+# 3. composer (skip if complete). Free-gateway models (*-free, unlimited
+# throughput) run without the global lock; cursor-agent models serialize.
 ncand=0; [ -f "$CAND" ] && ncand=$(wc -l < "$CAND")
+MODEL="${MODEL:-x-preview-f-free}"
 if [ "$ncand" -lt "$n" ]; then
-  echo "[farm] $TAG composer ($ncand/$n) — acquiring composer lock"
-  (
-    flock -w 21600 9 || { echo "[farm] $TAG composer lock failed"; exit 4; }
+  if [[ "$MODEL" == *-free ]]; then
+    echo "[farm] $TAG composer ($ncand/$n) — free gateway, no lock"
     "$PY" scripts/js2jac_dataset/farm/composer.py \
       --batch-dir "$BATCH" --out "$CAND" \
-      --model "${MODEL:-composer-2.5}" --workers "${WORKERS:-6}" --timeout "${TIMEOUT:-360}"
-  ) 9>/tmp/composer.lock
+      --model "$MODEL" --workers "${WORKERS:-6}" --timeout "${TIMEOUT:-360}"
+  else
+    echo "[farm] $TAG composer ($ncand/$n) — acquiring composer lock"
+    (
+      flock -w 21600 9 || { echo "[farm] $TAG composer lock failed"; exit 4; }
+      "$PY" scripts/js2jac_dataset/farm/composer.py \
+        --batch-dir "$BATCH" --out "$CAND" \
+        --model "$MODEL" --workers "${WORKERS:-6}" --timeout "${TIMEOUT:-360}"
+    ) 9>/tmp/composer.lock
+  fi
 else
   echo "[farm] $TAG composer complete ($ncand) — skip"
 fi

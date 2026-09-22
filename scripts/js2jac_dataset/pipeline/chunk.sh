@@ -17,6 +17,11 @@ MASTER="js2jac_dataset.jsonl"
 CANDS="${CANDS:-source/candidates.jsonl}"
 JAC_REPO="/home/jac/repos/jac_llm_data/jaseci/jac"
 PY="/home/jac/repos/jac_llm_data/.venv/bin/python"
+# Composer model. Default: ox-alpha free via the opencode zen gateway
+# (composer_harness auto-routes *-free models to zen, $0 cost). Override with
+# Free-model default (user directive 2026-08-22: do NOT use composer-2.5).
+MODEL="${JS2JAC_MODEL:-x-preview-f-free}"
+export JS2JAC_MODEL="$MODEL"   # read by the master-append step for provenance
 
 mkdir -p "$WORK" "$BATCH"
 
@@ -47,6 +52,8 @@ COMPOSE="$WORK/_compose"          # subset of work/ records to actually compose
 $PY - "$WORK" "$COMPOSE" "$FLOORKEPT" "$JAC_REPO" "$FAITHFUL" <<'PYEOF'
 import glob, json, os, sys, tempfile, subprocess
 from concurrent.futures import ThreadPoolExecutor
+sys.path.insert(0, os.path.join(os.getcwd(), "pipeline"))
+from guard_lib import jac_argv, jac_env
 work, compose_dir, floorkept, jac_repo = sys.argv[1:5]
 faithful = "--faithful" in sys.argv[5:]
 os.makedirs(compose_dir, exist_ok=True)
@@ -62,9 +69,13 @@ def floor_compiles(code):
     with tempfile.NamedTemporaryFile("w", suffix=".jac", delete=False) as tf:
         tf.write(code); tp = tf.name
     try:
-        return subprocess.run(["prlimit", f"--as={AS_CAP}", "--", "jac", "check", tp],
-                              cwd=jac_repo,
-                              capture_output=True, timeout=90).returncode == 0
+        # Run the checkout's source jac explicitly; the ambient binary is
+        # incompatible with this pinned js2jac checkout.
+        return subprocess.run(
+            ["prlimit", f"--as={AS_CAP}", "--", *jac_argv("check", tp)],
+            cwd=jac_repo, capture_output=True, timeout=90,
+            env={**os.environ, **jac_env()},
+        ).returncode == 0
     except Exception:
         return False
     finally:
@@ -73,7 +84,7 @@ def floor_compiles(code):
 # Only HOLES-floors are floor-gated. FULL always composes (idiomize); NONE has
 # no floor to gate. faithful mode keeps holes-floors in the round-trip set too.
 holes = [r for r in recs if r.get("floor_mode") == "holes" and not faithful]
-with ThreadPoolExecutor(max_workers=8) as ex:
+with ThreadPoolExecutor(max_workers=16) as ex:
     ok = list(ex.map(lambda r: floor_compiles(r.get("floor_jac")), holes))
 kept_ids = set()
 with open(floorkept, "w") as fh:
@@ -105,7 +116,7 @@ sys.path.insert(0, os.getcwd() + "/pipeline")
 from composer import skills_for_record, pre_reject
 work, out, cand, faithful_arg = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4:]
 faithful = "--faithful" in faithful_arg
-pol = json.loads(open("config/strip_policy.json").read())
+pol = json.loads(open("strip_policy.json").read())  # moved to pkg root in the staged-layout refactor
 # css_always: additionally pre-reject CSS-in-JS in SYNTAX mode. Off by default —
 # those are policy strip-and-keep and the LLM salvages ~15%; flip PREREJECT_CSS=1
 # to trade that yield for the token cut.
@@ -131,9 +142,8 @@ live = [r for r in recs if r["id"] not in done]
 print(f"  pre-reject: {len(pre)} none-mode records condemned by policy (no LLM); "
       f"{len(live)} remain for the composer")
 
-B = 10  # was 6: bigger batches amortize the per-call static context (agent
-        # scaffolding + grounding + policy) that dominates fresh-input tokens.
-        # Capped at 10 (py2jac precedent) to keep one response from truncating.
+B = 6   # smaller batches + more workers = finer parallelism; token cost no object
+        # (was 10: py2jac precedent, capping one response's truncation risk)
 # Segment by floor_mode so batches are homogeneous: FULL-floor records (the
 # model just idiomizes an existing exemplar) batch together and run LEAN, while
 # none/holes records (the model generates Jac) batch together and get grounded.
@@ -152,98 +162,65 @@ print(f"  {len(live)} -> {n} batches ({len(full)} full / {len(gen)} gen)")
 PYEOF
 
 echo "[$TAG] 4/5 composer cleanup (MCP off, batched)"
-exec 9>/tmp/composer.lock          # same lock as py2jac: one composer driver at a time
-flock -w 21600 9 || { echo "[$TAG] could not acquire composer lock"; exit 4; }
+# Free-gateway models (*-free, unlimited throughput) skip the global composer
+# lock; cursor-agent models still serialize one driver at a time.
+if [[ "$MODEL" != *-free ]]; then
+  exec 9>/tmp/composer.lock          # same lock as py2jac: one composer driver at a time
+  flock -w 21600 9 || { echo "[$TAG] could not acquire composer lock"; exit 4; }
+fi
 $PY pipeline/composer.py --batch-dir "$BATCH" --out "$CAND" \
-  --model composer-2.5 --workers 6 --timeout 360 $FAITHFUL
-flock -u 9
+  --model "$MODEL" --workers 16 --timeout 360 $FAITHFUL
+[[ "$MODEL" != *-free ]] && flock -u 9
 
 echo "[$TAG] 5/5 guard (jac check, floor-fallback) + merge floor-kept + append to $MASTER"
 $PY - "$WORK" "$CAND" "$DS" "$JAC_REPO" "$FLOORKEPT" <<'PYEOF'
-import json, re, subprocess, sys, tempfile, os
-from pathlib import Path
-sys.path.insert(0, os.getcwd() + "/gates")  # chunk.sh cd.s to the pkg root
-from orm_behavioral_gate import gate_orm
+import json, os, sys
+sys.path.insert(0, os.getcwd() + "/pipeline")  # guard_lib (shared with dpo_backfill.py)
+sys.path.insert(0, os.getcwd() + "/gates")
+from guard_lib import Checker, load_meta, orm_reject
 work, cand, ds, jac_repo, floorkept = sys.argv[1:6]
-meta = {}
-for f in Path(work).glob("*.json"):
-    if f.name == "report.json": continue
-    r = json.load(open(f)); meta[r["id"]] = r
+meta = load_meta(work)
+ck = Checker(jac_repo)   # prlimit AS cap + 90s timeout + code cache (see guard_lib)
 
-# 3GB address-space cap per jac check — same fix as step4_full_loop._run
-# (Aug 20 OOM freezes). A runaway check dies as a compile-fail instead.
-AS_CAP = int(os.environ.get("JAC_RLIMIT_AS_GB", "3")) << 30
-
-_ok_cache = {}
-def jac_ok(code):
-    if not code or code == "REJECT": return False
-    if code not in _ok_cache:          # was called twice per candidate uncached
-        with tempfile.NamedTemporaryFile("w", suffix=".jac", delete=False) as tf:
-            tf.write(code); tp = tf.name
-        try:
-            _ok_cache[code] = subprocess.run(
-                ["prlimit", f"--as={AS_CAP}", "--", "jac", "check", tp],
-                cwd=jac_repo, capture_output=True, timeout=90).returncode == 0
-        except Exception:
-            _ok_cache[code] = False
-        finally:
-            os.unlink(tp)
-    return _ok_cache[code]
-
-_GRAPH_OP = re.compile(r"-->|\+\+>|\bspawn\b|\+>:|->:|<-:|:->|:<-|\[\?:|\bdel here\b|\bhere\.|\bjobj\(")
-
-def hollow(m, code):
-    # An ORM record's job is to rewrite the DB calls against the lifted graph
-    # schema. `jac check` passes a hollow `return []`/`{}` stub all the same.
-    # The generic fidelity gate is the WRONG tool here (its body-mass signal
-    # false-rejects faithful route->walker rewrites, which are idiomatically
-    # DENSER/shorter than the JS). The persistence-specific hollowness signal:
-    # a real rewrite REFERENCES a lifted node AND uses a graph operator; a stub
-    # has neither. Non-ORM records skip this.
-    schema = m.get("schema_jac")
-    if not schema or not code:
-        return False
-    nodes = re.findall(r"\bnode\s+(\w+)", schema)
-    uses_node = any(re.search(rf"\b{n}\b", code) for n in nodes)
-    uses_graph = bool(_GRAPH_OP.search(code))
-    return not (uses_node and uses_graph)
-
-def orm_reject(m, code):
-    # For ORM records: prefer the BEHAVIORAL gate (seed->invoke->assert read-back)
-    # over the structural one — it catches wrong-filter/wrong-edge rewrites that
-    # DO touch the graph (so pass `hollow`) but read back nothing real. Only when
-    # the gate can't build a probe (no scalar entrypoint) fall back to structural.
-    schema = m.get("schema_jac")
-    if not schema:
-        return False, "not-orm"
-    verdict, why = gate_orm(schema, code, jac_repo)
-    if verdict == "KEEP":
-        return False, f"behavioral:{why}"
-    if verdict == "REJECT":
-        return True, f"behavioral:{why}"
-    return hollow(m, code), f"structural-fallback:{why}"   # INCONCLUSIVE
+# Precompute every expensive verdict (jac check subprocesses + ORM gates)
+# CONCURRENTLY — tokens are cheap, wall clock is not. The decision loop below
+# stays sequential and byte-identical in semantics.
+from concurrent.futures import ThreadPoolExecutor
+cands_all = [json.loads(l) for l in open(cand) if l.strip()]
+def _verdict(c):
+    m = meta.get(c["id"], {})
+    code = c.get("candidate")
+    ok = ck.ok(code)
+    rej_orm, why = (orm_reject(m, code, ck) if ok else (False, "not-ok"))
+    floor = m.get("floor_jac")
+    return c, ok, rej_orm, why, floor, bool(floor) and ck.ok(floor)
+with ThreadPoolExecutor(max_workers=16) as ex:
+    verdicts = list(ex.map(_verdict, cands_all))
 
 kept = drop = rej = fallback = hollowed = behav = 0
 pairs_f = open("dpo_pairs.jsonl", "a")  # next to dataset.jsonl (cwd = runs/TAG)
 with open(ds, "w") as out:
-    for line in open(cand):
-        line = line.strip()
-        if not line: continue
-        c = json.loads(line)
+    for c, ok_cand, rej_orm, why, floor, ok_floor in verdicts:
         m = meta.get(c["id"], {})
         code, src = c.get("candidate"), "js2jac_cleaned"
-        if jac_ok(code):
-            rej_orm, why = orm_reject(m, code)
+        if ok_cand:
             if rej_orm:
                 # compiles but hollow/wrong ORM rewrite — reject (the point of the lift)
                 hollowed += 1; drop += 1
                 if why.startswith("behavioral"): behav += 1
+                if floor and ok_floor:
+                    # DPO pair: chosen = compiling floor, rejected = hollow
+                    # rewrite. Both sides compile (equal correctness); the
+                    # preference dimension is graph fidelity. Previously these
+                    # — the textbook DPO negative — were dropped unpaired.
+                    pairs_f.write(json.dumps({"id": c["id"], "chosen": floor,
+                                              "rejected": code,
+                                              "why": "hollow-orm"}) + "\n")
                 continue
-        if not jac_ok(code):
+        if not ok_cand:
             # composer rejected or broke it — fall back to the floor if it compiles
             # (guards FULL floors against destructive idiomization; the pilot lesson).
-            floor = m.get("floor_jac")
-            if floor and jac_ok(floor):
+            if floor and ok_floor:
                 # DPO pair: chosen = known-good floor, rejected = broken rewrite
                 pairs_f.write(json.dumps({"id": c["id"], "chosen": floor,
                                           "rejected": code,
@@ -276,6 +253,7 @@ $PY - "$DS" "$MASTER" "$TAG" <<'PYEOF'
 import json, sys, os
 ds, master, tag = sys.argv[1:4]
 rows = [json.loads(l) for l in open(ds)]
+model = os.environ.get("JS2JAC_MODEL", "")
 seen = set()
 if os.path.exists(master):
     for l in open(master): seen.add(json.loads(l)["id"])
@@ -283,7 +261,9 @@ added = 0
 with open(master, "a") as fh:
     for r in rows:
         if r["id"] not in seen:
-            r["chunk"] = tag; fh.write(json.dumps(r) + "\n"); added += 1
+            r["chunk"] = tag
+            if model: r["model"] = model
+            fh.write(json.dumps(r) + "\n"); added += 1
 print(f"  appended {added} new records to {master} (total now {len(seen)+added})")
 PYEOF
 
@@ -293,7 +273,7 @@ PYEOF
 if [ "${JS2JAC_REPAIR:-1}" = "1" ]; then
   echo "[$TAG] 6/6 repair pass"
   $PY pipeline/repair.py all --run-dir "runs/$TAG" --master "$MASTER" --tag "$TAG" \
-    --model composer-2.5 --workers 4 --timeout 360 \
+    --model "$MODEL" --workers 12 --timeout 360 \
     || echo "[$TAG] repair pass failed (non-fatal)"
 else
   echo "[$TAG] repair pass disabled (JS2JAC_REPAIR=0)"

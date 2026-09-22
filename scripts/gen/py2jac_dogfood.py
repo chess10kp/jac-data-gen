@@ -14,7 +14,7 @@ Pass = rc 0 with non-empty jac output. Everything else (compile errors, crashes,
 timeouts, empty output) is a failure and is appended to failures.jsonl with the
 error text and the original python.
 
-Outputs (in --out-dir, default <repo>/data/py2jac_dogfood):
+Outputs (in --out-dir, default <repo>/archive/2026-09/scratch/py2jac_dogfood):
   failures.jsonl       {id, entrypoint, coverage, rc, stage, error, content}
   done.jsonl           {id, stage} ledger — resume-safe across reruns
   run.log              progress
@@ -44,7 +44,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DATASET = "nuprl/stack-dedup-python-testgen-starcoder-filter-v2"
 DEFAULT_JAC = Path.home() / "repos/jaseci/.venv/bin/jac"
-DEFAULT_OUT = REPO_ROOT / "data/py2jac_dogfood"
+DEFAULT_OUT = REPO_ROOT / "archive/2026-09/scratch/py2jac_dogfood"
 
 _print_lock = threading.Lock()
 _counters = {"pass": 0, "fail": 0}

@@ -15,6 +15,11 @@ import subprocess
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts" / "lib"))
+from jacresolve import resolve_jac  # noqa: E402
+
+JAC = resolve_jac()
+
 U_PREFIX = re.compile(r"\bu(['\"])")
 
 
@@ -62,7 +67,7 @@ def with_entry_to_tests(jac_src: str) -> str:
 def py2jac(python_src: str, work_py: Path) -> tuple[bool, str, str]:
     work_py.write_text(python_src)
     proc = subprocess.run(
-        ["jac", "tool", "py2jac", str(work_py)],
+        [JAC, "tool", "py2jac", str(work_py)],
         capture_output=True,
         text=True,
     )
@@ -72,7 +77,7 @@ def py2jac(python_src: str, work_py: Path) -> tuple[bool, str, str]:
 
 def jac_test(jac_path: Path) -> tuple[bool, str]:
     proc = subprocess.run(
-        ["jac", "test", str(jac_path)],
+        [JAC, "test", str(jac_path)],
         capture_output=True,
         text=True,
     )
@@ -124,7 +129,7 @@ def main() -> int:
     parser.add_argument(
         "--out-dir",
         type=Path,
-        default=Path("data/step2"),
+        default=Path("archive/2026-09/scratch/step2"),
     )
     args = parser.parse_args()
 

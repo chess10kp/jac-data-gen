@@ -12,9 +12,9 @@ Phases (all resume-safe, run in order):
             ids from the cached MultiPL-T dataset. py2jac only — NO floor jac
             test (floors are already banked; broken rec_repair test translations
             are harmless: only the CANDIDATE is tested, never the floor).
-  generate  one zen_idiomize call per work record -> data/floorfix/candidates.jsonl
+  generate  one zen_idiomize call per work record -> archive/2026-09/scratch/floorfix/candidates.jsonl
             (candidate may be null on gateway failure; --retry-empty redoes nulls)
-  guard     guard_one per candidate -> data/floorfix/results.jsonl
+  guard     guard_one per candidate -> archive/2026-09/scratch/floorfix/results.jsonl
             shard with --shard/--shards + --shared-tmp (one PG per shard)
   merge     rewrite master rows floor->idiomatic for guard passers (atomic,
             .bak kept) and regenerate data/py2jac_dataset_idiomatic.jsonl
@@ -47,7 +47,7 @@ from idiomize_seam import zen_idiomize  # noqa: E402
 
 MASTER = REPO / "data/composer_dataset.jsonl"
 EXPORT = REPO / "data/py2jac_dataset_idiomatic.jsonl"
-DIR = REPO / "data/floorfix"
+DIR = REPO / "archive/2026-09/scratch/floorfix"
 WORK = DIR / "work"
 CAND = DIR / "candidates.jsonl"
 RESULTS = DIR / "results.jsonl"

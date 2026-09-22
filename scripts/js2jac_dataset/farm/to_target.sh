@@ -13,7 +13,7 @@ cd "$ROOT"
 
 TARGET="${1:-2000}"
 MODELS="scripts/js2jac_dataset/farm_models.jsonl"
-LOG="data/farm_to_2k.log"
+LOG="archive/2026-09/data_logs/farm_to_2k.log"
 echo "=== farm_to_2k start $(date '+%F %T') target=$TARGET ===" >> "$LOG"
 
 prev_master=0

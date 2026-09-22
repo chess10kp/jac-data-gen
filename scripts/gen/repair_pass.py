@@ -16,9 +16,9 @@ Stages (all resumable, artifacts under --out-dir):
   4. guard   : jac check + jac test each candidate -> repaired.jsonl (passers)
 
 Usage:
-  python3 scripts/repair_pass.py collect --out-dir data/chunks/repair_proto --offset 400 --limit 30
-  python3 scripts/repair_pass.py compose --out-dir data/chunks/repair_proto
-  python3 scripts/repair_pass.py guard   --out-dir data/chunks/repair_proto
+  python3 scripts/repair_pass.py collect --out-dir archive/2026-09/scratch/chunks/repair_proto --offset 400 --limit 30
+  python3 scripts/repair_pass.py compose --out-dir archive/2026-09/scratch/chunks/repair_proto
+  python3 scripts/repair_pass.py guard   --out-dir archive/2026-09/scratch/chunks/repair_proto
 """
 from __future__ import annotations
 import argparse, json, os, re, subprocess, sys, tempfile, time
@@ -29,7 +29,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts" / "lib"))
 import step4_full_loop as S  # noqa: E402
 
-JAC = os.environ.get("JAC_BIN", "jac")   # allow testing against a custom binary
+from jacresolve import resolve_jac  # noqa: E402  (lib path inserted above)
+
+JAC = resolve_jac()   # $JAC_BIN override -> vendored compiler -> PATH
 
 # ids already banked in the master dataset — collect must skip these to avoid
 # wasted compose/guard on records that can never add a new master row.

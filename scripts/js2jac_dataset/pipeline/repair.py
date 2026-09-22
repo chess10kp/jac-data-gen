@@ -28,8 +28,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "lib"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from composer_harness import run_composer, add_common_args  # noqa: E402
-
-DEFAULT_JAC_REPO = "/home/jac/repos/jac_llm_data/jaseci/jac"
+from guard_lib import DEFAULT_JAC_REPO, jac_argv, jac_env  # noqa: E402
 AS_CAP = int(os.environ.get("JAC_RLIMIT_AS_GB", "3")) << 30
 PACK_SIZE = 10
 
@@ -58,11 +57,13 @@ HARD RULES:
 5. No prose outside the ===ID blocks."""
 
 
-def _run(cmd: list[str], cwd: str | None = None, to: int = 90) -> tuple[int, str]:
+def _run(cmd: list[str], cwd: str | None = None, to: int = 90,
+         env: dict[str, str] | None = None) -> tuple[int, str]:
     """prlimit-capped subprocess (same OOM guard as js2jac_chunk.sh guard)."""
     try:
         r = subprocess.run(["prlimit", f"--as={AS_CAP}", "--"] + cmd,
-                           capture_output=True, text=True, cwd=cwd, timeout=to)
+                           capture_output=True, text=True, cwd=cwd, timeout=to,
+                           env=env)
         return r.returncode, (r.stdout + r.stderr)
     except subprocess.TimeoutExpired:
         return 124, "TIMEOUT"
@@ -81,7 +82,11 @@ class Checker:
                 tf.write(code)
                 tp = tf.name
             try:
-                rc, out = _run(["jac", "check", tp], cwd=self.jac_repo)
+                rc, out = _run(
+                    jac_argv("check", tp), cwd=self.jac_repo, env={**os.environ, **jac_env()}
+                )
+                # Run the checkout's source jac explicitly. The ambient binary
+                # is incompatible with this pinned js2jac checkout.
                 self.cache[code] = (rc == 0, out[-800:] if rc else "")
             finally:
                 os.unlink(tp)
