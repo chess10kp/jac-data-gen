@@ -372,7 +372,35 @@ def main() -> int:
         if line.strip():
             r = json.loads(line)
             pass_meta[r["id"]] = r
+    REPAIR_PASSMETA = REPO / "data" / "osp_repair_passmeta.jsonl"
+    repairs: dict[str, dict] = {}
+    if REPAIR_PASSMETA.exists():
+        for line in REPAIR_PASSMETA.open():
+            if line.strip():
+                r = json.loads(line)
+                pass_meta[r["id"]] = {**pass_meta.get(r["id"], {}), **r}
+                repairs[r["id"]] = r
     legacy_rows = [json.loads(l) for l in LEGACY_RAW.open() if l.strip()]
+    rep_rows: dict[str, dict] = {}
+    REPAIRED_LEDGER = REPO / "data" / "osp_repaired.jsonl"
+    if REPAIRED_LEDGER.exists():
+        for line in REPAIRED_LEDGER.open():
+            if line.strip():
+                r = json.loads(line)
+                rep_rows[r["id"]] = r  # fold_repairs.py writes it deduped
+    n_repaired = 0
+    for row in legacy_rows:
+        rep = rep_rows.get(row["id"])
+        if rep and len(rep.get("messages") or ()) > 1:
+            row["messages"] = rep["messages"]
+            for k in ("run_tag", "test_pass", "test_verdict", "test_detail",
+                      "test_run_tag"):
+                if rep.get(k) is not None:
+                    row[k] = rep[k]
+            n_repaired += 1
+    if n_repaired:
+        print(f"repaired rows folded in: {n_repaired} "
+              f"(candidates replaced, gates re-run at pack time)")
     if args.limit:
         legacy_rows = legacy_rows[:args.limit]
     print(f"legacy rows: {len(legacy_rows)} ({len(pass_meta)} with PASS snapshot)")

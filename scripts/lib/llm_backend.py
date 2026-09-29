@@ -1,6 +1,6 @@
-"""Unified LLM backend — one seam for pi / cursor / zen / openrouter.
+"""Unified LLM backend — one seam for pi / cursor / zen / openrouter / devin.
 
-Goal: any model swaps via --backend pi|cursor|zen|openrouter|auto without
+Goal: any model swaps via --backend pi|cursor|zen|openrouter|zai|devin|auto without
 editing prompts or generation logic. Every backend exposes the same call:
 
     backend.call(system, user, model, timeout, tries) -> (text|None, error|None, usage dict)
@@ -17,6 +17,11 @@ Auto routing (when --backend auto):
   slash models like minimax/... -> openrouter
   else -> cursor (composer-2.5 etc.)
 
+Rate-limit workflow: DevinBackend detects provider rate limiting (the free-model
+quota window) and transparently falls back to pi/glm-5.3-flash, so grind lanes
+keep producing while the devin quota resets. DEVIN_FALLBACK_MODEL overrides the
+fallback model; DEVIN_FALLBACK_MODEL=off disables it.
+
 Callers:
   from llm_backend import get_backend, strip_prefix
   backend = get_backend(args.backend, args.model)
@@ -28,6 +33,8 @@ import json
 import os
 import re
 import subprocess
+import signal
+import sys
 import time
 import threading
 import uuid
@@ -80,10 +87,21 @@ def _ensure_iso_home() -> None:
 
 def strip_prefix(model: str) -> str:
     """Strip backend prefixes (pi:/cursor:/zen:/openrouter:/zai:, zai/) for transport."""
-    for p in ("pi:", "cursor:", "zen:", "openrouter:", "zai:", "zai/"):
+    for p in ("pi:", "cursor:", "zen:", "openrouter:", "zai:", "zai/", "devin:"):
         if model.startswith(p):
             return model[len(p):]
     return model
+
+
+_RATE_LIMIT_RE = re.compile(
+    r"rate[ _-]?limit|too many requests|\b429\b"
+    r"|quota\s*(?:exhausted|exceeded|reached)|usage limit",
+    re.I)
+
+
+def is_rate_limit(err: str | None) -> bool:
+    """True when backend error text indicates provider rate limiting."""
+    return bool(err and _RATE_LIMIT_RE.search(err))
 
 
 # ---------------------------------------------------------------------------
@@ -223,6 +241,8 @@ class PiBackend:
         m = model.lower()
         if "muse" in m or m.endswith("-free"):
             return "opencode"
+        if "glm" in m or m.startswith("zai/"):
+            return "zai"  # z.ai coding-plan OAuth (glm-5.3-flash fallback pool)
         return "openai-codex"
 
     def call(self, system: str, user: str, model: str, timeout: int, tries: int = 2
@@ -235,6 +255,10 @@ class PiBackend:
                 r = subprocess.run(
                     ["pi", "-p", "--provider", provider, "--model", model,
                      "--no-session", "--system-prompt", system, user],
+                    stdin=subprocess.DEVNULL,  # pi reads a non-TTY stdin and blocks
+                    cwd=os.environ.get("DEVIN_OSP_CWD", "/tmp/devin_osp_workspace"),
+                    # ^ pi blocks when run inside a large repo (tree scan); keep
+                    #   it in the same scratch workspace DevinBackend uses
                     capture_output=True, text=True, timeout=timeout)
             except subprocess.TimeoutExpired:
                 last = f"pi timeout after {timeout}s"
@@ -252,6 +276,124 @@ class PiBackend:
             time.sleep(2 ** attempt)
         return None, last, {"inputTokens": 0, "outputTokens": 0, "cacheReadTokens": 0,
                             "ms": int((time.perf_counter() - t0) * 1000)}
+
+
+# ---------------------------------------------------------------------------
+# Devin (local CLI)
+# ---------------------------------------------------------------------------
+
+class DevinBackend:
+    """Call the local Devin CLI in non-interactive print mode.
+
+    Devin is intentionally explicit-only: it is not selected by ``auto``.
+    Calls run from a throwaway workspace because the generator needs text,
+    not repository edits.  The prompt also asks Devin not to use tools.
+
+    Rate-limit workflow: when Devin fails because the account hit the
+    free-model rate limit, remaining retries are skipped (the quota window
+    is minutes long — retrying into it is wasted latency) and the call is
+    re-issued through PiBackend on DEVIN_FALLBACK_MODEL (default
+    glm-5.3-flash). Set DEVIN_FALLBACK_MODEL=off to disable.
+    """
+    name = "devin"
+
+    def call(self, system: str, user: str, model: str, timeout: int = 600,
+             tries: int = 2) -> tuple[str | None, str | None, dict]:
+        prompt = (
+            f"{system}\n\n---\n\n{user}\n\n"
+            "Return the requested answer directly. Do not use tools, edit "
+            "files, or describe your process."
+        )
+        work = Path(os.environ.get("DEVIN_OSP_CWD", "/tmp/devin_osp_workspace"))
+        work.mkdir(parents=True, exist_ok=True)
+        last = "not attempted"
+        t0 = time.perf_counter()
+        for attempt in range(tries):
+            try:
+                p = subprocess.Popen(
+                    ["devin", "--print", "--model", model,
+                     "--permission-mode", "auto",
+                     "--respect-workspace-trust", "false", "--", prompt],
+                    cwd=str(work), stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                    text=True, start_new_session=True,
+                )
+                try:
+                    out, err = p.communicate(timeout=timeout)
+                except subprocess.TimeoutExpired:
+                    try:
+                        os.killpg(p.pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+                    p.communicate()
+                    last = f"devin timeout after {timeout}s"
+                    time.sleep(2 ** attempt)
+                    continue
+            except FileNotFoundError:
+                return None, "devin CLI not found on PATH", {
+                    "inputTokens": 0, "outputTokens": 0,
+                    "cacheReadTokens": 0, "ms": 0,
+                }
+            except OSError as exc:
+                last = f"devin launch: {exc}"
+                time.sleep(2 ** attempt)
+                continue
+
+            raw = (out or "").strip()
+            if p.returncode != 0 or not raw:
+                combined = f"{err or ''}\n{raw or ''}"[-4000:]
+                if _RATE_LIMIT_RE.search(combined):
+                    # Quota window is minutes long; retries cannot succeed.
+                    last = f"devin rate-limited: {combined[-300:]}"
+                    break
+                last = f"devin rc={p.returncode}: {(err or raw)[-400:]}"
+                time.sleep(2 ** attempt)
+                continue
+
+            # Current Devin print mode is plain text. Accept a JSON envelope
+            # too, so a future CLI output-mode change does not poison a run.
+            text = raw
+            try:
+                payload = json.loads(raw)
+                if isinstance(payload, dict):
+                    if payload.get("is_error") or payload.get("error"):
+                        emsg = str(payload.get("error") or "unknown")
+                        if _RATE_LIMIT_RE.search(emsg):
+                            last = f"devin rate-limited: {emsg[:300]}"
+                            break
+                        last = f"devin error: {emsg}"
+                        time.sleep(2 ** attempt)
+                        continue
+                    text = (payload.get("result") or payload.get("response")
+                            or payload.get("text") or raw)
+            except json.JSONDecodeError:
+                pass
+
+            text = str(text).strip()
+            if text:
+                return text, None, {
+                    "inputTokens": 0, "outputTokens": 0,
+                    "cacheReadTokens": 0,
+                    "ms": int((time.perf_counter() - t0) * 1000),
+                }
+            last = "devin empty response"
+            time.sleep(2 ** attempt)
+
+        usage0 = {"inputTokens": 0, "outputTokens": 0, "cacheReadTokens": 0,
+                  "ms": int((time.perf_counter() - t0) * 1000)}
+        if is_rate_limit(last):
+            fb = os.environ.get("DEVIN_FALLBACK_MODEL", "glm-5.3-flash").strip()
+            if fb and fb.lower() not in {"off", "none", "disabled"}:
+                print(f"[llm_backend] devin rate-limited -> pi fallback "
+                      f"model={fb}", file=sys.stderr, flush=True)
+                text, ferr, fusage = PiBackend().call(
+                    system, user, fb, timeout=timeout, tries=2)
+                if text is not None:
+                    u = dict(fusage or {})
+                    u["fallback"] = f"pi/{fb}"
+                    return text, None, u
+                return None, (f"devin rate-limited; pi/{fb} fallback failed: "
+                              f"{ferr}"), usage0
+        return None, last, usage0
 
 
 # ---------------------------------------------------------------------------
@@ -584,11 +726,11 @@ class ZaiBackend:
 
 _BACKENDS: dict[str, type[Backend]] = {
     "pi": PiBackend, "cursor": CursorBackend, "zen": ZenBackend, "openrouter": OpenRouterBackend,
-    "zai": ZaiBackend,
+    "zai": ZaiBackend, "devin": DevinBackend,
 }
 
 def get_backend(backend: str, model: str) -> Backend:
-    """Resolve a backend instance. backend is pi|cursor|zen|openrouter|zai|auto."""
+    """Resolve a backend instance. backend is pi|cursor|zen|openrouter|zai|devin|auto."""
     b = (backend or "auto").lower().strip()
     # explicit prefix always wins — pi:foo -> PiBackend regardless of auto logic
     if model.startswith("pi:"):
@@ -603,7 +745,7 @@ def get_backend(backend: str, model: str) -> Backend:
         return ZaiBackend()
     if b != "auto":
         if b not in _BACKENDS:
-            raise ValueError(f"unknown backend {b!r} (pi|cursor|zen|openrouter|zai|auto)")
+            raise ValueError(f"unknown backend {b!r} (pi|cursor|zen|openrouter|zai|devin|auto)")
         return _BACKENDS[b]()
     # auto
     m = model.lower()

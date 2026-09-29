@@ -68,6 +68,8 @@ ISO_HOME = Path(os.environ.get("CURSOR_OSP_ISO_HOME", "/tmp/cursor_iso_home"))
 sys.path.insert(0, str(Path(__file__).parent))
 from osp_minimax_generate import _first_err, call_or, extract_jac  # noqa: E402
 from jac_source import strip_top_level_with_entry  # noqa: E402
+sys.path.insert(0, str(REPO / "scripts" / "lib"))
+from jacresolve import resolve_jac  # noqa: E402
 
 SYSTEM = """You write regression tests in the Jac language for a given Jac program.
 
@@ -162,7 +164,7 @@ def jac_test(code: str, tests: str, work: Path) -> tuple[int, str]:
     (work / "main.jac").write_text(test_code)
     (work / "main.test.jac").write_text(tests)
     try:
-        r = subprocess.run(["jac", "test", "main.jac"], capture_output=True,
+        r = subprocess.run([resolve_jac(), "test", "main.jac"], capture_output=True,
                            text=True, timeout=JAC_TIMEOUT, cwd=work)
     except subprocess.TimeoutExpired:
         return 124, "test-timeout (solution or tests exceeded budget)"

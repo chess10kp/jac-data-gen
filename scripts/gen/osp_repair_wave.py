@@ -46,12 +46,13 @@ from osp_glm_generate import call_glm  # noqa: E402
 
 DATASET = REPO / "data" / "osp_dataset.jsonl"
 RESULTS = REPO / "data" / "osp_test_results.jsonl"
-OUT = REPO / "data" / "osp_repaired.jsonl"
-FAILS = REPO / "data" / "osp_repair_failures.jsonl"
+OUT = Path(os.environ.get("OSP_REPAIR_OUT", str(REPO / "data" / "osp_repaired.jsonl")))
+FAILS = Path(os.environ.get("OSP_REPAIR_FAILS", str(REPO / "data" / "osp_repair_failures.jsonl")))
 
-FIXER = "minimax/minimax-m3:free"
-FIXER_TAG = "osp_repair_m3_free"
-DEFERRED = REPO / "data" / "osp_repair_deferred.jsonl"
+FIXER = os.environ.get("OSP_REPAIR_FIXER", "minimax/minimax-m3:free")
+FIXER_TAG = os.environ.get("OSP_REPAIR_TAG", "osp_repair_m3_free")
+DEFERRED = Path(os.environ.get("OSP_REPAIR_DEFERRED",
+                               str(REPO / "data" / "osp_repair_deferred.jsonl")))
 TEMP = float(os.environ.get("OSP_REPAIR_TEMP", "0.5"))
 TIMEOUT = int(os.environ.get("OSP_REPAIR_TIMEOUT", "180"))
 TRIES = int(os.environ.get("OSP_REPAIR_TRIES", "3"))
@@ -78,7 +79,18 @@ STRUCTURAL REQUIREMENTS (every repair must satisfy all of these — same as gene
 8. Every edge archetype you reference — in `visit [->:T:->]` or `a +>:T:+> b` — MUST be declared at module level as `edge T { ... }`. An empty body (`edge T { }`) is fine. NEVER write a typed visit or typed-edge connection whose name has no matching `edge` declaration.
 IDIOM: typed edges where the relationship carries meaning (`a +>:Owner:+> b;`), `here` for current node, `self` for walker, `visit [...]` for traversal, `disengage;` for early termination. Computed ternaries must assign a fresh name — NEVER `x = \"a\" if cond else x;`.
 
-Think step by step before answering: for each failing assertion, reason about what the program did versus what the test expected, locate the defect, then produce the full corrected program. Output ONLY the corrected program in one ```jac fence."""
+Think step by step before answering: for each failing assertion, reason about what the program did versus what the test expected, locate the defect, then produce the full corrected program.
+
+JAC 0.36 PITFALLS (each of these has actually killed a repair — check every one before answering):
+1. `visit` does NOT take an `else` clause — `visit [-->] else { ... }` is a syntax error. Guard first: `if not [-->] { ...disengage logic...; } visit [-->];`
+2. Never disengage before processing the current node. Tests spawn your walker on hand-built graphs where every node may be a leaf; `visit [-->] else { print(total); disengage; }` at the top of an ability fires immediately and nothing is processed. Compute/print for `here` FIRST, then `visit [-->];` as the last statement.
+3. Reserved words cannot be identifiers, even as walker fields or locals: `skip`, `flow`, `report`, `root`, `here`, `visit`, `edge`, `node`, `walker`. Rename them (`skip_count`, `flow_rate`, `report_log`).
+4. Free (module-level) helper functions must not take `self` — that is ability-only. Annotate every parameter explicitly; a bare `self` param on a module-level `def` is a compile error (E0052).
+5. Walker state: declare with `has reports: list[str] = [];` on the walker, mutate via `self.reports.append(...)` inside abilities; the object returned by `root spawn W()` carries that state for the tests to read.
+6. Long edge-chain statements must be parenthesized or split — a multi-line `a +>:E:+> b +>:E:+> c` chain breaks the parser; separate statements are safest: `root +>:E:+> a; a +>:E:+> b;`
+7. Only the FIRST `with <Type> entry` ability per walker fires; never rely on a second one. In a `with entry` demo block you may create and spawn, but remember tests delete this block — the walker must work on THEIR graph, not assume yours.
+
+Output ONLY the corrected program in one ```jac fence."""
 
 FIX_USER = """PROBLEM (the program must satisfy this):
 
@@ -147,14 +159,75 @@ def is_offline_error(err: str | None) -> bool:
     return any(m in err for m in OFFLINE_MARKERS)
 
 
+def _mask_literals(code: str) -> str:
+    """Position-preserving mask of string literals and line comments."""
+    out: list[str] = []
+    i, n = 0, len(code)
+    while i < n:
+        c = code[i]
+        if code.startswith('"""', i) or code.startswith("'''", i):
+            q = code[i:i + 3]
+            j = code.find(q, i + 3)
+            j = n if j < 0 else j + 3
+            out.append(re.sub(r"[^\n]", " ", code[i:j])); i = j; continue
+        if c in "\"'":
+            j = i + 1
+            while j < n and code[j] != c:
+                if code[j] == "\\":
+                    j += 1
+                j += 1
+            j = min(j + 1, n)
+            out.append(re.sub(r"[^\n]", " ", code[i:j])); i = j; continue
+        if c == "#":
+            j = code.find("\n", i)
+            j = n if j < 0 else j
+            out.append(" " * (j - i)); i = j; continue
+        out.append(c); i += 1
+    return "".join(out)
+
+
+def _match_close(masked: str, i: int) -> int:
+    """Index of the brace closing the one opened at ``i`` (-1 if unbalanced)."""
+    depth = 0
+    j = i
+    while j < len(masked):
+        if masked[j] == "{":
+            depth += 1
+        elif masked[j] == "}":
+            depth -= 1
+            if depth == 0:
+                return j
+        j += 1
+    return -1
+
+
 def local_gate(cand: str) -> str | None:
-    """Offline-capable static checks — no network needed. Returns critique or None."""
-    if "visit [-->]" not in cand and "visit [<--]" not in cand:
-        return "missing visit [-->] — walker never traverses"
-    if cand.count("Root entry") > 1:
-        return "two Root entry abilities — second never fires; use visit else { report } instead"
-    if "with entry" in cand and "root ++>" in cand:
-        return "with entry pollutes shared root — demo will be stripped before test but prefer local anchor"
+    """Offline-capable static checks — no network needed. Returns critique or None.
+
+    Structural (walker-aware): the earlier token checks mis-fired on
+    multi-walker programs (one Root entry ability per walker is legal and the
+    common shape) and on typed-edge traversal (`visit [->:E:->]` IS
+    traversing). Per the 2026-09-28 census, 86% of two_root_entry and 99% of
+    missing_visit gate hits were false positives that poisoned the fixer
+    prompts and the failures ledger.
+    """
+    mk = _mask_literals(cand)
+    for wm in re.finditer(r"\bwalker\s+[A-Za-z_]\w*\s*\{", mk):
+        w_close = _match_close(mk, wm.end() - 1)
+        if w_close < 0:
+            continue
+        body = mk[wm.end():w_close]
+        if len(re.findall(r"\bcan\s+[A-Za-z_]\w*\s+with\s+[Rr]oot\s+entry\s*\{", body)) > 1:
+            return ("two Root entry abilities in one walker — only the first fires; "
+                    "fold the later ones into visit else { ... } or delete them")
+        if not re.search(r"\bvisit\b", body):
+            return ("walker has no visit statement — it never traverses; "
+                    "add visit [-->] in its Root entry ability")
+    # NOTE: no `with entry` seeding check. The harness strips the top-level block
+    # before tests, so demo wiring (root ++> ...) cannot affect test outcomes —
+    # FIX_SYSTEM invariant 5 mandates it, and flagging it poisoned every r2 prompt
+    # (100% of graph-problem ids) with "move seeding into the walker", which
+    # double-seeds against self-seeding tests and breaks count assertions.
     return None
 
 
@@ -183,8 +256,15 @@ def main() -> int:
     ap.add_argument("--include-variants", action="store_true")
     ap.add_argument("--retry-failed", action="store_true",
                     help="also re-attempt ids already in the failures ledger")
+    ap.add_argument("--infra-only", action="store_true",
+                    help="re-attempt only ids whose ledger history is exclusively "
+                         "transport errors (never got a fair attempt)")
     ap.add_argument("--shard", type=int, default=0)
     ap.add_argument("--shards", type=int, default=1)
+    ap.add_argument("--backend", default="openrouter",
+                    help="llm_backend seam: openrouter (legacy call_or) | devin | pi | ...")
+    ap.add_argument("--model", default=None,
+                    help="fixer model (default: FIXER, minimax/minimax-m3:free)")
     args = ap.parse_args()
 
     rows = [json.loads(l) for l in DATASET.read_text().splitlines() if l.strip()]
@@ -195,27 +275,76 @@ def main() -> int:
                 r = json.loads(line)
                 latest[r["id"]] = r  # last row per id wins
 
+    infra_ids: set[str] = set()
+    if args.infra_only:
+        per_id: dict[str, list[bool]] = {}
+        canonical_fails = REPO / "data" / "osp_repair_failures.jsonl"
+        if canonical_fails.exists():
+            for line in canonical_fails.read_text().splitlines():
+                if line.strip():
+                    rec = json.loads(line)
+                    per_id.setdefault(rec["id"], []).append(is_offline_error(rec.get("error")))
+        infra_ids = {i for i, flags in per_id.items() if flags and all(flags)}
+        print(f"[plan] {len(infra_ids)} transport-only ids in ledger", flush=True)
+
     targets = []
     for r in rows:
         if args.include_variants or r.get("variant_idx", 0) == 0:
-            res = latest.get(r["id"])
-            if res is not None and res.get("verdict") == "SEMANTIC_FAIL" and res.get("tests"):
-                targets.append((r, res))
+            if args.infra_only:
+                if r["id"] in infra_ids and latest.get(r["id"], {}).get("tests"):
+                    targets.append((r, latest[r["id"]]))
+            else:
+                res = latest.get(r["id"])
+                if res is not None and res.get("verdict") == "SEMANTIC_FAIL" and res.get("tests"):
+                    targets.append((r, res))
     targets = targets[args.offset:]
     if args.limit:
         targets = targets[: args.limit]
     items = targets[args.shard::args.shards]
 
     done: set[str] = set()
-    for src in [OUT] + ([] if args.retry_failed else [FAILS]):
+    # canonical attempt memory — env overrides must not shrink it
+    for src in [REPO / "data" / "osp_repaired.jsonl"] + \
+               ([] if (args.retry_failed or args.infra_only)
+                else [REPO / "data" / "osp_repair_failures.jsonl"]):
         if src.exists():
             for line in src.read_text().splitlines():
                 if line.strip():
                     done.add(json.loads(line)["id"])
+    # this lane's own prior outputs (lane files may be env-overridden)
+    if OUT.exists():
+        for line in OUT.read_text().splitlines():
+            if line.strip():
+                done.add(json.loads(line)["id"])
+
+    fixer = args.model or FIXER
+    backend = None
+    if args.backend != "openrouter":
+        sys.path.insert(0, str(REPO / "scripts" / "lib"))
+        from llm_backend import get_backend
+        backend = get_backend(args.backend, fixer)
+
+    def fix_call(user: str) -> tuple[str | None, str | None]:
+        """FIXER call with exponential backoff on transport errors."""
+        content = err = None
+        delay = 2.0
+        for attempt in range(3):
+            if backend is not None:
+                content, err, _ = backend.call(FIX_SYSTEM, user, fixer,
+                                               timeout=TIMEOUT, tries=1)
+            else:
+                content, err = call_or(FIXER, FIX_SYSTEM, user, TIMEOUT, MAXTOK, TEMP, 1)
+            if not is_offline_error(err) or attempt == 2:
+                return content, err
+            print(f"[net] transport error, retry in {delay:.0f}s: {(err or '')[-80:]}", flush=True)
+            time.sleep(delay)
+            delay *= 4
+        return content, err
 
     print(f"[plan] {len(items)} sem-fail records to repair "
-          f"(rounds={args.rounds}, fixer={FIXER}, reviewer=glm-5.3-flash, "
+          f"(rounds={args.rounds}, fixer={args.backend}:{fixer}, reviewer=glm-5.3-flash, "
           f"{len(done)} already attempted)", flush=True)
+
 
     def ledger(rid: str, round_no: int, stage: str, error: str) -> None:
         with FAILS.open("a") as fh:
@@ -248,25 +377,27 @@ def main() -> int:
             work.mkdir(exist_ok=True)
 
             test_out = res.get("detail") or ""
-            critique = ""
+            critique: list[str] = []
             # offline-capable pre-check before burning network
             gate_msg = local_gate(code)
             if gate_msg:
-                critique = gate_msg
-                # don't burn a fix call — feed gate directly into next round's prompt
+                critique = [gate_msg]
+                # round 1 tests the unchanged code (no fix call) so the ledger
+                # surfaces the real failure detail; gate critique rides into round 2
             passed = False
+            skipped_once = False
             for rnd in range(1, args.rounds + 1):
                 # 1. FIX (reasoning model, high token budget) — durable with fallback
-                if not critique or "missing visit" not in critique.lower():
-                    # only call LLM if not already holding a local gate critique
-                    content, err = call_or(
-                        FIXER, FIX_SYSTEM,
+                if critique and rnd == 1 and not skipped_once:
+                    skipped_once = True
+                    cand = code  # fall through to TEST with existing code
+                else:
+                    content, err = fix_call(
                         FIX_USER.format(problem=problem, code=code, tests=tests,
                                         error=test_out[:1800],
                                         critique=f"REVIEWER CRITIQUE of the previous attempt:\n"
                                                  f"{chr(10).join('- ' + i for i in critique)}\n\n"
-                                                 if critique else ""),
-                        TIMEOUT, MAXTOK, TEMP, 1)
+                                                 if critique else ""))
                     if is_offline_error(err):
                         offline_streak += 1
                         defer(rid, rnd, err or "offline")
@@ -285,12 +416,6 @@ def main() -> int:
                     if cand is None:
                         ledger(rid, rnd, "fix-fence", "no ```jac fence in response")
                         continue
-                else:
-                    # use local gate's critique to drive a fix without LLM; craft cand = code (will be re-fixed next rnd)
-                    cand = code
-                    # clear gate critique after first use so next round actually calls LLM
-                    critique = ""
-                    # fall through to TEST with existing code to surface real detail if gate was stale
                 # 2. TEST (authoritative gate — every candidate gets a run; strip demo)
                 rc, out = jac_test(cand, tests, work)
                 verdict, detail = classify(out, rc)
@@ -318,15 +443,15 @@ def main() -> int:
                 # local gate takes precedence over remote review when offline
                 gate_now = local_gate(cand)
                 if gate_now:
-                    critique = gate_now
-                    ledger(rid, rnd, "review", critique[:500])
+                    critique = [gate_now]
+                    ledger(rid, rnd, "gate", gate_now[:500])
                 else:
                     issues = review(cand, problem, tests, test_out)
                     if issues:
-                        critique = "; ".join(issues)
-                        ledger(rid, rnd, "review", critique[:500])
+                        critique = issues
+                        ledger(rid, rnd, "review", "; ".join(issues)[:500])
                     else:
-                        critique = ""
+                        critique = []
                         ledger(rid, rnd, "test", detail)
 
             if passed:
