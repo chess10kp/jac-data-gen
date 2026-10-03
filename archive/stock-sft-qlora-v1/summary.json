@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "kind": "merged-graded-summary",
+  "created_at": "2026-10-03",
+  "configuration": {
+    "timeout_s": "120 (original) / 300 (regraded subset)",
+    "workers": 12,
+    "k": [
+      1,
+      2,
+      4
+    ],
+    "problems_sha256": "357ccd1c7d41b231f275bfd2b4c91c35403abfdd28bf67c32b27daea851a45c3"
+  },
+  "overall": {
+    "problems": 972,
+    "samples": 3888,
+    "complete": false,
+    "infra_errors": 1,
+    "status_counts": {
+      "check_fail": 2129,
+      "infra_error": 1,
+      "pass": 1716,
+      "test_fail": 37,
+      "timeout": 5
+    },
+    "check_rate": 0.452418,
+    "behavior_test_rate": 0.441472,
+    "task_success_rate": 0.441472,
+    "contract_rate": 1.0,
+    "pass_at_k": {
+      "1": {
+        "value": 0.441615,
+        "eligible_problems": 972
+      },
+      "2": {
+        "value": 0.460905,
+        "eligible_problems": 972
+      },
+      "4": {
+        "value": 0.470649,
+        "eligible_problems": 971
+      }
+    },
+    "feature_presence_samples": {
+      "report": 4,
+      "typed_def": 1932,
+      "typed_has": 3
+    },
+    "static_diagnostics": {
+      "typing": {
+        "typed_def_rate": 0.496914,
+        "no_dynamic_types_rate": 0.958076,
+        "mean_dynamic_type_mentions": 0.090278
+      },
+      "transpiler_residue": {
+        "no_python_syntax_rate": 1.0,
+        "no_import_py_rate": 1.0,
+        "no_embedded_test_blocks_rate": 1.0,
+        "mean_range_len_loops": 0.022891
+      },
+      "readability_diagnostics": {
+        "mean_source_lines": 8.627572,
+        "mean_line_length": 27.559166,
+        "mean_long_lines_over_100": 0.120113,
+        "mean_max_brace_depth": 1.30607
+      },
+      "feature_rates": {
+        "ability_entry": 0.0,
+        "disengage": 0.0,
+        "edge": 0.0,
+        "graph_connect": 0.0,
+        "graph_reference": 0.0,
+        "no_dynamic_types": 0.958076,
+        "no_import_py": 1.0,
+        "no_python_syntax": 1.0,
+        "no_test_blocks": 1.0,
+        "node": 0.0,
+        "obj": 0.0,
+        "report": 0.001029,
+        "spawn": 0.0,
+        "typed_def": 0.496914,
+        "typed_has": 0.000772,
+        "visit": 0.0,
+        "walker": 0.0
+      },
+      "note": "reported independently; no aggregate idiomaticity score"
+    },
+    "compile_only_samples": 0
+  },
+  "note": [
+    "regraded 1466 timeout/infra samples at 300s cap on clarity3 (jac 0.36.1, same binary)",
+    "1447/1466 previously timeout/infra samples now pass; pass@1 7.19% -> 44.16%"
+  ]
+}
