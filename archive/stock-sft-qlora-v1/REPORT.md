@@ -52,6 +52,29 @@ unaffected by the cap). Rule of thumb going forward: grade this suite at
 
 Reported independently; no aggregate idiomaticity score.
 
+## 2026-10-04 finding: completion track 0% is a grader artifact
+
+`eval_jac.py:assemble_source` prepends the problem `prefix` only when the
+sample dict carries a `completion` key — but the harness stores generations
+under `output`, so every completion sample was checked as a standalone
+fragment (unparseable by construction: `unexpected token 'return'` at the
+continuation). Translation (whole-file outputs) was unaffected. Evidence:
+re-checking `prefix+output` for all 1944 completion samples gives
+**check_pass 91.8% (1785/1944; 476/486 problems >=1, 404 4/4)** vs the
+recorded 0.0%.
+
+Behavioral regrade of a 117-sample spread subset (30 problems, 300s cap):
+45 pass / 63 test_fail / 8 timeout / 1 infra → **38.8% behavioral among
+completed** (n=116, 95% CI ~±9pt) — far below translation's 97.6%, so
+completion semantics, not syntax, is the real gap. Implied completion
+pass@1 ≈ 0.92 × 0.39 ≈ **0.36** and overall pass@1 ≈ (0.88 + 0.36)/2 ≈
+**0.62** (vs 0.44 recorded). Pending: fix the assembly dispatch and regrade
+the full completion track.
+
+Fix: dispatch `assemble_source` on `problem["task"] == "completion"`
+(prepend prefix/suffix regardless of sample key), or have the harness emit
+the `completion` key for completion-task rows.
+
 ## Files
 
 | file | sha256 |
