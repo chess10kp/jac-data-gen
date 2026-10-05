@@ -101,6 +101,7 @@ data/graph_targets/
 data/jachacks_sf_repos/
 data/jachacks_spring_repos/
 data/jachacks_2026_repos/
+data/jachacks_nonsf/
 
 # --- raw unfiltered jac dumps (regenerable; all_ dump >100MB, includes jaseci forks) ---
 data/jachacks_all_jac_files.jsonl
