@@ -51,3 +51,23 @@ Combined:
 wc -l data/jachacks_all_jac_files_filtered.jsonl  # 1820
 wc -l data/jachacks_all_jac_files.jsonl           # 17031
 ```
+
+## jac check verified (2026-10-06, post-repair)
+
+Non-SF files (spring + 2026 filtered) checked with `jac check` (jac 0.36.1 native) per-repo:
+
+| Edition | Files | Pass | Fail |
+|---|---|---|---|
+| Spring | 305 | 305 | 0 |
+| 2026 | 763 | 763 | 0 |
+| **Non-SF total** | **1068** | **1068** | **0** |
+
+Initial check (2026-10-04) passed 458/1068; a subagent+LLM repair sweep (old-dialect → 0.36.1 migration: `can` abilities, `root()`, edge-filter parens, `cl` markers, Unknown-type annotations, etc.) brought the rest green. Repaired records carry `repaired_by` + `original_sha` provenance fields; live repaired sources are mirrored in `data/jachacks_repaired/` and on `clarity2:~/jachacks_check/jachacks_nonsf`.
+
+- `data/jachacks_{spring,2026}_jac_files_checked.jsonl` — per-edition, only files passing `jac check`
+- `data/jachacks_nonsf_jac_files_checked.jsonl` — combined, 1068 files
+- `data/jachacks_nonsf_dataset_checked.jsonl` — per-repo metadata, all 75 repos (counts recomputed to checked subset)
+- `data/jachacks_nonsf_checked_summary.md` — repo table for the checked set
+- `data/jachacks_nonsf_check_report.json` — per-repo pass/fail breakdown
+
+Notes: fail verdict is jac's own per-module summary; `impl/*.impl.jac` parts merge into their parent module and inherit its verdict (19 such files, all in GhostWatch). Initial failures were mostly pre-0.35 syntax (`can x with` abilities, `root()`, old OSP idioms).

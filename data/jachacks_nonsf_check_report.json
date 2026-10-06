@@ -1,0 +1,310 @@
+{
+ "checker": "jac check 0.36.1 (per-repo, jac 0.36.1 native binary)",
+ "scope": "jachacks non-SF = spring + 2026 filtered jac files",
+ "total": 1068,
+ "passed": 1068,
+ "failed": 0,
+ "note": "post-repair sweep (2026-10-06): all 1068 files pass; prior run 458/610. impl/*.impl.jac parts merge into parent module verdicts.",
+ "repos": {
+  "siddhartha-45__arda-agent": {
+   "pass": 6,
+   "fail": 0
+  },
+  "m40ma0__AssumptionCourt": {
+   "pass": 2,
+   "fail": 0
+  },
+  "Anbu-00001__CivicMesh": {
+   "pass": 36,
+   "fail": 0
+  },
+  "NIKHILJAISWAL123__CyberCortex": {
+   "pass": 3,
+   "fail": 0
+  },
+  "Viktor-Nedev__Nourish": {
+   "pass": 32,
+   "fail": 0
+  },
+  "shaileshdev4__depgraph": {
+   "pass": 22,
+   "fail": 0
+  },
+  "krak-dev__DevOpsAudit": {
+   "pass": 5,
+   "fail": 0
+  },
+  "hboujmai__EvacuAI": {
+   "pass": 4,
+   "fail": 0
+  },
+  "krishs09-123__jachacks-engagement-auditor": {
+   "pass": 41,
+   "fail": 0
+  },
+  "sameeksha-sunilkumar__fraudgraph": {
+   "pass": 1,
+   "fail": 0
+  },
+  "gauri276__financial-time-machine-agent": {
+   "pass": 5,
+   "fail": 0
+  },
+  "kshitijkumrawat20__JacHacks2026": {
+   "pass": 13,
+   "fail": 0
+  },
+  "NIKHILJAISWAL123__GhostBoard": {
+   "pass": 4,
+   "fail": 0
+  },
+  "Syedjafar07__ghostnet-ai": {
+   "pass": 1,
+   "fail": 0
+  },
+  "zain22972__Grannycare": {
+   "pass": 1,
+   "fail": 0
+  },
+  "Rohan5commit__GraphPilot-Jac": {
+   "pass": 1,
+   "fail": 0
+  },
+  "Aditya0049__healthgraph-jachacks": {
+   "pass": 1,
+   "fail": 0
+  },
+  "idkitsspicy__ikigAI": {
+   "pass": 2,
+   "fail": 0
+  },
+  "fozagtx__insuraAgent": {
+   "pass": 10,
+   "fail": 0
+  },
+  "swethaganeshh__JacCareMind-AI": {
+   "pass": 1,
+   "fail": 0
+  },
+  "danhpham2000__JacCareRoute": {
+   "pass": 10,
+   "fail": 0
+  },
+  "NumberOneMahiruSimp__JacCivilisation": {
+   "pass": 1,
+   "fail": 0
+  },
+  "fozagtx__killBill": {
+   "pass": 3,
+   "fail": 0
+  },
+  "gaganTakIITD__LegalForge-AI": {
+   "pass": 23,
+   "fail": 0
+  },
+  "Harshprajapat777__MeddyBuddyAI": {
+   "pass": 1,
+   "fail": 0
+  },
+  "sumitsaraswat362__MedGraph-AI-": {
+   "pass": 1,
+   "fail": 0
+  },
+  "SoujanyaChatti__MediGraph": {
+   "pass": 1,
+   "fail": 0
+  },
+  "legitHacker23__NeuroFlow": {
+   "pass": 3,
+   "fail": 0
+  },
+  "Raunakg2005__Novadiff-jac": {
+   "pass": 2,
+   "fail": 0
+  },
+  "orbitronsystems__ori-Jac-Demo": {
+   "pass": 17,
+   "fail": 0
+  },
+  "Luxaris__Orion-and-Diana-JacHacks": {
+   "pass": 7,
+   "fail": 0
+  },
+  "Ranojitdas__Finance-app-jac": {
+   "pass": 1,
+   "fail": 0
+  },
+  "nishantr14__jac": {
+   "pass": 15,
+   "fail": 0
+  },
+  "Yxp23__Sentinel": {
+   "pass": 11,
+   "fail": 0
+  },
+  "Shital24650__sentinelos-omega": {
+   "pass": 3,
+   "fail": 0
+  },
+  "midhunrajcharles__Symbiont": {
+   "pass": 1,
+   "fail": 0
+  },
+  "beatable-12__truthforge-ai": {
+   "pass": 12,
+   "fail": 0
+  },
+  "RobertSamuel-tech__veritas": {
+   "pass": 1,
+   "fail": 0
+  },
+  "atmakursaiakhilreddy-debug__jachacks-idea-to-prototype": {
+   "pass": 1,
+   "fail": 0
+  },
+  "surya-tejaN__agentforge-ai": {
+   "pass": 1,
+   "fail": 0
+  },
+  "Anay162__agewise": {
+   "pass": 264,
+   "fail": 0
+  },
+  "lcsc0__AlphaWalker": {
+   "pass": 40,
+   "fail": 0
+  },
+  "aadish98__Notes_For_JACathon": {
+   "pass": 11,
+   "fail": 0
+  },
+  "justinhh4__Binsight": {
+   "pass": 21,
+   "fail": 0
+  },
+  "pescado707__Bono": {
+   "pass": 11,
+   "fail": 0
+  },
+  "adamkrugel-design__Brick-Hero": {
+   "pass": 3,
+   "fail": 0
+  },
+  "YugShah123__Bubbul": {
+   "pass": 2,
+   "fail": 0
+  },
+  "push-to-production__CareAnchor": {
+   "pass": 40,
+   "fail": 0
+  },
+  "YamaanNandolia__Outloop-AI": {
+   "pass": 11,
+   "fail": 0
+  },
+  "debssM__Jac_2026": {
+   "pass": 14,
+   "fail": 0
+  },
+  "FluentFlier__corpus": {
+   "pass": 12,
+   "fail": 0
+  },
+  "naeemexe__BusinessFabric": {
+   "pass": 4,
+   "fail": 0
+  },
+  "SamisLife__CryptoYouCanHold": {
+   "pass": 1,
+   "fail": 0
+  },
+  "ileahy__JacHacks": {
+   "pass": 5,
+   "fail": 0
+  },
+  "ayushmk7__GhostWatch": {
+   "pass": 82,
+   "fail": 0
+  },
+  "drPod__icij-offshore-leaks-investigator": {
+   "pass": 2,
+   "fail": 0
+  },
+  "sudarshan-sridhar__Inocula_Weapon": {
+   "pass": 4,
+   "fail": 0
+  },
+  "Sebasparky__jac_hacks": {
+   "pass": 24,
+   "fail": 0
+  },
+  "krishdeshmukhhh__jac-dev-tools": {
+   "pass": 7,
+   "fail": 0
+  },
+  "yousefalwahami__rent_jac": {
+   "pass": 24,
+   "fail": 0
+  },
+  "jac-hacks__jacuzzi": {
+   "pass": 2,
+   "fail": 0
+  },
+  "pkoyye-tech__Navi": {
+   "pass": 1,
+   "fail": 0
+  },
+  "drPod__supply-chain-risk-analyzer": {
+   "pass": 3,
+   "fail": 0
+  },
+  "thesanatt__orbit": {
+   "pass": 13,
+   "fail": 0
+  },
+  "guaijiacc__lit2lab": {
+   "pass": 3,
+   "fail": 0
+  },
+  "zero-abd__graphclaw": {
+   "pass": 11,
+   "fail": 0
+  },
+  "Async-Avengers__repoGhost": {
+   "pass": 52,
+   "fail": 0
+  },
+  "yishanlin22__resume_storytelling": {
+   "pass": 1,
+   "fail": 0
+  },
+  "JoeyBrar__ChainRX": {
+   "pass": 10,
+   "fail": 0
+  },
+  "Matusvec__spatialMind_JAC": {
+   "pass": 24,
+   "fail": 0
+  },
+  "shrimannmyneni__sybilscope": {
+   "pass": 1,
+   "fail": 0
+  },
+  "eric-zyh__Trace": {
+   "pass": 15,
+   "fail": 0
+  },
+  "Dhravidk__TraceForge": {
+   "pass": 19,
+   "fail": 0
+  },
+  "PRANAVMAHALINGAM__TraverseHealth": {
+   "pass": 1,
+   "fail": 0
+  },
+  "Wally-Ahmed__JacHacks2026": {
+   "pass": 24,
+   "fail": 0
+  }
+ }
+}
