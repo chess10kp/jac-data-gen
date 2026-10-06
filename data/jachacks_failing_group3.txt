@@ -1,0 +1,190 @@
+
+## Dhravidk__TraceForge (14 failing)
+  main.jac
+  scripts/validate_gold_annotations.jac
+  tests/smoke.jac
+  traceforge/analysis.jac
+  traceforge/api.jac
+  traceforge/cli.jac
+  traceforge/clustering.jac
+  traceforge/critical.jac
+  traceforge/eval.jac
+  traceforge/features.jac
+  traceforge/graph_build.jac
+  traceforge/llm_ops.jac
+  traceforge/reporting.jac
+  traceforge/ui.jac
+
+## FluentFlier__corpus (9 failing)
+  policies/builtin/action_safety.jac
+  policies/builtin/confidence_calibrator.jac
+  policies/builtin/context_poisoning.jac
+  policies/builtin/cross_user_firewall.jac
+  policies/builtin/exfiltration_guard.jac
+  policies/builtin/injection_firewall.jac
+  policies/builtin/rate_guard.jac
+  policies/builtin/scope_enforcer.jac
+  policies/builtin/session_hijack.jac
+
+## Harshprajapat777__MeddyBuddyAI (1 failing)
+  main.jac
+
+## Luxaris__Orion-and-Diana-JacHacks (6 failing)
+  diana/diana_huntress.jac
+  v1/monitor.jac
+  v1/watchdog.jac
+  v2/monitor.jac
+  v2/orion.jac
+  v2/watchdog.jac
+
+## NIKHILJAISWAL123__CyberCortex (3 failing)
+  agents.jac
+  graph.jac
+  main.jac
+
+## PRANAVMAHALINGAM__TraverseHealth (1 failing)
+  server/main.jac
+
+## SamisLife__CryptoYouCanHold (1 failing)
+  Backend-API/main.jac
+
+## Sebasparky__jac_hacks (23 failing)
+  components/BrowserShell.cl.jac
+  components/LayerPanel.cl.jac
+  electron/preload_runtime.cl.jac
+  electron/shell_runtime.cl.jac
+  electron/webview_preload_runtime.cl.jac
+  jac/compilation_test.jac
+  jac/execution_test.jac
+  jac/helpers_compare_v2.jac
+  jac/helpers_test.jac
+  jac/helpers_v2_test.jac
+  jac/layers/compilation.jac
+  jac/layers/execution.jac
+  jac/layers/helpers.jac
+  jac/layers/helpers_v2.jac
+  jac/layers/helpers_v2_io.jac
+  jac/layers/observation.jac
+  jac/layers/recording.jac
+  jac/layers/trace_utils.jac
+  jac/llm/kimi_client.jac
+  jac/llm/runtime.jac
+  jac/llm/runtime_state.jac
+  jac/recording_test.jac
+  main.jac
+
+## beatable-12__truthforge-ai (11 failing)
+  src/truthforge_antithesis.jac
+  src/truthforge_config.jac
+  src/truthforge_evidence.jac
+  src/truthforge_main.jac
+  src/truthforge_memory.jac
+  src/truthforge_memory_update.jac
+  src/truthforge_nodes.jac
+  src/truthforge_planner.jac
+  src/truthforge_referee.jac
+  src/truthforge_synthesis.jac
+  src/truthforge_thesis.jac
+
+## danhpham2000__JacCareRoute (1 failing)
+  backend/main.jac
+
+## fozagtx__insuraAgent (3 failing)
+  app.jac
+  frontend.cl.jac
+  probe_featherless.jac
+
+## gauri276__financial-time-machine-agent (4 failing)
+  jac-backend/agents.jac
+  jac-backend/llm_agents.jac
+  jac-backend/llm_test.jac
+  jac-backend/main.jac
+
+## krishs09-123__jachacks-engagement-auditor (35 failing)
+  components/AppShell.cl.jac
+  components/FindingList.cl.jac
+  components/FlairIcons.cl.jac
+  components/FlairShared.cl.jac
+  components/ui/Alert.cl.jac
+  components/ui/Badge.cl.jac
+  components/ui/Button.cl.jac
+  components/ui/Card.cl.jac
+  components/ui/Dialog.cl.jac
+  components/ui/Input.cl.jac
+  components/ui/Progress.cl.jac
+  components/ui/Table.cl.jac
+  components/ui/Tabs.cl.jac
+  frontend.cl.jac
+  hooks/useAuditList.cl.jac
+  hooks/useAuditRun.cl.jac
+  hooks/useProjects.cl.jac
+  main.jac
+  pages/AuditDetail.cl.jac
+  pages/AuditInput.cl.jac
+  pages/AuditList.cl.jac
+  pages/Dashboard.cl.jac
+  pages/EvidenceDetail.cl.jac
+  pages/FlairLogin.cl.jac
+  pages/FlairPillar.cl.jac
+  pages/Loading.cl.jac
+  pages/Login.cl.jac
+  pages/ProjectDetail.cl.jac
+  pages/ReportOverview.cl.jac
+  pages/RetentionReport.cl.jac
+  pages/Signup.cl.jac
+  pages/Start.cl.jac
+  services/audits.sv.jac
+  services/flair.sv.jac
+  services/heuristics.sv.jac
+
+## kshitijkumrawat20__JacHacks2026 (13 failing)
+  components/GreetCard.cl.jac
+  components/Sidebar.cl.jac
+  index.cl.jac
+  main.jac
+  pages/AgentActivityPage.cl.jac
+  pages/AnalyticsPage.cl.jac
+  pages/DashboardPage.cl.jac
+  pages/GoalWorkspacePage.cl.jac
+  pages/LoginPage.cl.jac
+  pages/MemoryTimelinePage.cl.jac
+  pages/OpportunityHubPage.cl.jac
+  pages/SettingsPage.cl.jac
+  services/appService.jac
+
+## midhunrajcharles__Symbiont (1 failing)
+  symbiont.jac
+
+## orbitronsystems__ori-Jac-Demo (16 failing)
+  components/GreetCard.cl.jac
+  index.cl.jac
+  main.jac
+  pages/DashboardPage.cl.jac
+  pages/LoginPage.cl.jac
+  pages/OnboardingPage.cl.jac
+  pages/WelcomePage.cl.jac
+  pages/dashboard/AIHubModule.cl.jac
+  pages/dashboard/AnalyticsModule.cl.jac
+  pages/dashboard/DriverModule.cl.jac
+  pages/dashboard/FleetModule.cl.jac
+  pages/dashboard/MonetizationModule.cl.jac
+  pages/dashboard/OperationsModule.cl.jac
+  pages/dashboard/RoutingModule.cl.jac
+  pages/dashboard/SurveyModule.cl.jac
+  pages/dashboard/TelemetryModule.cl.jac
+
+## siddhartha-45__arda-agent (6 failing)
+  jac_app/executor.jac
+  jac_app/graph.jac
+  jac_app/memory.jac
+  jac_app/planner.jac
+  jac_app/reflection.jac
+  jac_app/summarizer.jac
+
+## sumitsaraswat362__MedGraph-AI- (1 failing)
+  main.jac
+
+## zero-abd__graphclaw (3 failing)
+  graphclaw/dashboard.jac
+  graphclaw/dashboard_app/app.cl.jac
+  graphclaw/dashboard_app/main.jac

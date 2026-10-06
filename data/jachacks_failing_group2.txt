@@ -1,0 +1,191 @@
+
+## Aditya0049__healthgraph-jachacks (1 failing)
+  main.jac
+
+## Async-Avengers__repoGhost (19 failing)
+  app/agents/code_search.sv.jac
+  app/agents/docs_sync.sv.jac
+  app/agents/meeting_interpreter.sv.jac
+  app/agents/repo_mapper.sv.jac
+  app/components/AppShell.cl.jac
+  app/components/EmptyState.cl.jac
+  app/components/ErrorBanner.cl.jac
+  app/components/Layout.cl.jac
+  app/components/SetupShell.cl.jac
+  app/components/Toast.cl.jac
+  app/components/WidgetShell.cl.jac
+  app/components/WorkspaceShell.cl.jac
+  app/hooks/useRepoGhost.cl.jac
+  app/lib/ui_state.cl.jac
+  app/models/outputs.jac
+  app/orchestration/workflow.sv.jac
+  app/services/repo_ingest.sv.jac
+  app/services/search_index.sv.jac
+  main.jac
+
+## Matusvec__spatialMind_JAC (12 failing)
+  .planning/research/jac-docs/docs/assets/examples/basic/for_statements.jac
+  .planning/research/jac-docs/docs/assets/examples/object_spatial/finding_common_interests.jac
+  .planning/research/jac-docs/docs/assets/examples/object_spatial/object_spatial_references.jac
+  .planning/research/jac-docs/docs/examples/chapter_10_school.jac
+  .planning/research/jac-docs/scripts/validate_docs_code.jac
+  .planning/research/jac-docs/tests/e2e/test_code_blocks.jac
+  main.jac
+  services/py_bridge.jac
+  walkers/chat.jac
+  walkers/explore.jac
+  walkers/health.jac
+  walkers/query.jac
+
+## NumberOneMahiruSimp__JacCivilisation (1 failing)
+  backend/simulation.jac
+
+## Rohan5commit__GraphPilot-Jac (1 failing)
+  backend/jac/graphpilot.jac
+
+## YamaanNandolia__Outloop-AI (8 failing)
+  agent1_lookout.jac
+  agent2_data_gathering.jac
+  agent3_reviewer.jac
+  agent4_problem_creator.jac
+  agent5_software_prompt.jac
+  agent6_business_orchestrator.jac
+  agent7_pricing.jac
+  env_loader.jac
+
+## aadish98__Notes_For_JACathon (4 failing)
+  BeanBot/beanbot_client.jac
+  BeanBot/beanbot_entry.jac
+  BeanBot/beanbot_with_ui.jac
+  BeanBot/main.jac
+
+## atmakursaiakhilreddy-debug__jachacks-idea-to-prototype (1 failing)
+  main.jac
+
+## ayushmk7__GhostWatch (58 failing)
+  frontend/components/AmbientBackground.cl.jac
+  frontend/components/AppShell.cl.jac
+  frontend/components/AttentionItem.cl.jac
+  frontend/components/FeatureCard.cl.jac
+  frontend/components/FeatureGlyph.cl.jac
+  frontend/components/FlowCard.cl.jac
+  frontend/components/GhostShieldMark.cl.jac
+  frontend/components/GhostWatchWordmark.cl.jac
+  frontend/components/GraphPlaceholderAccent.cl.jac
+  frontend/components/GraphStateProvider.cl.jac
+  frontend/components/GraphView.cl.jac
+  frontend/components/IncidentFeedButton.cl.jac
+  frontend/components/MetricChip.cl.jac
+  frontend/components/PreviewShellStrip.cl.jac
+  frontend/components/SecurityIncidentPage.cl.jac
+  frontend/components/SessionNoteCard.cl.jac
+  frontend/components/SidebarNavButton.cl.jac
+  frontend/components/SummaryCard.cl.jac
+  frontend/components/WalkerStatusItem.cl.jac
+  frontend/components/ui_helpers.cl.jac
+  frontend/main.jac
+  frontend/mock_data.jac
+  frontend/pages/[...notFound].jac
+  frontend/pages/analysis/[pr_id].jac
+  frontend/pages/app/contributor.jac
+  frontend/pages/app/index.jac
+  frontend/pages/app/maintainer.jac
+  frontend/pages/auth.jac
+  frontend/pages/gaps.jac
+  frontend/pages/index.jac
+  frontend/pages/layout.jac
+  frontend/pages/start.jac
+  frontend/theme.cl.jac
+  graph/builder.jac
+  graph/impl/builder.impl.jac
+  main.jac
+  tests/test_core.jac
+  tests/test_traversal.jac
+  walkers/ghostwatch/dep_diff.jac
+  walkers/ghostwatch/fix_gen.jac
+  walkers/ghostwatch/gap_analysis.jac
+  walkers/ghostwatch/github_system2_webhook.jac
+  walkers/ghostwatch/impl/dep_diff.impl.jac
+  walkers/ghostwatch/impl/fix_gen.impl.jac
+  walkers/ghostwatch/impl/gap_analysis.impl.jac
+  walkers/ghostwatch/impl/github_system2_webhook.impl.jac
+  walkers/ghostwatch/impl/pr_creator.impl.jac
+  walkers/ghostwatch/impl/sandbox.impl.jac
+  walkers/ghostwatch/impl/system2_hooks.impl.jac
+  walkers/ghostwatch/pr_creator.jac
+  walkers/ghostwatch/sandbox.jac
+  walkers/ghostwatch/system2_hooks.jac
+  walkers/static/graph_state.jac
+  walkers/static/impl/graph_state.impl.jac
+  walkers/static/impl/orchestrator.impl.jac
+  walkers/static/impl/pr_comment.impl.jac
+  walkers/static/orchestrator.jac
+  walkers/static/pr_comment.jac
+
+## eric-zyh__Trace (6 failing)
+  artifacts/jac-backend/main.jac
+  artifacts/jac-backend/walkers/analyze.jac
+  artifacts/jac-backend/walkers/generate.jac
+  artifacts/jac-backend/walkers/ingest.jac
+  artifacts/jac-backend/walkers/recall.jac
+  artifacts/jac-backend/walkers/train.jac
+
+## fozagtx__killBill (1 failing)
+  audit.jac
+
+## guaijiacc__lit2lab (2 failing)
+  myapp/components/Button.cl.jac
+  myapp/main.jac
+
+## krak-dev__DevOpsAudit (5 failing)
+  agents.jac
+  architecture.jac
+  config.jac
+  integrations.jac
+  main.jac
+
+## naeemexe__BusinessFabric (3 failing)
+  components/Button.cl.jac
+  frontend.cl.jac
+  main.jac
+
+## pescado707__Bono (11 failing)
+  components/Badge.cl.jac
+  components/Button.cl.jac
+  components/Card.cl.jac
+  components/Container.cl.jac
+  components/Input.cl.jac
+  components/Select.cl.jac
+  components/Text.cl.jac
+  frontend.cl.jac
+  main.jac
+  server.jac
+  test_server.jac
+
+## shrimannmyneni__sybilscope (1 failing)
+  sybilscope/main.jac
+
+## thesanatt__orbit (4 failing)
+  src/app.jac
+  src/walkers/cartographer.jac
+  src/walkers/consolidator.jac
+  src/walkers/explorer.jac
+
+## yousefalwahami__rent_jac (14 failing)
+  dashboard.cl.jac
+  graphviz.cl.jac
+  incidents.cl.jac
+  index.cl.jac
+  login.cl.jac
+  main.jac
+  services/appService.jac
+  services/foursquare.jac
+  services/graph/crud.jac
+  services/graph/triage.jac
+  settings.cl.jac
+  shared.cl.jac
+  tenants_properties.cl.jac
+  workflow.cl.jac
+
+## zain22972__Grannycare (1 failing)
+  main.jac

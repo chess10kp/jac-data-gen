@@ -1,0 +1,181 @@
+
+## Anay162__agewise (110 failing)
+  abilities/__init__.jac
+  abilities/audit_logger.jac
+  abilities/code_lookup.jac
+  abilities/date_utils.jac
+  abilities/document_hash.jac
+  abilities/hipaa_utils.jac
+  abilities/llm_abilities.jac
+  abilities/medication_utils.jac
+  abilities/money_utils.jac
+  abilities/notification_sender.jac
+  app.jac
+  auth/hipaa_guard.jac
+  auth/permissions.jac
+  auth/session.jac
+  client/mock_data.cl.jac
+  components/action_item.cl.jac
+  components/appointment_card.cl.jac
+  components/care_gap_alert.cl.jac
+  components/layout.cl.jac
+  components/medication_row.cl.jac
+  components/status_badge.cl.jac
+  config/llm_config.jac
+  config/notification_config.jac
+  config/voice_config.jac
+  frontend/app.cl.jac
+  frontend/components/appointment_card.cl.jac
+  frontend/components/benefits_eligibility_card.cl.jac
+  frontend/components/bill_due_card.cl.jac
+  frontend/components/care_gap_alert.cl.jac
+  frontend/components/dispute_card.cl.jac
+  frontend/components/medication_row.cl.jac
+  frontend/components/prior_auth_tracker.cl.jac
+  frontend/components/refill_countdown.cl.jac
+  frontend/components/subscription_row.cl.jac
+  frontend/components/timeline.cl.jac
+  frontend/pages/appointments.cl.jac
+  frontend/pages/benefits_check.cl.jac
+  frontend/pages/bills_payments.cl.jac
+  frontend/pages/dashboard.cl.jac
+  frontend/pages/disputes.cl.jac
+  frontend/pages/documents.cl.jac
+  frontend/pages/finances.cl.jac
+  frontend/pages/legal.cl.jac
+  frontend/pages/medications.cl.jac
+  frontend/pages/subscriptions.cl.jac
+  graph/walkers/__init__.jac
+  graph/walkers/appointments/appointment_reschedule.jac
+  graph/walkers/bills/__init__.jac
+  graph/walkers/bills/bill_due_date_tracker.jac
+  graph/walkers/bills/missed_payment_detector.jac
+  graph/walkers/bills/payment_anomaly_detector.jac
+  graph/walkers/bills/prior_auth_tracker.jac
+  graph/walkers/bills/recurring_bill_detector.jac
+  graph/walkers/bills/subscription_identifier.jac
+  graph/walkers/bills/subscription_reviewer.jac
+  graph/walkers/disputes/appeal_form_filler.jac
+  graph/walkers/disputes/appeal_letter_generator.jac
+  graph/walkers/disputes/appeal_tracker.jac
+  graph/walkers/disputes/coverage_policy_checker.jac
+  graph/walkers/disputes/duplicate_claim_detector.jac
+  graph/walkers/disputes/ncci_mue_checker.jac
+  graph/walkers/disputes/ncci_ptp_checker.jac
+  graph/walkers/intake/claim_builder.jac
+  graph/walkers/intake/digest_generator.jac
+  graph/walkers/intake/document_extract.jac
+  graph/walkers/intake/eob_parser.jac
+  graph/walkers/legal/deadline_tracker.jac
+  graph/walkers/prescriptions/__init__.jac
+  graph/walkers/prescriptions/refill_monitor.jac
+  graph/walkers/voice/__init__.jac
+  graph/walkers/voice/call_dispatcher.jac
+  graph/walkers/voice/negotiation_strategist.jac
+  graph/walkers/voice/outcome_recorder.jac
+  integrations/document/embedding_generator.jac
+  integrations/document/ocr_processor.jac
+  integrations/document/pdf_extractor.jac
+  integrations/email/email_parser.jac
+  integrations/email/email_sender.jac
+  integrations/email/imap_connector.jac
+  integrations/financial/mx_client.jac
+  integrations/financial/plaid_client.jac
+  integrations/financial/transaction_monitor.jac
+  integrations/government/__init__.jac
+  integrations/government/benefits_gov_client.jac
+  integrations/government/ssa_client.jac
+  integrations/government/state_benefits_client.jac
+  integrations/health_portals/__init__.jac
+  integrations/health_portals/mychart_client.jac
+  integrations/health_portals/patient_portal_scraper.jac
+  integrations/health_portals/portal_connector.jac
+  integrations/medicare/blue_button_client.jac
+  integrations/medicare/cms_api_client.jac
+  integrations/medicare/medicare_portal_scraper.jac
+  integrations/notifications/push_client.jac
+  integrations/notifications/twilio_client.jac
+  integrations/notifications/webhook_handler.jac
+  integrations/pharmacy/__init__.jac
+  integrations/pharmacy/openfda_client.jac
+  integrations/pharmacy/pharmacy_api_client.jac
+  integrations/voice/bland_client.jac
+  integrations/voice/call_script_builder.jac
+  integrations/voice/ivr_navigator.jac
+  integrations/voice/vapi_client.jac
+  pages/appointments.cl.jac
+  pages/claims.cl.jac
+  pages/dashboard.cl.jac
+  pages/documents.cl.jac
+  pages/finances.cl.jac
+  pages/medications.cl.jac
+  pages/settings.cl.jac
+
+## NIKHILJAISWAL123__GhostBoard (4 failing)
+  client.jac
+  main.jac
+  models.jac
+  server.jac
+
+## Raunakg2005__Novadiff-jac (1 failing)
+  ui.jac
+
+## Syedjafar07__ghostnet-ai (1 failing)
+  jac/ghostnet.jac
+
+## Wally-Ahmed__JacHacks2026 (10 failing)
+  WalletCreateForm.cl.jac
+  app_platform.sv.jac
+  config.sv.jac
+  frontend.cl.jac
+  main.jac
+  services/audit.sv.jac
+  services/invoice.sv.jac
+  services/merchant.sv.jac
+  services/payment.sv.jac
+  services/settlement.sv.jac
+
+## Yxp23__Sentinel (8 failing)
+  src/agents/billing_volume_agent.jac
+  src/agents/billing_walker.jac
+  src/agents/collusion_agent.jac
+  src/agents/patient_agent.jac
+  src/agents/synthesis_agent.jac
+  src/agents/temporal_agent.jac
+  src/agents/temporal_walker.jac
+  src/graph/build_graph.jac
+
+## adamkrugel-design__Brick-Hero (2 failing)
+  components/countdownApp.cl.jac
+  main.jac
+
+## debssM__Jac_2026 (5 failing)
+  agents/damage_estimator.jac
+  agents/entity_extractor.jac
+  agents/fca_mapper.jac
+  agents/timeline_agent.jac
+  tests/test_timeline.jac
+
+## drPod__supply-chain-risk-analyzer (1 failing)
+  services/supply_chain.sv.jac
+
+## hboujmai__EvacuAI (4 failing)
+  jac/brain.jac
+  jac/disaster_agent.jac
+  jac/graph.jac
+  jac/planner.jac
+
+## legitHacker23__NeuroFlow (3 failing)
+  neuroflow-app/components/Button.cl.jac
+  neuroflow-app/main.jac
+  neuroflow-backend/neuroflow_agents.jac
+
+## sameeksha-sunilkumar__fraudgraph (1 failing)
+  backend/jac/fraud_agent.jac
+
+## sudarshan-sridhar__Inocula_Weapon (2 failing)
+  c2/main.jac
+  sentinel/main.jac
+
+## yishanlin22__resume_storytelling (1 failing)
+  backend/main.jac

@@ -1,0 +1,190 @@
+
+## Anbu-00001__CivicMesh (23 failing)
+  civicmesh/app.jac
+  civicmesh/app.sv.jac
+  civicmesh/components/ActionPlan.cl.jac
+  civicmesh/components/ActionPlan.impl.jac
+  civicmesh/components/ChatPane.cl.jac
+  civicmesh/components/ChatPane.impl.jac
+  civicmesh/components/GraphViz.cl.jac
+  civicmesh/components/GraphViz.impl.jac
+  civicmesh/components/ImpactReport.cl.jac
+  civicmesh/components/LandingPage.cl.jac
+  civicmesh/components/SessionBanner.cl.jac
+  civicmesh/components/TelemetryPanel.cl.jac
+  civicmesh/frontend.cl.jac
+  civicmesh/frontend.impl.jac
+  civicmesh/walkers/critique.jac
+  civicmesh/walkers/eligibility.jac
+  civicmesh/walkers/impact.jac
+  civicmesh/walkers/intake.jac
+  civicmesh/walkers/live_telemetry.jac
+  civicmesh/walkers/memory.jac
+  civicmesh/walkers/pathfinder.jac
+  civicmesh/walkers/seed.jac
+  civicmesh/walkers/translate.jac
+
+## JoeyBrar__ChainRX (6 failing)
+  components/CaffeineBackground.cl.jac
+  components/DrugGraph.cl.jac
+  components/DrugSelector.cl.jac
+  components/ResultCard.cl.jac
+  main.jac
+  test_run.jac
+
+## Ranojitdas__Finance-app-jac (1 failing)
+  jac/payguard_agent.jac
+
+## Shital24650__sentinelos-omega (3 failing)
+  jac/crisis_network.jac
+  jac/dispatch_agents.jac
+  jac/omega_escalation.jac
+
+## SoujanyaChatti__MediGraph (1 failing)
+  main.jac
+
+## Viktor-Nedev__Nourish (27 failing)
+  components/GreetCard.cl.jac
+  components/Navbar.cl.jac
+  components/Sidebar.cl.jac
+  data/mockData.cl.jac
+  index.cl.jac
+  main.jac
+  pages/AIAlerts.cl.jac
+  pages/AIInsights.cl.jac
+  pages/AuthPage.cl.jac
+  pages/CreateDonation.cl.jac
+  pages/CreateEvent.cl.jac
+  pages/CreateRequest.cl.jac
+  pages/DashboardPage.cl.jac
+  pages/DonationDetails.cl.jac
+  pages/DonationFeed.cl.jac
+  pages/EventDetails.cl.jac
+  pages/EventsList.cl.jac
+  pages/LandingPage.cl.jac
+  pages/LoginPage.cl.jac
+  pages/MapPage.cl.jac
+  pages/OnboardingPage.cl.jac
+  pages/OrgDashboard.cl.jac
+  pages/ProfilePage.cl.jac
+  pages/RequestDetails.cl.jac
+  pages/RequestsFeed.cl.jac
+  pages/SettingsPage.cl.jac
+  pages/UserDashboard.cl.jac
+
+## YugShah123__Bubbul (2 failing)
+  components/Button.cl.jac
+  main.jac
+
+## drPod__icij-offshore-leaks-investigator (1 failing)
+  services/offshore_leaks.sv.jac
+
+## gaganTakIITD__LegalForge-AI (13 failing)
+  agents/compliance.jac
+  agents/contradiction.jac
+  agents/graph_export.jac
+  agents/mesh_enrichment.jac
+  agents/negotiation.jac
+  agents/parser_agent.jac
+  agents/report_generator.jac
+  agents/risk_scorer.jac
+  main.jac
+  security/auth_gate.jac
+  service.jac
+  service_test.jac
+  tools/legal_tools.jac
+
+## ileahy__JacHacks (3 failing)
+  api.jac
+  app.jac
+  main.jac
+
+## jac-hacks__jacuzzi (2 failing)
+  components/Button.cl.jac
+  main.jac
+
+## justinhh4__Binsight (15 failing)
+  binsight/jac_app/extensions/domain/domain.jac
+  binsight/jac_app/extensions/domain/nodes.jac
+  binsight/jac_app/extensions/walkers/alert_walkers.jac
+  binsight/jac_app/extensions/walkers/analytics_walkers.jac
+  binsight/jac_app/extensions/walkers/audit_walkers.jac
+  binsight/jac_app/extensions/walkers/cost_walkers.jac
+  binsight/jac_app/extensions/walkers/export_walkers.jac
+  binsight/jac_app/extensions/walkers/hall_walkers.jac
+  binsight/jac_app/extensions/walkers/menu_walkers.jac
+  binsight/jac_app/extensions/walkers/query_walkers.jac
+  binsight/jac_app/extensions/walkers/recommendation_walkers.jac
+  binsight/jac_app/extensions/walkers/schedule_walkers.jac
+  binsight/jac_app/extensions/walkers/seed_walkers.jac
+  binsight/jac_app/extensions/walkers/vision_walkers.jac
+  binsight/jac_app/extensions/walkers/waste_walkers.jac
+
+## krishdeshmukhhh__jac-dev-tools (6 failing)
+  hello.jac
+  test.jac
+  tests/format-fixtures/messy.jac
+  tests/lint-fixtures/fail-missing-bracket.jac
+  tests/lint-fixtures/fail-missing-semicolon.jac
+  tests/lint-fixtures/pass-basic.jac
+
+## lcsc0__AlphaWalker (10 failing)
+  agents/judge_agent.jac
+  agents/query_walker.jac
+  alphawalker_pipeline.jac
+  api/engine.jac
+  api/jac_engine.jac
+  api/main.jac
+  api/models.jac
+  api/service.jac
+  api/storage.jac
+  output/memo_formatter.jac
+
+## nishantr14__jac (12 failing)
+  main.jac
+  tests/test_import.jac
+  tests/test_walker.jac
+  tests/test_walker2.jac
+  tests/test_walker3.jac
+  walkers/condition_walk.jac
+  walkers/drug_stats.jac
+  walkers/get_graph_data.jac
+  walkers/interaction_walk.jac
+  walkers/parse_rx.jac
+  walkers/report_walker.jac
+  walkers/seed_graph.jac
+
+## pkoyye-tech__Navi (1 failing)
+  navi.jac
+
+## push-to-production__CareAnchor (20 failing)
+  __init__.jac
+  agents/__init__.jac
+  agents/auth.jac
+  agents/orchestrator.jac
+  components/AppShell.cl.jac
+  components/Button.cl.jac
+  components/ChatWindow.cl.jac
+  components/CrisisBanner.cl.jac
+  components/ExportButtons.cl.jac
+  components/LandingPage.cl.jac
+  components/LoginScreen.cl.jac
+  components/MessageBubble.cl.jac
+  components/ProviderCard.cl.jac
+  components/SessionList.cl.jac
+  components/SessionPdf.cl.jac
+  components/SummaryPanel.cl.jac
+  main.jac
+  services/provider_matcher.jac
+  services/symptom_mapper.jac
+  services/transcript_parser.jac
+
+## shaileshdev4__depgraph (5 failing)
+  components/Button.cl.jac
+  main.jac
+  walkers/dep_graph_agent.jac
+  walkers/subtree_walker.jac
+  walkers/usage_context_util.jac
+
+## swethaganeshh__JacCareMind-AI (1 failing)
+  caremind_agents.jac
