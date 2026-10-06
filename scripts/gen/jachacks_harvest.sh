@@ -32,9 +32,15 @@ for repo in "${CANDIDATES[@]}"; do
     (cd "$repo" && find . -name '*.jac' -exec cp --parents {} "$MIRROR/$repo/" \;)
   }
   # push back to clarity2 check tree (jac files only; --delete handles renames)
-  rsync -az --timeout=120 --delete \
+  rsout=$(rsync -az --timeout=120 --delete \
     --include='*/' --include='*.jac' --exclude='*' \
-    "$repo/" "$REMOTE/$repo/" 2>&1 | grep -v "WARNING\|vulnerable\|openssh\|upgraded"
+    "$repo/" "$REMOTE/$repo/" 2>&1)
+  rsrc=$?
+  printf '%s\n' "$rsout" | grep -viE "warning|vulnerable|openssh|upgraded" >&2 || true
+  if [ $rsrc -ne 0 ]; then
+    echo "RSYNC FAILED (rc=$rsrc): $repo — mirror would go stale; aborting before commit" >&2
+    exit 1
+  fi
   echo "$repo" >> "$STATE"
 done
 
