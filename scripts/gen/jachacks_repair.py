@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
-"""Repair jachacks non-SF .jac files until they pass `jac check` (0.36.1).
+"""Repair jachacks .jac files until they pass `jac check` (0.36.1).
 
 Loop: extract per-file diagnostics on clarity2 -> LLM-rewrite failing files in
 parallel (pi CLI, subscription providers) -> push candidates -> re-check.
 A file is green when its module summary reports 0 errors (impl/ parts inherit
 their parent module verdict plus own-target diagnostics).
 
-State lives on clarity2:~/jachacks_check/jachacks_nonsf (the check tree).
-Candidates are mirrored locally in data/jachacks_repaired/<dirname>/<path> and
-logged to data/jachacks_repair_results.jsonl.
+State lives on clarity2:~/jachacks_check/<tree> (the check tree; tree per
+--edition). Candidates are mirrored locally in data/jachacks_repaired[<suffix>]/
+and logged to data/jachacks_repair_results[<suffix>].jsonl.
 
 Usage:
-  python3 jachacks_repair.py --rounds 4 --jobs 8
-  python3 jachacks_repair.py --only repo/file.jac,repo2/f.jac --rounds 2
+  python3 jachacks_repair.py --edition sf --rounds 4 --jobs 8
+  python3 jachacks_repair.py --edition sf --only repo/file.jac,repo2/f.jac --rounds 2
 
 Env knobs:
   JH_REPAIR_MODEL     pi model id      [glm-5.3-flash]
@@ -52,8 +52,7 @@ from osp_minimax_generate import extract_jac  # noqa: E402
 
 HOST = os.environ.get("JH_HOST", "clarity2")  # or "local"
 RROOT = "/home/madhu/jachacks_check"
-RTREE = f"{RROOT}/jachacks_nonsf"
-LTREE = os.environ.get("JH_LOCAL_TREE", "/tmp/jachacks_nonsf")
+LTREE = os.environ.get("JH_LOCAL_TREE", "")  # default per edition, set in main()
 MODEL = os.environ.get("JH_REPAIR_MODEL", "glm-5.3-flash")
 PROVIDER = os.environ.get("JH_REPAIR_PROVIDER", "zai")
 PI_CWD = "/tmp/devin_osp_workspace"
@@ -61,6 +60,22 @@ TIMEOUT = int(os.environ.get("JH_REPAIR_TIMEOUT", "300"))
 TRIES = int(os.environ.get("JH_REPAIR_TRIES", "3"))
 OUTDIR = REPO / "data" / "jachacks_repaired"
 RESULTS = REPO / "data" / "jachacks_repair_results.jsonl"
+
+EDITIONS = {
+    # edition: (source jsonl suffixes, tree suffix, results/mirror suffix)
+    "nonsf": (("spring", "2026"), "jachacks_nonsf", ""),
+    "sf": (("sf",), "jachacks_sf", "_sf"),
+}
+
+
+def edition_paths(edition: str) -> None:
+    """Point tree/results/mirror globals at the selected edition."""
+    global RTREE, LTREE, OUTDIR, RESULTS
+    _, tree, suffix = EDITIONS[edition]
+    RTREE = f"{RROOT}/{tree}"
+    LTREE = os.environ.get("JH_LOCAL_TREE", f"/tmp/{tree}")
+    OUTDIR = REPO / "data" / f"jachacks_repaired{suffix}"
+    RESULTS = REPO / "data" / f"jachacks_repair_results{suffix}.jsonl"
 
 SYSTEM = """You are an expert Jac (Jaseci) engineer repairing hackathon code written against an OLD Jac dialect so it passes `jac check` (jac 0.36.1, strict static type checker).
 
@@ -168,9 +183,12 @@ def local_recheck(repos: list[str] | None = None) -> dict:
 def remote_recheck(repos: list[str] | None = None) -> dict:
     if HOST == "local":
         return local_recheck(repos)
-    args = " ".join(repos) if repos else ""
-    ssh(f"python3 {RROOT}/recheck.py {args}", timeout=1800)
-    out = ssh(f"cat {RROOT}/recheck_state.json")
+    tree = Path(RTREE).name
+    args = f"--tree {tree} --state recheck_state_{tree}.json"
+    if repos:
+        args += " " + " ".join(repos)
+    ssh(f"python3 {RROOT}/recheck.py {args}", timeout=3600)
+    out = ssh(f"cat {RROOT}/recheck_state_{tree}.json")
     i = out.find("{")
     return json.loads(out[i:out.rfind("}") + 1])
 
@@ -243,12 +261,15 @@ def main() -> int:
     ap.add_argument("--jobs", type=int, default=8)
     ap.add_argument("--only", default="")
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--edition", choices=sorted(EDITIONS), default="nonsf")
     args = ap.parse_args()
     only = set(filter(None, args.only.split(",")))
+    edition_paths(args.edition)
+    sources = EDITIONS[args.edition][0]
 
     # load records -> rel path -> source (current, evolves across rounds)
     records: dict[str, dict] = {}
-    for src in ("spring", "2026"):
+    for src in sources:
         for line in open(REPO / "data" / f"jachacks_{src}_jac_files_filtered.jsonl"):
             r = json.loads(line)
             records[f"{r['dirname']}/{r['file_path']}"] = r

@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Rebuild checked non-SF jachacks datasets from the (possibly repaired) tree.
+"""Rebuild checked jachacks datasets from the (possibly repaired) tree.
 
-Reads the live tree at JH_TREE (default /tmp/jachacks_nonsf — subagents fix in
-place), re-runs `jac check` per repo, and emits the passing records into the
-*_checked.jsonl files. Repaired records get `repaired_by: 'subagent'` and
+Reads the live tree at JH_TREE (default /tmp/<tree> for --edition — subagents
+fix in place), re-runs `jac check` per repo, and emits the passing records into
+the *_checked.jsonl files. Repaired records get `repaired_by: 'subagent'` and
 `original_sha` provenance fields.
 """
 import hashlib
+import argparse
 import json
 import os
 import re
@@ -15,7 +16,12 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
-TREE = Path(os.environ.get("JH_TREE", "/tmp/jachacks_nonsf"))
+TREE = Path(os.environ.get("JH_TREE", ""))  # default per edition, set in main()
+EDITIONS = {
+    # edition: (source jsonl suffixes, tree name)
+    "nonsf": (("spring", "2026"), "jachacks_nonsf"),
+    "sf": (("sf",), "jachacks_sf"),
+}
 SUM_RE = re.compile(r"^(\S.*?\.jac) - (\d+) errors?,")
 TGT_RE = re.compile(r"^\s*-->\s*(\S+?\.jac):\d+:\d+")
 DIAG_START = re.compile(r"^\s*[✖⚠]")
@@ -70,8 +76,15 @@ def parent_of_impl(rel: str) -> str | None:
 
 
 def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--edition", choices=sorted(EDITIONS), default="nonsf")
+    args = ap.parse_args()
+    sources, tree_name = EDITIONS[args.edition]
+    global TREE
+    if not TREE:
+        TREE = Path("/tmp") / tree_name
     records = {}
-    for src in ("spring", "2026"):
+    for src in sources:
         for line in open(REPO / "data" / f"jachacks_{src}_jac_files_filtered.jsonl"):
             r = json.loads(line)
             records[f"{r['dirname']}/{r['file_path']}"] = r
@@ -97,7 +110,7 @@ def main() -> int:
 
     counts = {}
     renamed = {}
-    for src in ("spring", "2026"):
+    for src in sources:
         out = REPO / "data" / f"jachacks_{src}_jac_files_checked.jsonl"
         n = 0
         with open(out, "w") as g:
@@ -132,11 +145,12 @@ def main() -> int:
                 g.write(json.dumps(r) + "\n")
                 n += 1
         counts[src] = n
-    combined = REPO / "data" / "jachacks_nonsf_jac_files_checked.jsonl"
-    with open(combined, "w") as g:
-        for src in ("spring", "2026"):
-            for line in open(REPO / "data" / f"jachacks_{src}_jac_files_checked.jsonl"):
-                g.write(line)
+    if len(sources) > 1:
+        combined = REPO / "data" / f"jachacks_{args.edition}_jac_files_checked.jsonl"
+        with open(combined, "w") as g:
+            for src in sources:
+                for line in open(REPO / "data" / f"jachacks_{src}_jac_files_checked.jsonl"):
+                    g.write(line)
     print("checked:", counts, "combined:", sum(counts.values()))
     return 0
 
