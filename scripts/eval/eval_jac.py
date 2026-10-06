@@ -174,8 +174,19 @@ def extract_jac(text: str) -> tuple[str | None, str | None]:
 
 
 def assemble_source(problem: dict[str, Any], sample: dict[str, Any]) -> tuple[str | None, str | None]:
-    if "completion" in sample:
-        completion, error = extract_jac(str(sample.get("completion", "")))
+    # Completion-ness is a property of the PROBLEM, not of the sample key: the
+    # vllm harness stores generations under `output` for every task, so keying
+    # on `"completion" in sample` graded continuations as standalone files
+    # (unparseable by construction). Dispatch on the task field, with the
+    # sample key and documented prefix field as fallbacks for other suites.
+    completion_task = (
+        problem.get("task") == "completion"
+        or "completion" in sample
+        or bool(problem.get("prefix"))
+    )
+    if completion_task:
+        text = sample.get("completion", sample.get("output", ""))
+        completion, error = extract_jac(str(text))
         if error:
             return None, error
         return (
@@ -712,32 +723,33 @@ def main() -> int:
     args.out_dir.mkdir(parents=True, exist_ok=True)
 
     started = time.perf_counter()
+    # Stream rows as they complete: a crash (e.g. ENOSPC from postgres spill)
+    # must not discard finished grades. The file is append-safe for resume.
+    results_path = args.out_dir / "results.jsonl"
     ordered: list[dict[str, Any] | None] = [None] * len(samples)
-    with ThreadPoolExecutor(max_workers=args.workers) as executor:
-        futures = {
-            executor.submit(
-                grade_one,
-                index,
-                by_id[str(sample["problem_id"])],
-                sample,
-                jac_bin=args.jac_bin,
-                timeout_s=args.timeout,
-                tmp_root=args.tmp_root,
-                jac_tmp=jac_tmp,
-                server_codespace=not args.native_codespace,
-            ): index
-            for index, sample in enumerate(samples)
-        }
-        for future in as_completed(futures):
-            index, row = future.result()
-            ordered[index] = row
+    with results_path.open("w", encoding="utf-8") as results_file:
+        with ThreadPoolExecutor(max_workers=args.workers) as executor:
+            futures = {
+                executor.submit(
+                    grade_one,
+                    index,
+                    by_id[str(sample["problem_id"])],
+                    sample,
+                    jac_bin=args.jac_bin,
+                    timeout_s=args.timeout,
+                    tmp_root=args.tmp_root,
+                    jac_tmp=jac_tmp,
+                    server_codespace=not args.native_codespace,
+                ): index
+                for index, sample in enumerate(samples)
+            }
+            for future in as_completed(futures):
+                index, row = future.result()
+                ordered[index] = row
+                results_file.write(json.dumps(row, sort_keys=True) + "\n")
+                results_file.flush()
 
     results = [row for row in ordered if row is not None]
-    results_path = args.out_dir / "results.jsonl"
-    results_path.write_text(
-        "".join(json.dumps(row, sort_keys=True) + "\n" for row in results),
-        encoding="utf-8",
-    )
 
     overall = aggregate(results, args.k)
     tracks = {

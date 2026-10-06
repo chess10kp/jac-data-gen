@@ -91,5 +91,27 @@
   "note": [
     "regraded 1466 timeout/infra samples at 300s cap on clarity3 (jac 0.36.1, same binary)",
     "1447/1466 previously timeout/infra samples now pass; pass@1 7.19% -> 44.16%"
-  ]
+  ],
+  "regrade_completion_partial": {
+    "date": "2026-10-06",
+    "why": "2026-10-04 grader artifact: completion samples were checked as standalone fragments (assemble_source key-dispatch bug); this block regrades them with the fixed grader",
+    "grader": "scripts/eval/eval_jac.py (assemble_source dispatches on problem task; streaming results), jac 0.36.1, 300s cap, clarity2",
+    "coverage": {"samples_graded": 1526, "samples_total": 1944, "problems_touched": 485, "problems_total": 486, "infra_errors": 0},
+    "status_counts": {"pass": 590, "test_fail": 786, "check_fail": 135, "timeout": 15},
+    "check_rate": 0.912,
+    "behavioral_pass_among_check_clean": 0.424,
+    "pass_at_k": {
+      "1": {"value": 0.390, "eligible_problems": 485},
+      "2": {"value": 0.466, "eligible_problems": 473},
+      "4": {"value": 0.500, "eligible_problems": 172}
+    },
+    "translation_track_unchanged": {"pass_at_k": {"1": 0.883, "2": 0.922, "4": 0.942}, "behavioral_pass_among_check_clean": 0.976},
+    "combined_pass_at_k": {"1": 0.636, "2": 0.694, "4": 0.721},
+    "note": [
+      "stopped at user request before full coverage; missing 418 sample slots spread ~uniformly across 485 problems",
+      "pass@4 eligibility limited to the 172 problems with all 4 samples graded",
+      "raw grades: regrade-completion-partial/results.jsonl (sha256 c06629098a6084d1f8dd803937c4e3aa70859585fbee3fe33733fcdd58196ea2)",
+      "the overall/ block above is the ORIGINAL buggy-grader record, kept for provenance; use regrade_completion_partial + the translation regrade for corrected numbers"
+    ]
+  }
 }

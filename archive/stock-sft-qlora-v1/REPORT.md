@@ -75,12 +75,41 @@ Fix: dispatch `assemble_source` on `problem["task"] == "completion"`
 (prepend prefix/suffix regardless of sample key), or have the harness emit
 the `completion` key for completion-task rows.
 
+## 2026-10-06 partial behavioral regrade of the completion track
+
+Full-grader regrade with the assembly fix (`assemble_source` dispatches on
+`problem["task"]`, `scripts/eval/eval_jac.py` this commit; frozen
+`fn_eval_preds` copy untouched). Same jac 0.36.1 binary, 300s cap, graded on
+clarity2. Stopped at user request with 1526/1944 completion samples graded
+(485/486 problems touched; zero infra errors). Supersedes the 0.36 estimate
+above — the subset was slightly pessimistic.
+
+| pass@k (unbiased estimator) | translation (486) | completion (partial) | combined |
+|---|---|---|---|
+| k=1 | 88.3% | **39.0%** (485 elig.) | **63.6%** |
+| k=2 | 92.2% | 46.6% (473 elig.) | 69.4% |
+| k=4 | 94.2% | 50.0% (172 elig.) | 72.1% |
+
+Completion sample statuses: 590 pass / 786 test_fail / 135 check_fail /
+15 timeout. check_rate 91.2% (vs 91.8% check-only projection); behavioral
+pass among check-clean 42.4% (vs 38.8% on the 117 subset). Translation
+figures reproduce the recorded regrade exactly (1716/1944 samples, 458
+problems >=1 pass, 387 4/4, 97.6% behavioral|check).
+
+Caveats: completion pass@4 rests on the 172 problems with all four samples
+graded; k=1/2 on 485/473. Extrapolating the graded 78.5% to full coverage
+would move combined pass@1 by <1pt (the one untouched problem and 418
+missing sample slots are spread ~uniformly). The completion-vs-translation
+gap is behavioral, not syntactic: 91% of completions parse and typecheck,
+only 42% of those pass hidden tests.
+
 ## Files
 
 | file | sha256 |
 |---|---|
 | summary.json (corrected merged) | f305c91af858d6d574a1bc3d638eb945e08de479235890c27317e8a0654dde22 |
 | results.jsonl (3888 merged per-sample grades) | 5446cb6f92c6cdafbc9b3c800635bf1ec3f24bc5803bfeef9c3f13b0aac3d175 |
+| regrade-completion-partial/results.jsonl (1526 fixed-grader completion grades) | c06629098a6084d1f8dd803937c4e3aa70859585fbee3fe33733fcdd58196ea2 |
 | samples_suite.jsonl (raw generations) | 06e5956700894448b12574e5b3df20367ced8a7c625f08270f2f40017e3c621c |
 | original-120s/summary.json (pre-regrade headline) | df17e638cc5767e3b903ce620d3e694fd0e6061c1c74890b93a0cce5f1eeab7c |
 
