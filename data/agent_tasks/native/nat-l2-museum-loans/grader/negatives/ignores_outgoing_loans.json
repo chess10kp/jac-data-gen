@@ -1,0 +1,1 @@
+{"why": "owned works shown even when lent away", "edits": [{"file": "collection.jac", "old": "            if not art.in_conservation and len(away) == 0 {", "new": "            if not art.in_conservation {"}]}

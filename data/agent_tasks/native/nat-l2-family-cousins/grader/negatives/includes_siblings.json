@@ -1,0 +1,1 @@
+{"why": "siblings counted as cousins", "edits": [{"file": "family.jac", "old": "            if not shared {\n                names.add(kin.name);\n            }\n", "new": "            names.add(kin.name);\n"}]}

@@ -1,0 +1,1 @@
+{"why": "shown not set", "edits": [{"file": "collection.jac", "old": "        self.shown = len(titles);\n", "new": ""}]}

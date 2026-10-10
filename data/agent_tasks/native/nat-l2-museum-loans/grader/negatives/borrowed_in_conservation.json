@@ -1,0 +1,1 @@
+{"why": "borrowed works in conservation still shown", "edits": [{"file": "collection.jac", "old": "            if not art.in_conservation {\n                titles.add(art.title);", "new": "            if True {\n                titles.add(art.title);"}]}
