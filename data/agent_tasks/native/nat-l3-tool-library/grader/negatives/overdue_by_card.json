@@ -1,0 +1,1 @@
+{"why": "overdue sorted by member card instead of due day/code", "edits": [{"file": "toollib.jac", "old": "self.late.append((loan.due_day, tool.code, here.card));", "new": "self.late.append((0, here.card, tool.code));"}, {"file": "toollib.jac", "old": "for (due, code, card) in sorted(self.late)", "new": "for (due, card, code) in sorted(self.late)"}]}

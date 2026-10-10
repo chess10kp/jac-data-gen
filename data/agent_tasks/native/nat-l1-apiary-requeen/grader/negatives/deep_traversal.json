@@ -1,0 +1,1 @@
+{"why": "keeps walking into nucleus hives hung off other hives", "edits": [{"file": "apiary.jac", "old": "        self.checked += 1;\n", "new": "        self.checked += 1;\n        visit [-->[?:Hive]];\n"}]}

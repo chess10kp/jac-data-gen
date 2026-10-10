@@ -1,0 +1,5 @@
+{"why": "never checks whether the tool is already lent", "edits": [{"file": "toollib.jac", "old": "        if len([tool <-:Lent:<-]) > 0 {
+            report Receipt(ok=False, reason=\"already lent\");
+            return;
+        }
+", "new": ""}]}

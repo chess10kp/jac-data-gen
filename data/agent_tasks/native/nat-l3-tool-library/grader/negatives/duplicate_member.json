@@ -1,0 +1,7 @@
+{"why": "creates a fresh Member node on every checkout", "edits": [{"file": "toollib.jac", "old": "        if members {
+            member = members[0];
+        } else {
+            member = root ++> Member(card=self.card);
+        }
+", "new": "        member = root ++> Member(card=self.card);
+"}]}
