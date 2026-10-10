@@ -24,7 +24,7 @@ test "add normalizes ingredients" {
     assert get(v, "rating") == 0.0 and get(v, "ratings") == 0;
     assert len(get(v, "id")) > 0;
     bad = (root spawn add_recipe(title="  ", ingredients=["x"])).reports[0];
-    assert isinstance(bad, dict) and "error" in bad;
+    assert isinstance(bad, dict) and "error" in list(bad);
 }
 
 test "search by shared ingredient" {
@@ -53,9 +53,9 @@ test "ratings and top rated" {
     root spawn rate_recipe(recipe_id=get(b, "id"), stars=4);
     root spawn rate_recipe(recipe_id=get(c, "id"), stars=5);
     bad = (root spawn rate_recipe(recipe_id=get(c, "id"), stars=0)).reports[0];
-    assert isinstance(bad, dict) and "error" in bad;
+    assert isinstance(bad, dict) and "error" in list(bad);
     ghost = (root spawn rate_recipe(recipe_id="nope" + tag, stars=3)).reports[0];
-    assert isinstance(ghost, dict) and "error" in ghost;
+    assert isinstance(ghost, dict) and "error" in list(ghost);
     top = [get(x, "title") for x in flat((root spawn top_rated(limit=1000)).reports) if get(x, "title").endswith(tag)];
     assert list(top) == ["Gamma " + tag, "Alpha " + tag, "Beta " + tag];
 }

@@ -89,7 +89,11 @@ walker:pub score_team {
         }
         j = js[0];
         t = ts[0];
-        del [e for e in [edge j ->:Scored:-> t] if e.criterion == self.criterion];
+        for e in [edge j ->:Scored:-> t] {
+            if e.criterion == self.criterion {
+                del e;
+            }
+        }
         j +>:Scored(criterion=self.criterion, points=self.points):+> t;
         report {"ok": True};
     }

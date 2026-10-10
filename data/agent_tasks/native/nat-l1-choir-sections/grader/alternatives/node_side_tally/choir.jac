@@ -35,7 +35,7 @@ walker SectionCheck {
 
     can finish with Root exit {
         result: dict[str, int] = {};
-        for p in [Part.SOPRANO, Part.ALTO, Part.TENOR, Part.BASS] {
+        for p in Part {
             n = len([x for x in self.seen if x == p]);
             result[p.name] = n;
             if n < self.minimum {

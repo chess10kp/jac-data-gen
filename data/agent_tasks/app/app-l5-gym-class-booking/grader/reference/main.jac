@@ -35,6 +35,10 @@ def get_member(name: str) -> Member {
     return root ++> Member(name=name);
 }
 
+def view_name(v: dict[str, any]) -> str {
+    return v["name"];
+}
+
 def:pub create_class(name: str, capacity: int) -> dict[str, any] {
     if capacity < 1 {
         return {"error": "capacity must be at least 1"};
@@ -64,7 +68,7 @@ def:pub cancel_booking(class_id: str, member: str) -> dict[str, any] {
     }
     for m in [k <-:Booking:<-] {
         if m.name == member {
-            del [edge m ->:Booking:-> k];
+            m del --> k;
             return view(k);
         }
     }
@@ -72,7 +76,7 @@ def:pub cancel_booking(class_id: str, member: str) -> dict[str, any] {
 }
 
 def:pub list_classes() -> list[dict[str, any]] {
-    return sorted([view(k) for k in [root -->[?:Klass]]], key=lambda (v: dict[str, any]) -> str { return v["name"]; });
+    return sorted([view(k) for k in [root -->[?:Klass]]], key=view_name);
 }
 
 def:pub roster(class_id: str) -> list[str] {

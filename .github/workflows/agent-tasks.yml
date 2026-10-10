@@ -14,8 +14,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  JAC_VERSION: 0.37.25
-  JAC_SHA256: a7d29cc7b35cc25b8697510e7d31fcb3403a11451d5693f57e0918a7420cf2c2
+  JAC_VERSION: 0.36.1
+  JAC_SHA256: 3edaa74d5f6124c59be7183a58b823da0c325344c8666406332a57e4a5182c71
 
 jobs:
   plan:

@@ -1,1 +1,1 @@
-{"why": "only runs of the exact size", "edits": [{"file": "app.jac", "old": "if r.size.value >= need and run_free", "new": "if r.size.value == need and run_free"}]}
+{"why": "only runs of the exact size", "edits": [{"file": "app.jac", "old": "if RANK[r.size.name] >= need and run_free", "new": "if RANK[r.size.name] == need and run_free"}]}

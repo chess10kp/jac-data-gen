@@ -14,9 +14,9 @@ walker:pub record_visit {
             report {"error": "page required"};
             return;
         }
-        visit [here -->[?:PageCounter, page == name]] else {
-            visit here ++> PageCounter(page=name);
-        }
+        found = [c for c in [here -->[?:PageCounter]] if c.page == name];
+        counter = found[0] if found else here ++> PageCounter(page=name);
+        visit counter;
     }
 
     can bump with PageCounter entry {

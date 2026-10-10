@@ -11,4 +11,4 @@ Fee: the first 30 minutes are free; past that it's 2.00 per started hour of the 
 
 Errors — return `{"error": "<message>"}`: garage full (or capacity never set), a plate that's already parked trying to park again, leaving with a plate that isn't parked, a leave time before the entry time, bad time format.
 
-Keep the garage config, the cars currently parked, and a history of completed stays on the graph under root (history doesn't need an endpoint yet). Tests please, and make sure it boots with `jac run`.
+Keep the garage config, the cars currently parked, and a history of completed stays on the graph under root (history doesn't need an endpoint yet). Tests please, and make sure it boots with `jac start`.

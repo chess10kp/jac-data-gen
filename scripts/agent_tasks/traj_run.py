@@ -15,10 +15,13 @@ Subcommands
 Isolation (per session; no state can leak between sessions or into the box):
   <root>/<sid>/ws/<project>   fresh copy of starter/ (the agent's cwd)
   <root>/<sid>/home           HOME, XDG_* (pi + ast-edit caches)
-  <root>/<sid>/cache          JAC_CACHE_HOME: rt/ stage0/ toolchains/ symlinked to the
-                              shared read-only pre-warmed cache (the unpacked runtime
-                              is the slow part); jir/ copied; pg/ private (pg/dist
-                              symlinked) so every session gets a clean embedded postgres
+  <root>/<sid>/home/.cache/jac  the jac cache (XDG_CACHE_HOME/jac, which 0.36.1 uses for
+                              rt/jir; JAC_CACHE_HOME points at the same dir, which both
+                              versions use for the embedded postgres): rt/ stage0/
+                              toolchains/ symlinked to the shared pre-warmed cache (the
+                              unpacked runtime is the slow part); other entries copied;
+                              pg/ private (pg/dist symlinked) so every session gets a
+                              clean embedded postgres
   <root>/<sid>/tmp            TMPDIR (postgres socket dirs etc.)
   <root>/<sid>/agent          pi agent dir: settings.json only (retry policy and a
                               shell prefix that unsets the API key for the bash tool)
@@ -97,28 +100,38 @@ def which_bwrap() -> str | None:
     return b if p.returncode == 0 else None
 
 
-def make_cache(shared: Path, dst: Path) -> None:
-    """Private JAC_CACHE_HOME that shares the expensive read-only parts of `shared`."""
+def make_cache(shared_xdg: Path, dst_xdg: Path) -> None:
+    """Private XDG cache whose jac/ dir shares the expensive read-only parts of the shared one."""
+    shared, dst = shared_xdg / "jac", dst_xdg / "jac"
     dst.mkdir(parents=True, exist_ok=True)
-    for name in SHARED_LINKS:
-        if (shared / name).exists():
-            (dst / name).symlink_to(shared / name)
-    if (shared / "jir").is_dir():
-        shutil.copytree(shared / "jir", dst / "jir", symlinks=True)
+    for e in (shared.iterdir() if shared.is_dir() else []):
+        if e.name in SHARED_LINKS:
+            (dst / e.name).symlink_to(e)
+        elif e.name in ("pg", "tmp") or e.name.endswith(".lock"):
+            continue
+        elif e.is_dir():
+            shutil.copytree(e, dst / e.name, symlinks=True, ignore_dangling_symlinks=True)
+        elif e.is_file():
+            shutil.copy2(e, dst / e.name)
     (dst / "pg").mkdir()
     if (shared / "pg" / "dist").is_dir():
         (dst / "pg" / "dist").symlink_to(shared / "pg" / "dist")
     (dst / "tmp").mkdir()
 
 
-def session_env(sdir: Path, with_key: bool) -> dict:
+def jac_env(xdg: Path) -> dict:
+    return {"XDG_CACHE_HOME": str(xdg), "JAC_CACHE_HOME": str(xdg / "jac")}
+
+
+def session_env(sdir: Path, with_key: bool, home: Path | None = None) -> dict:
+    """Env for a session; `home` is the HOME path as seen by the session (VHOME under bwrap)."""
     env = {k: os.environ[k] for k in PASS_ENV if k in os.environ}
-    home = sdir / "home"
+    home = home or sdir / "home"
     env.update({
         "HOME": str(home), "USER": os.environ.get("USER", "runner"), "SHELL": "/bin/bash", "TERM": "dumb",
-        "XDG_CACHE_HOME": str(home / ".cache"), "XDG_CONFIG_HOME": str(home / ".config"),
+        **jac_env(home / ".cache"), "XDG_CONFIG_HOME": str(home / ".config"),
         "XDG_DATA_HOME": str(home / ".local/share"), "XDG_STATE_HOME": str(home / ".local/state"),
-        "TMPDIR": str(sdir / "tmp"), "JAC_CACHE_HOME": str(sdir / "cache"),
+        "TMPDIR": str(sdir / "tmp"),
         "JACPI_AGENT_DIR": str(sdir / "agent"), "JACPI_SOURCE_AGENT_DIR": str(sdir / "no-source-agent"),
         "JAC_AST_EDIT_CACHE_DIR": str(home / ".cache" / "pi-jac-ast-edit"),
         "PI_OFFLINE": "1", "PI_SKIP_VERSION_CHECK": "1", "PI_TELEMETRY": "0", "NO_COLOR": "1",
@@ -133,24 +146,32 @@ def session_env(sdir: Path, with_key: bool) -> dict:
 def make_session_dirs(sdir: Path, shared: Path) -> None:
     for d in ("home/.cache", "home/.config", "tmp", "agent", "session"):
         (sdir / d).mkdir(parents=True, exist_ok=True)
-    make_cache(shared, sdir / "cache")
+    make_cache(shared, sdir / "home" / ".cache")
     (sdir / "agent" / "settings.json").write_text(json.dumps(PI_SETTINGS, indent=1))
 
 
+VHOME = Path("/home/dev")   # HOME as the sandboxed session sees it; the workspace is VHOME/<project>
+
+
 def wrap(cmd: list[str], sdir: Path, cwd: Path, bwrap: str | None, extra_ro: list[Path]) -> list[str]:
+    """bwrap: / read-only; /home replaced by a tmpfs (hides the repo checkout with the graders, the
+    runner's home and other sessions); sdir bound at its own path and sdir/home at VHOME; the
+    harness, the shared cache and PATH dirs under /home re-bound read-only. `cwd` is the in-sandbox path."""
     if not bwrap:
         return cmd
     w = [bwrap, "--ro-bind", "/", "/", "--dev", "/dev", "--proc", "/proc", "--tmpfs", "/tmp",
          "--unshare-pid", "--unshare-ipc", "--die-with-parent", "--new-session"]
-    hide = {REPO}
+    hide = {Path("/home"), REPO}
     if os.environ.get("RUNNER_WORKSPACE"):          # /home/runner/work/<repo>: checkout + _temp step scripts
         hide.add(Path(os.environ["RUNNER_WORKSPACE"]).parent)
     for h in sorted(hide, key=lambda p: len(str(p))):
-        if not str(sdir).startswith(str(h) + "/"):
+        if not any(str(h).startswith(str(o) + "/") for o in hide):
             w += ["--tmpfs", str(h)]
-    for p in extra_ro:
-        w += ["--ro-bind", str(p), str(p)]
-    w += ["--bind", str(sdir), str(sdir), "--chdir", str(cwd), "--"]
+    path_dirs = [Path(d) for d in os.environ.get("PATH", "").split(":") if d.startswith("/home/") and Path(d).is_dir()]
+    for p in [*extra_ro, *path_dirs]:
+        if p.exists():
+            w += ["--ro-bind", str(p), str(p)]
+    w += ["--bind", str(sdir), str(sdir), "--bind", str(sdir / "home"), str(VHOME), "--chdir", str(cwd), "--"]
     return w + cmd
 
 
@@ -167,7 +188,7 @@ def reap(sdir: Path) -> int:
             envb = (p / "environ").read_bytes()
         except OSError:
             continue
-        if tag in cmd or cwd.startswith(tag) or f"JAC_CACHE_HOME={tag}/".encode() in envb:
+        if tag in cmd or cwd.startswith(tag) or f"={tag}/".encode() in envb:
             try:
                 os.kill(int(p.name), signal.SIGKILL)
                 n += 1
@@ -268,7 +289,8 @@ class Runner:
         self.bwrap = None if a.sandbox == "none" else which_bwrap()
         if a.sandbox == "bwrap" and not self.bwrap:
             raise SystemExit("--sandbox bwrap requested but bwrap is unusable")
-        self.extra_ro = [HARNESS]
+        self.extra_ro = [HARNESS, self.shared]
+        self.jac_version = subprocess.run(["jac", "--version"], capture_output=True, text=True).stdout.strip()
 
     def record(self, name: str, row: dict) -> None:
         with self.lock:
@@ -297,21 +319,22 @@ class Runner:
         if sdir.exists():
             shutil.rmtree(sdir, ignore_errors=True)
         make_session_dirs(sdir, self.shared)
-        ws = sdir / "ws" / project_name(meta["id"])
+        proj = project_name(meta["id"])
+        ws = sdir / "home" / proj                   # = VHOME/<proj> inside the sandbox
         ws.mkdir(parents=True)
         grader.copy_ws(td / "starter", ws)
         request = (td / "request.md").read_text().strip()
         cmd = [str(HARNESS / "deploy" / "jacpi.sh"), "--model", self.a.model,
                "--session-dir", str(sdir / "session"), "-p", request]
-        env = session_env(sdir, with_key=True)
+        env = session_env(sdir, with_key=True, home=VHOME if self.bwrap else None)
         with open(self.out / "logs" / f"{sid}.out", "w") as so, open(self.out / "logs" / f"{sid}.err", "w") as se:
-            rc, timed_out, wall = run_cmd(wrap(cmd, sdir, ws, self.bwrap, self.extra_ro), ws, env,
-                                          self.a.timeout * 60, so, se)
+            rc, timed_out, wall = run_cmd(wrap(cmd, sdir, VHOME / proj if self.bwrap else ws, self.bwrap,
+                                               self.extra_ro), ws, env, self.a.timeout * 60, so, se)
         reaped = reap(sdir)
         sess = sorted((sdir / "session").glob("*.jsonl"))
         summ = session_summary(sess[-1] if sess else None)
         row = {"sid": sid, "task_id": meta["id"], "kind": meta["kind"], "level": meta["level"], "sample": sample,
-               "attempt": n, "model": self.a.model, "rc": rc, "timed_out": timed_out, "wall_s": round(wall, 1),
+               "attempt": n, "model": self.a.model, "jac": self.jac_version, "rc": rc, "timed_out": timed_out, "wall_s": round(wall, 1),
                "reaped": reaped, "sandbox": "bwrap" if self.bwrap else "none", "n_session_files": len(sess),
                **summ}
         return row, sdir, ws
@@ -359,8 +382,8 @@ class Runner:
         gdir = sdir / "grade"
         gdir.mkdir()
         (gdir / "tmp").mkdir()
-        make_cache(self.shared, gdir / "cache")
-        env = {**session_env(gdir, with_key=False), "HOME": str(gdir), "JAC_CACHE_HOME": str(gdir / "cache"),
+        make_cache(self.shared, gdir / "xdg")
+        env = {**session_env(gdir, with_key=False), "HOME": str(gdir), **jac_env(gdir / "xdg"),
                "TMPDIR": str(gdir / "tmp")}
         try:
             p = subprocess.run([sys.executable, str(HERE / "grade.py"), str(td), str(ws), "--json"], env=env,
@@ -422,7 +445,7 @@ def pick_persistence_task() -> Path | None:
 def cmd_prewarm(a) -> int:
     shared = Path(a.shared).resolve()
     shared.mkdir(parents=True, exist_ok=True)
-    env = {**os.environ, "JAC_CACHE_HOME": str(shared)}
+    env = {**os.environ, **jac_env(shared)}
     for k in KEY_ENVS:
         env.pop(k, None)
     t0 = time.time()
@@ -439,9 +462,13 @@ def cmd_prewarm(a) -> int:
             log(f"prewarm {td.name}: ref passed={g['passed']} {g.get('detail', '')[:300]}")
             rc |= not g["passed"]
     sizes = {d.name: subprocess.run(["du", "-sh", str(d)], capture_output=True, text=True).stdout.split()[0]
-             for d in shared.iterdir() if d.is_dir()}
-    log(f"prewarm done in {time.time() - t0:.0f}s; shared cache {sizes}")
-    return rc
+             for d in (shared / "jac").iterdir() if d.is_dir()}
+    # the shared cache must hold no postgres datadir (sessions get their own): stop + drop it
+    log(f"prewarm reaped {reap(shared)} leftover processes")
+    for d in (shared / "jac" / "pg").glob("main*"):
+        shutil.rmtree(d, ignore_errors=True) if d.is_dir() else d.unlink()
+    log(f"prewarm done in {time.time() - t0:.0f}s; shared cache {sizes}; all refs passed={not rc}")
+    return 0  # informative only: the probe is the gate
 
 
 def cmd_probe(a) -> int:
@@ -451,36 +478,40 @@ def cmd_probe(a) -> int:
     if a.sandbox == "bwrap" and not bw:
         log("PROBE bwrap requested but unusable")
         return 1
-    td = pick_persistence_task()
+    td = (TASKS / "native" / os.environ["TRAJ_PROBE_TASK"]) if os.environ.get("TRAJ_PROBE_TASK") \
+        else pick_persistence_task()
     gate = json.loads((td / "grader" / "gate.json").read_text())
     sdir = root / "probe"
     shutil.rmtree(sdir, ignore_errors=True)
     make_session_dirs(sdir, shared)
-    ws = sdir / "ws" / project_name(td.name)
+    proj = project_name(td.name)
+    ws = sdir / "home" / proj
     ws.mkdir(parents=True)
     grader.copy_ws(td / "grader" / "reference", ws)
     for p in (td / "grader" / "probes").iterdir():
         shutil.copy(p, ws / p.name)
-    env = session_env(sdir, with_key=False)
+    env = session_env(sdir, with_key=False, home=VHOME if bw else None)
     steps = [["jac", "check", *json.loads((td / "task.json").read_text())["target_paths"]]]
     steps += [["jac", "run", s["file"], *s.get("args", [])] for s in gate["run_steps"]]
     expects = [[]] + [s.get("expect", []) for s in gate["run_steps"]]
     # Isolation checks: the repo (graders) must be invisible and / read-only under bwrap.
-    steps += [["bash", "-c", f"test ! -e {TASKS}/native && ! touch /usr/probe_w 2>/dev/null && echo ISOLATED"]] if bw else []
+    steps += [["bash", "-c", f"test ! -e {TASKS}/native && ! touch /usr/probe_w 2>/dev/null && ! touch {shared}/probe_w 2>/dev/null "
+               f"&& test \"$PWD\" = {VHOME / proj} && echo ISOLATED"]] if bw else []
     expects += [["ISOLATED"]] if bw else []
     ok = True
     log(f"PROBE task={td.name} sandbox={'bwrap' if bw else 'none'}")
     for cmd, exp in zip(steps, expects):
         with tempfile.TemporaryFile("w+") as f:
-            rc, to, wall = run_cmd(wrap(cmd, sdir, ws, bw, [HARNESS]), ws, env, 600, f, subprocess.STDOUT)
+            rc, to, wall = run_cmd(wrap(cmd, sdir, VHOME / proj if bw else ws, bw, [HARNESS, shared]), ws, env,
+                                   600, f, subprocess.STDOUT)
             f.seek(0)
             out = f.read()
         good = rc == 0 and all(e in out for e in exp)
         ok &= good
         log(f"PROBE {'ok ' if good else 'BAD'} {' '.join(cmd)[:80]} rc={rc} {wall:.1f}s" + ("" if good else f"\n{out[-1500:]}"))
     # the private cache really got its own postgres datadir, the shared one none
-    pg_private = any((sdir / "cache" / "pg").glob("main*"))
-    pg_shared = any((shared / "pg").glob("main*"))
+    pg_private = any((sdir / "home" / ".cache" / "jac" / "pg").glob("main*"))
+    pg_shared = any((shared / "jac" / "pg").glob("main*"))
     log(f"PROBE private pg datadir={pg_private} shared pg datadir={pg_shared} reaped={reap(sdir)}")
     shutil.rmtree(sdir, ignore_errors=True)
     log(f"PROBE {'PASS' if ok else 'FAIL'}")

@@ -28,9 +28,8 @@ def summary(ev: Event) -> dict[str, any] {
             }
         }
     }
-    order = lambda (s: str) -> str { return s.lower(); };
     return {"event": ev.name, "headcount": headcount,
-            "attending": sorted(attending, key=order), "declined": sorted(declined, key=order)};
+            "attending": sorted(attending, key=str.lower), "declined": sorted(declined, key=str.lower)};
 }
 
 walker:pub rsvp {
@@ -58,7 +57,7 @@ walker:pub rsvp {
         } else {
             g = here ++> Guest(key=name.lower(), display=name);
         }
-        del [edge g ->:Rsvp:-> ev];
+        g del --> ev;
         g +>:Rsvp(attending=self.attending, plus_ones=self.plus_ones):+> ev;
         report summary(ev);
     }

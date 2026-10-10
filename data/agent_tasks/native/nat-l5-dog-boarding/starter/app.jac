@@ -23,6 +23,16 @@ node Stay {
 
 edge Hosts: Run --> Stay {}
 
+"""Look up a Size member by its name (None if there is no such member)."""
+def size_named(label: str) -> Size | None {
+    for m in Size {
+        if m.name == label {
+            return m;
+        }
+    }
+    return None;
+}
+
 def:pub add_run(code: str, size: str) -> Run {
-    return root ++> Run(code=code, size=Size[size]);
+    return root ++> Run(code=code, size=size_named(size) or Size.SMALL);
 }

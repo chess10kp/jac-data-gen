@@ -3,9 +3,28 @@
   "kind": "native",
   "level": 4,
   "source": "hand-authored",
-  "gates": ["check", "test"],
-  "target_paths": ["harvest.jac", "model/varieties.jac"],
-  "jac_version": "0.37.25",
+  "gates": [
+    "check",
+    "test"
+  ],
+  "target_paths": [
+    "harvest.jac",
+    "model/varieties.jac"
+  ],
+  "jac_version": "0.36.1",
   "license": "original-authored (jac_llm_data agent-task pool)",
-  "provenance": {"author": "claude (hand-authored pilot)", "created": "2026-10-10", "title": "Orchard harvest forecast", "domain": "fruit orchard management", "constructs": ["package-style module imports", "enum extension", "three-level hierarchy traversal", "obj result", "sem annotations"], "inspiration": "none (original)"}
+  "provenance": {
+    "author": "claude (hand-authored pilot)",
+    "created": "2026-10-10",
+    "title": "Orchard harvest forecast",
+    "domain": "fruit orchard management",
+    "constructs": [
+      "package-style module imports",
+      "enum extension",
+      "three-level hierarchy traversal",
+      "obj result",
+      "sem annotations"
+    ],
+    "inspiration": "none (original)"
+  }
 }

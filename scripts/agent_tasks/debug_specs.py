@@ -26,7 +26,13 @@ def R(content: str) -> dict:
 
 
 HTTP_HELPERS = '''import tempfile;
-import from jaclang.testing.testing { JacTestClient }
+import from jaclang.runtimelib.testing { JacTestClient }
+
+"""Response body; newer servers wrap it in a {"data": ...} envelope."""
+def payload(resp: any) -> dict[str, any] {
+    body = resp.json();
+    return body["data"] if "data" in body and isinstance(body["data"], dict) else body;
+}
 
 def open_client -> JacTestClient {
     c = JacTestClient.from_file("app.jac", base_path=tempfile.mkdtemp());
@@ -37,13 +43,13 @@ def open_client -> JacTestClient {
 def walk(c: JacTestClient, name: str, body: dict[str, any]) -> any {
     resp = c.post("/walker/" + name, json=body);
     assert resp.status_code == 200, f"{name}: {resp.status_code} {resp.text}";
-    return resp.json()["data"]["reports"][0];
+    return payload(resp)["reports"][0];
 }
 
 def fn(c: JacTestClient, name: str, body: dict[str, any]) -> any {
     resp = c.post("/function/" + name, json=body);
     assert resp.status_code == 200, f"{name}: {resp.status_code} {resp.text}";
-    return resp.json()["data"]["result"];
+    return payload(resp)["result"];
 }
 '''
 
@@ -465,7 +471,7 @@ test "third tool for the same card hits the limit" {
     dict(
         id="dbg-l3-toollib-return-deletes-tool", src="native/nat-l3-tool-library", level=3,
         bugs=[B("wrong-delete-target", "Return deletes the Tool node instead of the Lent edge",
-                E("toollib.jac", "del [edge holders[0] ->:Lent:-> tool];", "del tool;"))],
+                E("toollib.jac", "                for doomed in [edge holders[0] ->:Lent:-> tool] {\n                    del doomed;\n                }\n", "                del tool;\n"))],
         request="""
 After a member returns a tool it vanishes from the catalogue. Someone returned the drill DR1 this morning and now checking it out again says "unknown tool"; we had to run RegisterTool for it again. Returning should just end the loan — the tool and the member stay.
 """,
@@ -680,7 +686,7 @@ Support tickets from the bike-share app:
             B("off-by-one", "overlap test treats back-to-back stays (one ends the night before the other starts) as overlapping",
               E("app.jac", "start < s.start + s.nights", "start <= s.start + s.nights")),
             B("wrong-sort-key", "run preference sorts by code before size, so larger runs are picked before fitting smaller ones",
-              E("app.jac", "key=lambda (r: Run) { (r.size.value, r.code); }", "key=lambda (r: Run) { (r.code, r.size.value); }")),
+              E("app.jac", "key=lambda (r: Run) { (RANK[r.size.name], r.code); }", "key=lambda (r: Run) { (r.code, RANK[r.size.name]); }")),
         ],
         request="""
 Two booking problems at the kennel:
@@ -791,17 +797,19 @@ test "parcel under one kilo pays the base price" {
 """,
     ),
     dict(
-        id="dbg-l3-library-copies-never-drop", src="app/app-l3-library-loans", level=3,
-        bugs=[B("edge-direction", "available copies count Loan edges leaving the book (there are none) instead of arriving at it",
-                E("main.jac", "return b.copies - len([edge b <-:Loan:<-]);", "return b.copies - len([edge b ->:Loan:->]);"))],
+        id="dbg-l3-library-one-copy-too-many", src="app/app-l3-library-loans", level=3,
+        bugs=[B("off-by-one", "availability check uses < 0 instead of <= 0, so a book with no copies left can still be checked out",
+                E("main.jac", "if b is None or available_copies(b) <= 0 {", "if b is None or available_copies(b) < 0 {"))],
         request="""
-The library CLI never runs out of copies. We have one copy of Ulysses; `jac run main.jac checkout ann <isbn> 2026-04-01` works, `available <isbn>` still says 1, and Bob can check it out too, and so can a third person. Checkouts are recorded (they appear in the overdue report later). Available should be copies minus copies currently on loan, and a checkout with no copy left must print "unavailable".
+The library CLI lends out more copies than we own. We have one copy of Ulysses: `jac run main.jac checkout ann <isbn> 2026-04-01` works and `available <isbn>` then says 0 — but Bob can still check it out after that, and then `available` says -1. A checkout when no copy is left must print "unavailable" and not record a loan.
 """,
         repro=R('''import from main { AddBook, Checkout, Available }
 
-test "checkout uses up the only copy" {
+test "no checkout once the only copy is out" {
     root spawn AddBook(isbn="repro-1", title="Ulysses", copies=1);
     root spawn Checkout(member="ann", isbn="repro-1", date="2026-04-01");
+    r = root spawn Checkout(member="bob", isbn="repro-1", date="2026-04-02");
+    assert r.reports[0]["ok"] == False;
     assert (root spawn Available(isbn="repro-1")).reports[0] == 0;
 }
 '''),

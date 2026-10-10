@@ -14,10 +14,10 @@ test "park leave and fees" {
     p = "ab" + uuid.uuid4().hex[:5];
     r = park(plate=p, at="08:00");
     assert get(r, "plate") == p.upper() and get(r, "entered") == "08:00";
-    assert p.upper() in get(occupancy(), "plates");
+    assert p.upper() in list(get(occupancy(), "plates"));
     l = leave(plate=p.upper(), at="09:01");
     assert get(l, "minutes") == 61 and abs(get(l, "fee") - 4.0) < 1e-9;
-    assert p.upper() not in get(occupancy(), "plates");
+    assert p.upper() not in list(get(occupancy(), "plates"));
     q = "cd" + uuid.uuid4().hex[:5];
     park(plate=q, at="10:00");
     assert abs(get(leave(plate=q, at="10:30"), "fee")) < 1e-9;

@@ -18,6 +18,14 @@ node Adopter {
 
 edge Adopted: Adopter --> Pet {}
 
+def age_then_name(p: Pet) -> tuple[int, str] {
+    return (p.age_years, p.name);
+}
+
+def pet_name(p: Pet) -> str {
+    return p.name;
+}
+
 walker:pub add_pet {
     has name: str;
     has species: str;
@@ -48,7 +56,7 @@ walker:pub list_available {
     }
 
     can finish with exit {
-        ordered = sorted(self.found, key=lambda (p: Pet) -> tuple[int, str] { return (p.age_years, p.name); });
+        ordered = sorted(self.found, key=age_then_name);
         report [p.view() for p in ordered];
     }
 }
@@ -86,6 +94,6 @@ walker:pub adopter_pets {
                 pets = [p for p in [a ->:Adopted:->]];
             }
         }
-        report [p.view() for p in sorted(pets, key=lambda (p: Pet) -> str { return p.name; })];
+        report [p.view() for p in sorted(pets, key=pet_name)];
     }
 }

@@ -87,7 +87,8 @@ class Task:
                 return False, f"missing target {t}"
             rc, out = _run([JAC, "check", t], ws, self.timeout)
             if rc != 0 or re.search(r"\b[1-9]\d* errors?\b", out.split("=====")[-1] if "=====" in out else ""):
-                return False, f"{t}: {out[-800:]}"
+                i = out.find("Error")
+                return False, f"{t}: {out[max(0, i - 20):i + 1200] if i >= 0 else out[-1200:]}"
         return True, ""
 
     def defined_symbols(self, ws: Path) -> set[str]:
@@ -208,7 +209,7 @@ class Task:
             copy_ws(cand, ws)
             if "check" in gates:
                 ok, why = self.check(ws)
-                res["gates"]["check"] = {"ok": ok, "detail": why[-800:]}
+                res["gates"]["check"] = {"ok": ok, "detail": why[:1400]}
             if "fidelity" in gates:
                 ok, why, info = self.fidelity(ws)
                 res["gates"]["fidelity"] = {"ok": ok, "detail": why, **info}

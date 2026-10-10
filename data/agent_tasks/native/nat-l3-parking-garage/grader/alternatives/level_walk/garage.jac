@@ -41,7 +41,7 @@ walker Enter {
                 disengage;
             }
         }
-        visit [-->[?:Level, number]];
+        visit sorted([-->[?:Level]], key=lambda (l: Level) { l.number; });
     }
 
     can try_level with Level entry {
@@ -84,7 +84,7 @@ walker Leave {
         for c in [here ->:ParkedOn:->] {
             if c.plate == self.plate {
                 self.fee = parking_fee(self.minute - c.entered_at);
-                del [here ->:ParkedOn:->[?:Car, plate == self.plate]];
+                del c;
             }
         }
     }

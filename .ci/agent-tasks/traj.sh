@@ -31,7 +31,7 @@ echo "pi $(pi --version) node $(node --version)"
   && .venv/bin/pip install -q -e ./python )
 cat "$H/VENDORED.json"
 # e2e: deploy/jacpi.sh against a fake local model (extension loads, typebox resolves, snapshot recorded)
-( cd "$H" && JAC_AST_EDIT_CACHE_DIR="$RUNNER_TEMP/astcache" JAC_CACHE_HOME="$SHARED" \
+( cd "$H" && JAC_AST_EDIT_CACHE_DIR="$RUNNER_TEMP/astcache" XDG_CACHE_HOME="$SHARED" JAC_CACHE_HOME="$SHARED/jac" \
   .venv/bin/python -m pytest -q tests/test_e2e_pi.py 2>&1 | tail -3 ) | tee "$OUTD/harness_e2e.txt"
 grep -q "1 passed" "$OUTD/harness_e2e.txt" || { echo "harness e2e failed"; exit 1; }
 
@@ -45,7 +45,7 @@ grep -q "PROBE PASS" "$OUTD/probe.txt" || { echo "isolation probe failed"; exit 
 if [ -n "$TRAJ_SANITY_KINDS" ]; then
   IFS=, read -ra SK <<< "$TRAJ_SANITY_KINDS"
   k="${SK[$((SHARD % ${#SK[@]}))]}"   # one kind per shard
-  JAC_CACHE_HOME="$SHARED" env -u ZAI_API_KEY "$PY" scripts/agent_tasks/grade.py --sanity --kinds "$k" \
+  XDG_CACHE_HOME="$SHARED" JAC_CACHE_HOME="$SHARED/jac" env -u ZAI_API_KEY "$PY" scripts/agent_tasks/grade.py --sanity --kinds "$k" \
     --per-kind "$TRAJ_SANITY_PER_KIND" --out "$OUTD/sanity.jsonl" || echo "SANITY had failures"
 fi
 

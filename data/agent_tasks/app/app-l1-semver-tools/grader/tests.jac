@@ -11,8 +11,11 @@ test "parse plain, v-prefixed and pre-release" {
 
 test "parse rejects garbage" {
     for bad in ["1.2", "1.2.3.4", "a.b.c", "1.2.x", "1.2.3-", ""] {
-        with testraises(ValueError) {
+        try {
             parse_version(bad);
+            assert False, "expected ValueError";
+        } except ValueError {
+            assert True;
         }
     }
 }
@@ -38,8 +41,11 @@ test "bump" {
     assert bump("v1.2.3", "major") == "2.0.0";
     assert bump("1.2.3-rc.1", "patch") == "1.2.3";
     assert bump("1.2.3-rc.1", "minor") == "1.3.0";
-    with testraises(ValueError) {
+    try {
         bump("1.2.3", "build");
+        assert False, "expected ValueError";
+    } except ValueError {
+        assert True;
     }
 }
 

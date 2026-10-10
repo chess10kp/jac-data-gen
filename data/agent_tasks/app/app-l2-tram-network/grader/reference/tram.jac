@@ -1,11 +1,5 @@
 """Tram network: shortest travel times by walker relaxation over Track edges."""
 
-# Anchor this module on the server (Python) backend with an import that has no
-# native-stdlib twin (`sys`/`math`/`uuid` do not anchor). Without it jac 0.37.25
-# places the module native, demotes the ability that reads edge objects (edge-object
-# references are not lowerable) and the mixed native/Python module aborts (SIGABRT).
-import heapq;
-
 node Stop {
     has name: str;
 }
@@ -36,7 +30,7 @@ walker TravelTimes {
 }
 
 walker FastestTime(TravelTimes) {
-    has target: str;
+    has target: str = "";
 
     can finish with exit {
         report self.best.get(self.target, -1);
@@ -44,7 +38,7 @@ walker FastestTime(TravelTimes) {
 }
 
 walker ReachableWithin(TravelTimes) {
-    has budget: int;
+    has budget: int = 0;
     has origin: str = "";
 
     can mark with Stop entry {

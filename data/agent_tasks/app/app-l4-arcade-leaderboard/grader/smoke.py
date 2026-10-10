@@ -2,8 +2,7 @@
 """Hidden HTTP smoke check. Usage: smoke.py <workspace_dir>
 
 Copies the workspace to a fresh temp dir (fresh graph store), boots
-`jac run --serve --port <free> main.jac` (the replacement for the removed
-`jac start`), waits for /healthz, exercises the endpoints the request names
+`jac start --port <free> main.jac` (jac 0.36.1), waits until it answers HTTP, exercises the endpoints the request names
 and asserts status + JSON shape. Last stdout line is a JSON verdict
 {"start": bool, "behavioral": bool, "failures": [...]}; exit 0 iff both true.
 Design-tolerant: a walker may report one list or one report per item, report
@@ -32,7 +31,7 @@ class Server:
             if "[dependencies.npm]" in toml:  # web-app: client deps needed to bundle
                 subprocess.run(["jac", "install"], cwd=self.dir, stdin=subprocess.DEVNULL, timeout=900)
         self.log = open(os.path.join(self.dir, "server.log"), "w")
-        self.proc = subprocess.Popen(["jac", "run", "--serve", "--port", str(self.port), "main.jac"],
+        self.proc = subprocess.Popen(["jac", "start", "--port", str(self.port), "main.jac"],
                                      cwd=self.dir, stdin=subprocess.DEVNULL, stdout=self.log,
                                      stderr=subprocess.STDOUT, start_new_session=True)
         self.base = f"http://127.0.0.1:{self.port}"
@@ -44,8 +43,9 @@ class Server:
                 return False
             try:
                 with urllib.request.urlopen(self.base + "/healthz", timeout=3) as r:
-                    if r.status == 200:
-                        return True
+                    return True
+            except urllib.error.HTTPError:
+                return True  # any HTTP answer means the server is up
             except Exception:
                 time.sleep(1)
         return False
@@ -142,7 +142,7 @@ def main():
     started = False
     try:
         started = srv.wait()
-        check(started, "server did not answer /healthz")
+        check(started, "server did not answer HTTP")
         if started:
             try:
                 checks(srv)

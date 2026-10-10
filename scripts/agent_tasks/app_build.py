@@ -55,7 +55,7 @@ EVALS = REPO / "evals"
 HIDDEN_NAME = "zz_hidden_acceptance.jac"
 SKIP_DIRS = {".jac", "node_modules", "__pycache__", ".venv", "dist"}
 ALL_GATES = {"check", "run", "test", "start", "fidelity", "behavioral"}
-JAC_VERSION = "0.37.25"
+JAC_VERSION = "0.36.1"
 
 # --------------------------------------------------------------------------- utils
 

@@ -30,7 +30,8 @@ walker LogQso {
         if matching {
             visit matching[0];
         } else {
-            visit here ++> BandLog(band=self.band);
+            fresh = here ++> BandLog(band=self.band);
+            visit fresh;
         }
     }
 

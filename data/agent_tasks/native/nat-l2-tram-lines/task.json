@@ -3,9 +3,27 @@
   "kind": "native",
   "level": 2,
   "source": "hand-authored",
-  "gates": ["check", "test"],
-  "target_paths": ["tramway.jac"],
-  "jac_version": "0.37.25",
+  "gates": [
+    "check",
+    "test"
+  ],
+  "target_paths": [
+    "tramway.jac"
+  ],
+  "jac_version": "0.36.1",
   "license": "original-authored (jac_llm_data agent-task pool)",
-  "provenance": {"author": "claude (hand-authored pilot)", "created": "2026-10-10", "title": "Tram line runs and interchange stops", "domain": "urban tram timetable", "constructs": ["typed edge with fields", "edge predicate by line", "walker state across visits", "disengage on loop", "edge objects"], "inspiration": "none (original)"}
+  "provenance": {
+    "author": "claude (hand-authored pilot)",
+    "created": "2026-10-10",
+    "title": "Tram line runs and interchange stops",
+    "domain": "urban tram timetable",
+    "constructs": [
+      "typed edge with fields",
+      "edge predicate by line",
+      "walker state across visits",
+      "disengage on loop",
+      "edge objects"
+    ],
+    "inspiration": "none (original)"
+  }
 }

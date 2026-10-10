@@ -63,8 +63,8 @@ test "adoption errors" {
     p = add("Kit" + tag, "cat", 1);
     root spawn adopt(pet_id=idof(p), adopter="a-" + tag);
     again = (root spawn adopt(pet_id=idof(p), adopter="b-" + tag)).reports[0];
-    assert isinstance(again, dict) and "error" in again;
+    assert isinstance(again, dict) and "error" in list(again);
     ghost = (root spawn adopt(pet_id="nope" + tag, adopter="b-" + tag)).reports[0];
-    assert isinstance(ghost, dict) and "error" in ghost;
+    assert isinstance(ghost, dict) and "error" in list(ghost);
     assert len(flat((root spawn adopter_pets(adopter="b-" + tag)).reports)) == 0;
 }

@@ -30,9 +30,9 @@ test "insufficient stock leaves state alone" {
 test "unknown sku with non-positive delta is an error" {
     s = "ghost-" + uuid.uuid4().hex[:6];
     r = adj(s, -1);
-    assert isinstance(r, dict) and "error" in r;
+    assert isinstance(r, dict) and "error" in list(r);
     r2 = adj(s, 0);
-    assert isinstance(r2, dict) and "error" in r2;
+    assert isinstance(r2, dict) and "error" in list(r2);
     r3 = adj(s, 4);
     assert get(r3, "quantity") == 4 and get(r3, "movements") == 1;
 }

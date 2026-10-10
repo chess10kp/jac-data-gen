@@ -40,7 +40,8 @@ walker PlantIn {
 
     can plant with Root entry {
         visit [-->[?:Bed, code == self.bed]] else {
-            visit here ++> Bed(code=self.bed);
+            fresh = here ++> Bed(code=self.bed);
+            visit fresh;
         }
     }
 

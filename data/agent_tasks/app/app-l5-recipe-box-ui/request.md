@@ -1,4 +1,4 @@
-I'd like a little full-stack recipe box in Jac. I ran `jac create --kind web-app` in this folder, so you'll see the guestbook template — replace it.
+I'd like a little full-stack recipe box in Jac. I ran `jac create --kind web-app` in this folder, so you'll see the guestbook template — replace it. (I already took the `endpoints` microservice route out of `jac.toml`, so everything runs in one process.)
 
 **Server (put the walkers in `endpoints.jac`, public walkers, `POST /walker/<name>`):**
 
@@ -12,4 +12,4 @@ A recipe view is `{"id", "title", "minutes", "ingredients" (sorted list), "ratin
 
 **Client:** a single page served at `/` that lists the recipes, has a form to add one (title + comma-separated ingredients), and a search box that filters by ingredient using `recipes_with`. Nothing fancy.
 
-Add some Jac tests for the server side, and make sure `jac run` serves the app.
+Add some Jac tests for the server side, and make sure `jac start` serves the app.

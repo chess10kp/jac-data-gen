@@ -59,9 +59,13 @@ walker:pub rent_bike {
             disengage;
         }
         best: Bike | None = None;
+        best_km = 0.0;
+        best_serial = "";
         for b in [here ->:Docked:->] {
-            if best is None or b.km < best.km or (b.km == best.km and b.serial < best.serial) {
+            if best is None or b.km < best_km or (b.km == best_km and b.serial < best_serial) {
                 best = b;
+                best_km = b.km;
+                best_serial = b.serial;
             }
         }
         if best is None {
@@ -71,7 +75,9 @@ walker:pub rent_bike {
         rider = riders[0] if riders else root ++> Rider(name=self.rider);
         chosen = best;
         if chosen is not None {
-            del [edge here ->:Docked:-> chosen];
+            for doomed in [edge here ->:Docked:-> chosen] {
+                del doomed;
+            }
             rider +>:Riding(since=self.minute):+> chosen;
             report {"ok": True, "bike": chosen.serial};
         }
@@ -108,7 +114,9 @@ walker:pub return_bike {
         }
         bike = riding[0];
         bike.km = bike.km + self.km;
-        del [edge riders[0] ->:Riding:-> bike];
+        for doomed in [edge riders[0] ->:Riding:-> bike] {
+            del doomed;
+        }
         here +>:Docked():+> bike;
         report {"ok": True, "bike": bike.serial};
     }

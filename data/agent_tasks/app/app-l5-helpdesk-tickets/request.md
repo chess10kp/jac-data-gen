@@ -17,4 +17,4 @@ A reported ticket looks like:
 
 `agent` is `""` until assigned. Any bad request (unknown ticket number, bad priority, empty subject, closing an unassigned or already-closed ticket, commenting on a closed ticket) reports `{"error": "<what went wrong>"}` and changes nothing.
 
-Everything lives on the graph under root. Also add tests and check it starts with `jac run`.
+Everything lives on the graph under root. Also add tests and check it starts with `jac start`.

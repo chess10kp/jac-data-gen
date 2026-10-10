@@ -2,9 +2,9 @@
 name = "recipe_box_ui"
 version = "0.1.0"
 description = "A full-stack Jac application"
-entry-point = "main"
+entry-point = "main.jac"
 kind = "web-app"
-jac-version = "==0.37.25"
+jac-version = "==0.36.1"
 
 [dependencies]
 [dependencies.npm]
@@ -16,8 +16,13 @@ jac-client-node = "1.0.7"
 
 
 [dev-dependencies]
-[dev-dependencies.pypi]
 watchdog = ">=3.0.0"
 
+[serve]
+base_route_app = "app"
 
 [client]
+
+[build]
+# keep plain modules on the Python (server) backend; see grader/notes.md
+default_codespace = "server"
