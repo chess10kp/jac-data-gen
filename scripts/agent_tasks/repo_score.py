@@ -118,7 +118,11 @@ def jac_check(tree: Path, timeout=1200) -> dict:
     elif passed is None:
         crash = out[-600:]
     ok = crash is None and failed == 0 and not errors
-    return {"ok": ok, "passed": passed, "failed": failed, "n_errors": len(errors),
+    raw = ""
+    if not ok and not errors:
+        keep = [l for l in out.splitlines() if re.search(r"Error|error|✖|FAILED|-->", l)]
+        raw = "\n".join(keep[:40])[-3000:]
+    return {"raw": raw, "ok": ok, "passed": passed, "failed": failed, "n_errors": len(errors),
             "codes": dict(Counter(e["code"] for e in errors)), "errors": errors,
             "failed_files": sorted(f for f, s in status.items() if s == "FAILED"),
             "secs": round(dt, 1), "crash": crash}
@@ -318,11 +322,24 @@ def find_entry(tree: Path, jac_files: list[str]) -> str | None:
         except Exception:
             pass
     names = ["main.jac", "app.jac", "server.jac", "api.jac", "backend.jac", "index.jac"]
+    core = [f for f in jac_files if not re.search(r"(^|/)(tests?|docs?|examples?|spikes?)/|test", f)]
     for depth in (0, 1, 2):
-        for f in sorted(jac_files, key=lambda x: (x.count("/"), x)):
+        for f in sorted(core, key=lambda x: (x.count("/"), x)):
             if f.count("/") == depth and Path(f).name in names:
                 return f
-    return None
+    best, bw = None, 0
+    for f in sorted(core, key=lambda x: (x.count("/"), x)):
+        t = (tree / f).read_text(errors="replace")
+        w = len(re.findall(r"^\s*walker\b", t, re.M)) + len(re.findall(r"def:pub|walker:pub", t)) \
+            + (5 if re.search(r"^\s*with\s+entry\b", t, re.M) else 0)
+        if w > bw:
+            best, bw = f, w
+    return best
+
+
+def first_err(out: str) -> str:
+    m = re.findall(r"^\s*(?:E\s+)?(\w*(?:Error|Exception)\b:? .{0,200})$", out, re.M)
+    return m[-1] if m else ""
 
 
 def free_port() -> int:
@@ -368,13 +385,14 @@ def serve_probe(tree: Path, entry: str, wait=120) -> dict:
     res["secs"] = round(time.time() - t0, 1)
     if not res["ok"]:
         res["tail"] = out[-500:]
+        res["err"] = first_err(out)
     return res
 
 
 def run_probe(tree: Path, entry: str, timeout=90) -> dict:
     ed = Path(entry).parent
     rc, out, dt = sh([JAC, "run", Path(entry).name], cwd=tree / ed, timeout=timeout)
-    return {"rc": rc, "secs": round(dt, 1), "tail": out[-500:],
+    return {"rc": rc, "secs": round(dt, 1), "tail": out[-500:], "err": first_err(out),
             "ok": rc == 0 and "Traceback" not in out and "Error" not in out[-300:]}
 
 
@@ -449,7 +467,15 @@ def score_repo_ci(r: dict, repaired_root: Path | None, out: Path) -> dict:
                     n_diff += 1
                     q.parent.mkdir(parents=True, exist_ok=True)
                     shutil.copy2(p, q)
-            res["repair_overlay"] = {"files": n_over, "changed": n_diff}
+            # the 0.36.1 repair renamed some X.cl.jac / X.sv.jac -> X.jac; drop the stale originals
+            n_drop = 0
+            for q in list(rep.rglob("*.jac")):
+                rel = q.relative_to(rep)
+                base = re.sub(r"\.(cl|sv|na)\.jac$", ".jac", str(rel))
+                if base != str(rel) and not (rep_src / rel).exists() and (rep_src / base).exists():
+                    q.unlink()
+                    n_drop += 1
+            res["repair_overlay"] = {"files": n_over, "changed": n_diff, "dropped_renamed": n_drop}
             trees.append(("repaired", rep))
         checks = {}
         final = None
@@ -852,8 +878,8 @@ def cmd_merge(a):
                              for k, v in (o.get("checks") or {}).items()}
             cm = o.get("code_map") or {}
             row["code_map"] = {k: cm.get(k) for k in ("ok", "kinds", "genai", "abilities")}
-            row["serve"] = {k: (o.get("serve") or {}).get(k) for k in ("ok", "status", "path", "secs")} if o.get("serve") else None
-            row["run"] = {k: (o.get("run") or {}).get(k) for k in ("ok", "rc", "secs")} if o.get("run") else None
+            row["serve"] = {k: (o.get("serve") or {}).get(k) for k in ("ok", "status", "path", "secs", "err")} if o.get("serve") else None
+            row["run"] = {k: (o.get("run") or {}).get(k) for k in ("ok", "rc", "secs", "err")} if o.get("run") else None
             row["faux"] = {k: (o.get("faux") or {}).get(k) for k in ("rc", "endpoints")} if o.get("faux") else None
             fh.write(json.dumps(row) + "\n")
     write_summary(rows, a)
