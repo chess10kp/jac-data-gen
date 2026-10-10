@@ -1,4 +1,4 @@
-import from toollib { Checkout };
+import from toollib { Checkout }
 
 test "module imports" {
     assert True;

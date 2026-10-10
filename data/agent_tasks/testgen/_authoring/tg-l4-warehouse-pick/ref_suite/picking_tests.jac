@@ -26,7 +26,9 @@ def lines(w: PickRun) -> list[str] {
 }
 
 test "build_warehouse chains aisles from root" {
-    first = build_warehouse([[("a", "x", 1)], [("b", "y", 2)], [("c", "z", 3)]]);
+    built = build_warehouse([[("a", "x", 1)], [("b", "y", 2)], [("c", "z", 3)]]);
+    first = [root -->[?:Aisle]][0];
+    assert built == first;
     assert first.number == 1;
     assert len([root -->[?:Aisle]]) == 1;
     second = [first ->:NextAisle:->][0];

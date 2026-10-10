@@ -1,4 +1,4 @@
-import from semver { compare };
+import from semver { compare }
 
 test "module imports" {
     assert True;

@@ -4,7 +4,7 @@ def log(ex: str, date: str, w: float, reps: int) -> SetEntry {
     return (root spawn LogSet(exercise=ex, date=date, weight=w, reps=reps)).reports[0];
 }
 
-def pb(ex: str) -> dict {
+def pb(ex: str) -> dict[str, any] {
     r = root spawn PersonalBest(exercise=ex);
     assert len(r.reports) == 1;
     return r.reports[0];

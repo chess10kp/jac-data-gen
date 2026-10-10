@@ -1,4 +1,4 @@
-import from family { Descendants };
+import from family { Descendants }
 
 test "module imports" {
     assert True;

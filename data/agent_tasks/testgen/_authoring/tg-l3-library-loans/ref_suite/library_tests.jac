@@ -4,7 +4,7 @@ def add(isbn: str, title: str, copies: int) -> Book {
     return (root spawn AddBook(isbn=isbn, title=title, copies=copies)).reports[0];
 }
 
-def lend(who: str, isbn: str, date: str) -> dict {
+def lend(who: str, isbn: str, date: str) -> dict[str, any] {
     w = root spawn Checkout(member=who, isbn=isbn, date=date);
     assert len(w.reports) == 1;
     return w.reports[0];

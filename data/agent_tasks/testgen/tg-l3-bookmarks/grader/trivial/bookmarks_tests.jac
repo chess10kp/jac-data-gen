@@ -1,4 +1,4 @@
-import from main { SaveBookmark };
+import from main { SaveBookmark }
 
 test "module imports" {
     assert True;

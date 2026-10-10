@@ -131,7 +131,7 @@ def build_task(spec: dict) -> Path:
     # trivial = import-only smoke suite
     (t / "grader" / "trivial").mkdir()
     (t / "grader" / "trivial" / tests).write_text(
-        f"import {spec['trivial_import']};\n\ntest \"module imports\" {{\n    assert True;\n}}\n")
+        f"import {spec['trivial_import']}\n\ntest \"module imports\" {{\n    assert True;\n}}\n")
     shutil.copyfile(auth / "request.md", t / "request.md")
     hand = json.loads((auth / "hand_mutants.json").read_text()) if (auth / "hand_mutants.json").exists() else []
     if (auth / "hand_mutants.json").exists():

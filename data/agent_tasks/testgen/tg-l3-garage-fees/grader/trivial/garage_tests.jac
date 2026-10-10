@@ -1,4 +1,4 @@
-import from garage { Enter };
+import from garage { Enter }
 
 test "module imports" {
     assert True;

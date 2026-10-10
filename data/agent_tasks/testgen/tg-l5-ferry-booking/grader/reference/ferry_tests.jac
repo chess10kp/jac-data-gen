@@ -1,12 +1,12 @@
 import from app { Vehicle, Sailing, Booking, Holds, add_sailing, book, cancel, manifest, day_summary }
 
-def bk(s: str, ref: str, v: str, p: int) -> dict {
+def bk(s: str, ref: str, v: str, p: int) -> dict[str, any] {
     w = root spawn book(sailing=s, ref=ref, vehicle=v, passengers=p);
     assert len(w.reports) == 1;
     return w.reports[0];
 }
 
-def man(s: str) -> dict {
+def man(s: str) -> dict[str, any] {
     return (root spawn manifest(sailing=s)).reports[0];
 }
 

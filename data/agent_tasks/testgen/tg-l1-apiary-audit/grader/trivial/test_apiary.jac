@@ -1,4 +1,4 @@
-import from apiary { RequeenAudit };
+import from apiary { RequeenAudit }
 
 test "module imports" {
     assert True;

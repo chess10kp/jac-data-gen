@@ -1,4 +1,4 @@
-import from harvest { ForecastBlock };
+import from harvest { ForecastBlock }
 
 test "module imports" {
     assert True;

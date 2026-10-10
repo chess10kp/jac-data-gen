@@ -71,8 +71,8 @@ test "loan window is inclusive and closed outside" {
 test "works in conservation are hidden everywhere" {
     a = new_museum("a");
     b = new_museum("b");
-    own = acquire(a, "Crack");
-    own.in_conservation = True;
+    mine = acquire(a, "Crack");
+    mine.in_conservation = True;
     lent = acquire(b, "Patch");
     lend(lent, a, 2026, 2027);
     lent.in_conservation = True;

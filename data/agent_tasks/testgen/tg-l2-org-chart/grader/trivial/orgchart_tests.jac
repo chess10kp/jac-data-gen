@@ -1,4 +1,4 @@
-import from orgchart { Headcount };
+import from orgchart { Headcount }
 
 test "module imports" {
     assert True;

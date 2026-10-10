@@ -145,10 +145,14 @@ def run_test(ws: Path, src: Path, dest: str) -> dict:
     shutil.copy2(src, q)
     rc, out = sh([JAC, "test", dest], cwd=ws, timeout=600)
     q.unlink()
-    passed = sum(int(x) for x in re.findall(r"(\d+) passed", out[-400:]))
-    failed = sum(int(x) for x in re.findall(r"(\d+) (?:failed|errors?)\b", out[-400:]))
-    ok = rc == 0 and passed > 0 and failed == 0
-    return {"ok": ok, "rc": rc, "passed": passed, "failed": failed, "tail": out[-2500:]}
+    tail = out[-600:]
+    passed = sum(int(x) for x in re.findall(r"(\d+) passed", tail))
+    failed = sum(int(x) for x in re.findall(r"(\d+) (?:failed|errors?|skipped)\b", tail))
+    # jac test exits 0 with "1 skipped" when the target import fails: require the
+    # exact expected test count to pass
+    expected = len(re.findall(r'^\s*test\s+(?:"[^"]*"|\w+)\s*\{', src.read_text(), re.M))
+    ok = rc == 0 and failed == 0 and passed == expected and expected > 0
+    return {"ok": ok, "rc": rc, "passed": passed, "failed": failed, "expected": expected, "tail": out[-2500:]}
 
 
 def run_smoke(ws: Path, smoke: Path) -> dict:

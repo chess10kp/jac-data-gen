@@ -1,4 +1,4 @@
-import from timesheet { weekly_pay };
+import from timesheet { weekly_pay }
 
 test "module imports" {
     assert True;

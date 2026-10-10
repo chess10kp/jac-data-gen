@@ -1,6 +1,6 @@
 import from main { Vehicle, FillUp, find_vehicle, fills_of, AddVehicle, RecordFill, Economy }
 
-def fill(p: str, odo: int, l: float) -> dict {
+def fill(p: str, odo: int, l: float) -> dict[str, any] {
     w = root spawn RecordFill(plate=p, odometer=odo, liters=l);
     assert len(w.reports) == 1;
     return w.reports[0];
@@ -23,7 +23,7 @@ test "adding a vehicle stores the plate upper-cased once" {
 test "find_vehicle ignores case and returns None for strangers" {
     root spawn AddVehicle(plate="xy1");
     assert find_vehicle("XY1") is not None;
-    assert find_vehicle("xy1").plate == "XY1";
+    assert [v.plate for v in [root -->[?:Vehicle]]] == ["XY1"];
     assert find_vehicle("zz9") is None;
 }
 
@@ -31,7 +31,7 @@ test "recording fills" {
     root spawn AddVehicle(plate="car1");
     assert fill("CAR1", 1000, 30.0)["ok"] == True;
     assert fill("car1", 1400, 28.0)["ok"] == True;
-    v = find_vehicle("car1");
+    v = [root -->[?:Vehicle]][0];
     assert [f.odometer for f in fills_of(v)] == [1000, 1400];
 }
 
@@ -44,7 +44,7 @@ test "odometer must strictly increase" {
     back = fill("car1", 999, 5.0);
     assert back["ok"] == False;
     assert fill("car1", 1001, 5.0)["ok"] == True;
-    assert len(fills_of(find_vehicle("car1"))) == 2;
+    assert len(fills_of([root -->[?:Vehicle]][0])) == 2;
 }
 
 test "unknown vehicle cannot be filled" {

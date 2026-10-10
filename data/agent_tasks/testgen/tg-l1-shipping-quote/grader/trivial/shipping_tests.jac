@@ -1,4 +1,4 @@
-import from shipping { quote };
+import from shipping { quote }
 
 test "module imports" {
     assert True;

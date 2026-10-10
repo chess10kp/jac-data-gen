@@ -1,4 +1,4 @@
-import from vault { RegrowPlan };
+import from vault { RegrowPlan }
 
 test "module imports" {
     assert True;

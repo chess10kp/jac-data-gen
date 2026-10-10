@@ -1,4 +1,4 @@
-import from main { Checkout };
+import from main { Checkout }
 
 test "module imports" {
     assert True;

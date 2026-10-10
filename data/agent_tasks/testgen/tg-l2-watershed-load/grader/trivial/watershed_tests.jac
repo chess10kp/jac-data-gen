@@ -1,4 +1,4 @@
-import from watershed { UpstreamLoad };
+import from watershed { UpstreamLoad }
 
 test "module imports" {
     assert True;

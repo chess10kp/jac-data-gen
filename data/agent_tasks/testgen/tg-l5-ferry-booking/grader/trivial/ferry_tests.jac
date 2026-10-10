@@ -1,4 +1,4 @@
-import from app { book };
+import from app { book }
 
 test "module imports" {
     assert True;

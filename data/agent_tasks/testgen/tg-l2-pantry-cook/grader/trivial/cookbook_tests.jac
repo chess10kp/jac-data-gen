@@ -1,4 +1,4 @@
-import from cookbook { WhatCanICook };
+import from cookbook { WhatCanICook }
 
 test "module imports" {
     assert True;
