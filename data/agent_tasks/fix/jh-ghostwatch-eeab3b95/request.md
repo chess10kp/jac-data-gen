@@ -1,1 +1,0 @@
-This project stopped compiling after we upgraded jac. Can you get `jac check` passing again for the whole workspace? Don't remove functionality to make it pass — the walkers, nodes and functions should all still be there and do what they did.

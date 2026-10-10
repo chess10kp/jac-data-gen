@@ -1,1 +1,0 @@
-I pulled this code out of our hackathon repo (CyberCortex) and it no longer type-checks with the current Jac toolchain. Please fix it so `jac check` is clean. Keep the behaviour and the public names intact; other modules import from these files.

@@ -139,12 +139,16 @@ def check(ws: Path) -> dict:
     return {"ok": ok, "summary": summ, "tail": "" if ok else out[-1500:]}
 
 
-def run_test(ws: Path, src: Path, dest: str) -> dict:
+def run_test(tree: Path, src: Path, dest: str) -> dict:
+    """Fresh copy + fresh CWD per test file (graph store is CWD-keyed; also avoids
+    waiting on a previous run's embedded-db shutdown)."""
+    ws = Path(tempfile.mkdtemp(prefix="ft_test_")) / "ws"
+    shutil.copytree(tree, ws)
     q = ws / dest
     q.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(src, q)
     rc, out = sh([JAC, "test", dest], cwd=ws, timeout=600)
-    q.unlink()
+    shutil.rmtree(ws.parent, ignore_errors=True)
     tail = out[-600:]
     passed = sum(int(x) for x in re.findall(r"(\d+) passed", tail))
     failed = sum(int(x) for x in re.findall(r"(\d+) (?:failed|errors?|skipped)\b", tail))
@@ -170,14 +174,17 @@ def validate_task(t: Path) -> dict:
         ws = Path(tempfile.mkdtemp(prefix=f"ft_{side}_")) / "ws"
         shutil.copytree(src, ws)
         r = {"check": check(ws)}
-        if (g / "regression.jac").exists():
-            r["regression"] = run_test(ws, g / "regression.jac", dest.replace(".jac", "_reg.jac"))
-        if (g / "tests.jac").exists():
-            r["tests"] = run_test(ws, g / "tests.jac", dest)
-        if "start" in (tj.get("gates") or []) and (g / "smoke.py").exists():
-            r["smoke"] = run_smoke(ws, g / "smoke.py")
-        res[side] = r
         shutil.rmtree(ws.parent, ignore_errors=True)
+        if (g / "regression.jac").exists():
+            r["regression"] = run_test(src, g / "regression.jac", dest.replace(".jac", "_reg.jac"))
+        if (g / "tests.jac").exists():
+            r["tests"] = run_test(src, g / "tests.jac", dest)
+        if "start" in (tj.get("gates") or []) and (g / "smoke.py").exists():
+            ws = Path(tempfile.mkdtemp(prefix=f"ft_smoke_")) / "ws"
+            shutil.copytree(src, ws)
+            r["smoke"] = run_smoke(ws, g / "smoke.py")
+            shutil.rmtree(ws.parent, ignore_errors=True)
+        res[side] = r
     R, S = res["reference"], res["starter"]
     why = []
     if not R["check"]["ok"]:
