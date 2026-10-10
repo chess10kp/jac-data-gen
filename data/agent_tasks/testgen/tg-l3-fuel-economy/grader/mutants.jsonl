@@ -1,0 +1,40 @@
+{"source": "mechanical", "op": "edge -->-><--", "edits": [{"file": "main.jac", "offset": 259, "old": "-->", "new": "<--"}], "id": "m00"}
+{"source": "mechanical", "op": "negate if", "edits": [{"file": "main.jac", "offset": 288, "old": "v.plate == plate.upper()", "new": "not (v.plate == plate.upper())"}], "id": "m01"}
+{"source": "mechanical", "op": "cmp ==->!=", "edits": [{"file": "main.jac", "offset": 296, "old": "==", "new": "!="}], "id": "m02"}
+{"source": "mechanical", "op": "meth upper->lower", "edits": [{"file": "main.jac", "offset": 305, "old": "upper", "new": "lower"}], "id": "m03"}
+{"source": "mechanical", "op": "call sorted->list", "edits": [{"file": "main.jac", "offset": 427, "old": "sorted", "new": "list"}], "id": "m04"}
+{"source": "mechanical", "op": "edge -->-><--", "edits": [{"file": "main.jac", "offset": 449, "old": "-->", "new": "<--"}], "id": "m05"}
+{"source": "mechanical", "op": "stmt-del report", "edits": [{"file": "main.jac", "offset": 641, "old": "report v if v is not None else here ++> Vehicle(plate=self.plate.upper());", "new": ""}], "id": "m06"}
+{"source": "mechanical", "op": "not-drop", "edits": [{"file": "main.jac", "offset": 658, "old": "not ", "new": ""}], "id": "m07"}
+{"source": "mechanical", "op": "connect ++>-><++", "edits": [{"file": "main.jac", "offset": 677, "old": "++>", "new": "<++"}], "id": "m08"}
+{"source": "mechanical", "op": "meth upper->lower", "edits": [{"file": "main.jac", "offset": 706, "old": "upper", "new": "lower"}], "id": "m09"}
+{"source": "mechanical", "op": "const False->True", "edits": [{"file": "main.jac", "offset": 932, "old": "False", "new": "True"}], "id": "m10"}
+{"source": "mechanical", "op": "negate if", "edits": [{"file": "main.jac", "offset": 1060, "old": "fills and self.odometer <= fills[-1].odometer", "new": "not (fills and self.odometer <= fills[-1].odometer)"}], "id": "m11"}
+{"source": "mechanical", "op": "bool and->or", "edits": [{"file": "main.jac", "offset": 1066, "old": "and", "new": "or"}], "id": "m12"}
+{"source": "mechanical", "op": "cmp <=-><", "edits": [{"file": "main.jac", "offset": 1084, "old": "<=", "new": "<"}], "id": "m13"}
+{"source": "mechanical", "op": "neg-drop", "edits": [{"file": "main.jac", "offset": 1093, "old": "-", "new": ""}], "id": "m14"}
+{"source": "mechanical", "op": "const False->True", "edits": [{"file": "main.jac", "offset": 1134, "old": "False", "new": "True"}], "id": "m15"}
+{"source": "mechanical", "op": "connect ++>-><++", "edits": [{"file": "main.jac", "offset": 1237, "old": "++>", "new": "<++"}], "id": "m16"}
+{"source": "mechanical", "op": "const True->False", "edits": [{"file": "main.jac", "offset": 1327, "old": "True", "new": "False"}], "id": "m17"}
+{"source": "mechanical", "op": "negate if", "edits": [{"file": "main.jac", "offset": 1510, "old": "v is not None", "new": "not (v is not None)"}], "id": "m18"}
+{"source": "mechanical", "op": "not-drop", "edits": [{"file": "main.jac", "offset": 1515, "old": "not ", "new": ""}], "id": "m19"}
+{"source": "mechanical", "op": "stmt-del visit", "edits": [{"file": "main.jac", "offset": 1538, "old": "visit [v -->[?:FillUp]];", "new": ""}], "id": "m20"}
+{"source": "mechanical", "op": "edge -->-><--", "edits": [{"file": "main.jac", "offset": 1547, "old": "-->", "new": "<--"}], "id": "m21"}
+{"source": "mechanical", "op": "stmt-del self.readings.append((he", "edits": [{"file": "main.jac", "offset": 1624, "old": "self.readings.append((here.odometer, here.liters));", "new": ""}], "id": "m22"}
+{"source": "mechanical", "op": "negate if", "edits": [{"file": "main.jac", "offset": 1756, "old": "len(r) < 2", "new": "not (len(r) < 2)"}], "id": "m23"}
+{"source": "mechanical", "op": "cmp <-><=", "edits": [{"file": "main.jac", "offset": 1763, "old": "<", "new": "<="}], "id": "m24"}
+{"source": "mechanical", "op": "int 2->3", "edits": [{"file": "main.jac", "offset": 1765, "old": "2", "new": "3"}], "id": "m25"}
+{"source": "mechanical", "op": "stmt-del report", "edits": [{"file": "main.jac", "offset": 1781, "old": "report 0.0;", "new": ""}], "id": "m26"}
+{"source": "mechanical", "op": "neg-drop", "edits": [{"file": "main.jac", "offset": 1835, "old": "-", "new": ""}], "id": "m27"}
+{"source": "mechanical", "op": "int 0->1", "edits": [{"file": "main.jac", "offset": 1839, "old": "0", "new": "1"}], "id": "m28"}
+{"source": "mechanical", "op": "arith -->+", "edits": [{"file": "main.jac", "offset": 1842, "old": "-", "new": "+"}], "id": "m29"}
+{"source": "mechanical", "op": "int 0->1", "edits": [{"file": "main.jac", "offset": 1849, "old": "0", "new": "1"}], "id": "m30"}
+{"source": "mechanical", "op": "stmt-del report", "edits": [{"file": "main.jac", "offset": 1916, "old": "report round(liters / distance * 100, 2);", "new": ""}], "id": "m31"}
+{"source": "mechanical", "op": "arith /->*", "edits": [{"file": "main.jac", "offset": 1936, "old": "/", "new": "*"}], "id": "m32"}
+{"source": "mechanical", "op": "arith *->/", "edits": [{"file": "main.jac", "offset": 1947, "old": "*", "new": "/"}], "id": "m33"}
+{"source": "mechanical", "op": "int 100->101", "edits": [{"file": "main.jac", "offset": 1949, "old": "100", "new": "101"}], "id": "m34"}
+{"source": "mechanical", "op": "int 100->99", "edits": [{"file": "main.jac", "offset": 1949, "old": "100", "new": "99"}], "id": "m35"}
+{"source": "mechanical", "op": "int 2->3", "edits": [{"file": "main.jac", "offset": 1954, "old": "2", "new": "3"}], "id": "m36"}
+{"source": "hand", "op": "hand h0", "why": "first fill litres counted", "edits": [{"file": "main.jac", "offset": 1865, "old": "liters = sum([l for (_, l) in r[1:]]);", "new": "liters = sum([l for (_, l) in r]);"}], "id": "m37"}
+{"source": "hand", "op": "hand h1", "why": "equal odometer accepted", "edits": [{"file": "main.jac", "offset": 1057, "old": "if fills and self.odometer <= fills[-1].odometer {", "new": "if fills and self.odometer < fills[-1].odometer {"}], "id": "m38"}
+{"source": "hand", "op": "hand h2", "why": "duplicate vehicles", "edits": [{"file": "main.jac", "offset": 641, "old": "report v if v is not None else here ++> Vehicle(plate=self.plate.upper());", "new": "report here ++> Vehicle(plate=self.plate.upper());"}], "id": "m39"}

@@ -21,7 +21,18 @@
     "n_candidates": 43,
     "n_mechanical_sites": 36,
     "n_source_negatives": 7,
-    "n_hand": 0
+    "n_hand": 0,
+    "stats": {
+      "n_candidates": 43,
+      "n_stillborn": 5,
+      "n_presumed_equivalent": 2,
+      "n_eligible": 36,
+      "ref_kill": 1.0,
+      "oracle_kill": 1.0,
+      "trivial_kill": 0.0,
+      "starter_kill": null,
+      "ref_survivors": []
+    }
   },
   "provenance": {
     "source_task": "native/nat-l3-bird-survey",

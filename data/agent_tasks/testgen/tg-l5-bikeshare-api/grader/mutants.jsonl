@@ -1,0 +1,33 @@
+{"source": "mechanical", "op": "edge -->-><--", "edits": [{"file": "app.jac", "offset": 587, "old": "-->", "new": "<--"}], "id": "m00"}
+{"source": "mechanical", "op": "cmp ==->!=", "edits": [{"file": "app.jac", "offset": 623, "old": "==", "new": "!="}], "id": "m01"}
+{"source": "mechanical", "op": "bool and->or", "edits": [{"file": "app.jac", "offset": 634, "old": "and", "new": "or"}], "id": "m02"}
+{"source": "mechanical", "op": "const True->False", "edits": [{"file": "app.jac", "offset": 751, "old": "True", "new": "False"}], "id": "m03"}
+{"source": "mechanical", "op": "negate if", "edits": [{"file": "app.jac", "offset": 891, "old": "s.code == code", "new": "not (s.code == code)"}], "id": "m04"}
+{"source": "mechanical", "op": "cmp ==->!=", "edits": [{"file": "app.jac", "offset": 898, "old": "==", "new": "!="}], "id": "m05"}
+{"source": "mechanical", "op": "edge -->-><--", "edits": [{"file": "app.jac", "offset": 1029, "old": "-->", "new": "<--"}], "id": "m06"}
+{"source": "mechanical", "op": "cmp ==->!=", "edits": [{"file": "app.jac", "offset": 1063, "old": "==", "new": "!="}], "id": "m07"}
+{"source": "mechanical", "op": "const False->True", "edits": [{"file": "app.jac", "offset": 1344, "old": "False", "new": "True"}], "id": "m08"}
+{"source": "mechanical", "op": "negate if", "edits": [{"file": "app.jac", "offset": 1646, "old": "not docked", "new": "not (not docked)"}], "id": "m09"}
+{"source": "mechanical", "op": "not-drop", "edits": [{"file": "app.jac", "offset": 1646, "old": "not ", "new": ""}], "id": "m10"}
+{"source": "mechanical", "op": "call sorted->list", "edits": [{"file": "app.jac", "offset": 1760, "old": "sorted", "new": "list"}], "id": "m11"}
+{"source": "mechanical", "op": "int 0->1", "edits": [{"file": "app.jac", "offset": 1819, "old": "0", "new": "1"}], "id": "m12"}
+{"source": "mechanical", "op": "stmt-del del", "edits": [{"file": "app.jac", "offset": 1915, "old": "del [edge st ->:Docked:-> bike];", "new": ""}], "id": "m13"}
+{"source": "mechanical", "op": "not-drop", "edits": [{"file": "app.jac", "offset": 2466, "old": "not ", "new": ""}], "id": "m14"}
+{"source": "mechanical", "op": "negate if", "edits": [{"file": "app.jac", "offset": 2577, "old": "len([st ->:Docked:->]) >= st.capacity", "new": "not (len([st ->:Docked:->]) >= st.capacity)"}], "id": "m15"}
+{"source": "mechanical", "op": "int 0->1", "edits": [{"file": "app.jac", "offset": 2728, "old": "0", "new": "1"}], "id": "m16"}
+{"source": "mechanical", "op": "stmt-del bike.km", "edits": [{"file": "app.jac", "offset": 2740, "old": "bike.km += self.km;", "new": ""}], "id": "m17"}
+{"source": "mechanical", "op": "aug +=->-=", "edits": [{"file": "app.jac", "offset": 2748, "old": "+", "new": "-"}], "id": "m18"}
+{"source": "mechanical", "op": "stmt-del del", "edits": [{"file": "app.jac", "offset": 2768, "old": "del [edge rd ->:Riding:-> bike];", "new": ""}], "id": "m19"}
+{"source": "mechanical", "op": "const True->False", "edits": [{"file": "app.jac", "offset": 2855, "old": "True", "new": "False"}], "id": "m20"}
+{"source": "mechanical", "op": "stmt-del visit", "edits": [{"file": "app.jac", "offset": 3002, "old": "visit [-->[?:Station]];", "new": ""}], "id": "m21"}
+{"source": "mechanical", "op": "edge -->-><--", "edits": [{"file": "app.jac", "offset": 3009, "old": "-->", "new": "<--"}], "id": "m22"}
+{"source": "mechanical", "op": "stmt-del self.rows.append({", "edits": [{"file": "app.jac", "offset": 3114, "old": "self.rows.append({\"code\": here.code, \"bikes\": n, \"free\": here.capacity - n});", "new": ""}], "id": "m23"}
+{"source": "mechanical", "op": "arith -->+", "edits": [{"file": "app.jac", "offset": 3185, "old": "-", "new": "+"}], "id": "m24"}
+{"source": "mechanical", "op": "call sorted->list", "edits": [{"file": "app.jac", "offset": 3246, "old": "sorted", "new": "list"}], "id": "m25"}
+{"source": "source-negative", "op": "neg highest_km", "why": "hands out most-worn bike", "edits": [{"file": "app.jac", "offset": 1753, "old": "bike = sorted(docked, key=lambda (b: Bike) { (b.km, b.serial); })[0];", "new": "bike = sorted(docked, key=lambda (b: Bike) { (b.km, b.serial); })[-1];"}], "id": "m26"}
+{"source": "source-negative", "op": "neg km_not_added", "why": "odometer not updated", "edits": [{"file": "app.jac", "offset": 2732, "old": "        bike.km += self.km;\n", "new": ""}], "id": "m27"}
+{"source": "source-negative", "op": "neg no_capacity_check", "why": "returns to a full station", "edits": [{"file": "app.jac", "offset": 2566, "old": "        if len([st ->:Docked:->]) >= st.capacity {", "new": "        if len([st ->:Docked:->]) > st.capacity {"}], "id": "m28"}
+{"source": "source-negative", "op": "neg no_rider_limit", "why": "riders can take several bikes", "edits": [{"file": "app.jac", "offset": 1448, "old": "        if rd is not None and len([rd ->:Riding:->]) > 0 {", "new": "        if False {"}], "id": "m29"}
+{"source": "source-negative", "op": "neg no_undock", "why": "bike stays docked while rented", "edits": [{"file": "app.jac", "offset": 1907, "old": "        del [edge st ->:Docked:-> bike];\n", "new": ""}], "id": "m30"}
+{"source": "source-negative", "op": "neg riding_edge_kept", "why": "riding edge not removed on return", "edits": [{"file": "app.jac", "offset": 2760, "old": "        del [edge rd ->:Riding:-> bike];\n", "new": ""}], "id": "m31"}
+{"source": "source-negative", "op": "neg status_unsorted", "why": "status in creation order", "edits": [{"file": "app.jac", "offset": 3239, "old": "report sorted(self.rows, key=lambda (r: dict[str, any]) { r[\"code\"]; });", "new": "report self.rows;"}], "id": "m32"}

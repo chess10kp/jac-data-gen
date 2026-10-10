@@ -21,7 +21,18 @@
     "n_candidates": 47,
     "n_mechanical_sites": 52,
     "n_source_negatives": 7,
-    "n_hand": 0
+    "n_hand": 0,
+    "stats": {
+      "n_candidates": 47,
+      "n_stillborn": 10,
+      "n_presumed_equivalent": 4,
+      "n_eligible": 33,
+      "ref_kill": 1.0,
+      "oracle_kill": 0.9394,
+      "trivial_kill": 0.0,
+      "starter_kill": null,
+      "ref_survivors": []
+    }
   },
   "provenance": {
     "source_task": "native/nat-l5-bikeshare-api",

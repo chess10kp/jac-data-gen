@@ -1,0 +1,27 @@
+{"source": "mechanical", "op": "const False->True", "edits": [{"file": "kiln.jac", "offset": 274, "old": "False", "new": "True"}], "id": "m00"}
+{"source": "mechanical", "op": "bool or->and", "edits": [{"file": "kiln.jac", "offset": 787, "old": "or", "new": "and"}], "id": "m01"}
+{"source": "mechanical", "op": "cmp ==->!=", "edits": [{"file": "kiln.jac", "offset": 802, "old": "==", "new": "!="}], "id": "m02"}
+{"source": "mechanical", "op": "aug +=->-=", "edits": [{"file": "kiln.jac", "offset": 1046, "old": "+", "new": "-"}], "id": "m03"}
+{"source": "mechanical", "op": "aug +=->-=", "edits": [{"file": "kiln.jac", "offset": 1082, "old": "+", "new": "-"}], "id": "m04"}
+{"source": "mechanical", "op": "arith +->-", "edits": [{"file": "kiln.jac", "offset": 1098, "old": "+", "new": "-"}], "id": "m05"}
+{"source": "mechanical", "op": "arith -->+", "edits": [{"file": "kiln.jac", "offset": 1312, "old": "-", "new": "+"}], "id": "m06"}
+{"source": "mechanical", "op": "int 0->1", "edits": [{"file": "kiln.jac", "offset": 805, "old": "0", "new": "1"}], "id": "m07"}
+{"source": "mechanical", "op": "int 0->1", "edits": [{"file": "kiln.jac", "offset": 950, "old": "0", "new": "1"}], "id": "m08"}
+{"source": "mechanical", "op": "int 0->1", "edits": [{"file": "kiln.jac", "offset": 960, "old": "0", "new": "1"}], "id": "m09"}
+{"source": "mechanical", "op": "int 100->101", "edits": [{"file": "kiln.jac", "offset": 1326, "old": "100", "new": "101"}], "id": "m10"}
+{"source": "mechanical", "op": "int 100->99", "edits": [{"file": "kiln.jac", "offset": 1326, "old": "100", "new": "99"}], "id": "m11"}
+{"source": "mechanical", "op": "negate if", "edits": [{"file": "kiln.jac", "offset": 774, "old": "here.aborted or here.pieces == 0", "new": "not (here.aborted or here.pieces == 0)"}], "id": "m12"}
+{"source": "mechanical", "op": "negate if", "edits": [{"file": "kiln.jac", "offset": 850, "old": "here.cone not in self.totals", "new": "not (here.cone not in self.totals)"}], "id": "m13"}
+{"source": "mechanical", "op": "not-in->in", "edits": [{"file": "kiln.jac", "offset": 860, "old": "not in", "new": "in"}], "id": "m14"}
+{"source": "mechanical", "op": "edge -->-><--", "edits": [{"file": "kiln.jac", "offset": 706, "old": "-->", "new": "<--"}], "id": "m15"}
+{"source": "mechanical", "op": "call sorted->list", "edits": [{"file": "kiln.jac", "offset": 1212, "old": "sorted", "new": "list"}], "id": "m16"}
+{"source": "mechanical", "op": "stmt-del visit", "edits": [{"file": "kiln.jac", "offset": 699, "old": "visit [-->[?:Firing]];", "new": ""}], "id": "m17"}
+{"source": "mechanical", "op": "stmt-del stat.pieces", "edits": [{"file": "kiln.jac", "offset": 1034, "old": "stat.pieces += here.pieces;", "new": ""}], "id": "m18"}
+{"source": "mechanical", "op": "stmt-del stat.losses", "edits": [{"file": "kiln.jac", "offset": 1070, "old": "stat.losses += here.cracked + here.glaze_faults;", "new": ""}], "id": "m19"}
+{"source": "mechanical", "op": "stmt-del out.append(s)", "edits": [{"file": "kiln.jac", "offset": 1355, "old": "out.append(s);", "new": ""}], "id": "m20"}
+{"source": "mechanical", "op": "stmt-del report", "edits": [{"file": "kiln.jac", "offset": 1388, "old": "report out;", "new": ""}], "id": "m21"}
+{"source": "source-negative", "op": "neg counts_aborted", "why": "counts aborted firings", "edits": [{"file": "kiln.jac", "offset": 771, "old": "if here.aborted or here.pieces == 0 {", "new": "if here.pieces == 0 {"}], "id": "m22"}
+{"source": "source-negative", "op": "neg loss_complement", "why": "yield as loss percentage", "edits": [{"file": "kiln.jac", "offset": 1288, "old": "s.yield_pct = (s.pieces - s.losses) * 100 // s.pieces;", "new": "s.yield_pct = 100 - s.losses * 100 // s.pieces;"}], "id": "m23"}
+{"source": "source-negative", "op": "neg no_glaze_faults", "why": "ignores glaze faults", "edits": [{"file": "kiln.jac", "offset": 1070, "old": "stat.losses += here.cracked + here.glaze_faults;", "new": "stat.losses += here.cracked;"}], "id": "m24"}
+{"source": "source-negative", "op": "neg rounds_yield", "why": "rounds instead of floor", "edits": [{"file": "kiln.jac", "offset": 1288, "old": "s.yield_pct = (s.pieces - s.losses) * 100 // s.pieces;", "new": "s.yield_pct = round((s.pieces - s.losses) * 100 / s.pieces);"}], "id": "m25"}
+{"source": "source-negative", "op": "neg unsorted_cones", "why": "cones in insertion order", "edits": [{"file": "kiln.jac", "offset": 1200, "old": "for cone in sorted(self.totals.keys()) {", "new": "for cone in self.totals.keys() {"}], "id": "m26"}

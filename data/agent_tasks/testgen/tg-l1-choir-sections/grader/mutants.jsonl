@@ -1,0 +1,21 @@
+{"source": "mechanical", "op": "bool and->or", "edits": [{"file": "choir.jac", "offset": 742, "old": "and", "new": "or"}], "id": "m00"}
+{"source": "mechanical", "op": "cmp >=->>", "edits": [{"file": "choir.jac", "offset": 762, "old": ">=", "new": ">"}], "id": "m01"}
+{"source": "mechanical", "op": "aug +=->-=", "edits": [{"file": "choir.jac", "offset": 809, "old": "+", "new": "-"}], "id": "m02"}
+{"source": "mechanical", "op": "cmp <-><=", "edits": [{"file": "choir.jac", "offset": 923, "old": "<", "new": "<="}], "id": "m03"}
+{"source": "mechanical", "op": "int 0->1", "edits": [{"file": "choir.jac", "offset": 634, "old": "0", "new": "1"}], "id": "m04"}
+{"source": "mechanical", "op": "int 2->3", "edits": [{"file": "choir.jac", "offset": 765, "old": "2", "new": "3"}], "id": "m05"}
+{"source": "mechanical", "op": "int 2->1", "edits": [{"file": "choir.jac", "offset": 765, "old": "2", "new": "1"}], "id": "m06"}
+{"source": "mechanical", "op": "int 1->2", "edits": [{"file": "choir.jac", "offset": 812, "old": "1", "new": "2"}], "id": "m07"}
+{"source": "mechanical", "op": "int 1->0", "edits": [{"file": "choir.jac", "offset": 812, "old": "1", "new": "0"}], "id": "m08"}
+{"source": "mechanical", "op": "negate if", "edits": [{"file": "choir.jac", "offset": 730, "old": "here.active and here.rehearsals >= 2", "new": "not (here.active and here.rehearsals >= 2)"}], "id": "m09"}
+{"source": "mechanical", "op": "negate if", "edits": [{"file": "choir.jac", "offset": 903, "old": "self.counts[p.name] < self.minimum", "new": "not (self.counts[p.name] < self.minimum)"}], "id": "m10"}
+{"source": "mechanical", "op": "edge -->-><--", "edits": [{"file": "choir.jac", "offset": 662, "old": "-->", "new": "<--"}], "id": "m11"}
+{"source": "mechanical", "op": "stmt-del visit", "edits": [{"file": "choir.jac", "offset": 655, "old": "visit [-->[?:Singer]];", "new": ""}], "id": "m12"}
+{"source": "mechanical", "op": "stmt-del self.counts[here.part.na", "edits": [{"file": "choir.jac", "offset": 781, "old": "self.counts[here.part.name] += 1;", "new": ""}], "id": "m13"}
+{"source": "mechanical", "op": "stmt-del self.short.append(p.name", "edits": [{"file": "choir.jac", "offset": 956, "old": "self.short.append(p.name);", "new": ""}], "id": "m14"}
+{"source": "mechanical", "op": "stmt-del report", "edits": [{"file": "choir.jac", "offset": 1015, "old": "report self.counts;", "new": ""}], "id": "m15"}
+{"source": "source-negative", "op": "neg counts_inactive", "why": "counts inactive singers", "edits": [{"file": "choir.jac", "offset": 727, "old": "if here.active and here.rehearsals >= 2 {", "new": "if here.rehearsals >= 2 {"}], "id": "m16"}
+{"source": "source-negative", "op": "neg missing_zero_parts", "why": "empty parts missing from dict", "edits": [{"file": "choir.jac", "offset": 576, "old": "        for p in Part {\n            self.counts[p.name] = 0;\n        }\n", "new": ""}, {"file": "choir.jac", "offset": 769, "old": "            self.counts[here.part.name] += 1;", "new": "            self.counts[here.part.name] = self.counts.get(here.part.name, 0) + 1;"}, {"file": "choir.jac", "offset": 888, "old": "            if self.counts[p.name] < self.minimum {", "new": "            if self.counts.get(p.name, 0) < self.minimum {"}], "id": "m17"}
+{"source": "source-negative", "op": "neg rehearsal_strict", "why": "rehearsals > 2", "edits": [{"file": "choir.jac", "offset": 746, "old": "here.rehearsals >= 2", "new": "here.rehearsals > 2"}], "id": "m18"}
+{"source": "source-negative", "op": "neg short_alpha", "why": "short list alphabetical instead of declaration order", "edits": [{"file": "choir.jac", "offset": 1007, "old": "        report self.counts;", "new": "        self.short.sort();\n        report self.counts;"}], "id": "m19"}
+{"source": "source-negative", "op": "neg short_inclusive", "why": "short uses <= minimum", "edits": [{"file": "choir.jac", "offset": 900, "old": "if self.counts[p.name] < self.minimum {", "new": "if self.counts[p.name] <= self.minimum {"}], "id": "m20"}
