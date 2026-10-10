@@ -1,0 +1,11 @@
+{
+ "cls": "off-by-one",
+ "why": "items donated at exactly keep_days instead of strictly after",
+ "edits": [
+  {
+   "file": "app.jac",
+   "old": "self.today - here.found_day > self.keep_days",
+   "new": "self.today - here.found_day >= self.keep_days"
+  }
+ ]
+}

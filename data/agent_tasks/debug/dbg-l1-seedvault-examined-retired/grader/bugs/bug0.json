@@ -1,0 +1,11 @@
+{
+ "cls": "statement-order",
+ "why": "examined counter incremented before the retired-lot early return",
+ "edits": [
+  {
+   "file": "vault.jac",
+   "old": "        if here.retired {\n            return;\n        }\n        self.examined += 1;\n",
+   "new": "        self.examined += 1;\n        if here.retired {\n            return;\n        }\n"
+  }
+ ]
+}

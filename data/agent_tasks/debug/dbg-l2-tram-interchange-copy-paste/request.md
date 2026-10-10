@@ -1,0 +1,1 @@
+The interchange list is missing stops. Museum is where line 1 terminates and line 2 departs, so passengers definitely change there, but `Interchanges` doesn't report it. Same with Quay, where line 3 arrives from the Beach and line 1 leaves. A stop is an interchange if two or more different lines arrive at or depart from it.

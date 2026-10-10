@@ -1,0 +1,11 @@
+{
+ "cls": "off-by-one",
+ "why": "capacity check uses <= so each level accepts one car more than it has spots",
+ "edits": [
+  {
+   "file": "garage.jac",
+   "old": "if len([lvl ->:ParkedOn:->]) < lvl.spots {",
+   "new": "if len([lvl ->:ParkedOn:->]) <= lvl.spots {"
+  }
+ ]
+}

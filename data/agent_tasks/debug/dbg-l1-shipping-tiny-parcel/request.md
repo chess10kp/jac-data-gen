@@ -1,0 +1,1 @@
+A customer noticed that a 0.5 kg domestic parcel is quoted at 4.40, which is less than our 5.00 domestic base price. Every parcel should pay at least the zone's base price; the per-kg rate only applies to weight above the first kilogram. Heavier parcels look correct.

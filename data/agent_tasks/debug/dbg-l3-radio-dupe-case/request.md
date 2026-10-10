@@ -1,0 +1,1 @@
+The contest logger isn't catching dupes when the operator types the callsign in lower case. I logged K1ABC on 20m, later typed `k1abc` on 20m again and it said "ok" — that's a dupe and costs us points with the contest committee. Calls are supposed to be case-insensitive (we store them upper-case).

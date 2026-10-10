@@ -1,0 +1,11 @@
+{
+ "cls": "off-by-one",
+ "why": "full-station check uses > so a full station accepts one more bike",
+ "edits": [
+  {
+   "file": "app.jac",
+   "old": "if len([st ->:Docked:->]) >= st.capacity {",
+   "new": "if len([st ->:Docked:->]) > st.capacity {"
+  }
+ ]
+}

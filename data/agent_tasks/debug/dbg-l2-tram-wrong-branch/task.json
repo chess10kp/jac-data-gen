@@ -1,0 +1,29 @@
+{
+ "id": "dbg-l2-tram-wrong-branch",
+ "kind": "debug",
+ "level": 2,
+ "source": "injected-bug:native/nat-l2-tram-lines",
+ "gates": [
+  "check",
+  "test",
+  "fidelity"
+ ],
+ "target_paths": [
+  "tramway.jac"
+ ],
+ "jac_version": "0.37.25",
+ "license": "original-authored (jac_llm_data agent-task pool)",
+ "provenance": {
+  "source_task": "native/nat-l2-tram-lines",
+  "source_level": 2,
+  "title": "Tram line runs and interchange stops",
+  "domain": "urban tram timetable",
+  "n_bugs": 1,
+  "bug_classes": [
+   "missing-edge-filter"
+  ],
+  "visible_repro": true,
+  "author": "claude (debug-kind builder)",
+  "created": "2026-10-10"
+ }
+}

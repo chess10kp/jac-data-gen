@@ -1,0 +1,1 @@
+`ChainOfCommand` is upside down. Spawned on Linus (an engineer) it reports an empty list, and spawned on Ada (the CEO) it lists her whole organisation. It should report the people ABOVE the starting employee, nearest manager first, up to the top. Headcount and payroll are fine.

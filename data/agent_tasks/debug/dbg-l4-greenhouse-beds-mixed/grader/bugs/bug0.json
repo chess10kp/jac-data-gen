@@ -1,0 +1,11 @@
+{
+ "cls": "wrong-field",
+ "why": "bed lookup in PlantIn compares the bed code against the species, so every planting creates a new bed",
+ "edits": [
+  {
+   "file": "greenhouse.jac",
+   "old": "beds = [root -->[?:Bed, code == self.bed]];",
+   "new": "beds = [root -->[?:Bed, code == self.species]];"
+  }
+ ]
+}

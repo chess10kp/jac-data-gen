@@ -1,0 +1,11 @@
+{
+ "cls": "any-vs-all",
+ "why": "pick run stops as soon as one SKU is complete (all) instead of continuing while any SKU is outstanding",
+ "edits": [
+  {
+   "file": "picking.jac",
+   "old": "if any([n > 0 for n in self.outstanding.values()]) {",
+   "new": "if all([n > 0 for n in self.outstanding.values()]) {"
+  }
+ ]
+}

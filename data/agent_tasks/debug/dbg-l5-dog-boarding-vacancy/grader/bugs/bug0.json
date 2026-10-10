@@ -1,0 +1,11 @@
+{
+ "cls": "off-by-one",
+ "why": "overlap test treats back-to-back stays (one ends the night before the other starts) as overlapping",
+ "edits": [
+  {
+   "file": "app.jac",
+   "old": "start < s.start + s.nights",
+   "new": "start <= s.start + s.nights"
+  }
+ ]
+}

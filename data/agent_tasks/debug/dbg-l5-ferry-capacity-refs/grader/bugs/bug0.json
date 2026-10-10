@@ -1,0 +1,11 @@
+{
+ "cls": "missing-condition",
+ "why": "foot slots consumed by passengers of every booking, not only FOOT bookings",
+ "edits": [
+  {
+   "file": "app.jac",
+   "old": "return self.passengers if self.vehicle == Vehicle.FOOT else 0;",
+   "new": "return self.passengers;"
+  }
+ ]
+}

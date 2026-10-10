@@ -1,0 +1,17 @@
+{
+ "run_steps": [
+  {
+   "file": "probe_gh_seed.jac",
+   "expect": [
+    "SEEDED=2"
+   ]
+  },
+  {
+   "file": "probe_gh_check.jac",
+   "expect": [
+    "DUE=N/fern",
+    "BEDCOUNT=3"
+   ]
+  }
+ ]
+}

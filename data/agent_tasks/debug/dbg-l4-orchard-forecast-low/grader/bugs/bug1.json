@@ -1,0 +1,16 @@
+{
+ "cls": "statement-order",
+ "why": "trees counted before the diseased early-return",
+ "edits": [
+  {
+   "file": "harvest.jac",
+   "old": "        self.counted += 1;\n    }\n",
+   "new": "    }\n"
+  },
+  {
+   "file": "harvest.jac",
+   "old": "        if here.diseased {\n            return;\n        }\n",
+   "new": "        self.counted += 1;\n        if here.diseased {\n            return;\n        }\n"
+  }
+ ]
+}

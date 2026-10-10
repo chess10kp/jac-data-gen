@@ -1,0 +1,30 @@
+{
+ "id": "dbg-l3-library-copies-never-drop",
+ "kind": "debug",
+ "level": 3,
+ "source": "injected-bug:app/app-l3-library-loans",
+ "gates": [
+  "check",
+  "test",
+  "behavioral",
+  "fidelity"
+ ],
+ "target_paths": [
+  "main.jac"
+ ],
+ "jac_version": "0.37.25",
+ "license": "MIT",
+ "provenance": {
+  "source_task": "app/app-l3-library-loans",
+  "source_level": 3,
+  "title": "",
+  "domain": "community lending library loans",
+  "n_bugs": 1,
+  "bug_classes": [
+   "edge-direction"
+  ],
+  "visible_repro": true,
+  "author": "claude (debug-kind builder)",
+  "created": "2026-10-10"
+ }
+}

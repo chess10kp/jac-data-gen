@@ -1,0 +1,11 @@
+{
+ "cls": "missing-sort",
+ "why": "levels tried in creation order instead of lowest number first",
+ "edits": [
+  {
+   "file": "garage.jac",
+   "old": "for lvl in sorted([root -->[?:Level]], key=lambda (l: Level) { l.number; }) {",
+   "new": "for lvl in [root -->[?:Level]] {"
+  }
+ ]
+}

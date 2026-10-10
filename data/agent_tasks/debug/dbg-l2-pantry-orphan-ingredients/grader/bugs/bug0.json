@@ -1,0 +1,11 @@
+{
+ "cls": "persistence-not-attached",
+ "why": "new Ingredient nodes are not connected to root, so get-or-create never finds them and substitutes attach to duplicate nodes",
+ "edits": [
+  {
+   "file": "cookbook.jac",
+   "old": "    return root ++> Ingredient(name=label);",
+   "new": "    return Ingredient(name=label);"
+  }
+ ]
+}

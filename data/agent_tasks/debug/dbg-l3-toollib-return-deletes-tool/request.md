@@ -1,0 +1,1 @@
+After a member returns a tool it vanishes from the catalogue. Someone returned the drill DR1 this morning and now checking it out again says "unknown tool"; we had to run RegisterTool for it again. Returning should just end the loan — the tool and the member stay.

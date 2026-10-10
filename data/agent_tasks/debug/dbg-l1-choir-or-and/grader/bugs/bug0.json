@@ -1,0 +1,11 @@
+{
+ "cls": "boolean-logic",
+ "why": "`and` replaced by `or` in the eligibility condition",
+ "edits": [
+  {
+   "file": "choir.jac",
+   "old": "if here.active and here.rehearsals >= 2 {",
+   "new": "if here.active or here.rehearsals >= 2 {"
+  }
+ ]
+}

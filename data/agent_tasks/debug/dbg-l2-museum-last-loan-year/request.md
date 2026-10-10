@@ -1,0 +1,1 @@
+A loaned painting disappears completely in the final year of its loan. "Orchard" is lent from museum A to museum B for 2025–2027 (inclusive). In 2027, `OnDisplay` at A correctly leaves it out (it's away), but `OnDisplay` at B doesn't list it either — so according to the system it's on display nowhere. 2025 and 2026 are fine. Loan years are inclusive at both ends.

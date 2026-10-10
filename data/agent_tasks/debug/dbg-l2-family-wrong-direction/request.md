@@ -1,0 +1,1 @@
+`Cousins` always returns an empty list for me, for my kids, for everyone I try — even in a tree where I know there are first cousins (my mum and my aunt share a parent, and my aunt has two kids). No error, just `[]`. Can you figure out what's wrong?

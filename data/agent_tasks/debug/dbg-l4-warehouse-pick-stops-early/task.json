@@ -1,0 +1,32 @@
+{
+ "id": "dbg-l4-warehouse-pick-stops-early",
+ "kind": "debug",
+ "level": 4,
+ "source": "injected-bug:native/nat-l4-warehouse-picking",
+ "gates": [
+  "check",
+  "test",
+  "run",
+  "fidelity"
+ ],
+ "target_paths": [
+  "picking.jac",
+  "main.jac"
+ ],
+ "jac_version": "0.37.25",
+ "license": "original-authored (jac_llm_data agent-task pool)",
+ "provenance": {
+  "source_task": "native/nat-l4-warehouse-picking",
+  "source_level": 4,
+  "title": "Warehouse aisle pick run",
+  "domain": "warehouse order picking",
+  "n_bugs": 2,
+  "bug_classes": [
+   "aliasing",
+   "any-vs-all"
+  ],
+  "visible_repro": false,
+  "author": "claude (debug-kind builder)",
+  "created": "2026-10-10"
+ }
+}

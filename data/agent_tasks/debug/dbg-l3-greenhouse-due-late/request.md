@@ -1,0 +1,1 @@
+Plants show up on the watering list one day late. Basil has a 2-day interval and was watered on day 10; on day 12 `DueOn` should list it, but it only appears on day 13. A plant is due once the days since its last watering reach its interval.

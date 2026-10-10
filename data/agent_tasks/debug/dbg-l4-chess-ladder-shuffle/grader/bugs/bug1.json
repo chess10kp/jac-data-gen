@@ -1,0 +1,11 @@
+{
+ "cls": "off-by-one",
+ "why": "range rule rejects a challenge exactly 3 rungs up",
+ "edits": [
+  {
+   "file": "challenge.jac",
+   "old": "if gap <= 0 or gap > 3 {",
+   "new": "if gap <= 0 or gap >= 3 {"
+  }
+ ]
+}

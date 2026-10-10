@@ -1,0 +1,11 @@
+{
+ "cls": "inconsistent-normalization",
+ "why": "dupe check compares the stored upper-case call against the raw (unnormalised) input",
+ "edits": [
+  {
+   "file": "contest.jac",
+   "old": "[book ->:Logged:->[?:Qso, call == sign]]",
+   "new": "[book ->:Logged:->[?:Qso, call == self.call]]"
+  }
+ ]
+}

@@ -1,0 +1,11 @@
+{
+ "cls": "copy-paste",
+ "why": "second loop meant to read incoming tracks reads outgoing tracks again",
+ "edits": [
+  {
+   "file": "tramway.jac",
+   "old": "        for e in [edge here <-:Track:<-] {",
+   "new": "        for e in [edge here ->:Track:->] {"
+  }
+ ]
+}

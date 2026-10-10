@@ -1,0 +1,31 @@
+{
+ "id": "dbg-l4-film-callsheet-times",
+ "kind": "debug",
+ "level": 4,
+ "source": "injected-bug:native/nat-l4-film-callsheet",
+ "gates": [
+  "check",
+  "test",
+  "fidelity"
+ ],
+ "target_paths": [
+  "callsheet.jac",
+  "crew.jac"
+ ],
+ "jac_version": "0.37.25",
+ "license": "original-authored (jac_llm_data agent-task pool)",
+ "provenance": {
+  "source_task": "native/nat-l4-film-callsheet",
+  "source_level": 4,
+  "title": "Film shoot call sheet",
+  "domain": "film production scheduling",
+  "n_bugs": 2,
+  "bug_classes": [
+   "inverted-comparison",
+   "wrong-attribute"
+  ],
+  "visible_repro": true,
+  "author": "claude (debug-kind builder)",
+  "created": "2026-10-10"
+ }
+}

@@ -1,0 +1,11 @@
+{
+ "cls": "persistence-not-attached",
+ "why": "new Species nodes are not attached to root, so every sighting creates a fresh species and a fresh edge",
+ "edits": [
+  {
+   "file": "survey.jac",
+   "old": "    return found[0] if found else root ++> Species(name=label);",
+   "new": "    return found[0] if found else Species(name=label);"
+  }
+ ]
+}

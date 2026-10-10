@@ -1,0 +1,11 @@
+{
+ "cls": "numeric-rounding",
+ "why": "yield is rounded instead of floored",
+ "edits": [
+  {
+   "file": "kiln.jac",
+   "old": "s.yield_pct = (s.pieces - s.losses) * 100 // s.pieces;",
+   "new": "s.yield_pct = round((s.pieces - s.losses) * 100 / s.pieces);"
+  }
+ ]
+}

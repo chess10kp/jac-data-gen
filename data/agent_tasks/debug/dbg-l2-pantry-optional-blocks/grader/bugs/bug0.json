@@ -1,0 +1,11 @@
+{
+ "cls": "missing-edge-filter",
+ "why": "Needs edges are not filtered on optional == False, so optional ingredients block recipes",
+ "edits": [
+  {
+   "file": "cookbook.jac",
+   "old": "[here ->:Needs:optional == False:->]",
+   "new": "[here ->:Needs:->]"
+  }
+ ]
+}

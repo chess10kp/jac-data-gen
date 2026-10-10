@@ -1,0 +1,31 @@
+{
+ "id": "dbg-l5-hackathon-scores-wrong",
+ "kind": "debug",
+ "level": 5,
+ "source": "injected-bug:native/nat-l5-hackathon-judging",
+ "gates": [
+  "check",
+  "test",
+  "start",
+  "fidelity"
+ ],
+ "target_paths": [
+  "app.jac"
+ ],
+ "jac_version": "0.37.25",
+ "license": "original-authored (jac_llm_data agent-task pool)",
+ "provenance": {
+  "source_task": "native/nat-l5-hackathon-judging",
+  "source_level": 5,
+  "title": "Hackathon judging service",
+  "domain": "event judging",
+  "n_bugs": 2,
+  "bug_classes": [
+   "missing-filter",
+   "missing-condition"
+  ],
+  "visible_repro": true,
+  "author": "claude (debug-kind builder)",
+  "created": "2026-10-10"
+ }
+}

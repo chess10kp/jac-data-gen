@@ -1,0 +1,6 @@
+{
+ "repro": {
+  "kind": "test",
+  "file": "repro_test.jac"
+ }
+}

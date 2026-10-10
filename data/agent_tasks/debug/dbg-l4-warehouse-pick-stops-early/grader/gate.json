@@ -1,0 +1,11 @@
+{
+ "run_steps": [
+  {
+   "file": "main.jac",
+   "expect": [
+    "warehouse ready",
+    "picked 5 lines, short 4 units"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,11 @@
+{
+ "cls": "wrong-aggregate",
+ "why": "last_day takes the latest submission instead of the max day",
+ "edits": [
+  {
+   "file": "survey.jac",
+   "old": "link.last_day = max(link.last_day, self.day);",
+   "new": "link.last_day = self.day;"
+  }
+ ]
+}

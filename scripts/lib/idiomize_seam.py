@@ -52,11 +52,20 @@ HARD RULES (any violation discards your output):
 2. KEEP THE FUNCTION NAME EXACTLY — do NOT rename it, do NOT snake_case it.
    The hidden tests call it by its current name.
 3. Identical behavior — the hidden test suite discards any semantic drift.
+   Preserve exactly: truthiness of returns (bool vs int), exception types raised,
+   int/float coercion, and edge cases (empty inputs, zero, negatives, one-element
+   collections). If the Python relies on a coercion or raises a specific error,
+   the Jac must do the same.
 4. This is a pure MultiPL-T function: apply Tier 0-2 (syntax, types, features)
    ONLY. Do NOT add walker/node/edge, `with entry`, `by llm`, or test blocks.
 5. NEVER use `any` as a type. Infer a concrete type from the Python source and
    usage (str, int, float, bool, bytes, list[T], dict[K,V], tuple[...], T | None).
    `any`, `list[any]`, `-> any` are all FORBIDDEN — a real type always exists.
+   Bare generics are compile errors too: `list`, `dict`, `tuple`, `set` MUST take
+   type args (`list[int]`, `dict[str, str]`). Genuinely heterogeneous values use
+   a union (`dict[str, str | int]`), never `any`. Function-typed parameters use
+   the ambient `Callable[[argT, ...], retT]` (no import needed); never rebind
+   ambient typing names (`Callable`, `Iterable`, `Sequence`) as locals.
 6. NEVER backtick-escape an identifier that is not a Jac reserved keyword.
    `list`, `dict`, `set`, `switch`, `obj` used as ordinary names/builtins are
    plain identifiers — write `list(...)`, not `` `list(...) ``. Backticks are

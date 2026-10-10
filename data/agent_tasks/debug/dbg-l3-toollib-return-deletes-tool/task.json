@@ -1,0 +1,30 @@
+{
+ "id": "dbg-l3-toollib-return-deletes-tool",
+ "kind": "debug",
+ "level": 3,
+ "source": "injected-bug:native/nat-l3-tool-library",
+ "gates": [
+  "check",
+  "test",
+  "run",
+  "fidelity"
+ ],
+ "target_paths": [
+  "toollib.jac"
+ ],
+ "jac_version": "0.37.25",
+ "license": "original-authored (jac_llm_data agent-task pool)",
+ "provenance": {
+  "source_task": "native/nat-l3-tool-library",
+  "source_level": 3,
+  "title": "Neighbourhood tool library lending",
+  "domain": "community tool lending",
+  "n_bugs": 1,
+  "bug_classes": [
+   "wrong-delete-target"
+  ],
+  "visible_repro": false,
+  "author": "claude (debug-kind builder)",
+  "created": "2026-10-10"
+ }
+}

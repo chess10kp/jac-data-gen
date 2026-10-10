@@ -1,0 +1,11 @@
+{
+ "cls": "traversal-depth",
+ "why": "the Hive ability keeps visiting outgoing Hive nodes, so nucleus hives hung off a hive get audited",
+ "edits": [
+  {
+   "file": "apiary.jac",
+   "old": "        self.checked += 1;\n",
+   "new": "        self.checked += 1;\n        visit [-->[?:Hive]];\n"
+  }
+ ]
+}

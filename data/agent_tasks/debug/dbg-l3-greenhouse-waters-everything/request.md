@@ -1,0 +1,1 @@
+Watering bed B1 resets the watering clock for the entire greenhouse. After someone waters B1, the thyme in B2 doesn't come up as due any more, even though nobody touched B2. Also the watered count reported for B1 is the total number of plants in the greenhouse. Watering a bed should only affect the plants in that bed.

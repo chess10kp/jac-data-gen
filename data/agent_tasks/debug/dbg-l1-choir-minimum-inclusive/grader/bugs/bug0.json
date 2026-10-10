@@ -1,0 +1,11 @@
+{
+ "cls": "off-by-one",
+ "why": "short list uses <= minimum instead of < minimum",
+ "edits": [
+  {
+   "file": "choir.jac",
+   "old": "if self.counts[p.name] < self.minimum {",
+   "new": "if self.counts[p.name] <= self.minimum {"
+  }
+ ]
+}

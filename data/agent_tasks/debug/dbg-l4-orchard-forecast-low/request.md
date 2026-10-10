@@ -1,0 +1,1 @@
+The harvest forecast for block Two looks way too low: two rows of mature Fuji (one tree per row) should be 100 kg and we get 50. In general it seems like each variety's total is just the yield of one tree. And separately, `trees_counted` includes trees we've marked diseased — those are supposed to be left out of both the kilos and the count.

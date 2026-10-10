@@ -1,0 +1,11 @@
+{
+ "cls": "missing-filter",
+ "why": "WaterBed visits every bed instead of only the requested one",
+ "edits": [
+  {
+   "file": "greenhouse.jac",
+   "old": "visit [-->[?:Bed, code == self.bed]];",
+   "new": "visit [-->[?:Bed]];"
+  }
+ ]
+}

@@ -1,0 +1,21 @@
+{
+ "run_steps": [
+  {
+   "file": "probe_radio_seed.jac",
+   "expect": [
+    "SEEDED"
+   ]
+  },
+  {
+   "file": "probe_radio_check.jac",
+   "expect": [
+    "RELOG=dupe",
+    "SCORE=4"
+   ]
+  }
+ ],
+ "repro": {
+  "kind": "test",
+  "file": "repro_test.jac"
+ }
+}

@@ -1,0 +1,11 @@
+{
+ "cls": "statement-order",
+ "why": "due check runs before tonight's hours are added, so lamps appear one night late",
+ "edits": [
+  {
+   "file": "keepers.jac",
+   "old": "        here.burn_hours += self.hours * factor;\n        if here.burn_hours >= 0.9 * here.rated_hours {\n            self.due.append(here.station);\n        }\n",
+   "new": "        if here.burn_hours >= 0.9 * here.rated_hours {\n            self.due.append(here.station);\n        }\n        here.burn_hours += self.hours * factor;\n"
+  }
+ ]
+}

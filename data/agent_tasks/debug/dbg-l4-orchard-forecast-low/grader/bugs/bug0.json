@@ -1,0 +1,11 @@
+{
+ "cls": "accumulator-overwrite",
+ "why": "per-variety kg is overwritten by each tree instead of summed",
+ "edits": [
+  {
+   "file": "harvest.jac",
+   "old": "self.kg[name] = self.kg.get(name, 0.0) + MATURE_KG[name] * age_factor(here.age);",
+   "new": "self.kg[name] = MATURE_KG[name] * age_factor(here.age);"
+  }
+ ]
+}

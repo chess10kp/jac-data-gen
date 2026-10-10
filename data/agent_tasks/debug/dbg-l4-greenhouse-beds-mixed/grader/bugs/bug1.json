@@ -1,0 +1,11 @@
+{
+ "cls": "missing-filter",
+ "why": "Uproot pulls the species from every bed, not just the requested one",
+ "edits": [
+  {
+   "file": "greenhouse.jac",
+   "old": "for b in [root -->[?:Bed, code == self.bed]] {",
+   "new": "for b in [root -->[?:Bed]] {"
+  }
+ ]
+}

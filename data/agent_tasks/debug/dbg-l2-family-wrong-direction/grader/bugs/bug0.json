@@ -1,0 +1,11 @@
+{
+ "cls": "edge-direction",
+ "why": "grandparents computed by walking ParentOf edges forward (to grandchildren) instead of backward",
+ "edits": [
+  {
+   "file": "family.jac",
+   "old": "grandparents = [me <-:ParentOf:<- <-:ParentOf:<-];",
+   "new": "grandparents = [me ->:ParentOf:-> ->:ParentOf:->];"
+  }
+ ]
+}

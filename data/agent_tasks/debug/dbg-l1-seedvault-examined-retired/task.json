@@ -1,0 +1,29 @@
+{
+ "id": "dbg-l1-seedvault-examined-retired",
+ "kind": "debug",
+ "level": 1,
+ "source": "injected-bug:native/nat-l1-seed-vault-regrow",
+ "gates": [
+  "check",
+  "test",
+  "fidelity"
+ ],
+ "target_paths": [
+  "vault.jac"
+ ],
+ "jac_version": "0.37.25",
+ "license": "original-authored (jac_llm_data agent-task pool)",
+ "provenance": {
+  "source_task": "native/nat-l1-seed-vault-regrow",
+  "source_level": 1,
+  "title": "Seed vault regrow planning",
+  "domain": "seed bank curation",
+  "n_bugs": 1,
+  "bug_classes": [
+   "statement-order"
+  ],
+  "visible_repro": false,
+  "author": "claude (debug-kind builder)",
+  "created": "2026-10-10"
+ }
+}

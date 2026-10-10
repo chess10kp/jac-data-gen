@@ -1,0 +1,54 @@
+{
+ "timeout_s": 300,
+ "start": {
+  "entry": "app.jac",
+  "requests": [
+   {
+    "path": "/function/add_run",
+    "json": {
+     "code": "PR1",
+     "size": "MEDIUM"
+    },
+    "expect": [
+     "PR1"
+    ]
+   },
+   {
+    "path": "/walker/book_stay",
+    "json": {
+     "dog": "probe",
+     "size": "SMALL",
+     "start": 1,
+     "nights": 2
+    },
+    "expect": [
+     "\"run\": \"PR1\""
+    ]
+   },
+   {
+    "path": "/walker/occupancy",
+    "json": {
+     "night": 2
+    },
+    "expect": [
+     "PR1:probe"
+    ]
+   },
+   {
+    "path": "/walker/vacancy",
+    "json": {
+     "start": 1,
+     "nights": 1
+    },
+    "expect": [
+     "\"MEDIUM\": 0",
+     "\"LARGE\": 0"
+    ]
+   }
+  ]
+ },
+ "repro": {
+  "kind": "test",
+  "file": "repro_test.jac"
+ }
+}

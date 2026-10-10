@@ -1,0 +1,11 @@
+{
+ "cls": "get-or-create",
+ "why": "rent always creates a new Rider node instead of reusing the existing one",
+ "edits": [
+  {
+   "file": "app.jac",
+   "old": "        if rd is None {\n            rd = root ++> Rider(name=self.rider);\n        }\n",
+   "new": "        rd = root ++> Rider(name=self.rider);\n"
+  }
+ ]
+}

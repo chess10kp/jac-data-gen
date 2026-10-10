@@ -1,0 +1,1 @@
+`RunLine(line="1")` from Quay goes Quay → Market → Depot. Depot is on line 2! Line 1 continues Market → Museum. It only happens at stops where two lines branch; straight sections are fine. A run must only ever follow hops of the line it was asked for.

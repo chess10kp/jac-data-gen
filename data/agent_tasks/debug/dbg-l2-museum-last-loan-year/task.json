@@ -1,0 +1,29 @@
+{
+ "id": "dbg-l2-museum-last-loan-year",
+ "kind": "debug",
+ "level": 2,
+ "source": "injected-bug:native/nat-l2-museum-loans",
+ "gates": [
+  "check",
+  "test",
+  "fidelity"
+ ],
+ "target_paths": [
+  "collection.jac"
+ ],
+ "jac_version": "0.37.25",
+ "license": "original-authored (jac_llm_data agent-task pool)",
+ "provenance": {
+  "source_task": "native/nat-l2-museum-loans",
+  "source_level": 2,
+  "title": "Museum gallery loans",
+  "domain": "museum collections management",
+  "n_bugs": 1,
+  "bug_classes": [
+   "inconsistent-filter"
+  ],
+  "visible_repro": true,
+  "author": "claude (debug-kind builder)",
+  "created": "2026-10-10"
+ }
+}

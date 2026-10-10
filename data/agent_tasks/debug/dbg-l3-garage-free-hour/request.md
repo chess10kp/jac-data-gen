@@ -1,0 +1,1 @@
+Customer complaint turned into an audit finding: a driver who stayed 45 minutes paid nothing, and someone who stayed 1 hour 50 minutes paid for one hour. Pricing is: first 30 minutes free; beyond that 3 per STARTED hour of the whole stay (so 31–60 minutes = 3, 61–120 = 6, ...). Please fix `Leave`.

@@ -1,0 +1,11 @@
+{
+ "cls": "wrong-scope",
+ "why": "duplicate booking ref only checked on the requested sailing instead of across all sailings",
+ "edits": [
+  {
+   "file": "app.jac",
+   "old": "if [b for b in [root -->[?:Sailing] ->:Holds:->] if b.ref == self.ref] {",
+   "new": "if [b for b in [s ->:Holds:->] if b.ref == self.ref] {"
+  }
+ ]
+}

@@ -1,0 +1,11 @@
+{
+ "cls": "wrong-attribute",
+ "why": "distinct locations counted by scene number instead of location",
+ "edits": [
+  {
+   "file": "callsheet.jac",
+   "old": "self.places.add(here.location);",
+   "new": "self.places.add(here.number);"
+  }
+ ]
+}

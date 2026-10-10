@@ -1,0 +1,11 @@
+{
+ "cls": "inconsistent-key",
+ "why": "visited set is filled with names but checked with jid, so braided reaches are counted twice",
+ "edits": [
+  {
+   "file": "watershed.jac",
+   "old": "        self.seen.add(key);\n",
+   "new": "        self.seen.add(here.name);\n"
+  }
+ ]
+}

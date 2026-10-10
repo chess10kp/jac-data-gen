@@ -1,0 +1,11 @@
+{
+ "cls": "edge-direction",
+ "why": "chain of command follows Manages edges downward instead of upward",
+ "edits": [
+  {
+   "file": "orgchart.jac",
+   "old": "        visit [here <-:Manages:<-];",
+   "new": "        visit [here ->:Manages:->];"
+  }
+ ]
+}

@@ -1,0 +1,11 @@
+{
+ "cls": "missing-edge-filter",
+ "why": "next stop is chosen among all outgoing tracks instead of the requested line's",
+ "edits": [
+  {
+   "file": "tramway.jac",
+   "old": "            nxt = [here ->:Track:line == self.line:->];",
+   "new": "            nxt = [here ->:Track:->];"
+  }
+ ]
+}

@@ -1,0 +1,11 @@
+{
+ "cls": "off-by-one",
+ "why": "age rule uses > 10 instead of >= 10",
+ "edits": [
+  {
+   "file": "vault.jac",
+   "old": "self.year - here.banked_year >= 10",
+   "new": "self.year - here.banked_year > 10"
+  }
+ ]
+}

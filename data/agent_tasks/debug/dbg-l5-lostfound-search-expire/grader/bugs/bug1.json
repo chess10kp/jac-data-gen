@@ -1,0 +1,11 @@
+{
+ "cls": "inconsistent-normalization",
+ "why": "search lower-cases the stored colour but not the query colour",
+ "edits": [
+  {
+   "file": "app.jac",
+   "old": "here.color.lower() == self.color.lower()",
+   "new": "here.color.lower() == self.color"
+  }
+ ]
+}

@@ -1,0 +1,29 @@
+{
+ "id": "dbg-l2-watershed-dry-inverted",
+ "kind": "debug",
+ "level": 2,
+ "source": "injected-bug:native/nat-l2-watershed-upstream",
+ "gates": [
+  "check",
+  "test",
+  "fidelity"
+ ],
+ "target_paths": [
+  "watershed.jac"
+ ],
+ "jac_version": "0.37.25",
+ "license": "original-authored (jac_llm_data agent-task pool)",
+ "provenance": {
+  "source_task": "native/nat-l2-watershed-upstream",
+  "source_level": 2,
+  "title": "Watershed upstream pollutant load",
+  "domain": "river catchment hydrology",
+  "n_bugs": 1,
+  "bug_classes": [
+   "inverted-filter"
+  ],
+  "visible_repro": false,
+  "author": "claude (debug-kind builder)",
+  "created": "2026-10-10"
+ }
+}

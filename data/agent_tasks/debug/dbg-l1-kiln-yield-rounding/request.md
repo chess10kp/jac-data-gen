@@ -1,0 +1,1 @@
+Small thing but the studio manager noticed: for cone 6 this month we fired 15 pieces and lost 2, and the yield report says 87%. Our convention (and the old spreadsheet) always rounds the percentage DOWN to a whole number, so it should be 86%. Other cones look plausible but I suspect they're affected too. Can you fix `ConeYield`?

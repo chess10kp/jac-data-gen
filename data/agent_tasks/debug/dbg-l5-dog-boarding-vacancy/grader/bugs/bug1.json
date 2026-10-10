@@ -1,0 +1,11 @@
+{
+ "cls": "wrong-sort-key",
+ "why": "run preference sorts by code before size, so larger runs are picked before fitting smaller ones",
+ "edits": [
+  {
+   "file": "app.jac",
+   "old": "key=lambda (r: Run) { (r.size.value, r.code); }",
+   "new": "key=lambda (r: Run) { (r.code, r.size.value); }"
+  }
+ ]
+}

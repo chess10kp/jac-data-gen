@@ -1,0 +1,29 @@
+{
+ "id": "dbg-l2-orgchart-chain-direction",
+ "kind": "debug",
+ "level": 2,
+ "source": "injected-bug:app/app-l2-org-chart",
+ "gates": [
+  "check",
+  "test",
+  "fidelity"
+ ],
+ "target_paths": [
+  "orgchart.jac"
+ ],
+ "jac_version": "0.37.25",
+ "license": "MIT",
+ "provenance": {
+  "source_task": "app/app-l2-org-chart",
+  "source_level": 2,
+  "title": "",
+  "domain": "company org chart hierarchy",
+  "n_bugs": 1,
+  "bug_classes": [
+   "edge-direction"
+  ],
+  "visible_repro": false,
+  "author": "claude (debug-kind builder)",
+  "created": "2026-10-10"
+ }
+}

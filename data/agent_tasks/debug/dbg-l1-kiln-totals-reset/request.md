@@ -1,0 +1,1 @@
+The cone yield report only ever seems to reflect one kiln load per cone. We had three cone-6 firings this week (10, 12 and 8 pieces) and the report says cone 6: 8 pieces. The totals for each cone should add up every non-aborted firing at that cone.

@@ -1,0 +1,12 @@
+{
+ "run_steps": [
+  {
+   "file": "main.jac",
+   "expect": [
+    "rejected: out of range",
+    "ladder: Ada > Eli > Ben > Cyd > Dov",
+    "dov-cyd: 0-1"
+   ]
+  }
+ ]
+}

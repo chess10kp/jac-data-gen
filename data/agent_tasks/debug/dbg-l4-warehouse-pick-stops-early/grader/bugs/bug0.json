@@ -1,0 +1,11 @@
+{
+ "cls": "aliasing",
+ "why": "walker works directly on the caller's order dict instead of a copy",
+ "edits": [
+  {
+   "file": "picking.jac",
+   "old": "self.outstanding = dict(self.order);",
+   "new": "self.outstanding = self.order;"
+  }
+ ]
+}

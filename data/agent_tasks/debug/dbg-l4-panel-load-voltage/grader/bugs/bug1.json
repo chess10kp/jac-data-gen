@@ -1,0 +1,11 @@
+{
+ "cls": "off-by-one",
+ "why": "overload threshold inclusive (>=) instead of strictly above 80%",
+ "edits": [
+  {
+   "file": "load.jac",
+   "old": "if amps > 0.8 * here.amps {",
+   "new": "if amps >= 0.8 * here.amps {"
+  }
+ ]
+}

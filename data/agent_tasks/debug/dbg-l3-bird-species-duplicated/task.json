@@ -1,0 +1,30 @@
+{
+ "id": "dbg-l3-bird-species-duplicated",
+ "kind": "debug",
+ "level": 3,
+ "source": "injected-bug:native/nat-l3-bird-survey",
+ "gates": [
+  "check",
+  "test",
+  "run",
+  "fidelity"
+ ],
+ "target_paths": [
+  "survey.jac"
+ ],
+ "jac_version": "0.37.25",
+ "license": "original-authored (jac_llm_data agent-task pool)",
+ "provenance": {
+  "source_task": "native/nat-l3-bird-survey",
+  "source_level": 3,
+  "title": "Volunteer bird survey tallies",
+  "domain": "citizen-science bird counts",
+  "n_bugs": 1,
+  "bug_classes": [
+   "persistence-not-attached"
+  ],
+  "visible_repro": false,
+  "author": "claude (debug-kind builder)",
+  "created": "2026-10-10"
+ }
+}

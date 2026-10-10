@@ -1,0 +1,29 @@
+{
+ "id": "dbg-l1-kiln-yield-rounding",
+ "kind": "debug",
+ "level": 1,
+ "source": "injected-bug:native/nat-l1-kiln-cone-yield",
+ "gates": [
+  "check",
+  "test",
+  "fidelity"
+ ],
+ "target_paths": [
+  "kiln.jac"
+ ],
+ "jac_version": "0.37.25",
+ "license": "original-authored (jac_llm_data agent-task pool)",
+ "provenance": {
+  "source_task": "native/nat-l1-kiln-cone-yield",
+  "source_level": 1,
+  "title": "Pottery kiln cone yield",
+  "domain": "ceramics studio kiln log",
+  "n_bugs": 1,
+  "bug_classes": [
+   "numeric-rounding"
+  ],
+  "visible_repro": true,
+  "author": "claude (debug-kind builder)",
+  "created": "2026-10-10"
+ }
+}

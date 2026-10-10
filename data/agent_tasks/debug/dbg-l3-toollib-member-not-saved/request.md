@@ -1,0 +1,1 @@
+Two problems at the tool library that I think are related: members can borrow any number of tools (the 2-tool limit never triggers — card c7 currently has five tools out), and the overdue report is always empty even though I know the hedge trimmer is three weeks late. Checkouts themselves say ok and the tools do show as lent.

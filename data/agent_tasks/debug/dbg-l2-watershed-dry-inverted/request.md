@@ -1,0 +1,1 @@
+Dry-season mode of `UpstreamLoad` gives nonsense. At the town station, wet season correctly sums everything upstream. In the dry season the seasonal gully channel is dry, so the hill and gully reaches behind it shouldn't contribute — but instead the dry-season result includes the gully and hill and leaves out the spring, which flows into town through a permanent channel all year.

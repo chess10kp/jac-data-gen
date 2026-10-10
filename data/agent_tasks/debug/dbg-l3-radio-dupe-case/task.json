@@ -1,0 +1,30 @@
+{
+ "id": "dbg-l3-radio-dupe-case",
+ "kind": "debug",
+ "level": 3,
+ "source": "injected-bug:native/nat-l3-radio-contest-log",
+ "gates": [
+  "check",
+  "test",
+  "run",
+  "fidelity"
+ ],
+ "target_paths": [
+  "contest.jac"
+ ],
+ "jac_version": "0.37.25",
+ "license": "original-authored (jac_llm_data agent-task pool)",
+ "provenance": {
+  "source_task": "native/nat-l3-radio-contest-log",
+  "source_level": 3,
+  "title": "Amateur radio contest logbook",
+  "domain": "ham radio contesting",
+  "n_bugs": 1,
+  "bug_classes": [
+   "inconsistent-normalization"
+  ],
+  "visible_repro": true,
+  "author": "claude (debug-kind builder)",
+  "created": "2026-10-10"
+ }
+}

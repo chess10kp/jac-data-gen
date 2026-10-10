@@ -1,0 +1,29 @@
+{
+ "id": "dbg-l1-shipping-tiny-parcel",
+ "kind": "debug",
+ "level": 1,
+ "source": "injected-bug:app/app-l1-shipping-quote",
+ "gates": [
+  "check",
+  "test",
+  "fidelity"
+ ],
+ "target_paths": [
+  "shipping.jac"
+ ],
+ "jac_version": "0.37.25",
+ "license": "MIT",
+ "provenance": {
+  "source_task": "app/app-l1-shipping-quote",
+  "source_level": 1,
+  "title": "",
+  "domain": "parcel shipping rate quoting",
+  "n_bugs": 1,
+  "bug_classes": [
+   "missing-clamp"
+  ],
+  "visible_repro": true,
+  "author": "claude (debug-kind builder)",
+  "created": "2026-10-10"
+ }
+}

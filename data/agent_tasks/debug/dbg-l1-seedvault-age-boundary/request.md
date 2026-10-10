@@ -1,0 +1,1 @@
+Running `RegrowPlan(year=2026)` doesn't include our 2016 wheat accessions even though they're due: anything that has been in the bank for ten years or more must be regrown. The 2015 lots do show up. Germination and low-stock lots look correct.

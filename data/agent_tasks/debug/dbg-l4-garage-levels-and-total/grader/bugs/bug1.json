@@ -1,0 +1,11 @@
+{
+ "cls": "accumulator-overwrite",
+ "why": "occupancy total overwritten per level instead of summed",
+ "edits": [
+  {
+   "file": "garage.jac",
+   "old": "self.total += n;",
+   "new": "self.total = n;"
+  }
+ ]
+}

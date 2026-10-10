@@ -1,0 +1,11 @@
+{
+ "cls": "ignored-parameter",
+ "why": "amps computed with a hard-coded 120 V instead of the walker's volts",
+ "edits": [
+  {
+   "file": "load.jac",
+   "old": "amps = round(watts / self.volts, 2);",
+   "new": "amps = round(watts / 120.0, 2);"
+  }
+ ]
+}

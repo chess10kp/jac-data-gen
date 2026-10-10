@@ -1,0 +1,1 @@
+The upstream load at the Low Ford station comes out as 22.5 kg/day, but adding up the reaches upstream of it by hand gives 12.5. Upstream of Low Ford the river splits around an island and joins again (top → left/right → low), and it looks like the stretch above the split is being counted more than once. Each reach should count exactly once, no matter how many routes lead to it.

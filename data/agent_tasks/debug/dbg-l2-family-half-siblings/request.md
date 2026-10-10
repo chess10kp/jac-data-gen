@@ -1,0 +1,1 @@
+Bug in the family tree app: when I run `Cousins` on myself it lists my half-brother. We share a dad but have different mums, so he's my sibling, not my cousin. Real cousins on both sides seem fine. Anyone who shares at least one parent with me must not appear as a cousin.

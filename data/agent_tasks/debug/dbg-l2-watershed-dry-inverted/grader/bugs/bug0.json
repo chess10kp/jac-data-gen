@@ -1,0 +1,11 @@
+{
+ "cls": "inverted-filter",
+ "why": "dry-season traversal follows only seasonal channels instead of only permanent ones",
+ "edits": [
+  {
+   "file": "watershed.jac",
+   "old": "seasonal == False",
+   "new": "seasonal == True"
+  }
+ ]
+}

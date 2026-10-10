@@ -1,0 +1,11 @@
+{
+ "cls": "assign-vs-accumulate",
+ "why": "return overwrites the odometer with the trip distance instead of adding it",
+ "edits": [
+  {
+   "file": "app.jac",
+   "old": "bike.km += self.km;",
+   "new": "bike.km = self.km;"
+  }
+ ]
+}

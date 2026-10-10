@@ -1,0 +1,30 @@
+{
+ "id": "dbg-l3-garage-free-hour",
+ "kind": "debug",
+ "level": 3,
+ "source": "injected-bug:native/nat-l3-parking-garage",
+ "gates": [
+  "check",
+  "test",
+  "run",
+  "fidelity"
+ ],
+ "target_paths": [
+  "garage.jac"
+ ],
+ "jac_version": "0.37.25",
+ "license": "original-authored (jac_llm_data agent-task pool)",
+ "provenance": {
+  "source_task": "native/nat-l3-parking-garage",
+  "source_level": 3,
+  "title": "Multi-level parking garage",
+  "domain": "parking operations",
+  "n_bugs": 1,
+  "bug_classes": [
+   "integer-division"
+  ],
+  "visible_repro": false,
+  "author": "claude (debug-kind builder)",
+  "created": "2026-10-10"
+ }
+}

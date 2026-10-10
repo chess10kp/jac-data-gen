@@ -1,0 +1,1 @@
+The `examined` number on the regrow plan doesn't match what the curators expect. We have 140 accessions, 25 of them retired, and the plan says it examined 140. Retired lots are skipped by the plan (correctly — none of them appear in it) and they shouldn't be counted as examined either.

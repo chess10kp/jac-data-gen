@@ -1,0 +1,1 @@
+Volunteers don't always hand in their field cards in order. When someone submits Monday's heron sighting (day 1) after Wednesday's (day 3), the survey now says heron was last seen at the marsh on day 1. The totals add up fine; it's only the "last seen" day that goes backwards. The last day must be the latest day the species was seen at that site, regardless of submission order.

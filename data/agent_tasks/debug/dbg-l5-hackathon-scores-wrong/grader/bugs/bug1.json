@@ -1,0 +1,11 @@
+{
+ "cls": "missing-condition",
+ "why": "empty track filter no longer means 'all tracks'",
+ "edits": [
+  {
+   "file": "app.jac",
+   "old": "if self.track and here.track != self.track {",
+   "new": "if here.track != self.track {"
+  }
+ ]
+}

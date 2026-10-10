@@ -1,0 +1,1 @@
+`SectionCheck(minimum=3)` lists SOPRANO as short, but we have exactly three eligible sopranos. Three is the minimum, so that section is fine — a part is only short when it has fewer than the minimum. The counts dictionary it reports is correct, it's just the `short` list that's wrong.

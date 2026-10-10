@@ -1,0 +1,11 @@
+{
+ "cls": "persistence-local-copy",
+ "why": "burn time is accumulated into a local variable and never written back to the Lamp node",
+ "edits": [
+  {
+   "file": "keepers.jac",
+   "old": "        here.burn_hours += self.hours * factor;\n        if here.burn_hours >= 0.9 * here.rated_hours {",
+   "new": "        total = here.burn_hours + self.hours * factor;\n        if total >= 0.9 * here.rated_hours {"
+  }
+ ]
+}

@@ -1,0 +1,1 @@
+The car park let a car onto level 1 when level 1 was already full — 40 spots, and the occupancy report showed 41 cars there. Drivers are circling looking for a space that doesn't exist. A level must not take more cars than it has spots; when every level is full, `Enter` must refuse with reason "full".

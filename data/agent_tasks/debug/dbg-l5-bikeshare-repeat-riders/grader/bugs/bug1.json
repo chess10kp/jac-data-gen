@@ -1,0 +1,11 @@
+{
+ "cls": "wrong-sort-key",
+ "why": "least-worn ordering sorts by serial first instead of km first",
+ "edits": [
+  {
+   "file": "app.jac",
+   "old": "key=lambda (b: Bike) { (b.km, b.serial); }",
+   "new": "key=lambda (b: Bike) { (b.serial, b.km); }"
+  }
+ ]
+}

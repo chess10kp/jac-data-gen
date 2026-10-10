@@ -1,0 +1,18 @@
+{
+ "run_steps": [
+  {
+   "file": "probe_lend_seed.jac",
+   "expect": [
+    "SEED_OK=True"
+   ]
+  },
+  {
+   "file": "probe_lend_check.jac",
+   "expect": [
+    "OVERDUE=M9:T1",
+    "SECOND=already lent",
+    "RETURNED=True"
+   ]
+  }
+ ]
+}

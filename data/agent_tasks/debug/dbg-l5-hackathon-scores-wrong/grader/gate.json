@@ -1,0 +1,53 @@
+{
+ "timeout_s": 300,
+ "start": {
+  "entry": "app.jac",
+  "requests": [
+   {
+    "path": "/function/register_team",
+    "json": {
+     "name": "Probe",
+     "track": "t"
+    },
+    "expect": [
+     "Probe"
+    ]
+   },
+   {
+    "path": "/function/add_judge",
+    "json": {
+     "name": "J1"
+    },
+    "expect": [
+     "J1"
+    ]
+   },
+   {
+    "path": "/walker/score_team",
+    "json": {
+     "judge": "J1",
+     "team": "Probe",
+     "criterion": "DEMO",
+     "points": 7
+    },
+    "expect": [
+     "\"ok\": true"
+    ]
+   },
+   {
+    "path": "/walker/leaderboard",
+    "json": {
+     "track": "t"
+    },
+    "expect": [
+     "\"team\": \"Probe\"",
+     "\"score\": 7.0"
+    ]
+   }
+  ]
+ },
+ "repro": {
+  "kind": "test",
+  "file": "repro_test.jac"
+ }
+}

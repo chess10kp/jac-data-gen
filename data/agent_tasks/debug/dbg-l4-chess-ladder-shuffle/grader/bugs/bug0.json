@@ -1,0 +1,11 @@
+{
+ "cls": "off-by-one",
+ "why": "rank shift excludes the defender (>= became >), leaving two players on the same rank",
+ "edits": [
+  {
+   "file": "challenge.jac",
+   "old": "if p.rank >= old_d and p.rank < old_c {",
+   "new": "if p.rank > old_d and p.rank < old_c {"
+  }
+ ]
+}

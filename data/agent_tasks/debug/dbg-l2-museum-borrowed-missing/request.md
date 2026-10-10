@@ -1,0 +1,1 @@
+Borrowed works never show up on our display list. We currently have two pieces on loan to us from the Harbour Museum, both within their loan years and neither in conservation, and `OnDisplay` at our museum only lists our own collection. The lending museum correctly stops listing them. Please fix it so works on an active loan to a museum are shown there.

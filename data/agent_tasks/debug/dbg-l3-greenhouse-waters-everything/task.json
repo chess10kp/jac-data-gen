@@ -1,0 +1,30 @@
+{
+ "id": "dbg-l3-greenhouse-waters-everything",
+ "kind": "debug",
+ "level": 3,
+ "source": "injected-bug:native/nat-l3-greenhouse-watering",
+ "gates": [
+  "check",
+  "test",
+  "run",
+  "fidelity"
+ ],
+ "target_paths": [
+  "greenhouse.jac"
+ ],
+ "jac_version": "0.37.25",
+ "license": "original-authored (jac_llm_data agent-task pool)",
+ "provenance": {
+  "source_task": "native/nat-l3-greenhouse-watering",
+  "source_level": 3,
+  "title": "Greenhouse bed watering schedule",
+  "domain": "greenhouse horticulture",
+  "n_bugs": 1,
+  "bug_classes": [
+   "missing-filter"
+  ],
+  "visible_repro": true,
+  "author": "claude (debug-kind builder)",
+  "created": "2026-10-10"
+ }
+}

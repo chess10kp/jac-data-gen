@@ -1,0 +1,11 @@
+{
+ "cls": "integer-division",
+ "why": "fee counts completed hours instead of started hours",
+ "edits": [
+  {
+   "file": "garage.jac",
+   "old": "fee = 3 * ((stay + 59) // 60);",
+   "new": "fee = 3 * (stay // 60);"
+  }
+ ]
+}

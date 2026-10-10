@@ -1,0 +1,11 @@
+{
+ "cls": "inconsistent-filter",
+ "why": "borrower-side loan filter treats end_year as exclusive while the owner side treats it as inclusive",
+ "edits": [
+  {
+   "file": "collection.jac",
+   "old": "[here <-:LoanedTo:start_year <= y, end_year >= y:<-]",
+   "new": "[here <-:LoanedTo:start_year <= y, end_year > y:<-]"
+  }
+ ]
+}

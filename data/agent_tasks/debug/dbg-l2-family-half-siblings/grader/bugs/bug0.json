@@ -1,0 +1,11 @@
+{
+ "cls": "wrong-predicate",
+ "why": "only full siblings are excluded; a half-sibling (one shared parent) is reported as a cousin",
+ "edits": [
+  {
+   "file": "family.jac",
+   "old": "            if not shared {",
+   "new": "            if len(shared) < len(parents) {"
+  }
+ ]
+}

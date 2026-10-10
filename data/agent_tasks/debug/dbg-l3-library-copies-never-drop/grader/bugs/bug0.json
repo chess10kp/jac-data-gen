@@ -1,0 +1,11 @@
+{
+ "cls": "edge-direction",
+ "why": "available copies count Loan edges leaving the book (there are none) instead of arriving at it",
+ "edits": [
+  {
+   "file": "main.jac",
+   "old": "return b.copies - len([edge b <-:Loan:<-]);",
+   "new": "return b.copies - len([edge b ->:Loan:->]);"
+  }
+ ]
+}

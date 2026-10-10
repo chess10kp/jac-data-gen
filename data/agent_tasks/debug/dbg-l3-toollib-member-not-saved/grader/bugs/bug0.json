@@ -1,0 +1,11 @@
+{
+ "cls": "persistence-not-attached",
+ "why": "new Member nodes are created but never connected to root, so the same card becomes a new member on every checkout",
+ "edits": [
+  {
+   "file": "toollib.jac",
+   "old": "            member = root ++> Member(card=self.card);",
+   "new": "            member = Member(card=self.card);"
+  }
+ ]
+}

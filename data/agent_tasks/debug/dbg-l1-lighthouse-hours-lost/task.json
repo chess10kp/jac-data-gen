@@ -1,0 +1,29 @@
+{
+ "id": "dbg-l1-lighthouse-hours-lost",
+ "kind": "debug",
+ "level": 1,
+ "source": "injected-bug:native/nat-l1-lighthouse-lamps",
+ "gates": [
+  "check",
+  "test",
+  "fidelity"
+ ],
+ "target_paths": [
+  "keepers.jac"
+ ],
+ "jac_version": "0.37.25",
+ "license": "original-authored (jac_llm_data agent-task pool)",
+ "provenance": {
+  "source_task": "native/nat-l1-lighthouse-lamps",
+  "source_level": 1,
+  "title": "Lighthouse lamp night shift",
+  "domain": "lighthouse maintenance",
+  "n_bugs": 1,
+  "bug_classes": [
+   "persistence-local-copy"
+  ],
+  "visible_repro": true,
+  "author": "claude (debug-kind builder)",
+  "created": "2026-10-10"
+ }
+}

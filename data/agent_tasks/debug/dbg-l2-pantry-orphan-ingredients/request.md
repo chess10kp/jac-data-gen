@@ -1,0 +1,1 @@
+Substitutions have stopped working. I registered `allow_substitute("butter", "margarine")`, my pantry has flour, sugar and margarine, and shortbread (flour, butter, sugar) is not suggested. Recipes where I have every ingredient still come up fine. It looks as if the substitute rules are just being ignored.

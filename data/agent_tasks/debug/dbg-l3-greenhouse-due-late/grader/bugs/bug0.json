@@ -1,0 +1,11 @@
+{
+ "cls": "off-by-one",
+ "why": "due test uses > interval instead of >= interval",
+ "edits": [
+  {
+   "file": "greenhouse.jac",
+   "old": ">= p.interval_days",
+   "new": "> p.interval_days"
+  }
+ ]
+}

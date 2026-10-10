@@ -1,0 +1,11 @@
+{
+ "cls": "accumulator-reset",
+ "why": "the per-cone stat is re-created for every firing, discarding earlier loads",
+ "edits": [
+  {
+   "file": "kiln.jac",
+   "old": "        if here.cone not in self.totals {\n            self.totals[here.cone] = ConeStat(cone=here.cone, pieces=0, losses=0, yield_pct=0);\n        }\n",
+   "new": "        self.totals[here.cone] = ConeStat(cone=here.cone, pieces=0, losses=0, yield_pct=0);\n"
+  }
+ ]
+}

@@ -1,0 +1,11 @@
+{
+ "cls": "wrong-delete-target",
+ "why": "Return deletes the Tool node instead of the Lent edge",
+ "edits": [
+  {
+   "file": "toollib.jac",
+   "old": "del [edge holders[0] ->:Lent:-> tool];",
+   "new": "del tool;"
+  }
+ ]
+}

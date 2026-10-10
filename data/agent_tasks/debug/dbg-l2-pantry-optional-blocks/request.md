@@ -1,0 +1,1 @@
+"What can I cook" refuses to suggest pancakes even though I have flour and milk; the only thing missing is blueberries, which the recipe marks as optional. Optional ingredients should never stop a recipe from being suggested (and shouldn't produce swaps either).

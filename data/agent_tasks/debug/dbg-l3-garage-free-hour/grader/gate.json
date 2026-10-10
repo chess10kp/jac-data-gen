@@ -1,0 +1,18 @@
+{
+ "run_steps": [
+  {
+   "file": "probe_gar_seed.jac",
+   "expect": [
+    "LEVEL=2"
+   ]
+  },
+  {
+   "file": "probe_gar_check.jac",
+   "expect": [
+    "DUP=already inside",
+    "FEE=6",
+    "TOTAL=1"
+   ]
+  }
+ ]
+}

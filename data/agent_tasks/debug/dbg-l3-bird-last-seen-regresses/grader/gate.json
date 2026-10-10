@@ -1,0 +1,21 @@
+{
+ "run_steps": [
+  {
+   "file": "probe_bird_seed.jac",
+   "expect": [
+    "SEED_DONE"
+   ]
+  },
+  {
+   "file": "probe_bird_check.jac",
+   "expect": [
+    "POND=Teal,Grebe",
+    "SCARCE=Grebe"
+   ]
+  }
+ ],
+ "repro": {
+  "kind": "test",
+  "file": "repro_test.jac"
+ }
+}

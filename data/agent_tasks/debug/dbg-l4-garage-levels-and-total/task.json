@@ -1,0 +1,31 @@
+{
+ "id": "dbg-l4-garage-levels-and-total",
+ "kind": "debug",
+ "level": 4,
+ "source": "injected-bug:native/nat-l3-parking-garage",
+ "gates": [
+  "check",
+  "test",
+  "run",
+  "fidelity"
+ ],
+ "target_paths": [
+  "garage.jac"
+ ],
+ "jac_version": "0.37.25",
+ "license": "original-authored (jac_llm_data agent-task pool)",
+ "provenance": {
+  "source_task": "native/nat-l3-parking-garage",
+  "source_level": 3,
+  "title": "Multi-level parking garage",
+  "domain": "parking operations",
+  "n_bugs": 2,
+  "bug_classes": [
+   "missing-sort",
+   "accumulator-overwrite"
+  ],
+  "visible_repro": true,
+  "author": "claude (debug-kind builder)",
+  "created": "2026-10-10"
+ }
+}

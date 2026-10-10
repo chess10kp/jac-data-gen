@@ -1,0 +1,11 @@
+{
+ "cls": "crash-missing-init",
+ "why": "summary accumulates with += into a dict key that was never initialised (KeyError)",
+ "edits": [
+  {
+   "file": "contest.jac",
+   "old": "self.counts[here.band.name] = len([here ->:Logged:->]);",
+   "new": "self.counts[here.band.name] += len([here ->:Logged:->]);"
+  }
+ ]
+}

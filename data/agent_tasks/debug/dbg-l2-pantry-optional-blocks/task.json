@@ -1,0 +1,29 @@
+{
+ "id": "dbg-l2-pantry-optional-blocks",
+ "kind": "debug",
+ "level": 2,
+ "source": "injected-bug:native/nat-l2-pantry-substitutes",
+ "gates": [
+  "check",
+  "test",
+  "fidelity"
+ ],
+ "target_paths": [
+  "cookbook.jac"
+ ],
+ "jac_version": "0.37.25",
+ "license": "original-authored (jac_llm_data agent-task pool)",
+ "provenance": {
+  "source_task": "native/nat-l2-pantry-substitutes",
+  "source_level": 2,
+  "title": "Cookbook pantry substitutions",
+  "domain": "home cooking / recipe graph",
+  "n_bugs": 1,
+  "bug_classes": [
+   "missing-edge-filter"
+  ],
+  "visible_repro": true,
+  "author": "claude (debug-kind builder)",
+  "created": "2026-10-10"
+ }
+}
