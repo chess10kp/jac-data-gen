@@ -1,0 +1,38 @@
+{
+ "toplevel_names": [],
+ "mass": {
+  "main.jac": 604
+ },
+ "body": {
+  "main.jac": 302
+ },
+ "target_paths": [
+  "main.jac"
+ ],
+ "symbols_dropped_not_in_starter": [
+  "ability:Resolver.reach_pkg",
+  "ability:Resolver.start",
+  "ability:Resolver.visit_pin",
+  "ability:Resolver.visit_pkg",
+  "edge:ResolvesTo",
+  "field:Requires.kind",
+  "field:Resolver.resolutions",
+  "field:Resolver.visited",
+  "field:VersionPin.raw_constraint",
+  "node:VersionPin",
+  "walker:Resolver"
+ ],
+ "starter_mass": {
+  "main.jac": 713
+ },
+ "starter_body": {
+  "main.jac": 245
+ },
+ "symbols": [
+  "edge:Requires",
+  "field:Package.name",
+  "field:Package.version",
+  "field:Resolver.conflicts",
+  "node:Package"
+ ]
+}

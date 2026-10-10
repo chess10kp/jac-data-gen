@@ -1,0 +1,49 @@
+{
+ "toplevel_names": [],
+ "mass": {
+  "main.jac": 557
+ },
+ "body": {
+  "main.jac": 126
+ },
+ "target_paths": [
+  "main.jac"
+ ],
+ "symbols_dropped_not_in_starter": [
+  "ability:FeaturePanelRenderer.draw_toggle",
+  "ability:RegistryRenderer.draw_toggle",
+  "ability:RegistryRenderer.open_panel",
+  "ability:ToggleMutator.flip",
+  "edge:OwnedBy",
+  "edge:RegisteredWith",
+  "field:FeaturePanelRenderer.drawn",
+  "field:RegistryRenderer.drawn",
+  "field:VRCentralPanel.available",
+  "field:VRCentralPanel.title",
+  "field:VRCentralPanel.year",
+  "field:VRFeature.available",
+  "field:VRFeature.title",
+  "field:VRFeature.year",
+  "field:VRToggle.available",
+  "field:VRToggle.title",
+  "field:VRToggle.year",
+  "node:VRCentralPanel",
+  "node:VRFeature",
+  "node:VRToggle",
+  "walker:FeaturePanelRenderer",
+  "walker:RegistryRenderer",
+  "walker:ToggleMutator"
+ ],
+ "starter_mass": {
+  "main.jac": 571
+ },
+ "starter_body": {
+  "main.jac": 86
+ },
+ "symbols": [
+  "ability:FeaturePanelRenderer.start",
+  "ability:RegistryRenderer.start",
+  "field:VRToggle.enabled",
+  "field:VRToggle.tooltip"
+ ]
+}

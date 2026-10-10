@@ -1,0 +1,43 @@
+{
+ "id": "jh-corpus-0a145ddb",
+ "kind": "fix",
+ "level": 1,
+ "source": "jachacks_2026",
+ "gates": [
+  "check",
+  "fidelity"
+ ],
+ "target_paths": [
+  "policies/builtin/context_poisoning.jac"
+ ],
+ "broken_paths": [
+  "policies/builtin/context_poisoning.jac"
+ ],
+ "jac_version": "0.36.1",
+ "license": "upstream repo license (public hackathon submission; see repo_url)",
+ "provenance": {
+  "repo": "FluentFlier__corpus",
+  "repo_url": "https://github.com/FluentFlier/corpus",
+  "edition": "2026",
+  "seed_module": "policies/builtin/context_poisoning.jac",
+  "reverted_files": [
+   "policies/builtin/context_poisoning.jac"
+  ],
+  "original": "data/jachacks_{spring,2026}_jac_files_filtered.jsonl",
+  "reference": "data/jachacks_nonsf (0.36.1 repair, green at 0.36.1)",
+  "starter": "hackathon original for reverted files, 0.36.1 repair elsewhere"
+ },
+ "starter_errors": {
+  "n_errors": 1,
+  "codes": {
+   "E1032": 1
+  },
+  "n_files": 1
+ },
+ "gate_thresholds": {
+  "symbols": 0.9,
+  "mass": 0.7,
+  "body": 0.6,
+  "body_file": 0.4
+ }
+}

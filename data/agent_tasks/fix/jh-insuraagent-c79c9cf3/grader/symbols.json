@@ -1,0 +1,80 @@
+{
+ "toplevel_names": [
+  "AppealStrength",
+  "DenialReason",
+  "_fail",
+  "_ok",
+  "echo_one_word",
+  "probe_enum",
+  "probe_typed_obj"
+ ],
+ "mass": {
+  "models.jac": 201,
+  "probe_featherless.jac": 399
+ },
+ "body": {
+  "models.jac": 0,
+  "probe_featherless.jac": 20
+ },
+ "target_paths": [
+  "probe_featherless.jac"
+ ],
+ "symbols_dropped_not_in_starter": [],
+ "starter_mass": {
+  "models.jac": 201,
+  "probe_featherless.jac": 397
+ },
+ "starter_body": {
+  "models.jac": 0,
+  "probe_featherless.jac": 20
+ },
+ "symbols": [
+  "def:_fail",
+  "def:_ok",
+  "def:echo_one_word",
+  "def:probe_enum",
+  "def:probe_typed_obj",
+  "enum:AppealStrength",
+  "enum:DenialReason",
+  "field:Appeal.appeal_id",
+  "field:Appeal.citations_json",
+  "field:Appeal.claim_id",
+  "field:Appeal.contradictions_json",
+  "field:Appeal.created_at",
+  "field:Appeal.denial_reason",
+  "field:Appeal.letter_body",
+  "field:Appeal.letter_subject",
+  "field:Appeal.policy_id",
+  "field:Appeal.strength",
+  "field:AppealLetter.body",
+  "field:AppealLetter.citations",
+  "field:AppealLetter.closing",
+  "field:AppealLetter.salutation",
+  "field:AppealLetter.subject",
+  "field:Claim.billed_amount",
+  "field:Claim.claim_id",
+  "field:Claim.clinical_record",
+  "field:Claim.cpt_code",
+  "field:Claim.date_of_service",
+  "field:Claim.denial_text",
+  "field:Claim.member_id",
+  "field:Claim.patient_name",
+  "field:Contradiction.clause_section",
+  "field:Contradiction.denial_quote",
+  "field:Contradiction.explanation",
+  "field:Contradiction.policy_quote",
+  "field:Policy.full_text",
+  "field:Policy.plan_name",
+  "field:Policy.policy_id",
+  "field:PolicyClause.relevance_note",
+  "field:PolicyClause.section",
+  "field:PolicyClause.text",
+  "field:PolicyClause.title",
+  "node:Appeal",
+  "node:Claim",
+  "node:Policy",
+  "obj:AppealLetter",
+  "obj:Contradiction",
+  "obj:PolicyClause"
+ ]
+}

@@ -1,0 +1,67 @@
+{
+ "id": "jh-outloop-ai-8126a4f5",
+ "kind": "fix",
+ "level": 5,
+ "source": "jachacks_2026",
+ "gates": [
+  "check",
+  "fidelity"
+ ],
+ "target_paths": [
+  "agent1_lookout.jac",
+  "agent2_data_gathering.jac",
+  "agent3_reviewer.jac",
+  "agent4_problem_creator.jac",
+  "agent5_software_prompt.jac",
+  "agent6_business_orchestrator.jac",
+  "agent7_pricing.jac",
+  "env_loader.jac"
+ ],
+ "broken_paths": [
+  "agent1_lookout.jac",
+  "agent2_data_gathering.jac",
+  "agent3_reviewer.jac",
+  "agent4_problem_creator.jac",
+  "agent5_software_prompt.jac",
+  "agent6_business_orchestrator.jac",
+  "agent7_pricing.jac",
+  "env_loader.jac"
+ ],
+ "jac_version": "0.36.1",
+ "license": "upstream repo license (public hackathon submission; see repo_url)",
+ "provenance": {
+  "repo": "YamaanNandolia__Outloop-AI",
+  "repo_url": "https://github.com/YamaanNandolia/Outloop-AI",
+  "edition": "2026",
+  "seed_module": "agent7_pricing.jac",
+  "reverted_files": [
+   "agent1_lookout.jac",
+   "agent2_data_gathering.jac",
+   "agent3_reviewer.jac",
+   "agent4_problem_creator.jac",
+   "agent5_software_prompt.jac",
+   "agent6_business_orchestrator.jac",
+   "agent7_pricing.jac",
+   "env_loader.jac"
+  ],
+  "original": "data/jachacks_{spring,2026}_jac_files_filtered.jsonl",
+  "reference": "data/jachacks_nonsf (0.36.1 repair, green at 0.36.1)",
+  "starter": "hackathon original for reverted files, 0.36.1 repair elsewhere"
+ },
+ "starter_errors": {
+  "n_errors": 19,
+  "codes": {
+   "E0049": 7,
+   "E0002": 6,
+   "E0004": 4,
+   "E0001": 2
+  },
+  "n_files": 8
+ },
+ "gate_thresholds": {
+  "symbols": 0.9,
+  "mass": 0.7,
+  "body": 0.6,
+  "body_file": 0.4
+ }
+}

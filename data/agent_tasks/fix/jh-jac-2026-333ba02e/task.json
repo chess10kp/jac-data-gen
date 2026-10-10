@@ -1,0 +1,43 @@
+{
+ "id": "jh-jac-2026-333ba02e",
+ "kind": "fix",
+ "level": 1,
+ "source": "jachacks_2026",
+ "gates": [
+  "check",
+  "fidelity"
+ ],
+ "target_paths": [
+  "agents/damage_estimator.jac"
+ ],
+ "broken_paths": [
+  "agents/damage_estimator.jac"
+ ],
+ "jac_version": "0.36.1",
+ "license": "upstream repo license (public hackathon submission; see repo_url)",
+ "provenance": {
+  "repo": "debssM__Jac_2026",
+  "repo_url": "https://github.com/debssM/Jac_2026",
+  "edition": "2026",
+  "seed_module": "agents/damage_estimator.jac",
+  "reverted_files": [
+   "agents/damage_estimator.jac"
+  ],
+  "original": "data/jachacks_{spring,2026}_jac_files_filtered.jsonl",
+  "reference": "data/jachacks_nonsf (0.36.1 repair, green at 0.36.1)",
+  "starter": "hackathon original for reverted files, 0.36.1 repair elsewhere"
+ },
+ "starter_errors": {
+  "n_errors": 1,
+  "codes": {
+   "E1032": 1
+  },
+  "n_files": 1
+ },
+ "gate_thresholds": {
+  "symbols": 0.9,
+  "mass": 0.7,
+  "body": 0.6,
+  "body_file": 0.4
+ }
+}

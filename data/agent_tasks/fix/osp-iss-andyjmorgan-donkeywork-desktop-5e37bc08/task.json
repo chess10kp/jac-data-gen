@@ -1,0 +1,41 @@
+{
+ "id": "osp-iss-andyjmorgan-donkeywork-desktop-5e37bc08",
+ "kind": "fix",
+ "level": 2,
+ "source": "osp_repair_code_fix",
+ "gates": [
+  "check",
+  "test",
+  "fidelity"
+ ],
+ "target_paths": [
+  "main.jac"
+ ],
+ "broken_paths": [
+  "main.jac"
+ ],
+ "jac_version": "0.36.1",
+ "license": "synthetic (generated in-house; repo license)",
+ "provenance": {
+  "dataset": "data/osp_repair/code_fix.jsonl",
+  "row_id": "codefix__iss_andyjmorgan__Donkeywork-Desktop__5",
+  "target_id": "iss_andyjmorgan__Donkeywork-Desktop__5",
+  "broken_generator": "luna",
+  "fixed_generator": "gpt-5.6-luna",
+  "original_error": "\u2716 Error: error[E0003]: Expected identifier, got '+'"
+ },
+ "starter_errors": {
+  "n_errors": 2,
+  "codes": {
+   "E0004": 1,
+   "E0027": 1
+  },
+  "n_files": 1
+ },
+ "gate_thresholds": {
+  "symbols": 0.9,
+  "mass": 0.7,
+  "body": 0.6,
+  "body_file": 0.4
+ }
+}

@@ -1,0 +1,39 @@
+{
+ "toplevel_names": [],
+ "mass": {
+  "jac/brain.jac": 668
+ },
+ "body": {
+  "jac/brain.jac": 394
+ },
+ "target_paths": [
+  "jac/brain.jac"
+ ],
+ "symbols_dropped_not_in_starter": [],
+ "starter_mass": {
+  "jac/brain.jac": 678
+ },
+ "starter_body": {
+  "jac/brain.jac": 401
+ },
+ "symbols": [
+  "ability:EvacuationBrain.assess_threat",
+  "ability:EvacuationBrain.decide",
+  "ability:EvacuationBrain.plan_evacuation",
+  "edge:EvacuationRoute",
+  "field:EvacuationBrain.cycle",
+  "field:EvacuationBrain.decisions",
+  "field:EvacuationBrain.fire_level",
+  "field:EvacuationBrain.memory",
+  "field:EvacuationRoute.distance",
+  "field:EvacuationRoute.estimated_time_minutes",
+  "field:Location.brightness",
+  "field:Location.is_safe_zone",
+  "field:Location.lat",
+  "field:Location.lon",
+  "field:Location.name",
+  "field:Location.risk",
+  "node:Location",
+  "walker:EvacuationBrain"
+ ]
+}

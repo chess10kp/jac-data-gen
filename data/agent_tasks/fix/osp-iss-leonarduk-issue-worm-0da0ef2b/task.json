@@ -1,0 +1,46 @@
+{
+ "id": "osp-iss-leonarduk-issue-worm-0da0ef2b",
+ "kind": "fix",
+ "level": 4,
+ "source": "osp_repair_code_fix",
+ "gates": [
+  "check",
+  "test",
+  "fidelity"
+ ],
+ "target_paths": [
+  "main.jac"
+ ],
+ "broken_paths": [
+  "main.jac"
+ ],
+ "jac_version": "0.36.1",
+ "license": "synthetic (generated in-house; repo license)",
+ "provenance": {
+  "dataset": "data/osp_repair/code_fix.jsonl",
+  "row_id": "codefix__iss_leonarduk__issue-worm__103",
+  "target_id": "iss_leonarduk__issue-worm__103",
+  "broken_generator": "minimax",
+  "fixed_generator": "minimax/minimax-m3:free",
+  "original_error": "[ERROR] Error: error[E0048]: Parenthesized filter syntax '(?:...)' was removed. Use bracket syntax '[?:...]' instead."
+ },
+ "starter_errors": {
+  "n_errors": 16,
+  "codes": {
+   "E0002": 6,
+   "E0004": 4,
+   "E0048": 2,
+   "E0001": 1,
+   "E0032": 1,
+   "E1053": 1,
+   "E1055": 1
+  },
+  "n_files": 1
+ },
+ "gate_thresholds": {
+  "symbols": 0.9,
+  "mass": 0.7,
+  "body": 0.6,
+  "body_file": 0.4
+ }
+}

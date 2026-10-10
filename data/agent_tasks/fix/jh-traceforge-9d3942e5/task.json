@@ -1,0 +1,45 @@
+{
+ "id": "jh-traceforge-9d3942e5",
+ "kind": "fix",
+ "level": 2,
+ "source": "jachacks_2026",
+ "gates": [
+  "check",
+  "fidelity"
+ ],
+ "target_paths": [
+  "scripts/validate_gold_annotations.jac"
+ ],
+ "broken_paths": [
+  "scripts/validate_gold_annotations.jac"
+ ],
+ "jac_version": "0.36.1",
+ "license": "upstream repo license (public hackathon submission; see repo_url)",
+ "provenance": {
+  "repo": "Dhravidk__TraceForge",
+  "repo_url": "https://github.com/Dhravidk/TraceForge",
+  "edition": "2026",
+  "seed_module": "scripts/validate_gold_annotations.jac",
+  "reverted_files": [
+   "scripts/validate_gold_annotations.jac"
+  ],
+  "original": "data/jachacks_{spring,2026}_jac_files_filtered.jsonl",
+  "reference": "data/jachacks_nonsf (0.36.1 repair, green at 0.36.1)",
+  "starter": "hackathon original for reverted files, 0.36.1 repair elsewhere"
+ },
+ "starter_errors": {
+  "n_errors": 3,
+  "codes": {
+   "E0022": 1,
+   "E0002": 1,
+   "E0006": 1
+  },
+  "n_files": 1
+ },
+ "gate_thresholds": {
+  "symbols": 0.9,
+  "mass": 0.7,
+  "body": 0.6,
+  "body_file": 0.4
+ }
+}

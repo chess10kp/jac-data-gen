@@ -1,0 +1,55 @@
+{
+ "toplevel_names": [],
+ "mass": {
+  "main.jac": 493
+ },
+ "body": {
+  "main.jac": 149
+ },
+ "target_paths": [
+  "main.jac"
+ ],
+ "symbols_dropped_not_in_starter": [],
+ "starter_mass": {
+  "main.jac": 493
+ },
+ "starter_body": {
+  "main.jac": 149
+ },
+ "symbols": [
+  "ability:SessionRevoker.disconnect",
+  "ability:SessionRevoker.revoke",
+  "ability:SessionRevoker.start",
+  "ability:SessionRevoker.stop",
+  "edge:AttachedTo",
+  "edge:Contains",
+  "edge:Runs",
+  "field:AttachedTo.terminal",
+  "field:Contains.label",
+  "field:PtyProcess.available",
+  "field:PtyProcess.height",
+  "field:PtyProcess.process_group",
+  "field:PtyProcess.process_id",
+  "field:PtyProcess.title",
+  "field:PtyProcess.width",
+  "field:PtyProcess.year",
+  "field:Runs.epoch",
+  "field:SessionRevoker.depth",
+  "field:SessionRevoker.invalidated",
+  "field:SessionRevoker.max_depth",
+  "field:TerminalClient.available",
+  "field:TerminalClient.client_id",
+  "field:TerminalClient.title",
+  "field:TerminalClient.year",
+  "field:TerminalSession.account",
+  "field:TerminalSession.available",
+  "field:TerminalSession.epoch",
+  "field:TerminalSession.mode",
+  "field:TerminalSession.title",
+  "field:TerminalSession.year",
+  "node:PtyProcess",
+  "node:TerminalClient",
+  "node:TerminalSession",
+  "walker:SessionRevoker"
+ ]
+}

@@ -1,0 +1,50 @@
+{
+ "id": "jh-graphpilot-jac-29b5e048",
+ "kind": "fix",
+ "level": 5,
+ "source": "jachacks_spring",
+ "gates": [
+  "check",
+  "fidelity"
+ ],
+ "target_paths": [
+  "backend/jac/graphpilot.jac"
+ ],
+ "broken_paths": [
+  "backend/jac/graphpilot.jac"
+ ],
+ "jac_version": "0.36.1",
+ "license": "upstream repo license (public hackathon submission; see repo_url)",
+ "provenance": {
+  "repo": "Rohan5commit__GraphPilot-Jac",
+  "repo_url": "https://github.com/Rohan5commit/GraphPilot-Jac",
+  "edition": "spring",
+  "seed_module": "backend/jac/graphpilot.jac",
+  "reverted_files": [
+   "backend/jac/graphpilot.jac"
+  ],
+  "original": "data/jachacks_{spring,2026}_jac_files_filtered.jsonl",
+  "reference": "data/jachacks_nonsf (0.36.1 repair, green at 0.36.1)",
+  "starter": "hackathon original for reverted files, 0.36.1 repair elsewhere"
+ },
+ "starter_errors": {
+  "n_errors": 43,
+  "codes": {
+   "E0046": 14,
+   "E1032": 7,
+   "E1053": 7,
+   "E0001": 4,
+   "E0002": 4,
+   "E0005": 4,
+   "E1116": 2,
+   "E1055": 1
+  },
+  "n_files": 1
+ },
+ "gate_thresholds": {
+  "symbols": 0.9,
+  "mass": 0.7,
+  "body": 0.6,
+  "body_file": 0.4
+ }
+}

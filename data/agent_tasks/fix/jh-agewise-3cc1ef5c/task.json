@@ -1,0 +1,43 @@
+{
+ "id": "jh-agewise-3cc1ef5c",
+ "kind": "fix",
+ "level": 2,
+ "source": "jachacks_2026",
+ "gates": [
+  "check",
+  "fidelity"
+ ],
+ "target_paths": [
+  "integrations/pharmacy/pharmacy_api_client.jac"
+ ],
+ "broken_paths": [
+  "integrations/pharmacy/pharmacy_api_client.jac"
+ ],
+ "jac_version": "0.36.1",
+ "license": "upstream repo license (public hackathon submission; see repo_url)",
+ "provenance": {
+  "repo": "Anay162__agewise",
+  "repo_url": "https://github.com/Anay162/agewise",
+  "edition": "2026",
+  "seed_module": "integrations/pharmacy/pharmacy_api_client.jac",
+  "reverted_files": [
+   "integrations/pharmacy/pharmacy_api_client.jac"
+  ],
+  "original": "data/jachacks_{spring,2026}_jac_files_filtered.jsonl",
+  "reference": "data/jachacks_nonsf (0.36.1 repair, green at 0.36.1)",
+  "starter": "hackathon original for reverted files, 0.36.1 repair elsewhere"
+ },
+ "starter_errors": {
+  "n_errors": 3,
+  "codes": {
+   "E0034": 3
+  },
+  "n_files": 1
+ },
+ "gate_thresholds": {
+  "symbols": 0.9,
+  "mass": 0.7,
+  "body": 0.6,
+  "body_file": 0.4
+ }
+}

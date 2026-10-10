@@ -1,0 +1,50 @@
+{
+ "toplevel_names": [
+  "ensure_config",
+  "env_or",
+  "list_configs",
+  "seed_demo_config"
+ ],
+ "mass": {
+  "config.sv.jac": 477,
+  "nodes/IntegrationConfig.jac": 126
+ },
+ "body": {
+  "config.sv.jac": 352,
+  "nodes/IntegrationConfig.jac": 21
+ },
+ "target_paths": [
+  "config.sv.jac"
+ ],
+ "symbols_dropped_not_in_starter": [
+  "ability:IntegrationConfig.__post_init__"
+ ],
+ "starter_mass": {
+  "config.jac": 488,
+  "nodes/IntegrationConfig.jac": 126
+ },
+ "starter_body": {
+  "config.jac": 363,
+  "nodes/IntegrationConfig.jac": 21
+ },
+ "symbols": [
+  "def:ensure_config",
+  "def:env_or",
+  "def:list_configs",
+  "def:seed_demo_config",
+  "field:IntegrationConfig.api_key",
+  "field:IntegrationConfig.chain_id",
+  "field:IntegrationConfig.config_id",
+  "field:IntegrationConfig.enabled",
+  "field:IntegrationConfig.label",
+  "field:IntegrationConfig.mode",
+  "field:IntegrationConfig.provider",
+  "field:IntegrationConfig.rpc_url",
+  "field:IntegrationConfig.secret_key",
+  "field:IntegrationConfig.treasury_wallet",
+  "field:IntegrationConfig.updated_at",
+  "field:IntegrationConfig.usdc_contract",
+  "field:IntegrationConfig.webhook_secret",
+  "node:IntegrationConfig"
+ ]
+}

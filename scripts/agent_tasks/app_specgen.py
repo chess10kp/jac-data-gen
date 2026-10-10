@@ -62,28 +62,33 @@ LEVEL_CONTRACT = {
        "error contract ({\"error\": ...}), tests requested; optionally a client UI (web-app kind).",
 }
 
-IDIOMS = """Verified jac 0.37.25 facts (use them, do not contradict them):
-- Test blocks: `test "name" { assert ...; }`; `with testraises(ValueError) { ... }`.
+IDIOMS = """Verified jac 0.36.1 facts (the pinned training version; use them, do not contradict them):
+- Test blocks: `test "name" { assert ...; }`. There is NO `testraises`: expect an exception with
+  `try { f(); assert False, "expected X"; } except X { assert True; }`.
 - Hidden tests live in a separate module `import from <target_module> { names }`; never name files test_*.jac.
 - `root` is a value (never `root()`); entry abilities `can x with Root entry`, `can y with Node entry`; generic
-  `can done with exit` fires once after the whole traversal.
+  `can done with exit` fires once after the whole traversal. Spawn: `(root spawn W(f=1)).reports[0]`.
 - `new = here ++> Item(...)` returns the node; typed edge `a +>:E(f=1):+> b`; traversal `[a ->:E:->]`,
-  `[a <-:E:<-]`, edge objects `[edge a ->:E:-> b]`; delete typed edge `del [edge a ->:E:-> b];`.
-- `has reports`-free walkers: `(root spawn W(f=1)).reports[0]`.
-- A walker `has` field named like an imported module symbol SHADOWS it inside abilities (field `date` hides
-  `datetime.date` imported as `date`) -> import the module (`import datetime;`) instead.
-- Bare generic annotations are errors (E1036): write `list[str]`, `dict[str, any]`.
-- A variable's first assignment pins its type: assigning two different walker types to one name is E1001.
-- `[n -->[?:T, field == v]]` field predicates resolve to Unknown in some contexts (W1051); prefer a comprehension.
-- `jac start` is gone: serve with `jac run --serve --port N main.jac`; envelopes are
-  {"ok", "data": {"result", "reports"}, "error"}; walker reports are in data.reports, function returns in data.result.
-- Persisted graph is keyed by cwd; hidden tests on root must use uuid-unique names and assert deltas only.
-- Anchor-free modules (no Python import / root / pub) are compiled NATIVE. Under native-placed test modules an
-  `any`-typed value compared to a list/dict literal is False (`r.reports[0] == ["a"]`): always compare
-  `list(x) == [...]` / `dict(x) == {...}`.
-- A native module with one un-lowerable ability (e.g. `[edge a ->:E:-> b]`) is demoted piecemeal and the mixed
-  module SIGABRTs with no output; anchor such a module server with an import that has no native twin
-  (`import heapq;` works; `sys`/`math`/`uuid` do not).
+  `[a <-:E:<-]`, edge objects `[edge a ->:E:-> b]`.
+- Do NOT delete typed edges with `del [edge a ->:E:-> b]` (E5043 "can't be assigned to in Del context" at
+  bytecode compile, after `jac check` passed). Use `a del --> b;` (removes the edge between them) or `del node;`.
+- Do NOT use lambdas in server code (`sorted(xs, key=lambda (x: T) -> K {...})`): they pass `jac check` but raise
+  `NameError: __jac_lambda_N is not defined` at run time. Use a named module-level `def` as the key.
+- `visit [ ... ] else { visit here ++> X(); }` crashes module import (`'ConnectOp' object has no attribute 'name'`);
+  write get-or-create explicitly (`found = [...]; n = found[0] if found else here ++> X(); visit n;`).
+- Walker inheritance: a subclass adding a field without a default after a base field with a default raises
+  `non-default argument follows default argument` at import - give subclass fields defaults.
+- `x in y` where y is `any`-typed is a type error (E1111): wrap `list(y)` / use a typed variable.
+- Container equality on `any`: compare `list(x) == [...]` / `dict(x) == {...}`.
+- A walker `has` field named like an imported symbol SHADOWS it inside abilities (field `date` hides
+  `datetime.date` imported as `date`) -> `import datetime;` instead.
+- Anchor-free modules may be compiled NATIVE and native string/list ops can silently misbehave; starters carry
+  `[build] default_codespace = "server"` in jac.toml - keep it.
+- Serving: `jac start --port N main.jac` (0.36.1 has no `jac run --serve`); envelopes are
+  {"ok", "data": {"result", "reports"}, "error"}; walker reports in data.reports, function returns in data.result.
+  A web-app scaffold lists `endpoints` under [scale.microservices.routes]; importing it from a test module then
+  fails ("sv-to-sv service ... file not found") - starters remove that route.
+- Persisted graph is keyed by cwd; tests on root must use uuid-unique names and assert deltas only.
 - `jac test` exits 0 with "N skipped" when the test module's import fails: never treat rc==0 as a pass.
 """
 

@@ -1,0 +1,50 @@
+{
+ "toplevel_names": [],
+ "mass": {
+  "backend/jac/graphpilot.jac": 218
+ },
+ "body": {
+  "backend/jac/graphpilot.jac": 74
+ },
+ "target_paths": [
+  "backend/jac/graphpilot.jac"
+ ],
+ "symbols_dropped_not_in_starter": [],
+ "starter_mass": {
+  "backend/jac/graphpilot.jac": 230
+ },
+ "starter_body": {
+  "backend/jac/graphpilot.jac": 90
+ },
+ "symbols": [
+  "ability:Executor.execute",
+  "ability:GraphPlanner.init",
+  "ability:MemoryTraverse.update_memory",
+  "ability:TaskGenerator.create",
+  "edge:executes",
+  "edge:links",
+  "edge:updates",
+  "field:Goal.scenario",
+  "field:Goal.status",
+  "field:Goal.title",
+  "field:GraphPlanner.goal",
+  "field:GraphPlanner.scenario",
+  "field:Memory.kind",
+  "field:Memory.value",
+  "field:MemoryTraverse.objective",
+  "field:Task.owner",
+  "field:Task.status",
+  "field:Task.title",
+  "field:Task.tool",
+  "field:TaskGenerator.owner",
+  "field:TaskGenerator.title",
+  "field:TaskGenerator.tool",
+  "node:Goal",
+  "node:Memory",
+  "node:Task",
+  "walker:Executor",
+  "walker:GraphPlanner",
+  "walker:MemoryTraverse",
+  "walker:TaskGenerator"
+ ]
+}

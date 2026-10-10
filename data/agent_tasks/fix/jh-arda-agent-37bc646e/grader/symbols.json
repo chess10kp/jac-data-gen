@@ -1,0 +1,44 @@
+{
+ "toplevel_names": [],
+ "mass": {
+  "jac_app/memory.jac": 536
+ },
+ "body": {
+  "jac_app/memory.jac": 389
+ },
+ "target_paths": [
+  "jac_app/memory.jac"
+ ],
+ "symbols_dropped_not_in_starter": [
+  "ability:MemoryRetrieval.__ability_entry_95_5__",
+  "ability:StoreMemory.__ability_entry_24_5__"
+ ],
+ "starter_mass": {
+  "jac_app/memory.jac": 568
+ },
+ "starter_body": {
+  "jac_app/memory.jac": 382
+ },
+ "symbols": [
+  "ability:MemoryRetrieval.init",
+  "ability:MemoryRetrieval.merge_results",
+  "ability:MemoryRetrieval.retrieve_historical",
+  "ability:MemoryRetrieval.retrieve_semantic",
+  "ability:StoreMemory.index_memory",
+  "ability:StoreMemory.init",
+  "ability:StoreMemory.store_all_results",
+  "ability:StoreMemory.store_persistent",
+  "ability:StoreMemory.store_semantic",
+  "field:MemoryRetrieval.db_memory",
+  "field:MemoryRetrieval.query",
+  "field:MemoryRetrieval.retrieved_memories",
+  "field:MemoryRetrieval.session_id",
+  "field:MemoryRetrieval.vector_memory",
+  "field:StoreMemory.db_memory",
+  "field:StoreMemory.results",
+  "field:StoreMemory.session_id",
+  "field:StoreMemory.vector_memory",
+  "walker:MemoryRetrieval",
+  "walker:StoreMemory"
+ ]
+}

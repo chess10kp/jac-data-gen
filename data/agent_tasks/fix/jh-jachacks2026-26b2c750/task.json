@@ -1,0 +1,44 @@
+{
+ "id": "jh-jachacks2026-26b2c750",
+ "kind": "fix",
+ "level": 2,
+ "source": "jachacks_2026",
+ "gates": [
+  "check",
+  "fidelity"
+ ],
+ "target_paths": [
+  "config.sv.jac"
+ ],
+ "broken_paths": [
+  "config.sv.jac"
+ ],
+ "jac_version": "0.36.1",
+ "license": "upstream repo license (public hackathon submission; see repo_url)",
+ "provenance": {
+  "repo": "Wally-Ahmed__JacHacks2026",
+  "repo_url": "https://github.com/Wally-Ahmed/JacHacks2026",
+  "edition": "2026",
+  "seed_module": "config.jac",
+  "reverted_files": [
+   "config.sv.jac"
+  ],
+  "original": "data/jachacks_{spring,2026}_jac_files_filtered.jsonl",
+  "reference": "data/jachacks_nonsf (0.36.1 repair, green at 0.36.1)",
+  "starter": "hackathon original for reverted files, 0.36.1 repair elsewhere"
+ },
+ "starter_errors": {
+  "n_errors": 4,
+  "codes": {
+   "E0049": 3,
+   "E1002": 1
+  },
+  "n_files": 1
+ },
+ "gate_thresholds": {
+  "symbols": 0.9,
+  "mass": 0.7,
+  "body": 0.6,
+  "body_file": 0.4
+ }
+}

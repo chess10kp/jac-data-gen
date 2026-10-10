@@ -1,0 +1,46 @@
+{
+ "id": "jh-jac-e2767359",
+ "kind": "fix",
+ "level": 3,
+ "source": "jachacks_spring",
+ "gates": [
+  "check",
+  "fidelity"
+ ],
+ "target_paths": [
+  "walkers/drug_stats.jac"
+ ],
+ "broken_paths": [
+  "walkers/drug_stats.jac"
+ ],
+ "jac_version": "0.36.1",
+ "license": "upstream repo license (public hackathon submission; see repo_url)",
+ "provenance": {
+  "repo": "nishantr14__jac",
+  "repo_url": "https://github.com/nishantr14/jac",
+  "edition": "spring",
+  "seed_module": "walkers/drug_stats.jac",
+  "reverted_files": [
+   "walkers/drug_stats.jac"
+  ],
+  "original": "data/jachacks_{spring,2026}_jac_files_filtered.jsonl",
+  "reference": "data/jachacks_nonsf (0.36.1 repair, green at 0.36.1)",
+  "starter": "hackathon original for reverted files, 0.36.1 repair elsewhere"
+ },
+ "starter_errors": {
+  "n_errors": 4,
+  "codes": {
+   "E0105": 1,
+   "E0004": 1,
+   "E1032": 1,
+   "E1116": 1
+  },
+  "n_files": 1
+ },
+ "gate_thresholds": {
+  "symbols": 0.9,
+  "mass": 0.7,
+  "body": 0.6,
+  "body_file": 0.4
+ }
+}

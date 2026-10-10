@@ -1,0 +1,50 @@
+{
+ "toplevel_names": [],
+ "mass": {
+  "jac-backend/agents.jac": 242,
+  "jac-backend/models.jac": 70
+ },
+ "body": {
+  "jac-backend/agents.jac": 167,
+  "jac-backend/models.jac": 0
+ },
+ "target_paths": [
+  "jac-backend/agents.jac"
+ ],
+ "symbols_dropped_not_in_starter": [],
+ "starter_mass": {
+  "jac-backend/agents.jac": 233,
+  "jac-backend/models.jac": 70
+ },
+ "starter_body": {
+  "jac-backend/agents.jac": 167,
+  "jac-backend/models.jac": 0
+ },
+ "symbols": [
+  "ability:CreateFinancialGraph.create",
+  "ability:FutureSimulator.simulate_root",
+  "ability:FutureSimulator.simulate_user",
+  "ability:RiskAnalyzer.analyze_expense",
+  "ability:RiskAnalyzer.analyze_goal",
+  "ability:RiskAnalyzer.analyze_root",
+  "ability:RiskAnalyzer.analyze_user",
+  "field:ExpenseCategory.amount",
+  "field:ExpenseCategory.category_name",
+  "field:FinancialGoal.goal_amount",
+  "field:FinancialGoal.goal_name",
+  "field:FinancialGoal.target_months",
+  "field:Scenario.risk_level",
+  "field:Scenario.scenario_name",
+  "field:UserProfile.current_savings",
+  "field:UserProfile.monthly_income",
+  "field:UserProfile.name",
+  "node:ExpenseCategory",
+  "node:FinanceRoot",
+  "node:FinancialGoal",
+  "node:Scenario",
+  "node:UserProfile",
+  "walker:CreateFinancialGraph",
+  "walker:FutureSimulator",
+  "walker:RiskAnalyzer"
+ ]
+}

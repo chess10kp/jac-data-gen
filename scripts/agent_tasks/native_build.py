@@ -58,12 +58,14 @@ def cmd_validate(a) -> int:
         tasks = [t for t in tasks if t.name in set(a.only.split(","))]
     shard, n = (int(x) for x in a.shard.split("/"))
     tasks = [t for i, t in enumerate(tasks) if i % n == shard]
+    import subprocess
+    jac_ver = subprocess.run([a.jac, "--version"], capture_output=True, text=True).stdout.strip()
     bad = 0
     with res_path.open("a") as fh:
         for t in tasks:
             h = task_hash(t)
             prev = cache.get(t.name)
-            if not a.force and prev and prev.get("hash") == h and prev.get("validated"):
+            if not a.force and prev and prev.get("hash") == h and prev.get("validated") and prev.get("jac") == jac_ver:
                 print(f"=== {t.name}: cached VALIDATED (hash {h}), skip")
                 continue
             try:
@@ -167,6 +169,8 @@ def cmd_manifest(a) -> int:
             validated, reason = False, f"stale result (task changed since hash {r['hash']})"
         elif not r["validated"]:
             validated, reason = False, "; ".join(x.splitlines()[0] for x in r["fail"])[:400]
+        elif meta.get("jac_version") and meta["jac_version"] not in (r.get("jac") or ""):
+            validated, reason = False, f"validated with {r.get('jac')!r}, task pins {meta['jac_version']}"
         elif not d["clean"]:
             validated, reason = False, f"dedup: {d['reason']}"
         else:
@@ -177,6 +181,7 @@ def cmd_manifest(a) -> int:
         lines.append({
             "id": meta["id"], "level": meta["level"], "source": meta["source"], "gates": meta["gates"],
             "validated": validated, "reason": reason, "hash": h, "ci_run": (r or {}).get("ci_run"),
+            "validated_with": (r or {}).get("jac"), "jac_version": meta.get("jac_version"),
             "dedup": d,
         })
     (ROOT / "manifest.jsonl").write_text("".join(json.dumps(x) + "\n" for x in lines))

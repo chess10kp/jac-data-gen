@@ -1,0 +1,42 @@
+{
+ "toplevel_names": [],
+ "mass": {
+  "main.jac": 606
+ },
+ "body": {
+  "main.jac": 164
+ },
+ "target_paths": [
+  "main.jac"
+ ],
+ "symbols_dropped_not_in_starter": [],
+ "starter_mass": {
+  "main.jac": 700
+ },
+ "starter_body": {
+  "main.jac": 197
+ },
+ "symbols": [
+  "ability:ImpersonationAuditor.audit",
+  "ability:PolicyScan.descend",
+  "ability:PolicyScan.start",
+  "edge:BindsClusterRole",
+  "edge:BindsRole",
+  "edge:OwnsRule",
+  "field:ClusterRole.name",
+  "field:ImpersonationAuditor.allowed",
+  "field:ImpersonationAuditor.flagged",
+  "field:Role.name",
+  "field:RoleBinding.name",
+  "field:Rule.label",
+  "field:Rule.resource_names",
+  "field:Rule.resources",
+  "field:Rule.verbs",
+  "node:ClusterRole",
+  "node:Role",
+  "node:RoleBinding",
+  "node:Rule",
+  "walker:ImpersonationAuditor",
+  "walker:PolicyScan"
+ ]
+}

@@ -1,0 +1,45 @@
+{
+ "id": "osp-iss-marin-community-marin-01166168",
+ "kind": "fix",
+ "level": 4,
+ "source": "osp_repair_code_fix",
+ "gates": [
+  "check",
+  "test",
+  "fidelity"
+ ],
+ "target_paths": [
+  "main.jac"
+ ],
+ "broken_paths": [
+  "main.jac"
+ ],
+ "jac_version": "0.36.1",
+ "license": "synthetic (generated in-house; repo license)",
+ "provenance": {
+  "dataset": "data/osp_repair/code_fix.jsonl",
+  "row_id": "codefix__iss_marin-community__marin__6997",
+  "target_id": "iss_marin-community__marin__6997",
+  "broken_generator": "minimax",
+  "fixed_generator": "minimax/minimax-m3:free",
+  "original_error": "\u2716 Error: error[E0002]: Missing ')'"
+ },
+ "starter_errors": {
+  "n_errors": 13,
+  "codes": {
+   "E0002": 5,
+   "E0004": 3,
+   "E1001": 2,
+   "E0001": 1,
+   "E0032": 1,
+   "E1030": 1
+  },
+  "n_files": 1
+ },
+ "gate_thresholds": {
+  "symbols": 0.9,
+  "mass": 0.7,
+  "body": 0.6,
+  "body_file": 0.4
+ }
+}

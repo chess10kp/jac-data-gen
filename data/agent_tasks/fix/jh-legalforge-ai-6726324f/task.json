@@ -1,0 +1,45 @@
+{
+ "id": "jh-legalforge-ai-6726324f",
+ "kind": "fix",
+ "level": 2,
+ "source": "jachacks_spring",
+ "gates": [
+  "check",
+  "fidelity"
+ ],
+ "target_paths": [
+  "agents/risk_scorer.jac"
+ ],
+ "broken_paths": [
+  "agents/risk_scorer.jac"
+ ],
+ "jac_version": "0.36.1",
+ "license": "upstream repo license (public hackathon submission; see repo_url)",
+ "provenance": {
+  "repo": "gaganTakIITD__LegalForge-AI",
+  "repo_url": "https://github.com/gaganTakIITD/LegalForge-AI",
+  "edition": "spring",
+  "seed_module": "agents/risk_scorer.jac",
+  "reverted_files": [
+   "agents/risk_scorer.jac"
+  ],
+  "original": "data/jachacks_{spring,2026}_jac_files_filtered.jsonl",
+  "reference": "data/jachacks_nonsf (0.36.1 repair, green at 0.36.1)",
+  "starter": "hackathon original for reverted files, 0.36.1 repair elsewhere"
+ },
+ "starter_errors": {
+  "n_errors": 3,
+  "codes": {
+   "E0105": 1,
+   "E0004": 1,
+   "E1032": 1
+  },
+  "n_files": 1
+ },
+ "gate_thresholds": {
+  "symbols": 0.9,
+  "mass": 0.7,
+  "body": 0.6,
+  "body_file": 0.4
+ }
+}

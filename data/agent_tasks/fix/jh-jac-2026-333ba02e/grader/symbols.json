@@ -1,0 +1,73 @@
+{
+ "toplevel_names": [],
+ "mass": {
+  "agents/damage_estimator.jac": 592,
+  "nodes/data_nodes.jac": 290
+ },
+ "body": {
+  "agents/damage_estimator.jac": 502,
+  "nodes/data_nodes.jac": 0
+ },
+ "target_paths": [
+  "agents/damage_estimator.jac"
+ ],
+ "symbols_dropped_not_in_starter": [],
+ "starter_mass": {
+  "agents/damage_estimator.jac": 588,
+  "nodes/data_nodes.jac": 290
+ },
+ "starter_body": {
+  "agents/damage_estimator.jac": 498,
+  "nodes/data_nodes.jac": 0
+ },
+ "symbols": [
+  "ability:DamageEstimatorAgent.estimate_damages",
+  "ability:DamageEstimatorAgent.run",
+  "field:CaseMemoNode.base_damages",
+  "field:CaseMemoNode.case_summary",
+  "field:CaseMemoNode.defendant",
+  "field:CaseMemoNode.gap_analysis",
+  "field:CaseMemoNode.overall_strength",
+  "field:CaseMemoNode.per_claim_penalty",
+  "field:CaseMemoNode.total_exposure",
+  "field:CaseMemoNode.total_false_claims",
+  "field:CaseMemoNode.treble_damages",
+  "field:CausationNode.causal_chain",
+  "field:CausationNode.evidence_list",
+  "field:CausationNode.strength_score",
+  "field:CausationNode.summary",
+  "field:DamageEstimatorAgent.damage_complete",
+  "field:DocumentNode.content",
+  "field:DocumentNode.doc_type",
+  "field:DocumentNode.filename",
+  "field:EvidenceNode.confidence",
+  "field:EvidenceNode.description",
+  "field:EvidenceNode.evidence_type",
+  "field:EvidenceNode.source_doc",
+  "field:FalsityNode.evidence_list",
+  "field:FalsityNode.falsity_type",
+  "field:FalsityNode.strength_score",
+  "field:FalsityNode.summary",
+  "field:MaterialityNode.evidence_list",
+  "field:MaterialityNode.government_relied",
+  "field:MaterialityNode.strength_score",
+  "field:MaterialityNode.summary",
+  "field:ScientorNode.evidence_list",
+  "field:ScientorNode.knowledge_type",
+  "field:ScientorNode.strength_score",
+  "field:ScientorNode.summary",
+  "field:TimelineNode.events",
+  "field:TimelineNode.fraud_end",
+  "field:TimelineNode.fraud_start",
+  "field:TimelineNode.total_duration_months",
+  "node:CaseMemoNode",
+  "node:CausationNode",
+  "node:DamageEstimatorAgent",
+  "node:DocumentNode",
+  "node:EvidenceNode",
+  "node:FalsityNode",
+  "node:MaterialityNode",
+  "node:ScientorNode",
+  "node:TimelineNode"
+ ]
+}

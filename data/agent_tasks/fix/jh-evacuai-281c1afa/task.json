@@ -1,0 +1,49 @@
+{
+ "id": "jh-evacuai-281c1afa",
+ "kind": "fix",
+ "level": 4,
+ "source": "jachacks_spring",
+ "gates": [
+  "check",
+  "fidelity"
+ ],
+ "target_paths": [
+  "jac/brain.jac"
+ ],
+ "broken_paths": [
+  "jac/brain.jac"
+ ],
+ "jac_version": "0.36.1",
+ "license": "upstream repo license (public hackathon submission; see repo_url)",
+ "provenance": {
+  "repo": "hboujmai__EvacuAI",
+  "repo_url": "https://github.com/hboujmai/EvacuAI",
+  "edition": "spring",
+  "seed_module": "jac/brain.jac",
+  "reverted_files": [
+   "jac/brain.jac"
+  ],
+  "original": "data/jachacks_{spring,2026}_jac_files_filtered.jsonl",
+  "reference": "data/jachacks_nonsf (0.36.1 repair, green at 0.36.1)",
+  "starter": "hackathon original for reverted files, 0.36.1 repair elsewhere"
+ },
+ "starter_errors": {
+  "n_errors": 24,
+  "codes": {
+   "E0002": 14,
+   "E0034": 2,
+   "E0004": 2,
+   "E1097": 2,
+   "E1055": 2,
+   "E1001": 1,
+   "E1053": 1
+  },
+  "n_files": 1
+ },
+ "gate_thresholds": {
+  "symbols": 0.9,
+  "mass": 0.7,
+  "body": 0.6,
+  "body_file": 0.4
+ }
+}

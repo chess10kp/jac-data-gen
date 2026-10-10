@@ -1,0 +1,51 @@
+{
+ "id": "jh-binsight-21ad3fff",
+ "kind": "fix",
+ "level": 5,
+ "source": "jachacks_2026",
+ "gates": [
+  "check",
+  "fidelity"
+ ],
+ "target_paths": [
+  "binsight/jac_app/extensions/domain/nodes.jac",
+  "binsight/jac_app/extensions/walkers/alert_walkers.jac"
+ ],
+ "broken_paths": [
+  "binsight/jac_app/extensions/domain/nodes.jac",
+  "binsight/jac_app/extensions/walkers/alert_walkers.jac"
+ ],
+ "jac_version": "0.36.1",
+ "license": "upstream repo license (public hackathon submission; see repo_url)",
+ "provenance": {
+  "repo": "justinhh4__Binsight",
+  "repo_url": "https://github.com/justinhh4/Binsight",
+  "edition": "2026",
+  "seed_module": "binsight/jac_app/extensions/walkers/alert_walkers.jac",
+  "reverted_files": [
+   "binsight/jac_app/extensions/domain/nodes.jac",
+   "binsight/jac_app/extensions/walkers/alert_walkers.jac"
+  ],
+  "original": "data/jachacks_{spring,2026}_jac_files_filtered.jsonl",
+  "reference": "data/jachacks_nonsf (0.36.1 repair, green at 0.36.1)",
+  "starter": "hackathon original for reverted files, 0.36.1 repair elsewhere"
+ },
+ "starter_errors": {
+  "n_errors": 36,
+  "codes": {
+   "E1032": 19,
+   "E0048": 6,
+   "E2018": 6,
+   "E2004": 3,
+   "E1053": 1,
+   "E1001": 1
+  },
+  "n_files": 2
+ },
+ "gate_thresholds": {
+  "symbols": 0.9,
+  "mass": 0.7,
+  "body": 0.6,
+  "body_file": 0.4
+ }
+}

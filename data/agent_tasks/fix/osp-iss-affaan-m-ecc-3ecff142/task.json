@@ -1,0 +1,48 @@
+{
+ "id": "osp-iss-affaan-m-ecc-3ecff142",
+ "kind": "fix",
+ "level": 5,
+ "source": "osp_repair_code_fix",
+ "gates": [
+  "check",
+  "test",
+  "fidelity"
+ ],
+ "target_paths": [
+  "main.jac"
+ ],
+ "broken_paths": [
+  "main.jac"
+ ],
+ "jac_version": "0.36.1",
+ "license": "synthetic (generated in-house; repo license)",
+ "provenance": {
+  "dataset": "data/osp_repair/code_fix.jsonl",
+  "row_id": "codefix__iss_affaan-m__ecc__2909",
+  "target_id": "iss_affaan-m__ecc__2909",
+  "broken_generator": "minimax",
+  "fixed_generator": "composer-2.5",
+  "original_error": "\u2716 Error: error[E0034]: Expected 'with' after 'can' ability name (use 'def' for function-style declarations)"
+ },
+ "starter_errors": {
+  "n_errors": 39,
+  "codes": {
+   "E0046": 11,
+   "E1001": 8,
+   "E1030": 7,
+   "E0002": 3,
+   "E0005": 3,
+   "E0077": 3,
+   "E1032": 2,
+   "E0034": 1,
+   "E0030": 1
+  },
+  "n_files": 1
+ },
+ "gate_thresholds": {
+  "symbols": 0.9,
+  "mass": 0.7,
+  "body": 0.6,
+  "body_file": 0.4
+ }
+}

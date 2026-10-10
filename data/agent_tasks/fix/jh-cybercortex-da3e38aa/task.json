@@ -1,0 +1,52 @@
+{
+ "id": "jh-cybercortex-da3e38aa",
+ "kind": "fix",
+ "level": 4,
+ "source": "jachacks_spring",
+ "gates": [
+  "check",
+  "fidelity"
+ ],
+ "target_paths": [
+  "agents.jac",
+  "graph.jac"
+ ],
+ "broken_paths": [
+  "agents.jac",
+  "graph.jac"
+ ],
+ "jac_version": "0.36.1",
+ "license": "upstream repo license (public hackathon submission; see repo_url)",
+ "provenance": {
+  "repo": "NIKHILJAISWAL123__CyberCortex",
+  "repo_url": "https://github.com/NIKHILJAISWAL123/CyberCortex",
+  "edition": "spring",
+  "seed_module": "agents.jac",
+  "reverted_files": [
+   "agents.jac",
+   "graph.jac"
+  ],
+  "original": "data/jachacks_{spring,2026}_jac_files_filtered.jsonl",
+  "reference": "data/jachacks_nonsf (0.36.1 repair, green at 0.36.1)",
+  "starter": "hackathon original for reverted files, 0.36.1 repair elsewhere"
+ },
+ "starter_errors": {
+  "n_errors": 22,
+  "codes": {
+   "E1032": 10,
+   "E0005": 4,
+   "E2018": 3,
+   "E0030": 2,
+   "E0002": 1,
+   "E0004": 1,
+   "E0034": 1
+  },
+  "n_files": 2
+ },
+ "gate_thresholds": {
+  "symbols": 0.9,
+  "mass": 0.7,
+  "body": 0.6,
+  "body_file": 0.4
+ }
+}

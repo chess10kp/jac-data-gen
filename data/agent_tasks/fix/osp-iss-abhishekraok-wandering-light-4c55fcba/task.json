@@ -1,0 +1,41 @@
+{
+ "id": "osp-iss-abhishekraok-wandering-light-4c55fcba",
+ "kind": "fix",
+ "level": 2,
+ "source": "osp_repair_code_fix",
+ "gates": [
+  "check",
+  "test",
+  "fidelity"
+ ],
+ "target_paths": [
+  "main.jac"
+ ],
+ "broken_paths": [
+  "main.jac"
+ ],
+ "jac_version": "0.36.1",
+ "license": "synthetic (generated in-house; repo license)",
+ "provenance": {
+  "dataset": "data/osp_repair/code_fix.jsonl",
+  "row_id": "codefix__iss_abhishekraok__wandering-light__22",
+  "target_id": "iss_abhishekraok__wandering-light__22",
+  "broken_generator": "minimax",
+  "fixed_generator": "minimax/minimax-m3:free",
+  "original_error": "\u2716 Error: error[E0010]: 'pass' is not supported in Jac"
+ },
+ "starter_errors": {
+  "n_errors": 4,
+  "codes": {
+   "E1032": 3,
+   "E0010": 1
+  },
+  "n_files": 1
+ },
+ "gate_thresholds": {
+  "symbols": 0.9,
+  "mass": 0.7,
+  "body": 0.6,
+  "body_file": 0.4
+ }
+}

@@ -1,0 +1,46 @@
+{
+ "id": "jh-medgraph-ai-10ba0428",
+ "kind": "fix",
+ "level": 3,
+ "source": "jachacks_spring",
+ "gates": [
+  "check",
+  "fidelity"
+ ],
+ "target_paths": [
+  "main.jac"
+ ],
+ "broken_paths": [
+  "main.jac"
+ ],
+ "jac_version": "0.36.1",
+ "license": "upstream repo license (public hackathon submission; see repo_url)",
+ "provenance": {
+  "repo": "sumitsaraswat362__MedGraph-AI-",
+  "repo_url": "https://github.com/sumitsaraswat362/MedGraph-AI-",
+  "edition": "spring",
+  "seed_module": "main.jac",
+  "reverted_files": [
+   "main.jac"
+  ],
+  "original": "data/jachacks_{spring,2026}_jac_files_filtered.jsonl",
+  "reference": "data/jachacks_nonsf (0.36.1 repair, green at 0.36.1)",
+  "starter": "hackathon original for reverted files, 0.36.1 repair elsewhere"
+ },
+ "starter_errors": {
+  "n_errors": 7,
+  "codes": {
+   "E1053": 3,
+   "E1032": 2,
+   "E1030": 1,
+   "E1054": 1
+  },
+  "n_files": 1
+ },
+ "gate_thresholds": {
+  "symbols": 0.9,
+  "mass": 0.7,
+  "body": 0.6,
+  "body_file": 0.4
+ }
+}

@@ -1,0 +1,48 @@
+{
+ "toplevel_names": [],
+ "mass": {
+  "graph/nodes.jac": 120,
+  "walkers/drug_stats.jac": 226
+ },
+ "body": {
+  "graph/nodes.jac": 0,
+  "walkers/drug_stats.jac": 182
+ },
+ "target_paths": [
+  "walkers/drug_stats.jac"
+ ],
+ "symbols_dropped_not_in_starter": [],
+ "starter_mass": {
+  "graph/nodes.jac": 120,
+  "walkers/drug_stats.jac": 216
+ },
+ "starter_body": {
+  "graph/nodes.jac": 0,
+  "walkers/drug_stats.jac": 183
+ },
+ "symbols": [
+  "ability:drug_stats.fetch",
+  "class:__specs__",
+  "field:Condition.contraindicated_drugs",
+  "field:Condition.icd_code",
+  "field:Condition.name",
+  "field:Drug.cyp_pathway",
+  "field:Drug.drug_class",
+  "field:Drug.generic_name",
+  "field:Drug.half_life_hours",
+  "field:Drug.name",
+  "field:MedProfile.conditions",
+  "field:MedProfile.drug_names",
+  "field:MedProfile.user_id",
+  "field:RiskReport.flagged_pairs",
+  "field:RiskReport.generated_at",
+  "field:RiskReport.severity_max",
+  "field:RiskReport.summary",
+  "field:__specs__.auth",
+  "node:Condition",
+  "node:Drug",
+  "node:MedProfile",
+  "node:RiskReport",
+  "walker:drug_stats"
+ ]
+}

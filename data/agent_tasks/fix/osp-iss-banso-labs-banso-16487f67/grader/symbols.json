@@ -1,0 +1,39 @@
+{
+ "toplevel_names": [],
+ "mass": {
+  "main.jac": 425
+ },
+ "body": {
+  "main.jac": 65
+ },
+ "target_paths": [
+  "main.jac"
+ ],
+ "symbols_dropped_not_in_starter": [
+  "ability:Executor.dispatch",
+  "edge:Successor",
+  "field:Route.active_spaces",
+  "field:Route.completed_spaces",
+  "field:Route.selected",
+  "field:Step.executed",
+  "field:Step.gates_passed",
+  "field:Successor.policy",
+  "node:Route",
+  "walker:Executor"
+ ],
+ "starter_mass": {
+  "main.jac": 951
+ },
+ "starter_body": {
+  "main.jac": 485
+ },
+ "symbols": [
+  "ability:Executor.start",
+  "field:Route.attempts",
+  "field:Route.name",
+  "field:Step.kind",
+  "field:Step.title",
+  "field:Successor.gate",
+  "node:Step"
+ ]
+}

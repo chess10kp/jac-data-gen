@@ -1,0 +1,49 @@
+{
+ "id": "jh-jaccaremind-ai-d83fe3d2",
+ "kind": "fix",
+ "level": 5,
+ "source": "jachacks_spring",
+ "gates": [
+  "check",
+  "fidelity"
+ ],
+ "target_paths": [
+  "caremind_agents.jac"
+ ],
+ "broken_paths": [
+  "caremind_agents.jac"
+ ],
+ "jac_version": "0.36.1",
+ "license": "upstream repo license (public hackathon submission; see repo_url)",
+ "provenance": {
+  "repo": "swethaganeshh__JacCareMind-AI",
+  "repo_url": "https://github.com/swethaganeshh/JacCareMind-AI",
+  "edition": "spring",
+  "seed_module": "caremind_agents.jac",
+  "reverted_files": [
+   "caremind_agents.jac"
+  ],
+  "original": "data/jachacks_{spring,2026}_jac_files_filtered.jsonl",
+  "reference": "data/jachacks_nonsf (0.36.1 repair, green at 0.36.1)",
+  "starter": "hackathon original for reverted files, 0.36.1 repair elsewhere"
+ },
+ "starter_errors": {
+  "n_errors": 55,
+  "codes": {
+   "E0005": 16,
+   "E0030": 12,
+   "E0046": 10,
+   "E0002": 9,
+   "E0034": 6,
+   "E0004": 1,
+   "E1053": 1
+  },
+  "n_files": 1
+ },
+ "gate_thresholds": {
+  "symbols": 0.9,
+  "mass": 0.7,
+  "body": 0.6,
+  "body_file": 0.4
+ }
+}

@@ -1,0 +1,50 @@
+{
+ "id": "jh-arda-agent-37bc646e",
+ "kind": "fix",
+ "level": 5,
+ "source": "jachacks_spring",
+ "gates": [
+  "check",
+  "fidelity"
+ ],
+ "target_paths": [
+  "jac_app/memory.jac"
+ ],
+ "broken_paths": [
+  "jac_app/memory.jac"
+ ],
+ "jac_version": "0.36.1",
+ "license": "upstream repo license (public hackathon submission; see repo_url)",
+ "provenance": {
+  "repo": "siddhartha-45__arda-agent",
+  "repo_url": "https://github.com/siddhartha-45/arda-agent",
+  "edition": "spring",
+  "seed_module": "jac_app/memory.jac",
+  "reverted_files": [
+   "jac_app/memory.jac"
+  ],
+  "original": "data/jachacks_{spring,2026}_jac_files_filtered.jsonl",
+  "reference": "data/jachacks_nonsf (0.36.1 repair, green at 0.36.1)",
+  "starter": "hackathon original for reverted files, 0.36.1 repair elsewhere"
+ },
+ "starter_errors": {
+  "n_errors": 60,
+  "codes": {
+   "E0046": 19,
+   "E0034": 16,
+   "E0002": 9,
+   "E0076": 7,
+   "E1032": 3,
+   "E0005": 2,
+   "E0030": 2,
+   "E1054": 2
+  },
+  "n_files": 1
+ },
+ "gate_thresholds": {
+  "symbols": 0.9,
+  "mass": 0.7,
+  "body": 0.6,
+  "body_file": 0.4
+ }
+}

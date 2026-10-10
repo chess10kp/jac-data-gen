@@ -1,0 +1,44 @@
+{
+ "toplevel_names": [],
+ "mass": {
+  "agents.jac": 144,
+  "graph.jac": 94
+ },
+ "body": {
+  "agents.jac": 99,
+  "graph.jac": 23
+ },
+ "target_paths": [
+  "agents.jac",
+  "graph.jac"
+ ],
+ "symbols_dropped_not_in_starter": [],
+ "starter_mass": {
+  "agents.jac": 145,
+  "graph.jac": 98
+ },
+ "starter_body": {
+  "agents.jac": 97,
+  "graph.jac": 34
+ },
+ "symbols": [
+  "ability:CoordinatorWalker.coordinate",
+  "ability:CyberGraph.init",
+  "ability:ScannerWalker.analyze_intel",
+  "ability:ScannerWalker.scan_target",
+  "edge:Analyzes",
+  "edge:Monitors",
+  "field:CyberGraph.start_node",
+  "field:ScannerWalker.scan_results",
+  "field:SecurityTarget.ip_address",
+  "field:SecurityTarget.status",
+  "field:SecurityTarget.vulnerabilities",
+  "field:ThreatIntel.active_threats",
+  "field:ThreatIntel.threat_level",
+  "node:SecurityTarget",
+  "node:ThreatIntel",
+  "obj:CyberGraph",
+  "walker:CoordinatorWalker",
+  "walker:ScannerWalker"
+ ]
+}

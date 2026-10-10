@@ -1,0 +1,71 @@
+{
+ "toplevel_names": [
+  "CareMindGraph"
+ ],
+ "mass": {
+  "caremind_agents.jac": 1282
+ },
+ "body": {
+  "caremind_agents.jac": 793
+ },
+ "target_paths": [
+  "caremind_agents.jac"
+ ],
+ "symbols_dropped_not_in_starter": [],
+ "starter_mass": {
+  "caremind_agents.jac": 1203
+ },
+ "starter_body": {
+  "caremind_agents.jac": 668
+ },
+ "symbols": [
+  "ability:AlertNode.generate_alert",
+  "ability:CareMindWalker.get_final_output",
+  "ability:CareMindWalker.visit_alert",
+  "ability:CareMindWalker.visit_memory",
+  "ability:CareMindWalker.visit_planning",
+  "ability:CareMindWalker.visit_risk",
+  "ability:CareMindWalker.visit_symptom",
+  "ability:MemoryNode.retrieve_context",
+  "ability:PlanningNode.generate_plan",
+  "ability:RiskNode.classify_risk",
+  "ability:SymptomNode.analyze_symptoms",
+  "def:CareMindGraph",
+  "edge:MemoryToSymptom",
+  "edge:PlanningToAlert",
+  "edge:RiskToPlanning",
+  "edge:SymptomToRisk",
+  "field:AgentResult.agent_name",
+  "field:AgentResult.output",
+  "field:AgentResult.success",
+  "field:AlertNode.alert_output",
+  "field:AlertNode.care_plan",
+  "field:CareMindWalker.patient_context",
+  "field:CareMindWalker.pipeline_trace",
+  "field:CareMindWalker.results",
+  "field:MemoryNode.memory_context",
+  "field:MemoryNode.patient_data",
+  "field:PatientContext.age",
+  "field:PatientContext.allergies",
+  "field:PatientContext.conditions",
+  "field:PatientContext.medications",
+  "field:PatientContext.message",
+  "field:PatientContext.name",
+  "field:PatientContext.patient_id",
+  "field:PatientContext.recent_history",
+  "field:PlanningNode.care_plan",
+  "field:PlanningNode.risk_assessment",
+  "field:RiskNode.risk_assessment",
+  "field:RiskNode.symptom_analysis",
+  "field:SymptomNode.memory_context",
+  "field:SymptomNode.symptom_analysis",
+  "node:AlertNode",
+  "node:MemoryNode",
+  "node:PlanningNode",
+  "node:RiskNode",
+  "node:SymptomNode",
+  "obj:AgentResult",
+  "obj:PatientContext",
+  "walker:CareMindWalker"
+ ]
+}

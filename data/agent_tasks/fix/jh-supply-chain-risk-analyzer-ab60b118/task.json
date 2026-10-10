@@ -1,0 +1,45 @@
+{
+ "id": "jh-supply-chain-risk-analyzer-ab60b118",
+ "kind": "fix",
+ "level": 2,
+ "source": "jachacks_2026",
+ "gates": [
+  "check",
+  "fidelity"
+ ],
+ "target_paths": [
+  "services/supply_chain.sv.jac"
+ ],
+ "broken_paths": [
+  "services/supply_chain.sv.jac"
+ ],
+ "jac_version": "0.36.1",
+ "license": "upstream repo license (public hackathon submission; see repo_url)",
+ "provenance": {
+  "repo": "drPod__supply-chain-risk-analyzer",
+  "repo_url": "https://github.com/drPod/supply-chain-risk-analyzer",
+  "edition": "2026",
+  "seed_module": "services/supply_chain.jac",
+  "reverted_files": [
+   "services/supply_chain.sv.jac"
+  ],
+  "original": "data/jachacks_{spring,2026}_jac_files_filtered.jsonl",
+  "reference": "data/jachacks_nonsf (0.36.1 repair, green at 0.36.1)",
+  "starter": "hackathon original for reverted files, 0.36.1 repair elsewhere"
+ },
+ "starter_errors": {
+  "n_errors": 4,
+  "codes": {
+   "E0049": 2,
+   "E1002": 1,
+   "E1001": 1
+  },
+  "n_files": 1
+ },
+ "gate_thresholds": {
+  "symbols": 0.9,
+  "mass": 0.7,
+  "body": 0.6,
+  "body_file": 0.4
+ }
+}

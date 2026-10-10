@@ -1,0 +1,31 @@
+{
+ "toplevel_names": [
+  "Button",
+  "app"
+ ],
+ "mass": {
+  "neuroflow-app/components/Button.jac": 141,
+  "neuroflow-app/main.jac": 139
+ },
+ "body": {
+  "neuroflow-app/components/Button.jac": 110,
+  "neuroflow-app/main.jac": 120
+ },
+ "target_paths": [
+  "neuroflow-app/components/Button.jac",
+  "neuroflow-app/main.jac"
+ ],
+ "symbols_dropped_not_in_starter": [],
+ "starter_mass": {
+  "neuroflow-app/components/Button.jac": 141,
+  "neuroflow-app/main.jac": 143
+ },
+ "starter_body": {
+  "neuroflow-app/components/Button.jac": 110,
+  "neuroflow-app/main.jac": 120
+ },
+ "symbols": [
+  "def:Button",
+  "def:app"
+ ]
+}

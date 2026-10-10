@@ -1,0 +1,42 @@
+{
+ "toplevel_names": [],
+ "mass": {
+  "v2/orion.jac": 376
+ },
+ "body": {
+  "v2/orion.jac": 239
+ },
+ "target_paths": [
+  "v2/orion.jac"
+ ],
+ "symbols_dropped_not_in_starter": [
+  "ability:orion_spatial_scan.__ability_entry_37_5__",
+  "ability:orion_spatial_scan.__ability_entry_41_5__",
+  "ability:orion_spatial_scan.__ability_entry_49_5__",
+  "ability:orion_spatial_scan.__ability_entry_64_5__",
+  "ability:orion_spatial_scan.__ability_entry_72_5__"
+ ],
+ "starter_mass": {
+  "v2/orion.jac": 373
+ },
+ "starter_body": {
+  "v2/orion.jac": 238
+ },
+ "symbols": [
+  "field:orion_spatial_scan.result",
+  "field:result_aggregator.final_result",
+  "field:rgb_fetch.image_path",
+  "field:sar_fetch.confidence_score",
+  "field:sar_fetch.target_locked",
+  "field:sar_fetch.winning_sensor",
+  "field:scan_coordinator.end_date",
+  "field:scan_coordinator.lat",
+  "field:scan_coordinator.lon",
+  "field:scan_coordinator.start_date",
+  "node:result_aggregator",
+  "node:rgb_fetch",
+  "node:sar_fetch",
+  "node:scan_coordinator",
+  "walker:orion_spatial_scan"
+ ]
+}

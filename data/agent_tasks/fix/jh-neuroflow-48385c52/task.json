@@ -1,0 +1,47 @@
+{
+ "id": "jh-neuroflow-48385c52",
+ "kind": "fix",
+ "level": 2,
+ "source": "jachacks_spring",
+ "gates": [
+  "check",
+  "fidelity"
+ ],
+ "target_paths": [
+  "neuroflow-app/components/Button.jac",
+  "neuroflow-app/main.jac"
+ ],
+ "broken_paths": [
+  "neuroflow-app/components/Button.cl.jac",
+  "neuroflow-app/main.jac"
+ ],
+ "jac_version": "0.36.1",
+ "license": "upstream repo license (public hackathon submission; see repo_url)",
+ "provenance": {
+  "repo": "legitHacker23__NeuroFlow",
+  "repo_url": "https://github.com/legitHacker23/NeuroFlow",
+  "edition": "spring",
+  "seed_module": "neuroflow-app/main.jac",
+  "reverted_files": [
+   "neuroflow-app/components/Button.cl.jac",
+   "neuroflow-app/main.jac"
+  ],
+  "original": "data/jachacks_{spring,2026}_jac_files_filtered.jsonl",
+  "reference": "data/jachacks_nonsf (0.36.1 repair, green at 0.36.1)",
+  "starter": "hackathon original for reverted files, 0.36.1 repair elsewhere"
+ },
+ "starter_errors": {
+  "n_errors": 3,
+  "codes": {
+   "E-file": 2,
+   "E0005": 1
+  },
+  "n_files": 2
+ },
+ "gate_thresholds": {
+  "symbols": 0.9,
+  "mass": 0.7,
+  "body": 0.6,
+  "body_file": 0.4
+ }
+}

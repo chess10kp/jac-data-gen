@@ -1,0 +1,47 @@
+{
+ "id": "jh-jachacks-idea-to-prototype-0c46f002",
+ "kind": "fix",
+ "level": 4,
+ "source": "jachacks_spring",
+ "gates": [
+  "check",
+  "fidelity"
+ ],
+ "target_paths": [
+  "main.jac"
+ ],
+ "broken_paths": [
+  "main.jac"
+ ],
+ "jac_version": "0.36.1",
+ "license": "upstream repo license (public hackathon submission; see repo_url)",
+ "provenance": {
+  "repo": "atmakursaiakhilreddy-debug__jachacks-idea-to-prototype",
+  "repo_url": "https://github.com/atmakursaiakhilreddy-debug/jachacks-idea-to-prototype",
+  "edition": "spring",
+  "seed_module": "main.jac",
+  "reverted_files": [
+   "main.jac"
+  ],
+  "original": "data/jachacks_{spring,2026}_jac_files_filtered.jsonl",
+  "reference": "data/jachacks_nonsf (0.36.1 repair, green at 0.36.1)",
+  "starter": "hackathon original for reverted files, 0.36.1 repair elsewhere"
+ },
+ "starter_errors": {
+  "n_errors": 19,
+  "codes": {
+   "E0005": 6,
+   "E0030": 6,
+   "E1001": 4,
+   "E0002": 2,
+   "E1032": 1
+  },
+  "n_files": 1
+ },
+ "gate_thresholds": {
+  "symbols": 0.9,
+  "mass": 0.7,
+  "body": 0.6,
+  "body_file": 0.4
+ }
+}

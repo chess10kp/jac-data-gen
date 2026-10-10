@@ -1,0 +1,24 @@
+{
+ "toplevel_names": [
+  "SessionBanner"
+ ],
+ "mass": {
+  "civicmesh/components/SessionBanner.jac": 625
+ },
+ "body": {
+  "civicmesh/components/SessionBanner.jac": 610
+ },
+ "target_paths": [
+  "civicmesh/components/SessionBanner.jac"
+ ],
+ "symbols_dropped_not_in_starter": [],
+ "starter_mass": {
+  "civicmesh/components/SessionBanner.jac": 623
+ },
+ "starter_body": {
+  "civicmesh/components/SessionBanner.jac": 608
+ },
+ "symbols": [
+  "def:SessionBanner"
+ ]
+}

@@ -1,0 +1,39 @@
+{
+ "toplevel_names": [
+  "design_architecture",
+  "generate_plan",
+  "generate_starter_code",
+  "refine_idea"
+ ],
+ "mass": {
+  "main.jac": 330
+ },
+ "body": {
+  "main.jac": 107
+ },
+ "target_paths": [
+  "main.jac"
+ ],
+ "symbols_dropped_not_in_starter": [],
+ "starter_mass": {
+  "main.jac": 313
+ },
+ "starter_body": {
+  "main.jac": 107
+ },
+ "symbols": [
+  "ability:build_idea_to_prototype.run",
+  "def:design_architecture",
+  "def:generate_plan",
+  "def:generate_starter_code",
+  "def:refine_idea",
+  "field:IdeaNode.architecture",
+  "field:IdeaNode.planned",
+  "field:IdeaNode.prd",
+  "field:IdeaNode.raw_idea",
+  "field:IdeaNode.starter_code",
+  "field:build_idea_to_prototype.raw_input",
+  "node:IdeaNode",
+  "walker:build_idea_to_prototype"
+ ]
+}

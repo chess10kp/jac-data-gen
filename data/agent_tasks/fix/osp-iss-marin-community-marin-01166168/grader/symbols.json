@@ -1,0 +1,60 @@
+{
+ "toplevel_names": [],
+ "mass": {
+  "main.jac": 565
+ },
+ "body": {
+  "main.jac": 146
+ },
+ "target_paths": [
+  "main.jac"
+ ],
+ "symbols_dropped_not_in_starter": [
+  "ability:DriverLoop.cache_ready",
+  "field:DriverLoop.pinned_seen"
+ ],
+ "starter_mass": {
+  "main.jac": 673
+ },
+ "starter_body": {
+  "main.jac": 234
+ },
+ "symbols": [
+  "ability:DriverLoop.note",
+  "ability:DriverLoop.start",
+  "ability:Persist.finish",
+  "ability:Persist.ingest",
+  "ability:Persist.start",
+  "edge:FrontierLink",
+  "edge:JoinsAgainst",
+  "edge:PersistsAs",
+  "field:CacheHandle.evicted",
+  "field:CacheHandle.name",
+  "field:CacheHandle.pinned",
+  "field:CacheHandle.resident_bytes",
+  "field:CacheHandle.shards",
+  "field:CacheHandle.storage_tier",
+  "field:DirEdge.dst",
+  "field:DirEdge.size_bytes",
+  "field:DirEdge.src",
+  "field:DriverLoop.rounds",
+  "field:DriverLoop.total_probed",
+  "field:DriverLoop.total_scanned",
+  "field:Frontier.label",
+  "field:Frontier.members",
+  "field:Frontier.round",
+  "field:FrontierLink.round",
+  "field:JoinsAgainst.probed_bytes",
+  "field:JoinsAgainst.round",
+  "field:JoinsAgainst.scanned_bytes",
+  "field:Persist.handle_name",
+  "field:Persist.storage_tier",
+  "field:PersistsAs.shards",
+  "field:PersistsAs.storage_tier",
+  "node:CacheHandle",
+  "node:DirEdge",
+  "node:Frontier",
+  "walker:DriverLoop",
+  "walker:Persist"
+ ]
+}

@@ -1,0 +1,28 @@
+{
+ "toplevel_names": [],
+ "mass": {
+  "integrations/pharmacy/pharmacy_api_client.jac": 96
+ },
+ "body": {
+  "integrations/pharmacy/pharmacy_api_client.jac": 26
+ },
+ "target_paths": [
+  "integrations/pharmacy/pharmacy_api_client.jac"
+ ],
+ "symbols_dropped_not_in_starter": [],
+ "starter_mass": {
+  "integrations/pharmacy/pharmacy_api_client.jac": 96
+ },
+ "starter_body": {
+  "integrations/pharmacy/pharmacy_api_client.jac": 26
+ },
+ "symbols": [
+  "ability:PharmacyAPIClient.get_medication_history",
+  "ability:PharmacyAPIClient.get_prescription_status",
+  "ability:PharmacyAPIClient.request_refill",
+  "field:PharmacyAPIClient.api_key",
+  "field:PharmacyAPIClient.base_url",
+  "field:PharmacyAPIClient.pharmacy_name",
+  "obj:PharmacyAPIClient"
+ ]
+}

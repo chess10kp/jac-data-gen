@@ -191,6 +191,7 @@ def cmd_build(a) -> None:
             print("built", s["id"])
         except Exception as e:
             print("FAILED", s["id"], e)
+            shutil.rmtree(OUT / s["id"], ignore_errors=True)
     stale = {p.name for p in OUT.iterdir() if p.is_dir() and not p.name.startswith((".", "_"))} - seen
     for n in sorted(stale):
         print("stale task dir (no spec):", n)
