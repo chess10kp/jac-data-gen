@@ -1,0 +1,1 @@
+{"why": "counts scenes not distinct locations", "edits": [{"file": "callsheet.jac", "old": "        self.locations = len(self.places);\n", "new": ""}]}

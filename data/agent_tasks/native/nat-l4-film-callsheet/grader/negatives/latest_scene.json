@@ -1,0 +1,1 @@
+{"why": "uses the latest scene", "edits": [{"file": "callsheet.jac", "old": "here.start_min < self.first_scene[key]", "new": "here.start_min > self.first_scene[key]"}]}

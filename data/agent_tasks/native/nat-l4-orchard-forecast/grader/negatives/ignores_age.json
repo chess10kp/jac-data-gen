@@ -1,0 +1,1 @@
+{"why": "ignores the age curve", "edits": [{"file": "harvest.jac", "old": "MATURE_KG[name] * age_factor(here.age)", "new": "MATURE_KG[name]"}]}

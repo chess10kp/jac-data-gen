@@ -1,0 +1,1 @@
+{"why": "main prints the wrong summary (counts skus not units)", "edits": [{"file": "main.jac", "old": "missing = sum(run.short.values());", "new": "missing = len(run.short);"}]}

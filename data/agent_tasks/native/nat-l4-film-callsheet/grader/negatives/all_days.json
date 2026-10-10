@@ -1,0 +1,1 @@
+{"why": "ignores the day filter", "edits": [{"file": "callsheet.jac", "old": "        if here.day == self.day {\n            visit [here ->:Scheduled:->];\n        }", "new": "        visit [here ->:Scheduled:->];"}]}

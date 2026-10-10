@@ -1,0 +1,1 @@
+{"why": "camera prep 30", "edits": [{"file": "crew.jac", "old": "        case Department.CAMERA:\n            return 60;\n", "new": ""}]}

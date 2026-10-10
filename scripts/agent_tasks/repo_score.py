@@ -159,7 +159,8 @@ def move_pypi(t: str) -> str:
             skip = h.group(1).strip().startswith("scale.microservices")
         if not skip:
             out2.append(ln)
-    out = out2
+    out = [re.sub(r'^(\s*kind\s*=\s*)"(fullstack|web|full-stack)"', r'\1"web-app"', l) for l in out2]
+    out = [re.sub(r'^(\s*kind\s*=\s*)"(api-service|api|backend)"', r'\1"service"', l) for l in out]
     for sec, kvs in moved.items():
         hdr = f"[{sec}.pypi]"
         if hdr in out:

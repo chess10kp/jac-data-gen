@@ -27,7 +27,8 @@ walker LogQso {
 
     can log with Root entry {
         sign = self.call.upper();
-        logs = [root -->[?:BandLog, band == self.band]];
+        # enum values can't be used in a graph-query predicate (QPred needs a scalar)
+        logs = [lg for lg in [root -->[?:BandLog]] if lg.band == self.band];
         book = logs[0] if logs else root ++> BandLog(band=self.band);
         if [book ->:Logged:->[?:Qso, call == sign]] {
             report "dupe";

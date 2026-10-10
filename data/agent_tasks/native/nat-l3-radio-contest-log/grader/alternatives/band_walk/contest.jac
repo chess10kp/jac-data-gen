@@ -26,7 +26,10 @@ walker LogQso {
     has zone: int;
 
     can start with Root entry {
-        visit [-->[?:BandLog, band == self.band]] else {
+        matching = [lg for lg in [-->[?:BandLog]] if lg.band.name == self.band.name];
+        if matching {
+            visit matching[0];
+        } else {
             visit here ++> BandLog(band=self.band);
         }
     }

@@ -1,0 +1,11 @@
+{
+  "id": "nat-l4-warehouse-picking",
+  "kind": "native",
+  "level": 4,
+  "source": "hand-authored",
+  "gates": ["check", "test", "run"],
+  "target_paths": ["picking.jac", "main.jac"],
+  "jac_version": "0.37.25",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "provenance": {"author": "claude (hand-authored pilot)", "created": "2026-10-10", "title": "Warehouse aisle pick run", "domain": "warehouse order picking", "constructs": ["multi-module imports", "chain traversal over typed edge", "walker mutating bins", "obj results", "entry-point wiring"], "inspiration": "none (original)"}
+}
