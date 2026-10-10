@@ -88,7 +88,8 @@ def call_sheet(day: int) -> list[str] {
         }
     }
     rows: list[str] = [];
-    for name in sorted(best.keys(), key=lambda (n: str) -> str { return f"{best[n]:05d} {n}"; }) {
+    for row in sorted([f"{best[n]:05d} {n}" for n in best]) {
+        name = row.split(" ", 1)[1];
         rows.append(f"{clock(best[name])} {name} ({p.crew[name].upper()})");
     }
     return rows;

@@ -107,7 +107,7 @@ impl assign(name: str, scene: str, early: int = 0) -> bool {
 
 impl call_sheet(day: int) -> list[str] {
     w = root spawn CallSheet(day=day);
-    order = sorted(w.best.keys(), key=lambda (n: str) -> str { return f"{w.best[n]:05d} {n}"; });
+    order = [row.split(" ", 1)[1] for row in sorted([f"{t:05d} {n}" for (n, t) in w.best.items()])];
     return [f"{clock(w.best[n])} {n} ({w.crew[n].dept.name})" for n in order];
 }
 

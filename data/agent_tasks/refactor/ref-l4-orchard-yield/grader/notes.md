@@ -6,3 +6,4 @@ Quirk (native lowering, module has no root): iterating an enum yields nothing an
 Floats: all yields are multiples of 0.25, so sums are exact regardless of traversal order.
 Negatives: counts_diseased, age_factor_boundary, duplicate_tags, season_ages_twice, slot_ignored.
 Quirk (0.36.1): `disengage` inside an annex `impl Walker.ability` is rejected (E2083 "only valid inside a walker ability"), so Locate stops via a found-guard instead.
+jac 0.36.1: starter/ and reference/ carry jac.toml `[build] default_codespace = "server"` (native-lowered modules can SIGSEGV/SIGABRT under `jac test`). No lambdas: at 0.36.1 a typed block lambda used as a sort key failed at test time (`NameError: __jac_lambda_1`), so sorts use plain keys / str.lower.

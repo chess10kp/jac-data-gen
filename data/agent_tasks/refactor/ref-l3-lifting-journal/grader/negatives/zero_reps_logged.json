@@ -1,0 +1,1 @@
+{"why": "zero-rep sets accepted", "edits": [{"file": "journal.jac", "old": "if k is None or reps <= 0 {", "new": "if k is None or reps < 0 {"}]}

@@ -1,0 +1,1 @@
+{"why": "seedlings use their normal interval", "edits": [{"file": "rounds.jac", "old": "return 1 if self.stage == Stage.SEEDLING else self.interval_days;", "new": "return self.interval_days;"}]}

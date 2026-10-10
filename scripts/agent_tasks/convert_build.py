@@ -43,6 +43,7 @@ from fix_gate import stub_bodies  # noqa: E402
 
 ROOT = REPO / "data" / "agent_tasks" / "convert"
 CACHE = ROOT / "build_results.jsonl"
+TARGET_JAC = "0.36.1"  # the training pipeline pins jac 0.36.1
 
 
 def task_dirs() -> list[Path]:
@@ -106,7 +107,7 @@ def validate(td: Path, repeats: int = 2) -> dict:
         fid = r["gates"].get("fidelity", {})
         ok.append(f"REF passes {','.join(r['gates'])} (api {fid.get('api', '-')}, mass {fid.get('mass_ratio', '-')})")
     else:
-        bad = {k: v["detail"][-900:] for k, v in r["gates"].items() if not v["ok"]}
+        bad = {k: (v["detail"][:1200] if k == "check" else v["detail"][-900:]) for k, v in r["gates"].items() if not v["ok"]}
         fail.append(f"REF fails: {json.dumps(bad)[:3000]}")
 
     # 2. hollow port (every body stubbed) must be killed
@@ -133,7 +134,7 @@ def validate(td: Path, repeats: int = 2) -> dict:
                 continue
             c = t.grade(w, ["check"])
             if not c["pass"]:
-                fail.append(f"NEG {n.stem}: stillborn (does not compile): {c['gates']['check']['detail'][-300:]}")
+                fail.append(f"NEG {n.stem}: stillborn (does not compile): {c['gates']['check']['detail'][:400]}")
                 continue
             r = t.grade(w, [g for g in gates if g in ("test", "start")])
             if r["pass"]:
@@ -196,7 +197,8 @@ def cmd_validate(a) -> int:
         for td in tasks:
             h = task_hash(td)
             prev = cache.get(td.name)
-            if not a.force and prev and prev.get("hash") == h and prev.get("validated"):
+            if not a.force and prev and prev.get("hash") == h and prev.get("validated") \
+                    and TARGET_JAC in prev.get("jac", ""):
                 print(f"=== {td.name}: cached VALIDATED (hash {h}), skip")
                 continue
             try:

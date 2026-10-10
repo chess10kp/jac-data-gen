@@ -1,0 +1,1 @@
+{"why": "failed attempts count toward the best estimate", "edits": [{"file": "journal.jac", "old": "        if k == SetKind.WORK {\n            link.top", "new": "        if k != SetKind.WARMUP {\n            link.top"}]}

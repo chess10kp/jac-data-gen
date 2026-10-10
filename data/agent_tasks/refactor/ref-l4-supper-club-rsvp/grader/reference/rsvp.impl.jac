@@ -116,7 +116,7 @@ impl guests(event: str, answer: str) -> list[str] {
     }
     r = ev spawn Roster();
     names = r.yes if a == Answer.YES else (r.no if a == Answer.NO else r.maybe);
-    return sorted(names, key=lambda (s: str) -> str { return s.lower(); });
+    return sorted(names, key=str.lower);
 }
 
 impl agenda(guest: str) -> list[str] {

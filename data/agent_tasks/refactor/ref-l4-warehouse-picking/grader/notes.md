@@ -7,3 +7,4 @@ Pick order: aisles 1..n; within an aisle by shelf level ascending, then stocking
 Quirk: W1051 warning on the loop var inside the edge predicate (harmless).
 Negatives: high_shelves_first, picks_blocked, dry_run_commits, never_stops, on_hand_counts_blocked, duplicate_codes.
 Quirk (0.36.1): `disengage` inside an annex `impl Walker.ability` is rejected (E2083), so FindBin simply does not visit further once it has a hit.
+jac 0.36.1: starter/ and reference/ carry jac.toml `[build] default_codespace = "server"` (native-lowered modules can SIGSEGV/SIGABRT under `jac test`). No lambdas: at 0.36.1 a typed block lambda used as a sort key failed at test time (`NameError: __jac_lambda_1`), so sorts use plain keys / str.lower.

@@ -1,0 +1,1 @@
+{"why": "returning to a passed stop is not flagged as a loop", "edits": [{"file": "tramway.jac", "old": "            self.looped = True;\n", "new": ""}]}

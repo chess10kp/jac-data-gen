@@ -1,0 +1,1 @@
+{"why": "warm-up sets counted in volume, failed sets dropped", "edits": [{"file": "journal.jac", "old": "        if k != SetKind.WARMUP {\n            link.volume", "new": "        if k != SetKind.FAIL {\n            link.volume"}]}

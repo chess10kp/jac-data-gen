@@ -1,0 +1,17 @@
+{
+  "id": "ref-l2-tram-rides",
+  "kind": "refactor",
+  "level": 2,
+  "source": "hand-authored (de-idiomized starter)",
+  "gates": ["check", "test"],
+  "target_paths": ["tramway.jac"],
+  "jac_version": "0.36.1",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "provenance": {"author": "claude (hand-authored)", "created": "2026-10-10", "title": "Tram line rides", "domain": "tram network routing", "smell": ["while-loop traversal over edge refs", "dict[str, any] result bag"], "idioms": ["walker traversal", "disengage", "spawn from facade function", "edge objects"], "inspiration": "data/agent_tasks/native/nat-l2-tram-lines"},
+  "idiom_gate": "scripts/agent_tasks/refactor_gate.py",
+  "idiom_targets": [
+    {"metric": "arch.walker", "op": ">=", "value": 1, "desc": ">=1 walker rides the line"},
+    {"metric": "visits", "op": ">=", "value": 1, "desc": "walker moves with visit"},
+    {"metric": "spawns", "op": ">=", "value": 1, "desc": "walker is spawned"}
+  ]
+}

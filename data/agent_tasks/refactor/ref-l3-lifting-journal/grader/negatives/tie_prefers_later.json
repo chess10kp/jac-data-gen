@@ -1,0 +1,1 @@
+{"why": "ties go to the later session", "edits": [{"file": "journal.jac", "old": "here.date < self.when)", "new": "here.date > self.when)"}]}

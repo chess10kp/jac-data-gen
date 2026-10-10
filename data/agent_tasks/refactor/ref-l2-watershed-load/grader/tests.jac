@@ -50,4 +50,5 @@ test "headwaters have no inflow at all" {
     assert headwaters(reaches(), flows()) == ["ditch", "lake", "spring"];
     assert headwaters(reaches(), []) == ["brook", "ditch", "estuary", "lake", "mill", "spring", "town"];
     assert len(headwaters([], flows())) == 0;
+    assert headwaters(reaches(), [{"from": "ditch", "to": "mill", "seasonal": True}]) == ["brook", "ditch", "estuary", "lake", "spring", "town"];
 }

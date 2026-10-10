@@ -3,5 +3,5 @@ Smell: pure functions over input records that build an adjacency dict (`_feeders
 Target: each call builds a throwaway graph (Reach nodes + FlowsInto typed edge with `seasonal`), spawns an Upstream walker on the gauge reach that climbs incoming FlowsInto edges (edge predicate `seasonal == False` in the dry season); headwaters = reaches with no incoming FlowsInto.
 Idiom targets: >=1 node, >=1 edge, >=1 walker, >=1 visit, >=1 spawn, >=1 edge filter.
 Loads are exact binary fractions and summed with math.fsum, so traversal order cannot change results.
-Codespace (jac 0.36.1): the module "preferred native but did not lower" (E5092 on builtin `float`) and compiles server for both starter and reference. `import math` does NOT anchor it. Anchor-free modules that DO lower native segfault under `jac test` on graph code at 0.36.1 (seen on the orienteering pilot), which is why the other L2 tasks of this batch are root-backed.
+Codespace: starter/ and reference/ carry jac.toml `[build] default_codespace = "server"` (at jac 0.36.1 native-compiled modules can SIGSEGV/SIGABRT under `jac test`; without it this module only stayed server because `float()` fails native lowering, E5092). `import math` does NOT anchor server.
 The transient graph is never attached to root.

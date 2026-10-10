@@ -1,0 +1,1 @@
+{"why": "exercise lookups are case-sensitive", "edits": [{"file": "journal.jac", "old": "        wanted = name.lower();", "new": "        wanted = name;"}]}

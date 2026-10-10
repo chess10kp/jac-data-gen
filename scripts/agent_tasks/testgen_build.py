@@ -120,6 +120,7 @@ def build_task(spec: dict) -> Path:
             (starter / rel).parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(p, starter / rel)
     _copy_code(ref, starter, code)
+    ensure_server_codespace(starter / "jac.toml", tid)
     if (auth / "starter_stub").is_dir():
         shutil.copytree(auth / "starter_stub", starter, dirs_exist_ok=True)
     # reference = starter + authored reference suite
@@ -203,6 +204,21 @@ def build_task(spec: dict) -> Path:
     }
     (t / "task.json").write_text(json.dumps(meta, indent=2) + "\n")
     return t
+
+
+SERVER_BUILD = '[build]\n# keep plain modules (and test modules) on the Python (server) backend:\n# jac 0.36.1 native compilation silently gives wrong answers in tests\ndefault_codespace = "server"\n'
+
+
+def ensure_server_codespace(toml: Path, tid: str) -> None:
+    txt = toml.read_text() if toml.exists() else f'[project]\nname = "{tid.replace("-", "_")}"\nversion = "0.1.0"\n'
+    if "default_codespace" not in txt:
+        if "[build]" in txt:
+            txt = txt.replace("[build]", SERVER_BUILD.rstrip("\n"), 1)
+        else:
+            txt = txt.rstrip("\n") + "\n\n" + SERVER_BUILD
+    elif 'default_codespace = "server"' not in txt:
+        raise ValueError(f"{toml}: non-server default_codespace")
+    toml.write_text(txt)
 
 
 def _src_hash(src: Path) -> str:

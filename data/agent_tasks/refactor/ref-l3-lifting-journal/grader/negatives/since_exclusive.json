@@ -1,0 +1,1 @@
+{"why": "volume window excludes the since date itself", "edits": [{"file": "journal.jac", "old": "if here.date >= self.since {", "new": "if here.date > self.since {"}]}

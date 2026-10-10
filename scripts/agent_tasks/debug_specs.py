@@ -26,7 +26,13 @@ def R(content: str) -> dict:
 
 
 HTTP_HELPERS = '''import tempfile;
-import from jaclang.testing.testing { JacTestClient }
+import from jaclang.runtimelib.testing { JacTestClient }
+
+"""Response body; newer servers wrap it in a {"data": ...} envelope."""
+def payload(resp: any) -> dict[str, any] {
+    body = resp.json();
+    return body["data"] if "data" in body and isinstance(body["data"], dict) else body;
+}
 
 def open_client -> JacTestClient {
     c = JacTestClient.from_file("app.jac", base_path=tempfile.mkdtemp());
@@ -37,13 +43,13 @@ def open_client -> JacTestClient {
 def walk(c: JacTestClient, name: str, body: dict[str, any]) -> any {
     resp = c.post("/walker/" + name, json=body);
     assert resp.status_code == 200, f"{name}: {resp.status_code} {resp.text}";
-    return resp.json()["data"]["reports"][0];
+    return payload(resp)["reports"][0];
 }
 
 def fn(c: JacTestClient, name: str, body: dict[str, any]) -> any {
     resp = c.post("/function/" + name, json=body);
     assert resp.status_code == 200, f"{name}: {resp.status_code} {resp.text}";
-    return resp.json()["data"]["result"];
+    return payload(resp)["result"];
 }
 '''
 

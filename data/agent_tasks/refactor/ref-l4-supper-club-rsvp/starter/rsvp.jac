@@ -90,7 +90,7 @@ def guests(event: str, answer: str) -> list[str] {
             out.append(b.names[key]);
         }
     }
-    return sorted(out, key=lambda (s: str) -> str { return s.lower(); });
+    return sorted(out, key=str.lower);
 }
 
 """Events a guest is (maybe) coming to, as "event (yes)" / "event (maybe)", sorted."""

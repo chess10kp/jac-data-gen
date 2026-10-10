@@ -1,0 +1,1 @@
+{"why": "a second outgoing hop on the same line is accepted", "edits": [{"file": "tramway.jac", "old": "    if [src ->:Track:line == ln:->] {\n        return False;\n    }\n", "new": ""}]}

@@ -1,0 +1,1 @@
+{"why": "rider follows tracks of every line", "edits": [{"file": "tramway.jac", "old": "        visit [here ->:Track:line == ln:->];\n    }", "new": "        visit [here ->:Track:->];\n    }"}]}

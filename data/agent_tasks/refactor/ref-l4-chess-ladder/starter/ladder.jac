@@ -28,8 +28,11 @@ def join(name: str) -> int {
 
 def standings -> list[str] {
     b = _book();
-    names = list(b.ranks.keys());
-    return sorted(names, key=lambda (n: str) -> int { return b.ranks[n]; });
+    out: list[str] = ["" for n in b.ranks];
+    for n in b.ranks {
+        out[b.ranks[n] - 1] = n;
+    }
+    return out;
 }
 
 """Record a challenge. outcome is from the challenger's side: "win", "loss" or "draw"."""

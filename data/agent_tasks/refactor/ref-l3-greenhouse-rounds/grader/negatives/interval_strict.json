@@ -1,0 +1,1 @@
+{"why": "a plant is only due one day after its interval", "edits": [{"file": "rounds.jac", "old": "if self.day - p.last_watered >= p.gap() {", "new": "if self.day - p.last_watered > p.gap() {"}]}

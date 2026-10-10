@@ -80,7 +80,12 @@ impl join(name: str) -> int {
 }
 
 impl standings -> list[str] {
-    return [p.name for p in sorted([root -->[?:Player]], key=lambda (p: Player) -> int { return p.rank; })];
+    players = [root -->[?:Player]];
+    out: list[str] = ["" for p in players];
+    for p in players {
+        out[p.rank - 1] = p.name;
+    }
+    return out;
 }
 
 impl challenge(challenger: str, defender: str, outcome: str, round: int) -> str {
