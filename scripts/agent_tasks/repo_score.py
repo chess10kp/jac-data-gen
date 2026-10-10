@@ -134,6 +134,25 @@ GENERIC_FILL = {"list": "list[any]", "dict": "dict[any, any]", "set": "set[any]"
 E1036_RE = re.compile(r'Generic type "(\w+)" requires explicit type arguments')
 
 
+def config_fix(tree: Path) -> list[str]:
+    """0.37 jac.toml migration: dotted entry-point, `jac fix dependencies`."""
+    done = []
+    for toml in tree.rglob("jac.toml"):
+        t = toml.read_text(errors="replace")
+        def dot(m):
+            v = m.group(2)
+            v2 = re.sub(r"(\.(sv|cl|na))?\.jac$", "", v).strip("./").replace("/", ".")
+            return f'{m.group(1)}"{v2}"'
+        t2 = re.sub(r'((?:entry-point|entry_point)\s*=\s*)"([^"]+\.jac)"', dot, t)
+        if t2 != t:
+            toml.write_text(t2)
+            done.append(f"entry-point:{toml.relative_to(tree)}")
+        rc, out, _ = sh([JAC, "fix", "dependencies"], cwd=toml.parent, timeout=120)
+        if rc == 0 and "no change" not in out.lower() and out.strip():
+            done.append(f"deps:{toml.relative_to(tree)}")
+    return done
+
+
 def mech_fix(tree: Path, errors: list[dict]) -> int:
     """Apply E1036 / E1116 fixes at the exact reported location. Returns #edits."""
     by_file = defaultdict(list)
@@ -145,6 +164,10 @@ def mech_fix(tree: Path, errors: list[dict]) -> int:
             by_file[e["file"]].append((e["line"], e["col"], m.group(1), GENERIC_FILL[m.group(1)]))
         elif e["code"] == "E1116" and 'got "root"' in e["msg"]:
             by_file[e["file"]].append((e["line"], e["col"], "root", "Root"))
+        elif e["code"] == "E2086":
+            m2 = re.search(r"Edge '(\w+)' declares no endpoints", e["msg"])
+            if m2:
+                by_file[e["file"]].append((e["line"], 1, "EDGE:" + m2.group(1), ""))
     n = 0
     for rel, locs in by_file.items():
         p = tree / rel
@@ -156,6 +179,13 @@ def mech_fix(tree: Path, errors: list[dict]) -> int:
             if i >= len(lines):
                 continue
             s = lines[i]
+            if name.startswith("EDGE:"):
+                en = name[5:]
+                m = re.search(r"\bedge\s+" + en + r"\b(?!\s*:)", s)
+                if m:
+                    lines[i] = s[:m.end()] + ": any --> any" + s[m.end():]
+                    n += 1
+                continue
             pat = re.compile(r"(?<![\w.])" + name + (r"\b(?!\s*\[)" if repl != "Root" else r"\b"))
             m = pat.search(s, max(0, c))
             if not m:
@@ -244,8 +274,10 @@ def find_entry(tree: Path, jac_files: list[str]) -> str | None:
                 d = cfg.get(sec) or {}
                 for k in ("entry-point", "entry_point", "entry", "main", "file"):
                     v = d.get(k)
-                    if isinstance(v, str) and (tree / v).is_file():
-                        return v
+                    if isinstance(v, str):
+                        for cand in (v, v.replace(".", "/") + ".jac"):
+                            if cand.endswith(".jac") and (tree / cand).is_file():
+                                return cand
         except Exception:
             pass
     names = ["main.jac", "app.jac", "server.jac", "api.jac", "backend.jac", "index.jac"]
@@ -311,7 +343,7 @@ def run_probe(tree: Path, entry: str, timeout=90) -> dict:
 
 def faux_probe(tree: Path, entry: str) -> dict:
     ed = Path(entry).parent
-    rc, out, dt = sh([JAC, "run", "--faux", Path(entry).name], cwd=tree / ed, timeout=180)
+    rc, out, dt = sh([JAC, "run", "--serve", "--faux", Path(entry).name], cwd=tree / ed, timeout=180)
     eps = len(re.findall(r"^\s*(?:GET|POST|PUT|DELETE|PATCH)\s+/", out, re.M))
     return {"rc": rc, "endpoints": eps, "secs": round(dt, 1), "head": out[:1500]}
 
@@ -361,6 +393,9 @@ def score_repo_ci(r: dict, repaired_root: Path | None, out: Path) -> dict:
         asis = work / "asis"
         make_tree(clone, asis)
         shutil.rmtree(clone, ignore_errors=True)
+        res["asis_text"] = text_metrics({str(p.relative_to(asis)): p.read_text(errors="replace")
+                                         for p in walk(asis) if p.suffix == ".jac"})
+        res["config_fix"] = config_fix(asis)
         trees = [("asis", asis)]
         rep_src = repaired_root / d if repaired_root else None
         if rep_src and rep_src.is_dir():
@@ -368,6 +403,8 @@ def score_repo_ci(r: dict, repaired_root: Path | None, out: Path) -> dict:
             shutil.copytree(asis, rep)
             n_over = n_diff = 0
             for p in rep_src.rglob("*.jac"):
+                if not p.is_file():
+                    continue
                 rel = p.relative_to(rep_src)
                 q = rep / rel
                 n_over += 1
@@ -390,14 +427,21 @@ def score_repo_ci(r: dict, repaired_root: Path | None, out: Path) -> dict:
             mech = work / "mech"
             shutil.copytree(t, mech)
             edits = 0
-            c = checks[name]
-            for _ in range(4):
+            mig = []
+            for tgt in ("placement", "access"):
+                rc, o2, _ = sh([JAC, "fix", tgt], cwd=mech, timeout=300)
+                mig.append({"fix": tgt, "rc": rc, "tail": o2[-200:]})
+                if rc == 0:
+                    edits += 1
+            res["jac_fix"] = mig
+            c = jac_check(mech)
+            for _ in range(5):
                 n = mech_fix(mech, c["errors"])
                 if not n:
                     break
                 edits += n
                 c = jac_check(mech)
-                if c["ok"] or not any(e["code"] in ("E1036", "E1116") for e in c["errors"]):
+                if c["ok"] or not any(e["code"] in ("E1036", "E1116", "E2086") for e in c["errors"]):
                     break
             if edits:
                 checks["mech"] = c
@@ -412,7 +456,7 @@ def score_repo_ci(r: dict, repaired_root: Path | None, out: Path) -> dict:
         res["final_tree"] = fname
         res["green"] = final is not None
         res["code_map"] = code_map(ftree)
-        entry = find_entry(ftree, inv["jac_files"])
+        entry = find_entry(ftree, sorted(str(p.relative_to(ftree)) for p in walk(ftree) if p.suffix == ".jac"))
         res["entry"] = entry
         if entry and final is not None:
             res["faux"] = faux_probe(ftree, entry)
@@ -605,7 +649,10 @@ def score(r: dict) -> tuple[float, dict]:
     kloc = max(tm["jac_loc"], 1) / 1000
     km = r.get("code_map", {}).get("kinds", {}) if r.get("code_map", {}).get("ok") else {}
     nodes, edges, walkers = km.get("node", 0), km.get("edge", 0), km.get("walker", 0)
-    idi = tm["idioms"]
+    idi = dict(tm["idioms"])
+    at = (r.get("asis_text") or {}).get("idioms", {})
+    for k in ("cl_files", "sv_files", "cl_block", "sv_block"):
+        idi[k] = max(idi.get(k, 0), at.get(k, 0))
     parts = {}
     # idiom density (40)
     graph_density = (nodes + 2 * edges + 2 * walkers) / kloc
@@ -758,7 +805,7 @@ def cmd_merge(a):
             o["tier"] = "silver"
     OUTDIR.mkdir(parents=True, exist_ok=True)
     keep_keys = ["dirname", "id", "source", "title", "github_url", "sha", "tier", "score", "score_parts",
-                 "reject_reasons", "green", "final_tree", "repair_frac", "mech_edits", "repair_overlay",
+                 "reject_reasons", "green", "final_tree", "repair_frac", "mech_edits", "repair_overlay", "config_fix", "jac_fix",
                  "jac_share", "unique_frac", "eval_overlap", "eval_line_overlap", "entry", "inventory",
                  "repo_markers", "text"]
     with (OUTDIR / "jachacks_scores.jsonl").open("w") as fh:
@@ -783,7 +830,8 @@ def why(o) -> str:
             f"trav {t['idioms']['visit'] + t['idioms']['spawn'] + t['idioms']['connect']}"]
     if t["idioms"]["by_llm"]:
         bits.append(f"by llm x{t['idioms']['by_llm']}")
-    if t["idioms"]["cl_files"] or t["idioms"]["cl_block"]:
+    at = (o.get("asis_text") or {}).get("idioms", {})
+    if t["idioms"]["cl_files"] or t["idioms"]["cl_block"] or at.get("cl_files") or at.get("cl_block"):
         bits.append("cl/sv split")
     bits.append(f"green:{o.get('final_tree')}")
     s = o.get("serve") or {}
