@@ -52,7 +52,7 @@ REPO = HERE.parents[1]
 ROOT = REPO / "data" / "agent_tasks" / "feature"
 MANIFEST = ROOT / "manifest.jsonl"
 JAC = os.environ.get("JAC_BIN", "jac")
-JAC_VERSION = "0.37.25"
+JAC_VERSION = "0.36.1"  # the training pipeline's pinned jac
 DROP = re.compile(r"(^|/)(package-lock\.json|pnpm-lock\.yaml|yarn\.lock|bun\.lockb?|\.env|\.env\.local)$")
 SECRET = re.compile(r"(sk-(proj-|ant-)?[A-Za-z0-9_-]{24,}|AIza[0-9A-Za-z_-]{30,}|ghp_[A-Za-z0-9]{30,}|AKIA[0-9A-Z]{16}|xox[bp]-[0-9A-Za-z-]{10,})")
 
@@ -80,6 +80,24 @@ def find_tree(trees_dir: Path, dirname: str) -> Path | None:
     return hits[0] if hits else None
 
 
+def pin_server_codespace(ws: Path) -> list[str]:
+    """0.36.1 compiles modules without a Python import natively and that path gives
+    silently wrong answers; pin the server (Python) codespace in jac.toml."""
+    toml = ws / "jac.toml"
+    if toml.exists():
+        t = toml.read_text()
+        if re.search(r"^\[build\]", t, re.M):
+            if "default_codespace" in t:
+                return []
+            t = re.sub(r"^\[build\]\s*$", '[build]\ndefault_codespace = "server"', t, count=1, flags=re.M)
+        else:
+            t = t.rstrip() + '\n\n[build]\ndefault_codespace = "server"\n'
+        toml.write_text(t)
+        return ["jac.toml: [build] default_codespace = \"server\""]
+    toml.write_text('[build]\ndefault_codespace = "server"\n')
+    return ["jac.toml created: [build] default_codespace = \"server\""]
+
+
 def files_of(d: Path) -> set[str]:
     return {str(p.relative_to(d)) for p in d.rglob("*") if p.is_file()}
 
@@ -101,6 +119,7 @@ def materialize(a):
                     if m.isfile() and not DROP.search(m.name):
                         tf.extract(m, starter, filter="data")
             prov["tree_run"] = tgz.parts[-4] if len(tgz.parts) >= 4 else str(tgz)
+            prov["harness_edits"] = pin_server_codespace(starter)
         ref = t / "grader" / "reference"
         ref.mkdir(parents=True, exist_ok=True)
         authored = files_of(ref)
@@ -116,7 +135,7 @@ def materialize(a):
         if removed:
             prov["removed_paths"] = removed
         tj.setdefault("kind", "feature")
-        tj.setdefault("jac_version", JAC_VERSION)
+        tj["jac_version"] = JAC_VERSION
         tj["id"] = t.name
         (t / "task.json").write_text(json.dumps(tj, indent=2) + "\n")
         leaks = [str(p) for p in t.rglob("*") if p.is_file() and p.suffix in (".jac", ".py", ".toml", ".md", ".json", ".js", ".ts")

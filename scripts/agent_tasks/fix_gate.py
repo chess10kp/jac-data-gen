@@ -55,6 +55,7 @@ T_MASS = 0.70       # target-file token mass vs min(reference, starter)
 T_BODY = 0.60       # target-file def/can/impl BODY tokens vs min(reference, starter)
 T_BODY_FILE = 0.40  # same, per target file with >= 20 body tokens
 T_MASS_FILE = T_BODY_FILE  # back-compat alias
+JAC_TOML = '[build]\ndefault_codespace = "server"\n'
 CHECK_TIMEOUT = int(os.environ.get("FIX_CHECK_TIMEOUT", "600"))
 SYM_JOBS = int(os.environ.get("FIX_SYM_JOBS", "6"))
 
@@ -147,12 +148,12 @@ def run_tests(ws: Path, test_file: str = "tests.jac", timeout: int = 300) -> dic
     m = ws / "main.jac"
     if m.exists():
         m.write_text(strip_entry(m.read_text(errors="replace")))
+    # jac 0.36.1: native-compiled modules can give silently wrong answers;
+    # pin the server (Python) codespace for every test run.
+    if not (ws / "jac.toml").exists():
+        (ws / "jac.toml").write_text(JAC_TOML)
     res = {"ok": False, "detail": "not run"}
-    for attempt in range(2):
-        if attempt:  # native codespace miscompiles some programs; retry pinned to server
-            if (ws / "jac.toml").exists():
-                break
-            (ws / "jac.toml").write_text('[build]\ndefault_codespace = "server"\n')
+    for _ in range(1):
         try:
             p = subprocess.run([JAC, "test", test_file], cwd=ws, capture_output=True,
                                text=True, timeout=timeout)

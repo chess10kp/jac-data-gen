@@ -1,7 +1,7 @@
 [project]
-name = "bikeshare"
+name = "seed-vault-regrow"
 version = "0.1.0"
-entry-point = "app"
+entry-point = "vault"
 
 [build]
 # keep everything on the Python/server codespace (0.36.1 native compile can give wrong answers)

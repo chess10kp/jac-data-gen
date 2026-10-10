@@ -662,6 +662,10 @@ def cmd_select(a) -> None:
         ign = shutil.ignore_patterns(".jac", "__pycache__", "__jac_gen__", "jac.toml")
         shutil.copytree(src / "starter", tdir / "starter", ignore=ign)
         shutil.copytree(src / "reference", tdir / "grader" / "reference", ignore=ign)
+        # 0.36.1 native codespace gives silently wrong answers: ship the server pin
+        for d in (tdir / "starter", tdir / "grader" / "reference"):
+            if not any(d.glob("**/jac.toml")):
+                (d / "jac.toml").write_text(G.JAC_TOML)
         shutil.copy(src / "symbols.json", tdir / "grader" / "symbols.json")
         u = c["unit"]
         st = c["starter"]

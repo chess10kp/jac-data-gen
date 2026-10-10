@@ -2,3 +2,7 @@
 name = "survey"
 version = "0.1.0"
 entry-point = "survey"
+
+[build]
+# keep everything on the Python/server codespace (0.36.1 native compile can give wrong answers)
+default_codespace = "server"
