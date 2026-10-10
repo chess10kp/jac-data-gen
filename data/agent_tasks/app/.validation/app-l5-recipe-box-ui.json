@@ -1,0 +1,118 @@
+{
+ "id": "app-l5-recipe-box-ui",
+ "level": 5,
+ "source": "hand-authored",
+ "gates": [
+  "check",
+  "test",
+  "start",
+  "behavioral"
+ ],
+ "hash": "5363ef8847c01dec",
+ "jac": "jac 0.37.25  (Linux x86_64)",
+ "dedup": {
+  "pass": true,
+  "domain": "recipe collection full-stack web app",
+  "domain_hits": [],
+  "max_5gram_containment": 0.0,
+  "nearest_5gram": null,
+  "max_8gram_containment": 0.0,
+  "nearest_8gram": null,
+  "n_eval_docs": 1387
+ },
+ "positive": {
+  "check": {
+   "ok": true,
+   "cmd": "jac check main.jac endpoints.jac frontend.jac frontend.impl.jac",
+   "rc": 0,
+   "secs": 7.1,
+   "tail": "\u26a0 warning[W2001]: Name 'form' may be undefined\n  --> frontend.jac:44:11\n   42 |             />\n   43 |             <button type=\"submit\">Search</button>\n   44 |         </form>\n      |           ^^^^\n   45 |         <ul id=\"recipes\">\n   46 |             {[\n\u26a0 warning[W2001]: Name 'strong' may be undefined\n  --> frontend.jac:48:43\n   46 |             {[\n   47 |                 <li key={r[\"id\"]}>\n   48 |                     <strong>{r[\"title\"]}</strong> - {\", \".join(r[\"ingredients\"])} ({r[\"rating\"]} stars)\n      |                                           ^^^^^^\n   49 |                 </li>\n   50 |                 for r in recipes\n\u26a0 warning[W2001]: Name 'li' may be undefined\n  --> frontend.jac:49:19\n   47 |                 <li key={r[\"id\"]}>\n   48 |                     <strong>{r[\"title\"]}</strong> - {\", \".join(r[\"ingredients\"])} ({r[\"rating\"]} stars)\n   49 |                 </li>\n      |                   ^^\n   50 |                 for r in recipes\n   51 |             ]}\n\u26a0 warning[W2001]: Name 'ul' may be undefined\n  --> frontend.jac:52:11\n   50 |                 for r in recipes\n   51 |             ]}\n   52 |         </ul>\n      |           ^^\n   53 |     </div>\n   54 | }\n\u26a0 warning[W2001]: Name 'div' may be undefined\n  --> frontend.jac:53:7\n   51 |             ]}\n   52 |         </ul>\n   53 |     </div>\n      |       ^^^\n   54 | }\n   55 | ",
+   "stdout_tail": "  \u2192 run 'jac guide reference/diagnostics' for guidance\n  \u2192 run 'jac guide reference/diagnostics' for guidance\n  \u2192 run 'jac guide reference/diagnostics' for guidance\n\n============================== 4 passed in 6.48s ==============================="
+  },
+  "test": {
+   "steps": [
+    {
+     "cmd": "jac test endpoints.jac",
+     "rc": 0,
+     "secs": 2.4,
+     "tail": "..                                                                       [100%]\n\n2 passed in 1.64s",
+     "stdout_tail": "..                                                                       [100%]\n\n2 passed in 1.64s"
+    },
+    {
+     "cmd": "jac test zz_hidden_acceptance.jac",
+     "rc": 0,
+     "secs": 3.0,
+     "tail": ".....                                                                    [100%]\n\n5 passed in 2.20s",
+     "stdout_tail": ".....                                                                    [100%]\n\n5 passed in 2.20s"
+    }
+   ],
+   "own_test_files": [
+    "endpoints.test.jac"
+   ],
+   "ok": true
+  },
+  "start": {
+   "ok": true,
+   "script": "smoke.py",
+   "verdict": {
+    "start": true,
+    "behavioral": true,
+    "failures": []
+   },
+   "rc": 0,
+   "tail": "+ react-router-dom@6.30.6 (v7.18.4 available)\n+ zod@4.6.5\n\n83 packages installed [850.00ms]\n\n  \u2714 Dependencies installed (0.9s)\n  \u2714 npm dependencies installed\n\u2714 All dependencies installed\n{\"start\": true, \"behavioral\": true, \"failures\": []}\n\u26a0 Migrating from jac-client-node meta-package to individual dependencies...\n\u26a0 Migrating from @jac-client/dev-deps meta-package to individual dependencies...\nResolving dependencies\nResolved, downloaded and extracted [430]\nSaved lockfile\n---- server.log tail ----\n{'id': '5a52e935c49e4de799e984d1974b8f93', 'title': 'Aioli', 'minutes': 0, 'ingredients': ['egg', 'garlic'], 'rating': 0.0, 'ratings': 0}\n127.0.0.1 \"POST /walker/add_recipe HTTP/1.1\" 200 467 22.8ms c75d6200aca84efb9bc33994bc17fd35\n{'id': 'b25925867b2c4764af77e1f8d9424b42', 'title': 'Omelette', 'minutes': 0, 'ingredients': ['egg'], 'rating': 0.0, 'ratings': 0}\n127.0.0.1 \"POST /walker/add_recipe HTTP/1.1\" 200 443 19.7ms 47c9f68339ea4a56bf0f254dfbcc900a\n{'error': 'title required'}\n127.0.0.1 \"POST /walker/add_recipe HTTP/1.1\" 200 330 10.9ms 975ad27289c44e40b195bbe7645dbbef\n[{'id': '5a52e935c49e4de799e984d1974b8f93', 'title': 'Aioli', 'minutes': 0, 'ingredients': ['egg', 'garlic'], 'rating': 0.0, 'ratings': 0}, {'id': 'b25925867b2c4764af77e1f8d9424b42', 'title': 'Omelette', 'minutes': 0, 'ingredients': ['egg'], 'rating': 0.0, 'ratings': 0}, {'id': '280debe3d89f4613b7dc419e9b3d2099', 'title': 'Pesto', 'minutes': 10, 'ingredients': ['basil', 'garlic', 'pine nuts'], 'rating': 0.0, 'ratings': 0}]\n127.0.0.1 \"POST /walker/list_recipes HTTP/1.1\" 200 684 20.3ms f0cad72937204295925ccb5f584474e3\n[{'id': '5a52e935c49e4de799e984d1974b8f93', 'title': 'Aioli', 'minutes': 0, 'ingredients': ['egg', 'garlic'], 'rating': 0.0, 'ratings': 0}, {'id': '280debe3d89f4613b7dc419e9b3d2099', 'title': 'Pesto', 'minutes': 10, 'ingredients': ['basil', 'garlic', 'pine nuts'], 'rating': 0.0, 'ratings': 0}]\n127.0.0.1 \"POST /walker/recipes_with HTTP/1.1\" 200 880 19.1ms 28bc8a0f3fc546e09f63a7cc31aa4e05\n{'id': '280debe3d89f4613b7dc419e9b3d2099', 'title': 'Pesto', 'minutes': 10, 'ingredients': ['basil', 'garlic', 'pine nuts'], 'rating': 3.0, 'ratings': 1}\n127.0.0.1 \"POST /walker/rate_recipe HTTP/1.1\" 200 470 18.0ms 91fb816704ac4d0595cab71670efc808\n{'id': '280debe3d89f4613b7dc419e9b3d2099', 'title': 'Pesto', 'minutes': 10, 'ingredients': ['basil', 'garlic', 'pine nuts'], 'rating': 3.5, 'ratings': 2}\n127.0.0.1 \"POST /walker/rate_recipe HTTP/1.1\" 200 470 18.4ms 8e06d096baa44e038afae19c1964e8c8\n{'id': '5a52e935c49e4de799e984d1974b8f93', 'title': 'Aioli', 'minutes': 0, 'ingredients': ['egg', 'garlic'], 'rating': 5.0, 'ratings': 1}\n127.0.0.1 \"POST /walker/rate_recipe HTTP/1.1\" 200 454 18.2ms df58f024b1d94ca8a1a38f25f486c5f9\n{'error': 'stars must be 1-5'}\n127.0.0.1 \"POST /walker/rate_recipe HTTP/1.1\" 200 347 10.7ms 4012058c82bf4e4ea92acef8b0b25655\n[{'id': '5a52e935c49e4de799e984d1974b8f93', 'title': 'Aioli', 'minutes': 0, 'ingredients': ['egg', 'garlic'], 'rating': 5.0, 'ratings': 1}, {'id': '280debe3d89f4613b7dc419e9b3d2099', 'title': 'Pesto', 'minutes': 10, 'ingredients': ['basil', 'garlic', 'pine nuts'], 'rating': 3.5, 'ratings': 2}]\n127.0.0.1 \"POST /walker/top_rated HTTP/1.1\" 200 558 19.9ms fefe7e93c388404b961bd4c14a0bf323\n[{'id': '5a52e935c49e4de799e984d1974b8f93', 'title': 'Aioli', 'minutes': 0, 'ingredients': ['egg', 'garlic'], 'rating': 5.0, 'ratings': 1}]\n127.0.0.1 \"POST /walker/top_rated HTTP/1.1\" 200 403 19.0ms 3b4807ba86f94d9ba9af8c44ca0365a5\n{\"ts\": \"2026-10-10T15:34:15.592632Z\", \"level\": \"WARNING\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"drain: started (signal SIGTERM, budget 10.0s)\"}\n\nShutting down server..."
+  },
+  "behavioral": {
+   "ok": true,
+   "script": "smoke.py",
+   "verdict": {
+    "start": true,
+    "behavioral": true,
+    "failures": []
+   },
+   "rc": 0,
+   "tail": "+ react-router-dom@6.30.6 (v7.18.4 available)\n+ zod@4.6.5\n\n83 packages installed [850.00ms]\n\n  \u2714 Dependencies installed (0.9s)\n  \u2714 npm dependencies installed\n\u2714 All dependencies installed\n{\"start\": true, \"behavioral\": true, \"failures\": []}\n\u26a0 Migrating from jac-client-node meta-package to individual dependencies...\n\u26a0 Migrating from @jac-client/dev-deps meta-package to individual dependencies...\nResolving dependencies\nResolved, downloaded and extracted [430]\nSaved lockfile\n---- server.log tail ----\n{'id': '5a52e935c49e4de799e984d1974b8f93', 'title': 'Aioli', 'minutes': 0, 'ingredients': ['egg', 'garlic'], 'rating': 0.0, 'ratings': 0}\n127.0.0.1 \"POST /walker/add_recipe HTTP/1.1\" 200 467 22.8ms c75d6200aca84efb9bc33994bc17fd35\n{'id': 'b25925867b2c4764af77e1f8d9424b42', 'title': 'Omelette', 'minutes': 0, 'ingredients': ['egg'], 'rating': 0.0, 'ratings': 0}\n127.0.0.1 \"POST /walker/add_recipe HTTP/1.1\" 200 443 19.7ms 47c9f68339ea4a56bf0f254dfbcc900a\n{'error': 'title required'}\n127.0.0.1 \"POST /walker/add_recipe HTTP/1.1\" 200 330 10.9ms 975ad27289c44e40b195bbe7645dbbef\n[{'id': '5a52e935c49e4de799e984d1974b8f93', 'title': 'Aioli', 'minutes': 0, 'ingredients': ['egg', 'garlic'], 'rating': 0.0, 'ratings': 0}, {'id': 'b25925867b2c4764af77e1f8d9424b42', 'title': 'Omelette', 'minutes': 0, 'ingredients': ['egg'], 'rating': 0.0, 'ratings': 0}, {'id': '280debe3d89f4613b7dc419e9b3d2099', 'title': 'Pesto', 'minutes': 10, 'ingredients': ['basil', 'garlic', 'pine nuts'], 'rating': 0.0, 'ratings': 0}]\n127.0.0.1 \"POST /walker/list_recipes HTTP/1.1\" 200 684 20.3ms f0cad72937204295925ccb5f584474e3\n[{'id': '5a52e935c49e4de799e984d1974b8f93', 'title': 'Aioli', 'minutes': 0, 'ingredients': ['egg', 'garlic'], 'rating': 0.0, 'ratings': 0}, {'id': '280debe3d89f4613b7dc419e9b3d2099', 'title': 'Pesto', 'minutes': 10, 'ingredients': ['basil', 'garlic', 'pine nuts'], 'rating': 0.0, 'ratings': 0}]\n127.0.0.1 \"POST /walker/recipes_with HTTP/1.1\" 200 880 19.1ms 28bc8a0f3fc546e09f63a7cc31aa4e05\n{'id': '280debe3d89f4613b7dc419e9b3d2099', 'title': 'Pesto', 'minutes': 10, 'ingredients': ['basil', 'garlic', 'pine nuts'], 'rating': 3.0, 'ratings': 1}\n127.0.0.1 \"POST /walker/rate_recipe HTTP/1.1\" 200 470 18.0ms 91fb816704ac4d0595cab71670efc808\n{'id': '280debe3d89f4613b7dc419e9b3d2099', 'title': 'Pesto', 'minutes': 10, 'ingredients': ['basil', 'garlic', 'pine nuts'], 'rating': 3.5, 'ratings': 2}\n127.0.0.1 \"POST /walker/rate_recipe HTTP/1.1\" 200 470 18.4ms 8e06d096baa44e038afae19c1964e8c8\n{'id': '5a52e935c49e4de799e984d1974b8f93', 'title': 'Aioli', 'minutes': 0, 'ingredients': ['egg', 'garlic'], 'rating': 5.0, 'ratings': 1}\n127.0.0.1 \"POST /walker/rate_recipe HTTP/1.1\" 200 454 18.2ms df58f024b1d94ca8a1a38f25f486c5f9\n{'error': 'stars must be 1-5'}\n127.0.0.1 \"POST /walker/rate_recipe HTTP/1.1\" 200 347 10.7ms 4012058c82bf4e4ea92acef8b0b25655\n[{'id': '5a52e935c49e4de799e984d1974b8f93', 'title': 'Aioli', 'minutes': 0, 'ingredients': ['egg', 'garlic'], 'rating': 5.0, 'ratings': 1}, {'id': '280debe3d89f4613b7dc419e9b3d2099', 'title': 'Pesto', 'minutes': 10, 'ingredients': ['basil', 'garlic', 'pine nuts'], 'rating': 3.5, 'ratings': 2}]\n127.0.0.1 \"POST /walker/top_rated HTTP/1.1\" 200 558 19.9ms fefe7e93c388404b961bd4c14a0bf323\n[{'id': '5a52e935c49e4de799e984d1974b8f93', 'title': 'Aioli', 'minutes': 0, 'ingredients': ['egg', 'garlic'], 'rating': 5.0, 'ratings': 1}]\n127.0.0.1 \"POST /walker/top_rated HTTP/1.1\" 200 403 19.0ms 3b4807ba86f94d9ba9af8c44ca0365a5\n{\"ts\": \"2026-10-10T15:34:15.592632Z\", \"level\": \"WARNING\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"drain: started (signal SIGTERM, budget 10.0s)\"}\n\nShutting down server..."
+  }
+ },
+ "negative": {
+  "test": {
+   "steps": [
+    {
+     "why": "no own test blocks found"
+    },
+    {
+     "cmd": "jac test zz_hidden_acceptance.jac",
+     "rc": 1,
+     "secs": 2.2,
+     "tail": "E                                                                        [100%]\n\nFAILED /tmp/appgate_king1l_p/zz_hidden_acceptance.jac::zz_hidden_acceptance.jac\nTraceback (most recent call last):\n  File \"/home/runner/_work/jac/jac/.zig-cache/o/8776b3f32593b10747b6ba6ce20fea8b/payload.tar.zst.work/site/jaclang/testing/impl/test_runner.impl.jac\", line 677, in run_file\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/python/lib/python3.14/importlib/__init__.py\", line 88, in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen importlib._bootstrap>\", line 1406, in _gcd_import\n  File \"<frozen importlib._bootstrap>\", line 1371, in _find_and_load\n  File \"<frozen importlib._bootstrap>\", line 1342, in _find_and_load_unlocked\n  File \"<frozen importlib._bootstrap>\", line 938, in _load_unlocked\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/site/jaclang/meta_importer.py\", line 356, in exec_module\n    self._exec_compiled_module(module, file_path)\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/site/jaclang/meta_importer.py\", line 457, in _exec_compiled_module\n    exec(codeobj, module.__dict__)\n    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/appgate_king1l_p/zz_hidden_acceptance.jac\", line 2, in <module>\n    import from endpoints { add_recipe, list_recipes, recipes_with, rate_recipe, top_rated }\n     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nImportError: cannot import name 'add_recipe' from 'endpoints' (/tmp/appgate_king1l_p/endpoints.jac)\n\n1 error in 1.49s\n\u2716 Error: Tests failed.",
+     "stdout_tail": "    import from endpoints { add_recipe, list_recipes, recipes_with, rate_recipe, top_rated }\n     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nImportError: cannot import name 'add_recipe' from 'endpoints' (/tmp/appgate_king1l_p/endpoints.jac)\n\n1 error in 1.49s"
+    }
+   ],
+   "own_test_files": [],
+   "ok": false
+  },
+  "behavioral": {
+   "ok": false,
+   "script": "smoke.py",
+   "verdict": {
+    "start": true,
+    "behavioral": false,
+    "failures": [
+     "add_recipe wrong: 405 {'detail': 'Method Not Allowed'}",
+     "dedupe wrong: {}",
+     "list wrong: {'detail': 'Method Not Allowed'}",
+     "recipes_with wrong: {'detail': 'Method Not Allowed'}",
+     "rating wrong: {}",
+     "top_rated wrong: {'detail': 'Method Not Allowed'}",
+     "top_rated limit wrong: {'detail': 'Method Not Allowed'}"
+    ]
+   },
+   "rc": 1,
+   "tail": "+ react-dom@19.3.0\n+ react-error-boundary@5.0.0 (v6.1.6 available)\n+ react-router-dom@6.30.6 (v7.18.4 available)\n+ zod@4.6.5\n\n83 packages installed [81.00ms]\n\n  \u2714 Dependencies installed (0.1s)\n  \u2714 npm dependencies installed\n\u2714 All dependencies installed\n{\"start\": true, \"behavioral\": false, \"failures\": [\"add_recipe wrong: 405 {'detail': 'Method Not Allowed'}\", \"dedupe wrong: {}\", \"list wrong: {'detail': 'Method Not Allowed'}\", \"recipes_with wrong: {'detail': 'Method Not Allowed'}\", \"rating wrong: {}\", \"top_rated wrong: {'detail': 'Method Not Allowed'}\", \"top_rated limit wrong: {'detail': 'Method Not Allowed'}\"]}\n\u26a0 Migrating from jac-client-node meta-package to individual dependencies...\n\u26a0 Migrating from @jac-client/dev-deps meta-package to individual dependencies...\nSaved lockfile\n---- server.log tail ----\n\n  jac dev server v0.37.25\n\n  \u279c  Local:     http://localhost:36419/\n  \u279c  Network:   http://10.1.0.193:36419/\n\n  Server ready\n\n127.0.0.1 \"GET /healthz HTTP/1.1\" 200 16 0.7ms f6a130fa44274cbcb26a4b03f8a7d60d\n127.0.0.1 \"GET / HTTP/1.1\" 200 1575 13.3ms ce447e6e151c4addb6408d5dd3a73939\n127.0.0.1 \"POST /walker/add_recipe HTTP/1.1\" 405 32 0.6ms 5a607ef44b0a45dd90ced3c42bea9997\n127.0.0.1 \"POST /walker/add_recipe HTTP/1.1\" 405 32 0.4ms f8eabe3cc3d94e81a99700e5501e9947\n127.0.0.1 \"POST /walker/add_recipe HTTP/1.1\" 405 32 0.5ms 2a62f1d3ce4a4776bafa9b7b806d5d73\n127.0.0.1 \"POST /walker/add_recipe HTTP/1.1\" 405 32 0.4ms b95691d803a34232a07949e36d8f67b1\n127.0.0.1 \"POST /walker/list_recipes HTTP/1.1\" 405 32 0.4ms e254807298ad4697a0fc8994f79082eb\n127.0.0.1 \"POST /walker/recipes_with HTTP/1.1\" 405 32 0.4ms fe64ff78f30b47ed8c1b455fe3307aea\n127.0.0.1 \"POST /walker/rate_recipe HTTP/1.1\" 405 32 0.4ms d2f29682cc424705afde5d5ff00ba094\n127.0.0.1 \"POST /walker/rate_recipe HTTP/1.1\" 405 32 0.4ms e18e3eb8be1243d799b8aba5db20cc63\n127.0.0.1 \"POST /walker/rate_recipe HTTP/1.1\" 405 32 0.4ms 827960e1de674d0e9a4272bb86c674ec\n127.0.0.1 \"POST /walker/rate_recipe HTTP/1.1\" 405 32 0.4ms 5bc3dcce68874af4a559bb2abe0c679c\n127.0.0.1 \"POST /walker/top_rated HTTP/1.1\" 405 32 0.4ms 41c681e923b6470d9e4dc67e494cd8fe\n127.0.0.1 \"POST /walker/top_rated HTTP/1.1\" 405 32 0.4ms a7066348e1044b77b3948ec3f0864705\n{\"ts\": \"2026-10-10T15:34:39.174074Z\", \"level\": \"WARNING\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"drain: started (signal SIGTERM, budget 10.0s)\"}\n\nShutting down server..."
+  }
+ },
+ "secs": 58.9,
+ "validated": true,
+ "reason": "reference passes ['behavioral', 'check', 'start', 'test']; starter fails ['behavioral', 'test']; dedup ok",
+ "ci_run": "38063985138"
+}

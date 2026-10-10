@@ -1,0 +1,114 @@
+{
+ "id": "app-l3-plant-watering",
+ "level": 3,
+ "source": "hand-authored",
+ "gates": [
+  "check",
+  "test",
+  "run",
+  "behavioral"
+ ],
+ "hash": "da67673c270bfcbe",
+ "jac": "jac 0.37.25  (Linux x86_64)",
+ "dedup": {
+  "pass": true,
+  "domain": "houseplant watering schedule",
+  "domain_hits": [],
+  "max_5gram_containment": 0.0,
+  "nearest_5gram": null,
+  "max_8gram_containment": 0.0,
+  "nearest_8gram": null,
+  "n_eval_docs": 1387
+ },
+ "positive": {
+  "check": {
+   "ok": true,
+   "cmd": "jac check main.jac",
+   "rc": 0,
+   "secs": 2.5,
+   "tail": "  Checking main.jac...\nmain.jac ok [100%]\n============================== 1 passed in 2.20s ===============================",
+   "stdout_tail": "  Checking main.jac...\nmain.jac ok [100%]\n============================== 1 passed in 2.20s ==============================="
+  },
+  "test": {
+   "steps": [
+    {
+     "cmd": "jac test zz_hidden_acceptance.jac",
+     "rc": 0,
+     "secs": 4.4,
+     "tail": "....                                                                     [100%]\n\n4 passed in 3.94s",
+     "stdout_tail": "....                                                                     [100%]\n\n4 passed in 3.94s"
+    }
+   ],
+   "ok": true
+  },
+  "run": {
+   "ok": true,
+   "script": "behavioral.py",
+   "verdict": {
+    "run": true,
+    "behavioral": true,
+    "failures": []
+   },
+   "rc": 0,
+   "tail": "{\"run\": true, \"behavioral\": true, \"failures\": []}\n$ add fern 3 2026-01-01\nPlant(name='fern', every_days=3, last_watered='2026-01-01')\nadded fern\n$ add cactus 14 2026-01-01\nPlant(name='cactus', every_days=14, last_watered='2026-01-01')\nadded cactus\n$ due 2026-01-03\n[]\nnothing due\n$ due 2026-01-04\n['fern']\nfern\n$ water fern 2026-01-04\nPlant(name='fern', every_days=3, last_watered='2026-01-04')\nwatered fern\n$ due 2026-01-05\n[]\nnothing due\n$ due 2026-01-15\n['cactus', 'fern']\ncactus\nfern\n$ add fern 2 2026-01-14\nPlant(name='fern', every_days=2, last_watered='2026-01-14')\nadded fern\n$ due 2026-01-15\n['cactus']\ncactus\n$ water orchid 2026-01-15\nno such plant"
+  },
+  "behavioral": {
+   "ok": true,
+   "script": "behavioral.py",
+   "verdict": {
+    "run": true,
+    "behavioral": true,
+    "failures": []
+   },
+   "rc": 0,
+   "tail": "{\"run\": true, \"behavioral\": true, \"failures\": []}\n$ add fern 3 2026-01-01\nPlant(name='fern', every_days=3, last_watered='2026-01-01')\nadded fern\n$ add cactus 14 2026-01-01\nPlant(name='cactus', every_days=14, last_watered='2026-01-01')\nadded cactus\n$ due 2026-01-03\n[]\nnothing due\n$ due 2026-01-04\n['fern']\nfern\n$ water fern 2026-01-04\nPlant(name='fern', every_days=3, last_watered='2026-01-04')\nwatered fern\n$ due 2026-01-05\n[]\nnothing due\n$ due 2026-01-15\n['cactus', 'fern']\ncactus\nfern\n$ add fern 2 2026-01-14\nPlant(name='fern', every_days=2, last_watered='2026-01-14')\nadded fern\n$ due 2026-01-15\n['cactus']\ncactus\n$ water orchid 2026-01-15\nno such plant"
+  }
+ },
+ "negative": {
+  "test": {
+   "steps": [
+    {
+     "cmd": "jac test zz_hidden_acceptance.jac",
+     "rc": 1,
+     "secs": 1.1,
+     "tail": "E                                                                        [100%]\n\nFAILED /tmp/appgate_5wxuetmj/zz_hidden_acceptance.jac::zz_hidden_acceptance.jac\nTraceback (most recent call last):\n  File \"/home/runner/_work/jac/jac/.zig-cache/o/8776b3f32593b10747b6ba6ce20fea8b/payload.tar.zst.work/site/jaclang/testing/impl/test_runner.impl.jac\", line 677, in run_file\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/python/lib/python3.14/importlib/__init__.py\", line 88, in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen importlib._bootstrap>\", line 1406, in _gcd_import\n  File \"<frozen importlib._bootstrap>\", line 1371, in _find_and_load\n  File \"<frozen importlib._bootstrap>\", line 1342, in _find_and_load_unlocked\n  File \"<frozen importlib._bootstrap>\", line 938, in _load_unlocked\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/site/jaclang/meta_importer.py\", line 356, in exec_module\n    self._exec_compiled_module(module, file_path)\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/site/jaclang/meta_importer.py\", line 457, in _exec_compiled_module\n    exec(codeobj, module.__dict__)\n    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/appgate_5wxuetmj/zz_hidden_acceptance.jac\", line 2, in <module>\n    import from main { AddPlant, WaterPlant, DuePlants }\n     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nImportError: cannot import name 'AddPlant' from 'main' (/tmp/appgate_5wxuetmj/main.jac)\n\n1 error in 0.75s\n\u2716 Error: Tests failed.",
+     "stdout_tail": "    import from main { AddPlant, WaterPlant, DuePlants }\n     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nImportError: cannot import name 'AddPlant' from 'main' (/tmp/appgate_5wxuetmj/main.jac)\n\n1 error in 0.75s"
+    }
+   ],
+   "ok": false
+  },
+  "behavioral": {
+   "ok": false,
+   "script": "behavioral.py",
+   "verdict": {
+    "run": false,
+    "behavioral": false,
+    "failures": [
+     "`jac run main.jac add fern 3 2026-01-01` exited 2: Preparing application...\n  Compiling server modules and placement metadata...\nusage: plant_watering [-h] {greet} ...\nplant_watering: error: argument command: invalid choice: 'add' (choose from 'greet')\n",
+     "`jac run main.jac add cactus 14 2026-01-01` exited 2: Preparing application...\n  Restoring prepared application\nusage: plant_watering [-h] {greet} ...\nplant_watering: error: argument command: invalid choice: 'add' (choose from 'greet')\n",
+     "`jac run main.jac due 2026-01-03` exited 2: Preparing application...\n  Restoring prepared application\nusage: plant_watering [-h] {greet} ...\nplant_watering: error: argument command: invalid choice: 'due' (choose from 'greet')\n",
+     "due 01-03 should be 'nothing due', got ''",
+     "`jac run main.jac due 2026-01-04` exited 2: Preparing application...\n  Restoring prepared application\nusage: plant_watering [-h] {greet} ...\nplant_watering: error: argument command: invalid choice: 'due' (choose from 'greet')\n",
+     "due 01-04 should list only fern, got ''",
+     "`jac run main.jac water fern 2026-01-04` exited 2: Preparing application...\n  Restoring prepared application\nusage: plant_watering [-h] {greet} ...\nplant_watering: error: argument command: invalid choice: 'water' (choose from 'greet')\n",
+     "`jac run main.jac due 2026-01-05` exited 2: Preparing application...\n  Restoring prepared application\nusage: plant_watering [-h] {greet} ...\nplant_watering: error: argument command: invalid choice: 'due' (choose from 'greet')\n",
+     "after watering fern, due 01-05 should be empty, got ''",
+     "`jac run main.jac due 2026-01-15` exited 2: Preparing application...\n  Restoring prepared application\nusage: plant_watering [-h] {greet} ...\nplant_watering: error: argument command: invalid choice: 'due' (choose from 'greet')\n",
+     "due 01-15 should list both, got ''",
+     "due list should be alphabetical one per line, got []",
+     "`jac run main.jac add fern 2 2026-01-14` exited 2: Preparing application...\n  Restoring prepared application\nusage: plant_watering [-h] {greet} ...\nplant_watering: error: argument command: invalid choice: 'add' (choose from 'greet')\n",
+     "`jac run main.jac due 2026-01-15` exited 2: Preparing application...\n  Restoring prepared application\nusage: plant_watering [-h] {greet} ...\nplant_watering: error: argument command: invalid choice: 'due' (choose from 'greet')\n",
+     "re-added fern should not be due 01-15, got ''",
+     "`jac run main.jac water orchid 2026-01-15` exited 2: Preparing application...\n  Restoring prepared application\nusage: plant_watering [-h] {greet} ...\nplant_watering: error: argument command: invalid choice: 'water' (choose from 'greet')\n",
+     "watering unknown plant should say 'no such plant', got ''"
+    ]
+   },
+   "rc": 1,
+   "tail": "{\"run\": false, \"behavioral\": false, \"failures\": [\"`jac run main.jac add fern 3 2026-01-01` exited 2: Preparing application...\\n  Compiling server modules and placement metadata...\\nusage: plant_watering [-h] {greet} ...\\nplant_watering: error: argument command: invalid choice: 'add' (choose from 'greet')\\n\", \"`jac run main.jac add cactus 14 2026-01-01` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: plant_watering [-h] {greet} ...\\nplant_watering: error: argument command: invalid choice: 'add' (choose from 'greet')\\n\", \"`jac run main.jac due 2026-01-03` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: plant_watering [-h] {greet} ...\\nplant_watering: error: argument command: invalid choice: 'due' (choose from 'greet')\\n\", \"due 01-03 should be 'nothing due', got ''\", \"`jac run main.jac due 2026-01-04` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: plant_watering [-h] {greet} ...\\nplant_watering: error: argument command: invalid choice: 'due' (choose from 'greet')\\n\", \"due 01-04 should list only fern, got ''\", \"`jac run main.jac water fern 2026-01-04` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: plant_watering [-h] {greet} ...\\nplant_watering: error: argument command: invalid choice: 'water' (choose from 'greet')\\n\", \"`jac run main.jac due 2026-01-05` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: plant_watering [-h] {greet} ...\\nplant_watering: error: argument command: invalid choice: 'due' (choose from 'greet')\\n\", \"after watering fern, due 01-05 should be empty, got ''\", \"`jac run main.jac due 2026-01-15` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: plant_watering [-h] {greet} ...\\nplant_watering: error: argument command: invalid choice: 'due' (choose from 'greet')\\n\", \"due 01-15 should list both, got ''\", \"due list should be alphabetical one per line, got []\", \"`jac run main.jac add fern 2 2026-01-14` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: plant_watering [-h] {greet} ...\\nplant_watering: error: argument command: invalid choice: 'add' (choose from 'greet')\\n\", \"`jac run main.jac due 2026-01-15` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: plant_watering [-h] {greet} ...\\nplant_watering: error: argument command: invalid choice: 'due' (choose from 'greet')\\n\", \"re-added fern should not be due 01-15, got ''\", \"`jac run main.jac water orchid 2026-01-15` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: plant_watering [-h] {greet} ...\\nplant_watering: error: argument command: invalid choice: 'water' (choose from 'greet')\\n\", \"watering unknown plant should say 'no such plant', got ''\"]}\n$ add fern 3 2026-01-01\n\n$ add cactus 14 2026-01-01\n\n$ due 2026-01-03\n\n$ due 2026-01-04\n\n$ water fern 2026-01-04\n\n$ due 2026-01-05\n\n$ due 2026-01-15\n\n$ add fern 2 2026-01-14\n\n$ due 2026-01-15\n\n$ water orchid 2026-01-15\n"
+  }
+ },
+ "secs": 32.1,
+ "validated": true,
+ "reason": "reference passes ['behavioral', 'check', 'run', 'test']; starter fails ['behavioral', 'test']; dedup ok",
+ "ci_run": "38063985138"
+}

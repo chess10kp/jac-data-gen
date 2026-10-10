@@ -1,0 +1,61 @@
+{
+ "id": "app-l1-shipping-quote",
+ "level": 1,
+ "source": "hand-authored",
+ "gates": [
+  "check",
+  "test"
+ ],
+ "hash": "76945a89e5f02a16",
+ "jac": "jac 0.37.25  (Linux x86_64)",
+ "dedup": {
+  "pass": true,
+  "domain": "parcel shipping rate quoting",
+  "domain_hits": [],
+  "max_5gram_containment": 0.0,
+  "nearest_5gram": null,
+  "max_8gram_containment": 0.0,
+  "nearest_8gram": null,
+  "n_eval_docs": 1387
+ },
+ "positive": {
+  "check": {
+   "ok": true,
+   "cmd": "jac check shipping.jac",
+   "rc": 0,
+   "secs": 1.2,
+   "tail": "  Checking shipping.jac...\nshipping.jac ok [100%]\n============================== 1 passed in 0.63s ===============================",
+   "stdout_tail": "  Checking shipping.jac...\nshipping.jac ok [100%]\n============================== 1 passed in 0.63s ==============================="
+  },
+  "test": {
+   "steps": [
+    {
+     "cmd": "jac test zz_hidden_acceptance.jac",
+     "rc": 0,
+     "secs": 10.8,
+     "tail": ".....                                                                    [100%]\n\n5 passed in 10.16s",
+     "stdout_tail": ".....                                                                    [100%]\n\n5 passed in 10.16s"
+    }
+   ],
+   "ok": true
+  }
+ },
+ "negative": {
+  "test": {
+   "steps": [
+    {
+     "cmd": "jac test zz_hidden_acceptance.jac",
+     "rc": 0,
+     "secs": 1.8,
+     "tail": "s                                                                        [100%]\n\n1 skipped in 1.13s",
+     "stdout_tail": "s                                                                        [100%]\n\n1 skipped in 1.13s"
+    }
+   ],
+   "ok": false
+  }
+ },
+ "secs": 13.8,
+ "validated": true,
+ "reason": "reference passes ['check', 'test']; starter fails ['test']; dedup ok",
+ "ci_run": "38063985138"
+}

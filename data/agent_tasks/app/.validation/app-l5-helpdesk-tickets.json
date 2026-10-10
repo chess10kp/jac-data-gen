@@ -1,0 +1,118 @@
+{
+ "id": "app-l5-helpdesk-tickets",
+ "level": 5,
+ "source": "hand-authored",
+ "gates": [
+  "check",
+  "test",
+  "start",
+  "behavioral"
+ ],
+ "hash": "07b2ec66891d6356",
+ "jac": "jac 0.37.25  (Linux x86_64)",
+ "dedup": {
+  "pass": true,
+  "domain": "IT help-desk ticketing API",
+  "domain_hits": [],
+  "max_5gram_containment": 0.0,
+  "nearest_5gram": null,
+  "max_8gram_containment": 0.0,
+  "nearest_8gram": null,
+  "n_eval_docs": 1387
+ },
+ "positive": {
+  "check": {
+   "ok": true,
+   "cmd": "jac check main.jac",
+   "rc": 0,
+   "secs": 1.1,
+   "tail": "  Checking main.jac...\nmain.jac ok [100%]\n\n=================================== WARNINGS ===================================\n___________________________________ main.jac ___________________________________\n  \u2192 run 'jac guide jac-types' for guidance\n\n============================== 1 passed in 0.73s ===============================\n\u26a0 warning[W1037]: Explicit 'any' type annotation disables type checking here; consider a more specific type\n  --> main.jac:23:41\n   21 | }\n   22 | \n   23 | def ticket_view(t: Ticket) -> dict[str, any] {\n      |                                         ^^^\n   24 |     comments = sorted([c for c in [t -->[?:Comment]]], key=lambda (c: Comment) -> int { return c.seq; });\n   25 |     return {\"number\": t.number, \"subject\": t.subject, \"priority\": t.priority, \"status\": t.status,",
+   "stdout_tail": "=================================== WARNINGS ===================================\n___________________________________ main.jac ___________________________________\n  \u2192 run 'jac guide jac-types' for guidance\n\n============================== 1 passed in 0.73s ==============================="
+  },
+  "test": {
+   "steps": [
+    {
+     "cmd": "jac test helpdesk_tests.jac",
+     "rc": 0,
+     "secs": 3.1,
+     "tail": "..                                                                       [100%]\n\n2 passed in 2.60s",
+     "stdout_tail": "..                                                                       [100%]\n\n2 passed in 2.60s"
+    },
+    {
+     "cmd": "jac test zz_hidden_acceptance.jac",
+     "rc": 0,
+     "secs": 1.9,
+     "tail": "....                                                                     [100%]\n\n4 passed in 1.32s",
+     "stdout_tail": "....                                                                     [100%]\n\n4 passed in 1.32s"
+    }
+   ],
+   "own_test_files": [
+    "helpdesk_tests.jac"
+   ],
+   "ok": true
+  },
+  "start": {
+   "ok": true,
+   "script": "smoke.py",
+   "verdict": {
+    "start": true,
+    "behavioral": true,
+    "failures": []
+   },
+   "rc": 0,
+   "tail": "{\"start\": true, \"behavioral\": true, \"failures\": []}\n---- server.log tail ----\n{'number': 3, 'subject': 'Printer jam', 'priority': 'normal', 'status': 'open', 'agent': '', 'comments': []}\n127.0.0.1 \"POST /walker/open_ticket HTTP/1.1\" 200 423 11.2ms ee8e972ae63141a7a8d0d8fe926d93e2\n{'error': 'bad priority asap'}\n127.0.0.1 \"POST /walker/open_ticket HTTP/1.1\" 200 333 7.1ms ed98ed002c8046e9926d05f5a59914fd\n{'error': 'assign before closing'}\n127.0.0.1 \"POST /walker/close_ticket HTTP/1.1\" 200 316 9.0ms 95d8ea9168f044a4bb6f3c854433e4d5\n{'number': 1, 'subject': 'VPN down', 'priority': 'high', 'status': 'open', 'agent': 'kim', 'comments': []}\n127.0.0.1 \"POST /walker/assign_ticket HTTP/1.1\" 200 406 10.1ms dbfe448800a84f63a695c38a938b043c\n{'number': 1, 'subject': 'VPN down', 'priority': 'high', 'status': 'open', 'agent': 'kim', 'comments': [{'author': 'kim', 'body': 'rebooted router'}]}\n127.0.0.1 \"POST /walker/add_comment HTTP/1.1\" 200 474 12.8ms 8cbe7cdda7ba460a8d0114b490353920\n{'number': 1, 'subject': 'VPN down', 'priority': 'high', 'status': 'open', 'agent': 'kim', 'comments': [{'author': 'kim', 'body': 'rebooted router'}, {'author': 'ana', 'body': 'works now'}]}\n127.0.0.1 \"POST /walker/add_comment HTTP/1.1\" 200 508 14.8ms a4c0994a8ff54cfea29e330c3384898e\n{'number': 1, 'subject': 'VPN down', 'priority': 'high', 'status': 'closed', 'agent': 'kim', 'comments': [{'author': 'kim', 'body': 'rebooted router'}, {'author': 'ana', 'body': 'works now'}]}\n127.0.0.1 \"POST /walker/close_ticket HTTP/1.1\" 200 474 10.9ms f1ff299273ec4b2aaa17d1b1635472f2\n{'error': 'ticket is closed'}\n127.0.0.1 \"POST /walker/add_comment HTTP/1.1\" 200 342 8.7ms d3d663189c20456495e7ed0367b82b8e\n{'error': 'no ticket 42'}\n127.0.0.1 \"POST /walker/assign_ticket HTTP/1.1\" 200 326 9.1ms 35880548e1824470a2ec7d4034ea045f\n[{'number': 1, 'subject': 'VPN down', 'priority': 'high', 'status': 'closed', 'agent': 'kim', 'comments': [{'author': 'kim', 'body': 'rebooted router'}, {'author': 'ana', 'body': 'works now'}]}, {'number': 3, 'subject': 'Printer jam', 'priority': 'normal', 'status': 'open', 'agent': '', 'comments': []}, {'number': 2, 'subject': 'New laptop', 'priority': 'low', 'status': 'open', 'agent': '', 'comments': []}]\n127.0.0.1 \"POST /walker/list_tickets HTTP/1.1\" 200 693 11.4ms 89b99f17448348329d1f7ef38f6bdbb0\n[{'number': 3, 'subject': 'Printer jam', 'priority': 'normal', 'status': 'open', 'agent': '', 'comments': []}, {'number': 2, 'subject': 'New laptop', 'priority': 'low', 'status': 'open', 'agent': '', 'comments': []}]\n127.0.0.1 \"POST /walker/list_tickets HTTP/1.1\" 200 503 10.5ms de87e1135c3a4086b0d5f661f178b9b1\n{\"ts\": \"2026-10-10T15:32:53.551470Z\", \"level\": \"WARNING\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"drain: started (signal SIGTERM, budget 10.0s)\"}\n\nShutting down server..."
+  },
+  "behavioral": {
+   "ok": true,
+   "script": "smoke.py",
+   "verdict": {
+    "start": true,
+    "behavioral": true,
+    "failures": []
+   },
+   "rc": 0,
+   "tail": "{\"start\": true, \"behavioral\": true, \"failures\": []}\n---- server.log tail ----\n{'number': 3, 'subject': 'Printer jam', 'priority': 'normal', 'status': 'open', 'agent': '', 'comments': []}\n127.0.0.1 \"POST /walker/open_ticket HTTP/1.1\" 200 423 11.2ms ee8e972ae63141a7a8d0d8fe926d93e2\n{'error': 'bad priority asap'}\n127.0.0.1 \"POST /walker/open_ticket HTTP/1.1\" 200 333 7.1ms ed98ed002c8046e9926d05f5a59914fd\n{'error': 'assign before closing'}\n127.0.0.1 \"POST /walker/close_ticket HTTP/1.1\" 200 316 9.0ms 95d8ea9168f044a4bb6f3c854433e4d5\n{'number': 1, 'subject': 'VPN down', 'priority': 'high', 'status': 'open', 'agent': 'kim', 'comments': []}\n127.0.0.1 \"POST /walker/assign_ticket HTTP/1.1\" 200 406 10.1ms dbfe448800a84f63a695c38a938b043c\n{'number': 1, 'subject': 'VPN down', 'priority': 'high', 'status': 'open', 'agent': 'kim', 'comments': [{'author': 'kim', 'body': 'rebooted router'}]}\n127.0.0.1 \"POST /walker/add_comment HTTP/1.1\" 200 474 12.8ms 8cbe7cdda7ba460a8d0114b490353920\n{'number': 1, 'subject': 'VPN down', 'priority': 'high', 'status': 'open', 'agent': 'kim', 'comments': [{'author': 'kim', 'body': 'rebooted router'}, {'author': 'ana', 'body': 'works now'}]}\n127.0.0.1 \"POST /walker/add_comment HTTP/1.1\" 200 508 14.8ms a4c0994a8ff54cfea29e330c3384898e\n{'number': 1, 'subject': 'VPN down', 'priority': 'high', 'status': 'closed', 'agent': 'kim', 'comments': [{'author': 'kim', 'body': 'rebooted router'}, {'author': 'ana', 'body': 'works now'}]}\n127.0.0.1 \"POST /walker/close_ticket HTTP/1.1\" 200 474 10.9ms f1ff299273ec4b2aaa17d1b1635472f2\n{'error': 'ticket is closed'}\n127.0.0.1 \"POST /walker/add_comment HTTP/1.1\" 200 342 8.7ms d3d663189c20456495e7ed0367b82b8e\n{'error': 'no ticket 42'}\n127.0.0.1 \"POST /walker/assign_ticket HTTP/1.1\" 200 326 9.1ms 35880548e1824470a2ec7d4034ea045f\n[{'number': 1, 'subject': 'VPN down', 'priority': 'high', 'status': 'closed', 'agent': 'kim', 'comments': [{'author': 'kim', 'body': 'rebooted router'}, {'author': 'ana', 'body': 'works now'}]}, {'number': 3, 'subject': 'Printer jam', 'priority': 'normal', 'status': 'open', 'agent': '', 'comments': []}, {'number': 2, 'subject': 'New laptop', 'priority': 'low', 'status': 'open', 'agent': '', 'comments': []}]\n127.0.0.1 \"POST /walker/list_tickets HTTP/1.1\" 200 693 11.4ms 89b99f17448348329d1f7ef38f6bdbb0\n[{'number': 3, 'subject': 'Printer jam', 'priority': 'normal', 'status': 'open', 'agent': '', 'comments': []}, {'number': 2, 'subject': 'New laptop', 'priority': 'low', 'status': 'open', 'agent': '', 'comments': []}]\n127.0.0.1 \"POST /walker/list_tickets HTTP/1.1\" 200 503 10.5ms de87e1135c3a4086b0d5f661f178b9b1\n{\"ts\": \"2026-10-10T15:32:53.551470Z\", \"level\": \"WARNING\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"drain: started (signal SIGTERM, budget 10.0s)\"}\n\nShutting down server..."
+  }
+ },
+ "negative": {
+  "test": {
+   "steps": [
+    {
+     "why": "no own test blocks found"
+    },
+    {
+     "cmd": "jac test zz_hidden_acceptance.jac",
+     "rc": 1,
+     "secs": 1.4,
+     "tail": "E                                                                        [100%]\n\nFAILED /tmp/appgate_eci8dokg/zz_hidden_acceptance.jac::zz_hidden_acceptance.jac\nTraceback (most recent call last):\n  File \"/home/runner/_work/jac/jac/.zig-cache/o/8776b3f32593b10747b6ba6ce20fea8b/payload.tar.zst.work/site/jaclang/testing/impl/test_runner.impl.jac\", line 677, in run_file\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/python/lib/python3.14/importlib/__init__.py\", line 88, in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen importlib._bootstrap>\", line 1406, in _gcd_import\n  File \"<frozen importlib._bootstrap>\", line 1371, in _find_and_load\n  File \"<frozen importlib._bootstrap>\", line 1342, in _find_and_load_unlocked\n  File \"<frozen importlib._bootstrap>\", line 938, in _load_unlocked\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/site/jaclang/meta_importer.py\", line 356, in exec_module\n    self._exec_compiled_module(module, file_path)\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/site/jaclang/meta_importer.py\", line 457, in _exec_compiled_module\n    exec(codeobj, module.__dict__)\n    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/appgate_eci8dokg/zz_hidden_acceptance.jac\", line 2, in <module>\n    import from main { open_ticket, assign_ticket, add_comment, close_ticket, list_tickets }\n     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nImportError: cannot import name 'open_ticket' from 'main' (/tmp/appgate_eci8dokg/main.jac)\n\n1 error in 0.95s\n\u2716 Error: Tests failed.",
+     "stdout_tail": "    import from main { open_ticket, assign_ticket, add_comment, close_ticket, list_tickets }\n     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nImportError: cannot import name 'open_ticket' from 'main' (/tmp/appgate_eci8dokg/main.jac)\n\n1 error in 0.95s"
+    }
+   ],
+   "own_test_files": [],
+   "ok": false
+  },
+  "behavioral": {
+   "ok": false,
+   "script": "smoke.py",
+   "verdict": {
+    "start": true,
+    "behavioral": false,
+    "failures": [
+     "open 1 wrong: 405 {'detail': 'Method Not Allowed'}",
+     "numbering wrong: {} {}",
+     "assign wrong: {}",
+     "comments wrong: {}",
+     "close wrong: 405 {'detail': 'Method Not Allowed'}",
+     "list order wrong: []",
+     "open filter wrong: []"
+    ]
+   },
+   "rc": 1,
+   "tail": "{\"start\": true, \"behavioral\": false, \"failures\": [\"open 1 wrong: 405 {'detail': 'Method Not Allowed'}\", \"numbering wrong: {} {}\", \"assign wrong: {}\", \"comments wrong: {}\", \"close wrong: 405 {'detail': 'Method Not Allowed'}\", \"list order wrong: []\", \"open filter wrong: []\"]}\n---- server.log tail ----\n\n  jac dev server v0.37.25\n\n  \u279c  Local:     http://localhost:46509/\n  \u279c  Network:   http://10.1.1.136:46509/\n\n  Server ready (no client)\n\n127.0.0.1 \"GET /healthz HTTP/1.1\" 200 16 0.5ms 90b591039c6c4612af00e10f084872a4\n127.0.0.1 \"POST /walker/open_ticket HTTP/1.1\" 405 32 0.5ms 499a7c8069544a22a4521433e8a38019\n127.0.0.1 \"POST /walker/open_ticket HTTP/1.1\" 405 32 0.3ms 4a6b02e324a7463291528318bc0a8eb8\n127.0.0.1 \"POST /walker/open_ticket HTTP/1.1\" 405 32 0.3ms 7600819eae814fb8a473a4a835e8fd48\n127.0.0.1 \"POST /walker/open_ticket HTTP/1.1\" 405 32 0.3ms 9ac1119f921640748d10fe0e68e01460\n127.0.0.1 \"POST /walker/close_ticket HTTP/1.1\" 405 32 0.3ms a3fb15ca2eae4a158725cf388e44a267\n127.0.0.1 \"POST /walker/assign_ticket HTTP/1.1\" 405 32 0.3ms 22fd584698fe4c838b8c963676119fea\n127.0.0.1 \"POST /walker/add_comment HTTP/1.1\" 405 32 0.3ms f20fccfda7c1428fbc3584804beb9596\n127.0.0.1 \"POST /walker/add_comment HTTP/1.1\" 405 32 0.2ms 86c4329e4a5244d7a11eed86caf77c82\n127.0.0.1 \"POST /walker/close_ticket HTTP/1.1\" 405 32 0.3ms 9a2550a80d044fadb60a2d26afc6ae40\n127.0.0.1 \"POST /walker/add_comment HTTP/1.1\" 405 32 0.2ms 46b1b70a03c24a4590f83e83761edf2a\n127.0.0.1 \"POST /walker/assign_ticket HTTP/1.1\" 405 32 0.2ms 56e5ef04f5924e9d8d29f85b37dc4828\n127.0.0.1 \"POST /walker/list_tickets HTTP/1.1\" 405 32 0.3ms 43dda9c97f5f48e1a7675e5a8d3c03d2\n127.0.0.1 \"POST /walker/list_tickets HTTP/1.1\" 405 32 0.2ms 9ddc8a564b144ceca570e20039281766\n{\"ts\": \"2026-10-10T15:32:57.001803Z\", \"level\": \"WARNING\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"drain: started (signal SIGTERM, budget 10.0s)\"}\n\nShutting down server..."
+  }
+ },
+ "secs": 11.9,
+ "validated": true,
+ "reason": "reference passes ['behavioral', 'check', 'start', 'test']; starter fails ['behavioral', 'test']; dedup ok",
+ "ci_run": "38063985138"
+}

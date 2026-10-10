@@ -1,0 +1,117 @@
+{
+ "id": "app-l5-parking-garage",
+ "level": 5,
+ "source": "hand-authored",
+ "gates": [
+  "check",
+  "test",
+  "start",
+  "behavioral"
+ ],
+ "hash": "25769f99b75affef",
+ "jac": "jac 0.37.25  (Linux x86_64)",
+ "dedup": {
+  "pass": true,
+  "domain": "parking garage occupancy and fees API",
+  "domain_hits": [],
+  "max_5gram_containment": 0.0,
+  "nearest_5gram": null,
+  "max_8gram_containment": 0.0,
+  "nearest_8gram": null,
+  "n_eval_docs": 1387
+ },
+ "positive": {
+  "check": {
+   "ok": true,
+   "cmd": "jac check main.jac",
+   "rc": 0,
+   "secs": 1.2,
+   "tail": "\u26a0 warning[W1037]: Explicit 'any' type annotation disables type checking here; consider a more specific type\n  --> main.jac:44:34\n   42 | }\n   43 | \n   44 | def:pub occupancy() -> dict[str, any] {\n      |                                  ^^^\n   45 |     g = garage();\n   46 |     cars = parked(g);\n\u26a0 warning[W1037]: Explicit 'any' type annotation disables type checking here; consider a more specific type\n  --> main.jac:51:47\n   49 | }\n   50 | \n   51 | def:pub set_capacity(spots: int) -> dict[str, any] {\n      |                                               ^^^\n   52 |     g = garage();\n   53 |     if spots < 1 {\n\u26a0 warning[W1037]: Explicit 'any' type annotation disables type checking here; consider a more specific type\n  --> main.jac:63:48\n   61 | }\n   62 | \n   63 | def:pub park(plate: str, at: str) -> dict[str, any] {\n      |                                                ^^^\n   64 |     g = garage();\n   65 |     p = plate.strip().upper();\n\u26a0 warning[W1037]: Explicit 'any' type annotation disables type checking here; consider a more specific type\n  --> main.jac:80:49\n   78 | }\n   79 | \n   80 | def:pub leave(plate: str, at: str) -> dict[str, any] {\n      |                                                 ^^^\n   81 |     g = garage();\n   82 |     p = plate.strip().upper();\n\u26a0 warning[W3005]: Empty parentheses can be removed [remove-empty-parens]\n  --> main.jac:44:1\n   42 | }\n   43 | \n   44 | def:pub occupancy() -> dict[str, any] {\n      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n   45 |     g = garage();\n   46 |     cars = parked(g);",
+   "stdout_tail": "  \u2192 run 'jac guide jac-types' for guidance\n  \u2192 run 'jac guide jac-types' for guidance\n  \u2192 run 'jac guide reference/diagnostics' for guidance\n\n============================== 1 passed in 0.61s ==============================="
+  },
+  "test": {
+   "steps": [
+    {
+     "cmd": "jac test garage_tests.jac",
+     "rc": 0,
+     "secs": 3.9,
+     "tail": "...                                                                      [100%]\n\n3 passed in 3.18s",
+     "stdout_tail": "...                                                                      [100%]\n\n3 passed in 3.18s"
+    },
+    {
+     "cmd": "jac test zz_hidden_acceptance.jac",
+     "rc": 0,
+     "secs": 2.5,
+     "tail": "...                                                                      [100%]\n\n3 passed in 1.71s",
+     "stdout_tail": "...                                                                      [100%]\n\n3 passed in 1.71s"
+    }
+   ],
+   "own_test_files": [
+    "garage_tests.jac"
+   ],
+   "ok": true
+  },
+  "start": {
+   "ok": true,
+   "script": "smoke.py",
+   "verdict": {
+    "start": true,
+    "behavioral": true,
+    "failures": []
+   },
+   "rc": 0,
+   "tail": "{\"start\": true, \"behavioral\": true, \"failures\": []}\n---- server.log tail ----\n\n  jac dev server v0.37.25\n\n  \u279c  Local:     http://localhost:55961/\n  \u279c  Network:   http://10.1.0.67:55961/\n\n  Server ready (no client)\n\n127.0.0.1 \"GET /healthz HTTP/1.1\" 200 16 0.6ms df01cc85a247465887ec87daa6e34506\n127.0.0.1 \"POST /function/park HTTP/1.1\" 200 108 28.0ms a34bf4afd1e742ae9040f82f8d7eb1dc\n127.0.0.1 \"POST /function/set_capacity HTTP/1.1\" 200 139 15.7ms 5b4c9d1b72904ed8ab34d9769b57210b\n127.0.0.1 \"POST /function/park HTTP/1.1\" 200 123 14.2ms ce2ecc33a24d4579af5586121242913b\n127.0.0.1 \"POST /function/park HTTP/1.1\" 200 111 12.8ms 3adf89d90e6e4ba3a5874d0281ca83fb\n127.0.0.1 \"POST /function/park HTTP/1.1\" 200 121 14.8ms decf723ad76646a9b0d97bc0babffd66\n127.0.0.1 \"POST /function/park HTTP/1.1\" 200 108 13.3ms 5bc9f45bd92045b2a4b1db7d68acef1f\n127.0.0.1 \"POST /function/occupancy HTTP/1.1\" 200 155 13.3ms 78b1f1385d95482dac44f8ac7030d7ec\n127.0.0.1 \"POST /function/set_capacity HTTP/1.1\" 200 124 13.2ms 60802fdbf332464f8ed149f6eb52e39b\n127.0.0.1 \"POST /function/leave HTTP/1.1\" 200 130 14.0ms 8e21e7825d2f4792896c6d25640abacb\n127.0.0.1 \"POST /function/leave HTTP/1.1\" 200 128 14.4ms cbe2d4a14937413a858af9f5867c4c5a\n127.0.0.1 \"POST /function/leave HTTP/1.1\" 200 107 13.2ms 7d2e92d392f444259e9aace5535a45c1\n127.0.0.1 \"POST /function/park HTTP/1.1\" 200 105 10.9ms 11074d564021461c91b32a40d0c3261a\n127.0.0.1 \"POST /function/occupancy HTTP/1.1\" 200 139 13.4ms f992ccbb170f40c4b27550a7db521890\n{\"ts\": \"2026-10-10T15:33:05.373543Z\", \"level\": \"WARNING\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"drain: started (signal SIGTERM, budget 10.0s)\"}\n\nShutting down server..."
+  },
+  "behavioral": {
+   "ok": true,
+   "script": "smoke.py",
+   "verdict": {
+    "start": true,
+    "behavioral": true,
+    "failures": []
+   },
+   "rc": 0,
+   "tail": "{\"start\": true, \"behavioral\": true, \"failures\": []}\n---- server.log tail ----\n\n  jac dev server v0.37.25\n\n  \u279c  Local:     http://localhost:55961/\n  \u279c  Network:   http://10.1.0.67:55961/\n\n  Server ready (no client)\n\n127.0.0.1 \"GET /healthz HTTP/1.1\" 200 16 0.6ms df01cc85a247465887ec87daa6e34506\n127.0.0.1 \"POST /function/park HTTP/1.1\" 200 108 28.0ms a34bf4afd1e742ae9040f82f8d7eb1dc\n127.0.0.1 \"POST /function/set_capacity HTTP/1.1\" 200 139 15.7ms 5b4c9d1b72904ed8ab34d9769b57210b\n127.0.0.1 \"POST /function/park HTTP/1.1\" 200 123 14.2ms ce2ecc33a24d4579af5586121242913b\n127.0.0.1 \"POST /function/park HTTP/1.1\" 200 111 12.8ms 3adf89d90e6e4ba3a5874d0281ca83fb\n127.0.0.1 \"POST /function/park HTTP/1.1\" 200 121 14.8ms decf723ad76646a9b0d97bc0babffd66\n127.0.0.1 \"POST /function/park HTTP/1.1\" 200 108 13.3ms 5bc9f45bd92045b2a4b1db7d68acef1f\n127.0.0.1 \"POST /function/occupancy HTTP/1.1\" 200 155 13.3ms 78b1f1385d95482dac44f8ac7030d7ec\n127.0.0.1 \"POST /function/set_capacity HTTP/1.1\" 200 124 13.2ms 60802fdbf332464f8ed149f6eb52e39b\n127.0.0.1 \"POST /function/leave HTTP/1.1\" 200 130 14.0ms 8e21e7825d2f4792896c6d25640abacb\n127.0.0.1 \"POST /function/leave HTTP/1.1\" 200 128 14.4ms cbe2d4a14937413a858af9f5867c4c5a\n127.0.0.1 \"POST /function/leave HTTP/1.1\" 200 107 13.2ms 7d2e92d392f444259e9aace5535a45c1\n127.0.0.1 \"POST /function/park HTTP/1.1\" 200 105 10.9ms 11074d564021461c91b32a40d0c3261a\n127.0.0.1 \"POST /function/occupancy HTTP/1.1\" 200 139 13.4ms f992ccbb170f40c4b27550a7db521890\n{\"ts\": \"2026-10-10T15:33:05.373543Z\", \"level\": \"WARNING\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"drain: started (signal SIGTERM, budget 10.0s)\"}\n\nShutting down server..."
+  }
+ },
+ "negative": {
+  "test": {
+   "steps": [
+    {
+     "why": "no own test blocks found"
+    },
+    {
+     "cmd": "jac test zz_hidden_acceptance.jac",
+     "rc": 1,
+     "secs": 1.9,
+     "tail": "E                                                                        [100%]\n\nFAILED /tmp/appgate_3cs2y_32/zz_hidden_acceptance.jac::zz_hidden_acceptance.jac\nTraceback (most recent call last):\n  File \"/home/runner/_work/jac/jac/.zig-cache/o/8776b3f32593b10747b6ba6ce20fea8b/payload.tar.zst.work/site/jaclang/testing/impl/test_runner.impl.jac\", line 677, in run_file\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/python/lib/python3.14/importlib/__init__.py\", line 88, in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen importlib._bootstrap>\", line 1406, in _gcd_import\n  File \"<frozen importlib._bootstrap>\", line 1371, in _find_and_load\n  File \"<frozen importlib._bootstrap>\", line 1342, in _find_and_load_unlocked\n  File \"<frozen importlib._bootstrap>\", line 938, in _load_unlocked\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/site/jaclang/meta_importer.py\", line 356, in exec_module\n    self._exec_compiled_module(module, file_path)\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/site/jaclang/meta_importer.py\", line 457, in _exec_compiled_module\n    exec(codeobj, module.__dict__)\n    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/appgate_3cs2y_32/zz_hidden_acceptance.jac\", line 2, in <module>\n    import from main { set_capacity, park, leave, occupancy }\n     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nImportError: cannot import name 'set_capacity' from 'main' (/tmp/appgate_3cs2y_32/main.jac)\n\n1 error in 1.29s\n\u2716 Error: Tests failed.",
+     "stdout_tail": "    import from main { set_capacity, park, leave, occupancy }\n     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nImportError: cannot import name 'set_capacity' from 'main' (/tmp/appgate_3cs2y_32/main.jac)\n\n1 error in 1.29s"
+    }
+   ],
+   "own_test_files": [],
+   "ok": false
+  },
+  "behavioral": {
+   "ok": false,
+   "script": "smoke.py",
+   "verdict": {
+    "start": true,
+    "behavioral": false,
+    "failures": [
+     "set_capacity wrong: 405 {'detail': 'Method Not Allowed'}",
+     "park wrong: 405 {'detail': 'Method Not Allowed'}",
+     "occupancy wrong: {}",
+     "leave wrong: 405 {'detail': 'Method Not Allowed'}",
+     "short stay should be free: 405 {'detail': 'Method Not Allowed'}",
+     "final occupancy wrong: {}"
+    ]
+   },
+   "rc": 1,
+   "tail": "{\"start\": true, \"behavioral\": false, \"failures\": [\"set_capacity wrong: 405 {'detail': 'Method Not Allowed'}\", \"park wrong: 405 {'detail': 'Method Not Allowed'}\", \"occupancy wrong: {}\", \"leave wrong: 405 {'detail': 'Method Not Allowed'}\", \"short stay should be free: 405 {'detail': 'Method Not Allowed'}\", \"final occupancy wrong: {}\"]}\n---- server.log tail ----\n\n  jac dev server v0.37.25\n\n  \u279c  Local:     http://localhost:45325/\n  \u279c  Network:   http://10.1.0.67:45325/\n\n  Server ready (no client)\n\n127.0.0.1 \"GET /healthz HTTP/1.1\" 200 16 0.6ms 9f71cf7892fb4e1d9c6086fa2ead4b10\n127.0.0.1 \"POST /function/park HTTP/1.1\" 405 32 0.6ms 12463f19cb5246c98ead8c68387941c5\n127.0.0.1 \"POST /function/set_capacity HTTP/1.1\" 405 32 0.4ms 856becc587ce473bb51c528ae58bb20f\n127.0.0.1 \"POST /function/park HTTP/1.1\" 405 32 0.4ms f0171884e31c49cba4124dbff17c8579\n127.0.0.1 \"POST /function/park HTTP/1.1\" 405 32 0.4ms 85179825eebe4c6bbf2555beda874442\n127.0.0.1 \"POST /function/park HTTP/1.1\" 405 32 0.4ms c1ca6e7c1b1c480c950c4d2b037a6361\n127.0.0.1 \"POST /function/park HTTP/1.1\" 405 32 0.4ms bd7f8a6459a34817a0985c0f3c538887\n127.0.0.1 \"POST /function/occupancy HTTP/1.1\" 405 32 0.4ms a5f25208d23c476b84dadfa576b6109b\n127.0.0.1 \"POST /function/set_capacity HTTP/1.1\" 405 32 0.3ms 71c86d5da0c3498980bb8edbdd680726\n127.0.0.1 \"POST /function/leave HTTP/1.1\" 405 32 0.3ms 7b89c5a35b044b7fba766173cfc5c51d\n127.0.0.1 \"POST /function/leave HTTP/1.1\" 405 32 0.3ms 637f37a2b4474de2ae8ff7e6f88790dd\n127.0.0.1 \"POST /function/leave HTTP/1.1\" 405 32 0.3ms d5a6fa77c5da450a99593317fc93661f\n127.0.0.1 \"POST /function/park HTTP/1.1\" 405 32 0.4ms 0c4a6fac47ec41c7a5f23e445e3fb6e2\n127.0.0.1 \"POST /function/occupancy HTTP/1.1\" 405 32 0.4ms b3a742a6a8474246ae60e12364c16635\n{\"ts\": \"2026-10-10T15:33:10.433338Z\", \"level\": \"WARNING\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"drain: started (signal SIGTERM, budget 10.0s)\"}\n\nShutting down server..."
+  }
+ },
+ "secs": 15.9,
+ "validated": true,
+ "reason": "reference passes ['behavioral', 'check', 'start', 'test']; starter fails ['behavioral', 'test']; dedup ok",
+ "ci_run": "38063985138"
+}

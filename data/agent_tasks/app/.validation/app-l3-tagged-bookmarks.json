@@ -1,0 +1,116 @@
+{
+ "id": "app-l3-tagged-bookmarks",
+ "level": 3,
+ "source": "hand-authored",
+ "gates": [
+  "check",
+  "test",
+  "run",
+  "behavioral"
+ ],
+ "hash": "90d7fbd5eb4502e2",
+ "jac": "jac 0.37.25  (Linux x86_64)",
+ "dedup": {
+  "pass": true,
+  "domain": "tagged bookmark manager",
+  "domain_hits": [],
+  "max_5gram_containment": 0.0,
+  "nearest_5gram": null,
+  "max_8gram_containment": 0.0,
+  "nearest_8gram": null,
+  "n_eval_docs": 1387
+ },
+ "positive": {
+  "check": {
+   "ok": true,
+   "cmd": "jac check main.jac",
+   "rc": 0,
+   "secs": 1.2,
+   "tail": "  Checking main.jac...\nmain.jac ok [100%]\n============================== 1 passed in 0.63s ===============================",
+   "stdout_tail": "  Checking main.jac...\nmain.jac ok [100%]\n============================== 1 passed in 0.63s ==============================="
+  },
+  "test": {
+   "steps": [
+    {
+     "cmd": "jac test zz_hidden_acceptance.jac",
+     "rc": 0,
+     "secs": 4.8,
+     "tail": "....                                                                     [100%]\n\n4 passed in 4.05s",
+     "stdout_tail": "....                                                                     [100%]\n\n4 passed in 4.05s"
+    }
+   ],
+   "ok": true
+  },
+  "run": {
+   "ok": true,
+   "script": "behavioral.py",
+   "verdict": {
+    "run": true,
+    "behavioral": true,
+    "failures": []
+   },
+   "rc": 0,
+   "tail": "saved https://example.com/recipes\n$ save https://docs.python.org Python lang,docs, reference\nBookmark(url='https://docs.python.org', title='Python')\nsaved https://docs.python.org\n$ find lang\n['https://docs.python.org', 'https://jac-lang.org']\nhttps://docs.python.org\nhttps://jac-lang.org\n$ save https://jac-lang.org Jac language osp\nBookmark(url='https://jac-lang.org', title='Jac language')\nsaved https://jac-lang.org\n$ find OSP\n['https://jac-lang.org']\nhttps://jac-lang.org\n$ find docs\n['https://docs.python.org', 'https://jac-lang.org']\nhttps://docs.python.org\nhttps://jac-lang.org\n$ tags\n{'lang': 2, 'docs': 2, 'food': 1, 'reference': 1, 'osp': 1}\ndocs 2\nfood 1\nlang 2\nosp 1\nreference 1\n$ delete https://example.com/recipes\nTrue\ndeleted\n$ tags\n{'lang': 2, 'docs': 2, 'reference': 1, 'osp': 1}\ndocs 2\nlang 2\nosp 1\nreference 1\n$ find food\n[]\nno bookmarks\n$ delete https://nope.example\nFalse\nnot found"
+  },
+  "behavioral": {
+   "ok": true,
+   "script": "behavioral.py",
+   "verdict": {
+    "run": true,
+    "behavioral": true,
+    "failures": []
+   },
+   "rc": 0,
+   "tail": "saved https://example.com/recipes\n$ save https://docs.python.org Python lang,docs, reference\nBookmark(url='https://docs.python.org', title='Python')\nsaved https://docs.python.org\n$ find lang\n['https://docs.python.org', 'https://jac-lang.org']\nhttps://docs.python.org\nhttps://jac-lang.org\n$ save https://jac-lang.org Jac language osp\nBookmark(url='https://jac-lang.org', title='Jac language')\nsaved https://jac-lang.org\n$ find OSP\n['https://jac-lang.org']\nhttps://jac-lang.org\n$ find docs\n['https://docs.python.org', 'https://jac-lang.org']\nhttps://docs.python.org\nhttps://jac-lang.org\n$ tags\n{'lang': 2, 'docs': 2, 'food': 1, 'reference': 1, 'osp': 1}\ndocs 2\nfood 1\nlang 2\nosp 1\nreference 1\n$ delete https://example.com/recipes\nTrue\ndeleted\n$ tags\n{'lang': 2, 'docs': 2, 'reference': 1, 'osp': 1}\ndocs 2\nlang 2\nosp 1\nreference 1\n$ find food\n[]\nno bookmarks\n$ delete https://nope.example\nFalse\nnot found"
+  }
+ },
+ "negative": {
+  "test": {
+   "steps": [
+    {
+     "cmd": "jac test zz_hidden_acceptance.jac",
+     "rc": 1,
+     "secs": 2.0,
+     "tail": "E                                                                        [100%]\n\nFAILED /tmp/appgate_4equglfu/zz_hidden_acceptance.jac::zz_hidden_acceptance.jac\nTraceback (most recent call last):\n  File \"/home/runner/_work/jac/jac/.zig-cache/o/8776b3f32593b10747b6ba6ce20fea8b/payload.tar.zst.work/site/jaclang/testing/impl/test_runner.impl.jac\", line 677, in run_file\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/python/lib/python3.14/importlib/__init__.py\", line 88, in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen importlib._bootstrap>\", line 1406, in _gcd_import\n  File \"<frozen importlib._bootstrap>\", line 1371, in _find_and_load\n  File \"<frozen importlib._bootstrap>\", line 1342, in _find_and_load_unlocked\n  File \"<frozen importlib._bootstrap>\", line 938, in _load_unlocked\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/site/jaclang/meta_importer.py\", line 356, in exec_module\n    self._exec_compiled_module(module, file_path)\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/site/jaclang/meta_importer.py\", line 457, in _exec_compiled_module\n    exec(codeobj, module.__dict__)\n    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/appgate_4equglfu/zz_hidden_acceptance.jac\", line 2, in <module>\n    import from main { SaveBookmark, FindByTag, TagCounts, DeleteBookmark }\n     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nImportError: cannot import name 'SaveBookmark' from 'main' (/tmp/appgate_4equglfu/main.jac)\n\n1 error in 1.36s\n\u2716 Error: Tests failed.",
+     "stdout_tail": "    import from main { SaveBookmark, FindByTag, TagCounts, DeleteBookmark }\n     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nImportError: cannot import name 'SaveBookmark' from 'main' (/tmp/appgate_4equglfu/main.jac)\n\n1 error in 1.36s"
+    }
+   ],
+   "ok": false
+  },
+  "behavioral": {
+   "ok": false,
+   "script": "behavioral.py",
+   "verdict": {
+    "run": false,
+    "behavioral": false,
+    "failures": [
+     "`jac run main.jac save https://jac-lang.org Jac lang,Docs` exited 2: Preparing application...\n  Compiling server modules and placement metadata...\nusage: tagged_bookmarks [-h] {greet} ...\ntagged_bookmarks: error: argument command: invalid choice: 'save' (choose from 'greet')\n",
+     "`jac run main.jac save https://example.com/recipes Recipes food` exited 2: Preparing application...\n  Restoring prepared application\nusage: tagged_bookmarks [-h] {greet} ...\ntagged_bookmarks: error: argument command: invalid choice: 'save' (choose from 'greet')\n",
+     "`jac run main.jac save https://docs.python.org Python lang,docs, reference` exited 2: Preparing application...\n  Restoring prepared application\nusage: tagged_bookmarks [-h] {greet} ...\ntagged_bookmarks: error: argument command: invalid choice: 'save' (choose from 'greet')\n",
+     "`jac run main.jac find lang` exited 2: Preparing application...\n  Restoring prepared application\nusage: tagged_bookmarks [-h] {greet} ...\ntagged_bookmarks: error: argument command: invalid choice: 'find' (choose from 'greet')\n",
+     "find lang should list 2 urls sorted, got ''",
+     "`jac run main.jac save https://jac-lang.org Jac language osp` exited 2: Preparing application...\n  Restoring prepared application\nusage: tagged_bookmarks [-h] {greet} ...\ntagged_bookmarks: error: argument command: invalid choice: 'save' (choose from 'greet')\n",
+     "`jac run main.jac find OSP` exited 2: Preparing application...\n  Restoring prepared application\nusage: tagged_bookmarks [-h] {greet} ...\ntagged_bookmarks: error: argument command: invalid choice: 'find' (choose from 'greet')\n",
+     "resave should add osp tag, got ''",
+     "`jac run main.jac find docs` exited 2: Preparing application...\n  Restoring prepared application\nusage: tagged_bookmarks [-h] {greet} ...\ntagged_bookmarks: error: argument command: invalid choice: 'find' (choose from 'greet')\n",
+     "resave must not drop old tags, got ''",
+     "`jac run main.jac tags` exited 2: Preparing application...\n  Restoring prepared application\nusage: tagged_bookmarks [-h] {greet} ...\ntagged_bookmarks: error: argument command: invalid choice: 'tags' (choose from 'greet')\n",
+     "tag counts wrong: ''",
+     "`jac run main.jac delete https://example.com/recipes` exited 2: Preparing application...\n  Restoring prepared application\nusage: tagged_bookmarks [-h] {greet} ...\ntagged_bookmarks: error: argument command: invalid choice: 'delete' (choose from 'greet')\n",
+     "delete should print deleted, got ''",
+     "`jac run main.jac tags` exited 2: Preparing application...\n  Restoring prepared application\nusage: tagged_bookmarks [-h] {greet} ...\ntagged_bookmarks: error: argument command: invalid choice: 'tags' (choose from 'greet')\n",
+     "`jac run main.jac find food` exited 2: Preparing application...\n  Restoring prepared application\nusage: tagged_bookmarks [-h] {greet} ...\ntagged_bookmarks: error: argument command: invalid choice: 'find' (choose from 'greet')\n",
+     "find food should print no bookmarks, got ''",
+     "`jac run main.jac delete https://nope.example` exited 2: Preparing application...\n  Restoring prepared application\nusage: tagged_bookmarks [-h] {greet} ...\ntagged_bookmarks: error: argument command: invalid choice: 'delete' (choose from 'greet')\n",
+     "deleting unknown url should print not found, got ''"
+    ]
+   },
+   "rc": 1,
+   "tail": "{\"run\": false, \"behavioral\": false, \"failures\": [\"`jac run main.jac save https://jac-lang.org Jac lang,Docs` exited 2: Preparing application...\\n  Compiling server modules and placement metadata...\\nusage: tagged_bookmarks [-h] {greet} ...\\ntagged_bookmarks: error: argument command: invalid choice: 'save' (choose from 'greet')\\n\", \"`jac run main.jac save https://example.com/recipes Recipes food` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: tagged_bookmarks [-h] {greet} ...\\ntagged_bookmarks: error: argument command: invalid choice: 'save' (choose from 'greet')\\n\", \"`jac run main.jac save https://docs.python.org Python lang,docs, reference` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: tagged_bookmarks [-h] {greet} ...\\ntagged_bookmarks: error: argument command: invalid choice: 'save' (choose from 'greet')\\n\", \"`jac run main.jac find lang` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: tagged_bookmarks [-h] {greet} ...\\ntagged_bookmarks: error: argument command: invalid choice: 'find' (choose from 'greet')\\n\", \"find lang should list 2 urls sorted, got ''\", \"`jac run main.jac save https://jac-lang.org Jac language osp` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: tagged_bookmarks [-h] {greet} ...\\ntagged_bookmarks: error: argument command: invalid choice: 'save' (choose from 'greet')\\n\", \"`jac run main.jac find OSP` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: tagged_bookmarks [-h] {greet} ...\\ntagged_bookmarks: error: argument command: invalid choice: 'find' (choose from 'greet')\\n\", \"resave should add osp tag, got ''\", \"`jac run main.jac find docs` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: tagged_bookmarks [-h] {greet} ...\\ntagged_bookmarks: error: argument command: invalid choice: 'find' (choose from 'greet')\\n\", \"resave must not drop old tags, got ''\", \"`jac run main.jac tags` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: tagged_bookmarks [-h] {greet} ...\\ntagged_bookmarks: error: argument command: invalid choice: 'tags' (choose from 'greet')\\n\", \"tag counts wrong: ''\", \"`jac run main.jac delete https://example.com/recipes` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: tagged_bookmarks [-h] {greet} ...\\ntagged_bookmarks: error: argument command: invalid choice: 'delete' (choose from 'greet')\\n\", \"delete should print deleted, got ''\", \"`jac run main.jac tags` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: tagged_bookmarks [-h] {greet} ...\\ntagged_bookmarks: error: argument command: invalid choice: 'tags' (choose from 'greet')\\n\", \"`jac run main.jac find food` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: tagged_bookmarks [-h] {greet} ...\\ntagged_bookmarks: error: argument command: invalid choice: 'find' (choose from 'greet')\\n\", \"find food should print no bookmarks, got ''\", \"`jac run main.jac delete https://nope.example` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: tagged_bookmarks [-h] {greet} ...\\ntagged_bookmarks: error: argument command: invalid choice: 'delete' (choose from 'greet')\\n\", \"deleting unknown url should print not found, got ''\"]}\n$ save https://jac-lang.org Jac lang,Docs\n\n$ save https://example.com/recipes Recipes food\n\n$ save https://docs.python.org Python lang,docs, reference\n\n$ find lang\n\n$ save https://jac-lang.org Jac language osp\n\n$ find OSP\n\n$ find docs\n\n$ tags\n\n$ delete https://example.com/recipes\n\n$ tags\n\n$ find food\n\n$ delete https://nope.example\n"
+  }
+ },
+ "secs": 56.4,
+ "validated": true,
+ "reason": "reference passes ['behavioral', 'check', 'run', 'test']; starter fails ['behavioral', 'test']; dedup ok",
+ "ci_run": "38063985138"
+}

@@ -12,10 +12,13 @@ passes only if ALL hold:
                archetypes + their abilities, `jac code symbol NAME` for
                top-level defs / enums). Comments and string literals never
                register, so a `# walker Foo {}` cannot satisfy the contract.
-  3. mass      code mass (tokens outside comments/strings) of the task's target
-               files is >= T_MASS of the reference's, and no single target file
-               drops below T_MASS_FILE (stops "stub the one broken file in a big
-               workspace" from hiding behind the untouched files).
+  3. mass      over the task's target files (the ones the agent must touch):
+               total code mass (tokens outside comments) >= T_MASS and def/can/
+               impl BODY mass >= T_BODY of the baseline, and no target file's
+               body mass drops below T_BODY_FILE (stops "stub the one broken
+               file in a big workspace" hiding behind untouched files). Baseline
+               = min(reference, starter) per file, so a faithful fix of a starter
+               that is shorter than the reference is not penalised.
   4. test      (only when the task has a grader/tests.jac) `jac test` passes with
                the hidden test module dropped next to the candidate.
 
@@ -47,9 +50,11 @@ JAC = os.environ.get("JAC_BIN", "jac")
 # Calibrated with --calibrate over the pilot pool (see manifest/notes): every
 # reference and every starter's symbol/mass profile sits well above these;
 # body-stubs and delete-the-broken-files candidates fall well below.
-T_SYM = 0.90
-T_MASS = 0.70
-T_MASS_FILE = 0.50
+T_SYM = 0.90        # reference symbols (that the starter also names) that must survive
+T_MASS = 0.70       # target-file token mass vs min(reference, starter)
+T_BODY = 0.60       # target-file def/can/impl BODY tokens vs min(reference, starter)
+T_BODY_FILE = 0.40  # same, per target file with >= 20 body tokens
+T_MASS_FILE = T_BODY_FILE  # back-compat alias
 CHECK_TIMEOUT = int(os.environ.get("FIX_CHECK_TIMEOUT", "600"))
 SYM_JOBS = int(os.environ.get("FIX_SYM_JOBS", "6"))
 
@@ -243,6 +248,8 @@ def archetype_symbols(ws: Path) -> list[str]:
         syms.append(f"{a['kind']}:{a['name']}")
         for ab in a.get("abilities", []):
             syms.append(f"ability:{a['name']}.{ab.split('(')[0]}")
+        for fd in a.get("fields", []):
+            syms.append(f"field:{a['name']}.{fd.split(':')[0].strip()}")
     return syms
 
 
@@ -270,18 +277,53 @@ def defined_toplevel(ws: Path, names: list[tuple[str, str]]) -> list[str]:
     return [h for r in res for h in r]
 
 
-def inventory(ws: Path, target_paths: list[str] | None = None) -> dict:
-    """Reference-side inventory: compiler symbols + per-file mass."""
-    names = []
-    mass = {}
+def body_mass(src: str) -> int:
+    """Tokens inside def/can/impl bodies (what a body-stub deletes)."""
+    return code_mass(src) - code_mass(stub_bodies(src))
+
+
+def ident_set(ws: Path) -> set[str]:
+    out = set()
+    for p in jac_files(ws):
+        out |= {v.lstrip("`") for k, v in tokens(p.read_text(errors="replace")) if k == "id"}
+    return out
+
+
+def _sym_leaf(sym: str) -> str:
+    return sym.split(":", 1)[1].split(".")[-1]
+
+
+def inventory(ws: Path, target_paths: list[str] | None = None, starter: Path | None = None) -> dict:
+    """Reference-side inventory: compiler symbols + per-file mass/body mass.
+
+    With `starter`, the baseline is what the starter already had: symbols whose
+    name never occurs in the starter (reference-only inventions) are dropped,
+    and the starter's own per-file masses are recorded so the gate measures
+    against min(reference, starter) -- a faithful fix of a shorter starter
+    must not fail just because the reference is longer."""
+    names, mass, body = [], {}, {}
     for p in jac_files(ws):
         src = p.read_text(errors="replace")
         rel = str(p.relative_to(ws))
-        mass[rel] = code_mass(src)
+        mass[rel], body[rel] = code_mass(src), body_mass(src)
         names += toplevel_names(src)
     syms = archetype_symbols(ws) + defined_toplevel(ws, names)
-    return {"symbols": sorted(syms), "toplevel_names": sorted(set(n for _, n in names)),
-            "mass": mass, "target_paths": target_paths or sorted(mass)}
+    inv = {"toplevel_names": sorted(set(n for _, n in names)),
+           "mass": mass, "body": body, "target_paths": target_paths or sorted(mass)}
+    if starter is not None:
+        ids = ident_set(starter)
+        dropped = [x for x in syms if _sym_leaf(x) not in ids]
+        syms = [x for x in syms if _sym_leaf(x) in ids]
+        inv["symbols_dropped_not_in_starter"] = sorted(dropped)
+        smass, sbody = {}, {}
+        for p in jac_files(starter):
+            src = p.read_text(errors="replace")
+            k = _norm(str(p.relative_to(starter)))
+            smass[k] = smass.get(k, 0) + code_mass(src)
+            sbody[k] = sbody.get(k, 0) + body_mass(src)
+        inv["starter_mass"], inv["starter_body"] = smass, sbody
+    inv["symbols"] = sorted(syms)
+    return inv
 
 
 # --------------------------------------------------------------------------
@@ -326,24 +368,31 @@ def grade(task_dir: Path, cand: Path, inv: dict | None = None, run_check_too: bo
     res["symbols"] = {"ratio": round(sym_ratio, 3), "ref": len(inv["symbols"]),
                       "missing": missing[:25]}
 
-    # mass over target files
-    cmass = {}
+    # mass / body mass over target files, baseline = min(reference, starter)
+    cm, cb = {}, {}
     for p in jac_files(cand):
-        cmass.setdefault(_norm(str(p.relative_to(cand))), 0)
-        cmass[_norm(str(p.relative_to(cand)))] += code_mass(p.read_text(errors="replace"))
-    tot_r = tot_c = 0
+        k = _norm(str(p.relative_to(cand)))
+        src = p.read_text(errors="replace")
+        cm[k] = cm.get(k, 0) + code_mass(src)
+        cb[k] = cb.get(k, 0) + body_mass(src)
+    sm, sb = inv.get("starter_mass", {}), inv.get("starter_body", {})
+    tot = {"m_base": 0, "m_cand": 0, "b_base": 0, "b_cand": 0}
     per_file = {}
     for rel in inv["target_paths"]:
-        r = inv["mass"].get(rel, 0)
-        c = cmass.get(_norm(rel), 0)
-        tot_r += r
-        tot_c += c
-        if r:
-            per_file[rel] = round(c / r, 3)
-    mass_ratio = tot_c / max(1, tot_r)
+        k = _norm(rel)
+        mb = min(inv["mass"].get(rel, 0), sm.get(k, inv["mass"].get(rel, 0)))
+        bb = min(inv["body"].get(rel, 0), sb.get(k, inv["body"].get(rel, 0)))
+        tot["m_base"] += mb
+        tot["m_cand"] += min(cm.get(k, 0), 2 * mb)  # cap: padding can't buy back a stub
+        tot["b_base"] += bb
+        tot["b_cand"] += min(cb.get(k, 0), 2 * bb)
+        if bb >= 20:
+            per_file[rel] = round(cb.get(k, 0) / bb, 3)
+    mass_ratio = tot["m_cand"] / max(1, tot["m_base"])
+    body_ratio = tot["b_cand"] / tot["b_base"] if tot["b_base"] else 1.0
     min_file = min(per_file.values()) if per_file else 1.0
-    res["mass"] = {"ratio": round(mass_ratio, 3), "min_file": min_file,
-                   "ref_tokens": tot_r, "cand_tokens": tot_c}
+    res["mass"] = {"ratio": round(mass_ratio, 3), "body_ratio": round(body_ratio, 3),
+                   "min_file": min_file, **tot}
 
     if (task_dir / "grader" / "tests.jac").exists() and "test" in task.get("gates", []):
         with tempfile.TemporaryDirectory(prefix="fixgate_") as td:
@@ -359,8 +408,10 @@ def grade(task_dir: Path, cand: Path, inv: dict | None = None, run_check_too: bo
         reasons.append(f"symbols {sym_ratio:.2f} < {T_SYM}")
     if mass_ratio < T_MASS:
         reasons.append(f"mass {mass_ratio:.2f} < {T_MASS}")
-    if min_file < T_MASS_FILE:
-        reasons.append(f"file mass {min_file:.2f} < {T_MASS_FILE}")
+    if body_ratio < T_BODY:
+        reasons.append(f"body mass {body_ratio:.2f} < {T_BODY}")
+    if min_file < T_BODY_FILE:
+        reasons.append(f"file body mass {min_file:.2f} < {T_BODY_FILE}")
     if "test" in res and not res["test"]["ok"]:
         reasons.append("test: " + res["test"]["detail"])
     res["pass"] = not reasons
@@ -445,7 +496,7 @@ def calibrate(root: Path, out: Path | None = None) -> list[dict]:
         rows.append(row)
         print(json.dumps({k: (v if k == "id" else {"pass": v["pass"],
                           "sym": v["symbols"]["ratio"], "mass": v["mass"]["ratio"],
-                          "min_file": v["mass"]["min_file"], "check": v["check"]["ok"]})
+                          "body": v["mass"]["body_ratio"], "min_file": v["mass"]["min_file"], "check": v["check"]["ok"]})
                           for k, v in row.items()}), flush=True)
     if out:
         out.write_text("\n".join(json.dumps(r) for r in rows) + "\n")

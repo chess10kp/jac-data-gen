@@ -1,0 +1,126 @@
+{
+ "id": "app-l4-team-lunch-poll",
+ "level": 4,
+ "source": "hand-authored",
+ "gates": [
+  "check",
+  "test",
+  "start",
+  "behavioral"
+ ],
+ "hash": "ac43a1d60d41b1d7",
+ "jac": "jac 0.37.25  (Linux x86_64)",
+ "dedup": {
+  "pass": true,
+  "domain": "team lunch voting poll API",
+  "domain_hits": [],
+  "max_5gram_containment": 0.0,
+  "nearest_5gram": null,
+  "max_8gram_containment": 0.0,
+  "nearest_8gram": null,
+  "n_eval_docs": 1387
+ },
+ "positive": {
+  "check": {
+   "ok": true,
+   "cmd": "jac check main.jac",
+   "rc": 0,
+   "secs": 1.2,
+   "tail": "  Checking main.jac...\nmain.jac ok [100%]\n============================== 1 passed in 0.61s ===============================",
+   "stdout_tail": "  Checking main.jac...\nmain.jac ok [100%]\n============================== 1 passed in 0.61s ==============================="
+  },
+  "test": {
+   "steps": [
+    {
+     "cmd": "jac test poll_tests.jac",
+     "rc": 0,
+     "secs": 3.9,
+     "tail": ".                                                                        [100%]\n\n1 passed in 3.03s",
+     "stdout_tail": ".                                                                        [100%]\n\n1 passed in 3.03s"
+    },
+    {
+     "cmd": "jac test zz_hidden_acceptance.jac",
+     "rc": 0,
+     "secs": 2.6,
+     "tail": "...                                                                      [100%]\n\n3 passed in 1.71s",
+     "stdout_tail": "...                                                                      [100%]\n\n3 passed in 1.71s"
+    }
+   ],
+   "own_test_files": [
+    "poll_tests.jac"
+   ],
+   "ok": true
+  },
+  "start": {
+   "ok": true,
+   "script": "smoke.py",
+   "verdict": {
+    "start": true,
+    "behavioral": true,
+    "failures": []
+   },
+   "rc": 0,
+   "tail": "{\"start\": true, \"behavioral\": true, \"failures\": []}\n---- server.log tail ----\n  \u279c  Local:     http://localhost:51443/\n  \u279c  Network:   http://10.1.0.118:51443/\n\n  Server ready (no client)\n\n127.0.0.1 \"GET /healthz HTTP/1.1\" 200 16 0.7ms d66ca07e63a0440da34c7e85b81fa12f\n{'poll': 'friday', 'tallies': {'tacos': 1}, 'leader': 'tacos'}\n127.0.0.1 \"POST /walker/cast_vote HTTP/1.1\" 200 377 36.0ms c91d2a62f2e3445c82cce61908977b44\n{'poll': 'friday', 'tallies': {'tacos': 1, 'pho': 1}, 'leader': 'pho'}\n127.0.0.1 \"POST /walker/cast_vote HTTP/1.1\" 200 383 22.6ms 1ff450a16c3943db88dac55cfd1bb6a6\n{'poll': 'friday', 'tallies': {'tacos': 2, 'pho': 1}, 'leader': 'tacos'}\n127.0.0.1 \"POST /walker/cast_vote HTTP/1.1\" 200 386 23.4ms 913377d708374b9593b477d1ae225ab1\n{'poll': 'friday', 'tallies': {'pho': 2, 'tacos': 1}, 'leader': 'pho'}\n127.0.0.1 \"POST /walker/cast_vote HTTP/1.1\" 200 383 23.7ms 50dc43d392ec43128ec3c3428f7ec0c1\n{'poll': 'friday', 'tallies': {'pho': 3}, 'leader': 'pho'}\n127.0.0.1 \"POST /walker/cast_vote HTTP/1.1\" 200 370 23.8ms 4ca5470e1ddc44bcaab3a58677603176\n{'poll': 'monday', 'tallies': {'salad': 1}, 'leader': 'salad'}\n127.0.0.1 \"POST /walker/cast_vote HTTP/1.1\" 200 377 23.1ms b8d4575129a749f1bd0dc72be4962412\n{'poll': 'tie', 'tallies': {'zucchini': 1}, 'leader': 'zucchini'}\n127.0.0.1 \"POST /walker/cast_vote HTTP/1.1\" 200 378 24.1ms b4d122fcb8384fd0bcfbedd783ce1074\n{'poll': 'tie', 'tallies': {'zucchini': 1, 'apple': 1}, 'leader': 'apple'}\n127.0.0.1 \"POST /walker/cast_vote HTTP/1.1\" 200 384 25.2ms e13eee74d3b54fe6bb99efde2e94378c\n{\"ts\": \"2026-10-10T15:33:07.818268Z\", \"level\": \"WARNING\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"drain: started (signal SIGTERM, budget 10.0s)\"}\n\nShutting down server..."
+  },
+  "behavioral": {
+   "ok": true,
+   "script": "smoke.py",
+   "verdict": {
+    "start": true,
+    "behavioral": true,
+    "failures": []
+   },
+   "rc": 0,
+   "tail": "{\"start\": true, \"behavioral\": true, \"failures\": []}\n---- server.log tail ----\n  \u279c  Local:     http://localhost:51443/\n  \u279c  Network:   http://10.1.0.118:51443/\n\n  Server ready (no client)\n\n127.0.0.1 \"GET /healthz HTTP/1.1\" 200 16 0.7ms d66ca07e63a0440da34c7e85b81fa12f\n{'poll': 'friday', 'tallies': {'tacos': 1}, 'leader': 'tacos'}\n127.0.0.1 \"POST /walker/cast_vote HTTP/1.1\" 200 377 36.0ms c91d2a62f2e3445c82cce61908977b44\n{'poll': 'friday', 'tallies': {'tacos': 1, 'pho': 1}, 'leader': 'pho'}\n127.0.0.1 \"POST /walker/cast_vote HTTP/1.1\" 200 383 22.6ms 1ff450a16c3943db88dac55cfd1bb6a6\n{'poll': 'friday', 'tallies': {'tacos': 2, 'pho': 1}, 'leader': 'tacos'}\n127.0.0.1 \"POST /walker/cast_vote HTTP/1.1\" 200 386 23.4ms 913377d708374b9593b477d1ae225ab1\n{'poll': 'friday', 'tallies': {'pho': 2, 'tacos': 1}, 'leader': 'pho'}\n127.0.0.1 \"POST /walker/cast_vote HTTP/1.1\" 200 383 23.7ms 50dc43d392ec43128ec3c3428f7ec0c1\n{'poll': 'friday', 'tallies': {'pho': 3}, 'leader': 'pho'}\n127.0.0.1 \"POST /walker/cast_vote HTTP/1.1\" 200 370 23.8ms 4ca5470e1ddc44bcaab3a58677603176\n{'poll': 'monday', 'tallies': {'salad': 1}, 'leader': 'salad'}\n127.0.0.1 \"POST /walker/cast_vote HTTP/1.1\" 200 377 23.1ms b8d4575129a749f1bd0dc72be4962412\n{'poll': 'tie', 'tallies': {'zucchini': 1}, 'leader': 'zucchini'}\n127.0.0.1 \"POST /walker/cast_vote HTTP/1.1\" 200 378 24.1ms b4d122fcb8384fd0bcfbedd783ce1074\n{'poll': 'tie', 'tallies': {'zucchini': 1, 'apple': 1}, 'leader': 'apple'}\n127.0.0.1 \"POST /walker/cast_vote HTTP/1.1\" 200 384 25.2ms e13eee74d3b54fe6bb99efde2e94378c\n{\"ts\": \"2026-10-10T15:33:07.818268Z\", \"level\": \"WARNING\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"drain: started (signal SIGTERM, budget 10.0s)\"}\n\nShutting down server..."
+  }
+ },
+ "negative": {
+  "test": {
+   "steps": [
+    {
+     "why": "no own test blocks found"
+    },
+    {
+     "cmd": "jac test zz_hidden_acceptance.jac",
+     "rc": 1,
+     "secs": 2.5,
+     "tail": "E                                                                        [100%]\n\nFAILED /tmp/appgate_c3a34jaf/zz_hidden_acceptance.jac::zz_hidden_acceptance.jac\nTraceback (most recent call last):\n  File \"/home/runner/_work/jac/jac/.zig-cache/o/8776b3f32593b10747b6ba6ce20fea8b/payload.tar.zst.work/site/jaclang/testing/impl/test_runner.impl.jac\", line 677, in run_file\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/python/lib/python3.14/importlib/__init__.py\", line 88, in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen importlib._bootstrap>\", line 1406, in _gcd_import\n  File \"<frozen importlib._bootstrap>\", line 1371, in _find_and_load\n  File \"<frozen importlib._bootstrap>\", line 1342, in _find_and_load_unlocked\n  File \"<frozen importlib._bootstrap>\", line 938, in _load_unlocked\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/site/jaclang/meta_importer.py\", line 356, in exec_module\n    self._exec_compiled_module(module, file_path)\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/site/jaclang/meta_importer.py\", line 457, in _exec_compiled_module\n    exec(codeobj, module.__dict__)\n    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/appgate_c3a34jaf/zz_hidden_acceptance.jac\", line 2, in <module>\n    import from main { cast_vote }\n     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nImportError: cannot import name 'cast_vote' from 'main' (/tmp/appgate_c3a34jaf/main.jac)\n\n1 error in 1.74s\n\u2716 Error: Tests failed.",
+     "stdout_tail": "    import from main { cast_vote }\n     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nImportError: cannot import name 'cast_vote' from 'main' (/tmp/appgate_c3a34jaf/main.jac)\n\n1 error in 1.74s"
+    }
+   ],
+   "own_test_files": [],
+   "ok": false
+  },
+  "behavioral": {
+   "ok": false,
+   "script": "smoke.py",
+   "verdict": {
+    "start": true,
+    "behavioral": false,
+    "failures": [
+     "cast_vote failed: 405 {'detail': 'Method Not Allowed'}",
+     "cast_vote failed: 405 {'detail': 'Method Not Allowed'}",
+     "cast_vote failed: 405 {'detail': 'Method Not Allowed'}",
+     "poll name missing: {}",
+     "tallies wrong: {}",
+     "leader wrong: {}",
+     "cast_vote failed: 405 {'detail': 'Method Not Allowed'}",
+     "revote wrong: {}",
+     "cast_vote failed: 405 {'detail': 'Method Not Allowed'}",
+     "zero-vote choice should vanish: {}",
+     "cast_vote failed: 405 {'detail': 'Method Not Allowed'}",
+     "polls should be independent: {}",
+     "cast_vote failed: 405 {'detail': 'Method Not Allowed'}",
+     "cast_vote failed: 405 {'detail': 'Method Not Allowed'}",
+     "tie should go alphabetical: {}"
+    ]
+   },
+   "rc": 1,
+   "tail": "{\"start\": true, \"behavioral\": false, \"failures\": [\"cast_vote failed: 405 {'detail': 'Method Not Allowed'}\", \"cast_vote failed: 405 {'detail': 'Method Not Allowed'}\", \"cast_vote failed: 405 {'detail': 'Method Not Allowed'}\", \"poll name missing: {}\", \"tallies wrong: {}\", \"leader wrong: {}\", \"cast_vote failed: 405 {'detail': 'Method Not Allowed'}\", \"revote wrong: {}\", \"cast_vote failed: 405 {'detail': 'Method Not Allowed'}\", \"zero-vote choice should vanish: {}\", \"cast_vote failed: 405 {'detail': 'Method Not Allowed'}\", \"polls should be independent: {}\", \"cast_vote failed: 405 {'detail': 'Method Not Allowed'}\", \"cast_vote failed: 405 {'detail': 'Method Not Allowed'}\", \"tie should go alphabetical: {}\"]}\n---- server.log tail ----\n{\"ts\": \"2026-10-10T15:33:12.951453Z\", \"level\": \"INFO\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"Ops self-check endpoint registered: /admin/ops/health\"}\n{\"ts\": \"2026-10-10T15:33:12.951517Z\", \"level\": \"INFO\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"Deploy-health endpoint registered: /admin/ops/deploy\"}\n{\"ts\": \"2026-10-10T15:33:12.951587Z\", \"level\": \"INFO\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"Network endpoint registered: /admin/ops/network\"}\n{\"ts\": \"2026-10-10T15:33:12.951651Z\", \"level\": \"INFO\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"Pod-env endpoint registered: /admin/ops/podenv\"}\nJac API Server running on http://localhost:59109\n\n  jac dev server v0.37.25\n\n  \u279c  Local:     http://localhost:59109/\n  \u279c  Network:   http://10.1.0.118:59109/\n\n  Server ready (no client)\n\n127.0.0.1 \"GET /healthz HTTP/1.1\" 200 16 0.7ms 90a711237d5e4c31ad10809252b41f49\n127.0.0.1 \"POST /walker/cast_vote HTTP/1.1\" 405 32 0.6ms 630bc52bf5904758b227109a37aeb62a\n127.0.0.1 \"POST /walker/cast_vote HTTP/1.1\" 405 32 0.5ms 47f0a108753f46e4a8f9bd9614840c87\n127.0.0.1 \"POST /walker/cast_vote HTTP/1.1\" 405 32 0.4ms 557d9858434f4f14a3bbed47d0602fa4\n127.0.0.1 \"POST /walker/cast_vote HTTP/1.1\" 405 32 0.4ms 4696e54f14814f219ea91fd890efe621\n127.0.0.1 \"POST /walker/cast_vote HTTP/1.1\" 405 32 0.4ms 4ee7e27a356a4013942150e03d56dd81\n127.0.0.1 \"POST /walker/cast_vote HTTP/1.1\" 405 32 0.3ms 248ccf8ae3f64463bf9d30e5841d44a5\n127.0.0.1 \"POST /walker/cast_vote HTTP/1.1\" 405 32 0.3ms f83a3d7e3d884c5894e30460a3e4382f\n127.0.0.1 \"POST /walker/cast_vote HTTP/1.1\" 405 32 0.4ms f9f91763b6b9453e9fa4b2451cd954da\n{\"ts\": \"2026-10-10T15:33:13.456633Z\", \"level\": \"WARNING\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"drain: started (signal SIGTERM, budget 10.0s)\"}\n\nShutting down server..."
+  }
+ },
+ "secs": 16.7,
+ "validated": true,
+ "reason": "reference passes ['behavioral', 'check', 'start', 'test']; starter fails ['behavioral', 'test']; dedup ok",
+ "ci_run": "38063985138"
+}
