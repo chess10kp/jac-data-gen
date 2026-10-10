@@ -23,7 +23,6 @@ base_route_app = "app"
 
 [client]
 
-[scale]
-[scale.microservices]
-[scale.microservices.routes]
-endpoints = "/endpoints"
+[build]
+# keep plain modules on the Python (server) backend; see grader/notes.md
+default_codespace = "server"

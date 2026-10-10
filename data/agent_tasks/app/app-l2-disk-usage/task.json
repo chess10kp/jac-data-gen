@@ -16,7 +16,7 @@
     "domain": "filesystem disk usage tree",
     "author": "claude-opus (agent), hand-checked pilot",
     "created": "2026-10-10",
-    "starter": "empty",
+    "starter": "jac.toml only (jac create cli, 0.36.1)",
     "taxonomy": "JacProjectFactory Factory4Eval levels 1-5",
     "dedup_checked_against": [
       "evals/frontend/v1/specs.json",

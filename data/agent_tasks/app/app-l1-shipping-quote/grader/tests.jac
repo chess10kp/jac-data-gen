@@ -15,11 +15,17 @@ test "billable weight uses the larger and rounds up to half kg" {
 }
 
 test "billable weight rejects non-positive input" {
-    with testraises(ValueError) {
+    try {
         billable_weight(0, 10, 10, 10);
+        assert False, "expected ValueError";
+    } except ValueError {
+        assert True;
     }
-    with testraises(ValueError) {
+    try {
         billable_weight(1, 10, -2, 10);
+        assert False, "expected ValueError";
+    } except ValueError {
+        assert True;
     }
 }
 
@@ -33,11 +39,17 @@ test "quotes per zone" {
 }
 
 test "quote rejects bad input" {
-    with testraises(ValueError) {
+    try {
         quote(2.0, "moon");
+        assert False, "expected ValueError";
+    } except ValueError {
+        assert True;
     }
-    with testraises(ValueError) {
+    try {
         quote(0, "domestic");
+        assert False, "expected ValueError";
+    } except ValueError {
+        assert True;
     }
 }
 
@@ -47,7 +59,10 @@ test "free shipping thresholds" {
     assert not free_shipping(99.0, "regional");
     assert free_shipping(100.0, "regional");
     assert not free_shipping(10000.0, "international");
-    with testraises(ValueError) {
+    try {
         free_shipping(10.0, "nowhere");
+        assert False, "expected ValueError";
+    } except ValueError {
+        assert True;
     }
 }

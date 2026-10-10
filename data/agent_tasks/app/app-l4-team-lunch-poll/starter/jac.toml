@@ -10,3 +10,7 @@ jac-version = "==0.36.1"
 
 [dev-dependencies]
 watchdog = ">=3.0.0"
+
+[build]
+# keep plain modules on the Python (server) backend; see grader/notes.md
+default_codespace = "server"

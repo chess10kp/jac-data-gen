@@ -1,4 +1,4 @@
-I'd like a little full-stack recipe box in Jac. I ran `jac create --kind web-app` in this folder, so you'll see the guestbook template — replace it.
+I'd like a little full-stack recipe box in Jac. I ran `jac create --kind web-app` in this folder, so you'll see the guestbook template — replace it. (I already took the `endpoints` microservice route out of `jac.toml`, so everything runs in one process.)
 
 **Server (put the walkers in `endpoints.jac`, public walkers, `POST /walker/<name>`):**
 

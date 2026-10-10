@@ -19,11 +19,17 @@ test "scale down to fraction" {
 }
 
 test "scale rejects bad servings" {
-    with testraises(ValueError) {
+    try {
         scale_recipe([Ingredient(name="x", qty=1.0, unit="g")], 0, 4);
+        assert False, "expected ValueError";
+    } except ValueError {
+        assert True;
     }
-    with testraises(ValueError) {
+    try {
         scale_recipe([Ingredient(name="x", qty=1.0, unit="g")], 4, -1);
+        assert False, "expected ValueError";
+    } except ValueError {
+        assert True;
     }
 }
 
@@ -37,11 +43,17 @@ test "convert volumes and weights" {
 }
 
 test "convert rejects mixed families and unknown units" {
-    with testraises(ValueError) {
+    try {
         convert(1.0, "cup", "g");
+        assert False, "expected ValueError";
+    } except ValueError {
+        assert True;
     }
-    with testraises(ValueError) {
+    try {
         convert(1.0, "pinch", "tsp");
+        assert False, "expected ValueError";
+    } except ValueError {
+        assert True;
     }
 }
 

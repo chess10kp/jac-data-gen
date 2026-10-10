@@ -12,8 +12,12 @@ node Best {
     has seq: float = 0.0;
 }
 
+def rank_key(b: Best) -> tuple[int, float] {
+    return (-b.score, b.seq);
+}
+
 def board(g: Game) -> list[dict[str, any]] {
-    entries = sorted([b for b in [g -->[?:Best]]], key=lambda (b: Best) -> tuple[int, float] { return (-b.score, b.seq); });
+    entries = sorted([b for b in [g -->[?:Best]]], key=rank_key);
     return [{"player": b.player, "score": b.score} for b in entries[:5]];
 }
 

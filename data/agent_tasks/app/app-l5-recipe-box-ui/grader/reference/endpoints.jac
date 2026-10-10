@@ -20,8 +20,16 @@ def recipe_view(r: Recipe) -> dict[str, any] {
             "rating": avg, "ratings": r.stars_count};
 }
 
+def view_title(v: dict[str, any]) -> str {
+    return v["title"];
+}
+
+def rating_then_title(v: dict[str, any]) -> tuple[float, str] {
+    return (-v["rating"], v["title"]);
+}
+
 def by_title(views: list[dict[str, any]]) -> list[dict[str, any]] {
-    return sorted(views, key=lambda (v: dict[str, any]) -> str { return v["title"]; });
+    return sorted(views, key=view_title);
 }
 
 walker:pub add_recipe {
@@ -101,7 +109,7 @@ walker:pub top_rated {
 
     can rank with Root entry {
         rated = [recipe_view(r) for r in [here -->[?:Recipe]] if r.stars_count > 0];
-        ranked = sorted(rated, key=lambda (v: dict[str, any]) -> tuple[float, str] { return (-v["rating"], v["title"]); });
+        ranked = sorted(rated, key=rating_then_title);
         report ranked[:self.limit];
     }
 }

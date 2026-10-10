@@ -12,6 +12,10 @@ edge Ballot: Voter --> Poll {
     has choice: str;
 }
 
+def votes_then_name(kv: tuple[str, int]) -> tuple[int, str] {
+    return (-kv[1], kv[0]);
+}
+
 walker:pub cast_vote {
     has poll: str;
     has voter: str;
@@ -22,13 +26,13 @@ walker:pub cast_vote {
         p = polls[0] if polls else here ++> Poll(name=self.poll);
         voters = [v for v in [here -->[?:Voter]] if v.name == self.voter];
         v = voters[0] if voters else here ++> Voter(name=self.voter);
-        del [edge v ->:Ballot:-> p];
+        v del --> p;
         v +>:Ballot(choice=self.choice.strip().lower()):+> p;
         tallies: dict[str, int] = {};
         for b in [edge p <-:Ballot:<-] {
             tallies[b.choice] = tallies.get(b.choice, 0) + 1;
         }
-        leader = sorted(tallies.items(), key=lambda (kv: tuple[str, int]) -> tuple[int, str] { return (-kv[1], kv[0]); })[0][0];
+        leader = sorted(tallies.items(), key=votes_then_name)[0][0];
         report {"poll": p.name, "tallies": tallies, "leader": leader};
     }
 }

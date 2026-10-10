@@ -2,7 +2,7 @@
 
 A task's smoke.py defines `checks(srv)` and calls `run(checks)`. The harness copies
 the workspace to a fresh temp dir (fresh graph store namespace), boots
-`jac run --serve --port <free> main.jac`, waits for /healthz, runs the checks and
+`jac start -p <free> -n main.jac` (jac 0.36.1), waits for /healthz, runs the checks and
 prints a JSON verdict {"start", "behavioral", "failures"} as the LAST stdout line;
 exit 0 iff both are true. Walker endpoints are POST /walker/<name>.
 """
@@ -38,7 +38,7 @@ class Server:
         self.port = s.getsockname()[1]
         s.close()
         self.log = open(os.path.join(self.dir, "server.log"), "w")
-        self.proc = subprocess.Popen(["jac", "run", "--serve", "--port", str(self.port), entry],
+        self.proc = subprocess.Popen([os.environ.get("JAC_BIN", "jac"), "start", "-p", str(self.port), "-n", entry],
                                      cwd=self.dir, stdin=subprocess.DEVNULL, stdout=self.log,
                                      stderr=subprocess.STDOUT, start_new_session=True)
         self.base = f"http://127.0.0.1:{self.port}"

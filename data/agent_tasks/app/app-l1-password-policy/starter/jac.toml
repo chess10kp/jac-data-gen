@@ -1,7 +1,7 @@
 [project]
-name = "tagged_bookmarks"
+name = "password_policy"
 version = "0.1.0"
-description = "Command-line Jac project"
+description = "Jac library project"
 entry-point = "main.jac"
 kind = "cli"
 jac-version = "==0.36.1"

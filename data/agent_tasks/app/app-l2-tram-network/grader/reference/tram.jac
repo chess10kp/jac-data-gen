@@ -30,7 +30,7 @@ walker TravelTimes {
 }
 
 walker FastestTime(TravelTimes) {
-    has target: str;
+    has target: str = "";
 
     can finish with exit {
         report self.best.get(self.target, -1);
@@ -38,7 +38,7 @@ walker FastestTime(TravelTimes) {
 }
 
 walker ReachableWithin(TravelTimes) {
-    has budget: int;
+    has budget: int = 0;
     has origin: str = "";
 
     can mark with Stop entry {

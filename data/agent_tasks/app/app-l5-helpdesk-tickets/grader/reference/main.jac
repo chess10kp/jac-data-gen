@@ -20,8 +20,16 @@ node Comment {
     has body: str;
 }
 
+def comment_seq(c: Comment) -> int {
+    return c.seq;
+}
+
+def ticket_order(t: Ticket) -> tuple[int, int] {
+    return (PRIORITY.get(t.priority, 9), t.number);
+}
+
 def ticket_view(t: Ticket) -> dict[str, any] {
-    comments = sorted([c for c in [t -->[?:Comment]]], key=lambda (c: Comment) -> int { return c.seq; });
+    comments = sorted([c for c in [t -->[?:Comment]]], key=comment_seq);
     return {"number": t.number, "subject": t.subject, "priority": t.priority, "status": t.status,
             "agent": t.agent, "comments": [{"author": c.author, "body": c.body} for c in comments]};
 }
@@ -117,7 +125,7 @@ walker:pub list_tickets {
 
     can listing with Root entry {
         ts = [t for t in [here -->[?:Ticket]] if not self.status or t.status == self.status];
-        ts = sorted(ts, key=lambda (t: Ticket) -> tuple[int, int] { return (PRIORITY.get(t.priority, 9), t.number); });
+        ts = sorted(ts, key=ticket_order);
         report [ticket_view(t) for t in ts];
     }
 }
