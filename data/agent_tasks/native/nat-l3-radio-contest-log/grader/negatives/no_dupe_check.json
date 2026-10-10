@@ -1,0 +1,1 @@
+{"why": "stores dupes", "edits": [{"file": "contest.jac", "old": "        if [book ->:Logged:->[?:Qso, call == sign]] {\n            report \"dupe\";\n            return;\n        }\n", "new": ""}]}

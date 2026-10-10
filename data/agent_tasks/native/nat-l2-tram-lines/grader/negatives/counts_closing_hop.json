@@ -1,0 +1,1 @@
+{"why": "adds minutes of the loop-closing hop", "edits": [{"file": "tramway.jac", "old": "            if nxt and nxt[0] not in self.visited {\n                self.minutes += hop.minutes;", "new": "            self.minutes += hop.minutes;\n            if nxt and nxt[0] not in self.visited {"}]}

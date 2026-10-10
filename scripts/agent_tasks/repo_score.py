@@ -134,6 +134,42 @@ GENERIC_FILL = {"list": "list[any]", "dict": "dict[any, any]", "set": "set[any]"
 E1036_RE = re.compile(r'Generic type "(\w+)" requires explicit type arguments')
 
 
+def move_pypi(t: str) -> str:
+    """Move python packages listed directly under [dependencies]/[dev-dependencies]
+    into [<table>.pypi] (what `jac fix dependencies` should do, but it refuses to load
+    a jac.toml whose [dev-dependencies] still holds python packages)."""
+    lines = t.split("\n")
+    out, moved, cur = [], defaultdict(list), None
+    for ln in lines:
+        h = re.match(r"^\s*\[([^\]]+)\]\s*(#.*)?$", ln)
+        if h:
+            cur = h.group(1).strip()
+            out.append(ln)
+            continue
+        kv = re.match(r'^\s*("?)([A-Za-z0-9_.\-\[\]]+)\1\s*=', ln)
+        if cur in ("dependencies", "dev-dependencies") and kv and "/" not in kv.group(2):
+            moved[cur].append(ln.strip())
+            continue
+        out.append(ln)
+    # drop tables removed in 0.37 (deploy-only config)
+    out2, skip = [], False
+    for ln in out:
+        h = re.match(r"^\s*\[([^\]]+)\]", ln)
+        if h:
+            skip = h.group(1).strip().startswith("scale.microservices")
+        if not skip:
+            out2.append(ln)
+    out = out2
+    for sec, kvs in moved.items():
+        hdr = f"[{sec}.pypi]"
+        if hdr in out:
+            i = out.index(hdr)
+            out[i + 1:i + 1] = kvs
+        else:
+            out += ["", hdr, *kvs]
+    return "\n".join(out)
+
+
 def config_fix(tree: Path) -> list[str]:
     """0.37 jac.toml migration: dotted entry-point, `jac fix dependencies`."""
     done = []
@@ -143,7 +179,7 @@ def config_fix(tree: Path) -> list[str]:
             v = m.group(2)
             v2 = re.sub(r"(\.(sv|cl|na))?\.jac$", "", v).strip("./").replace("/", ".")
             return f'{m.group(1)}"{v2}"'
-        t2 = re.sub(r'((?:entry-point|entry_point)\s*=\s*)"([^"]+\.jac)"', dot, t)
+        t2 = move_pypi(re.sub(r'((?:entry-point|entry_point)\s*=\s*)"([^"]+\.jac)"', dot, t))
         if t2 != t:
             toml.write_text(t2)
             done.append(f"entry-point:{toml.relative_to(tree)}")

@@ -1,0 +1,1 @@
+{"why": "only full siblings excluded (half-siblings become cousins)", "edits": [{"file": "family.jac", "old": "            if not shared {", "new": "            if len(shared) < len(parents) {"}]}

@@ -1,0 +1,1 @@
+{"why": "count 0 accepted", "edits": [{"file": "survey.jac", "old": "if self.count <= 0 {", "new": "if self.count < 0 {"}]}

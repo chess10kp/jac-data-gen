@@ -1,0 +1,7 @@
+{
+  "run_steps": [
+    {"file": "probe_radio_seed.jac", "expect": ["SEEDED"]},
+    {"file": "probe_radio_check.jac", "expect": ["RELOG=dupe", "SCORE=4"]}
+  ],
+  "contracts": [{"name": "LogQso", "kind": "walker"}, {"name": "Score", "kind": "walker"}, {"name": "BandSummary", "kind": "walker"}]
+}

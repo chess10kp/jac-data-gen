@@ -99,17 +99,65 @@ def run_check(ws: Path, paths: list[str] | None = None, timeout: int = CHECK_TIM
             "summary": (summ or "").strip("= "), "crash": crash}
 
 
+def strip_entry(src: str) -> str:
+    """Drop module-level `with entry {...}` blocks (demo drivers) so importing the
+    target from the hidden test module doesn't execute them."""
+    toks = list(_TOK.finditer(src))
+    out, i, depth, k = [], 0, 0, 0
+    while k < len(toks):
+        v = toks[k].group(0)
+        if v in "{[(":
+            depth += 1
+        elif v in "}])":
+            depth = max(0, depth - 1)
+        elif depth == 0 and v == "with" and k + 1 < len(toks) and toks[k + 1].group(0) == "entry":
+            j = k + 2
+            while j < len(toks) and toks[j].group(0) != "{":
+                j += 1
+            d, e = 0, j
+            while e < len(toks):
+                w = toks[e].group(0)
+                d += (w == "{") - (w == "}")
+                if w == "}" and d == 0:
+                    break
+                e += 1
+            if e < len(toks):
+                out.append(src[i:toks[k].start()])
+                i = toks[e].end()
+                k = e + 1
+                continue
+        k += 1
+    out.append(src[i:])
+    return "".join(out)
+
+
 def run_tests(ws: Path, test_file: str = "tests.jac", timeout: int = 300) -> dict:
-    try:
-        p = subprocess.run([JAC, "test", test_file], cwd=ws, capture_output=True,
-                           text=True, timeout=timeout)
-    except subprocess.TimeoutExpired:
-        return {"ok": False, "detail": "timeout"}
-    txt = p.stdout + p.stderr
-    m = re.findall(r"(\d+) passed", txt)
-    f = re.findall(r"(\d+) failed", txt)
-    ok = p.returncode == 0 and bool(m) and not any(int(x) for x in f)
-    return {"ok": ok, "detail": (txt.strip().splitlines() or [""])[-1][:200]}
+    """Run the hidden test module inside ws (a scratch copy: main.jac gets its
+    `with entry` driver stripped first)."""
+    m = ws / "main.jac"
+    if m.exists():
+        m.write_text(strip_entry(m.read_text(errors="replace")))
+    res = {"ok": False, "detail": "not run"}
+    for attempt in range(2):
+        if attempt:  # native codespace miscompiles some programs; retry pinned to server
+            if (ws / "jac.toml").exists():
+                break
+            (ws / "jac.toml").write_text('[build]\ndefault_codespace = "server"\n')
+        try:
+            p = subprocess.run([JAC, "test", test_file], cwd=ws, capture_output=True,
+                               text=True, timeout=timeout)
+        except subprocess.TimeoutExpired:
+            res = {"ok": False, "detail": "timeout"}
+            continue
+        txt = p.stdout + p.stderr
+        m = re.findall(r"(\d+) passed", txt)
+        f = re.findall(r"(\d+) failed", txt)
+        ok = p.returncode == 0 and bool(m) and not any(int(x) for x in f)
+        tail = [l for l in txt.strip().splitlines() if "passed" in l or "failed" in l or "Error" in l]
+        res = {"ok": ok, "detail": (tail[-1] if tail else txt[-200:])[:200]}
+        if ok:
+            break
+    return res
 
 
 # --------------------------------------------------------------------------

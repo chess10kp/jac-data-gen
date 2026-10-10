@@ -1,0 +1,1 @@
+{"why": "leave does not delete the car", "edits": [{"file": "garage.jac", "old": "        del car;\n", "new": ""}]}

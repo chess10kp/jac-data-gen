@@ -1,0 +1,1 @@
+{"why": "31+ minutes boundary wrong (30 charged)", "edits": [{"file": "garage.jac", "old": "if stay > 30 {", "new": "if stay >= 30 {"}]}

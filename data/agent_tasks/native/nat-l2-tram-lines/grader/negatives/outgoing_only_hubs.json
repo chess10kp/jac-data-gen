@@ -1,0 +1,1 @@
+{"why": "interchange considers departing edges only", "edits": [{"file": "tramway.jac", "old": "        for e in [edge here <-:Track:<-] {\n            lines.add(e.line);\n        }\n", "new": ""}]}

@@ -1,0 +1,1 @@
+{"why": "dupe check across all bands", "edits": [{"file": "contest.jac", "old": "if [book ->:Logged:->[?:Qso, call == sign]] {", "new": "if [root -->[?:BandLog] ->:Logged:->[?:Qso, call == sign]] {"}]}

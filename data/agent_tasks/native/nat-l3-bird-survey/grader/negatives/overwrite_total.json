@@ -1,0 +1,1 @@
+{"why": "overwrites total instead of adding", "edits": [{"file": "survey.jac", "old": "link.total += self.count;", "new": "link.total = self.count;"}]}

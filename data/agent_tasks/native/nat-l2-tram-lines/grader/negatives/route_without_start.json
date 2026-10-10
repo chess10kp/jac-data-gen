@@ -1,0 +1,1 @@
+{"why": "route omits the starting stop", "edits": [{"file": "tramway.jac", "old": "        self.route.append(here.name);\n", "new": "        if self.visited[0] != here {\n            self.route.append(here.name);\n        }\n"}]}

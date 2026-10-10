@@ -1,0 +1,1 @@
+{"why": "always creates a new edge", "edits": [{"file": "survey.jac", "old": "        if links {\n            link = links[0];", "new": "        if False {\n            link = links[0];"}]}

@@ -1,0 +1,1 @@
+{"why": "allows one car over capacity", "edits": [{"file": "garage.jac", "old": "if len([lvl ->:ParkedOn:->]) < lvl.spots {", "new": "if len([lvl ->:ParkedOn:->]) <= lvl.spots {"}]}

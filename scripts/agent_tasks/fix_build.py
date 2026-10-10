@@ -62,7 +62,7 @@ MAX_ERRORS = 60
 UNITS_PER_REPO = 6      # evaluated in CI
 TASKS_PER_REPO = 2      # kept in the pool
 OSP_EVAL = 64           # osp candidates evaluated in CI
-SECRET_RE = re.compile(r"(sk-[A-Za-z0-9_-]{20,}|AIza[0-9A-Za-z_-]{30,}|ghp_[A-Za-z0-9]{30,}|"
+SECRET_RE = re.compile(r"(sk-(?:proj-|ant-)?[A-Za-z0-9]{20,}|AIza[0-9A-Za-z_-]{30,}|ghp_[A-Za-z0-9]{30,}|"
                        r"xox[bap]-[A-Za-z0-9-]{20,}|AKIA[0-9A-Z]{16}|sk-or-v1-[0-9a-f]{20,}|"
                        r"(?i:api[_-]?key|secret|token)\s*[:=]\s*[\"'][A-Za-z0-9_\-]{24,}[\"'])")
 
@@ -410,6 +410,12 @@ def cmd_candidates(a) -> None:
     out = Path(a.out)
     (out / "cands").mkdir(parents=True, exist_ok=True)
     nonsf = Path(a.nonsf)
+    if nonsf.suffix == ".gz":  # CI: staged, secret-redacted .jac-only snapshot
+        x = Path(tempfile.mkdtemp(prefix="nonsf_"))
+        import tarfile
+        with tarfile.open(nonsf) as tf:
+            tf.extractall(x, filter="data")
+        nonsf = x / "jachacks_nonsf"
     units = jachacks_units(nonsf) + osp_units()
     units.sort(key=lambda u: u["cid"])
     mine = shard_of(units, a.shard)
@@ -715,9 +721,32 @@ def cmd_merge_validate(a) -> None:
     print(f"merged {len(res)} validate rows; validated={sum(r['validated'] for r in res.values())}")
 
 
+def cmd_stage_src(a) -> None:
+    """Pack data/jachacks_nonsf (.jac only, secrets redacted) for CI."""
+    import tarfile
+    dst = OUT / "_src" / "nonsf.tar.gz"
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    src = DATA / "jachacks_nonsf"
+    n = red = 0
+    with tarfile.open(dst, "w:gz") as tf:
+        for p in sorted(src.rglob("*.jac")):
+            if not p.is_file() or ".jac" in p.relative_to(src).parts[:-1]:
+                continue
+            txt = p.read_text(errors="replace")
+            txt2 = SECRET_RE.sub("REDACTED", txt)
+            red += txt2 != txt
+            import io
+            b = txt2.encode()
+            ti = tarfile.TarInfo(str(Path("jachacks_nonsf") / p.relative_to(src)))
+            ti.size = len(b)
+            tf.addfile(ti, io.BytesIO(b))
+            n += 1
+    print(f"staged {n} files ({red} redacted) -> {dst} ({dst.stat().st_size // 1024} KiB)")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("stage", choices=["candidates", "select", "validate", "merge-validate", "units"])
+    ap.add_argument("stage", choices=["candidates", "select", "validate", "merge-validate", "units", "stage-src"])
     ap.add_argument("--shard", default="0/1")
     ap.add_argument("--out", default="ci_out")
     ap.add_argument("--nonsf", default=str(DATA / "jachacks_nonsf"))
@@ -731,7 +760,7 @@ def main() -> int:
         print(Counter(u['error_code'] for u in ou).most_common())
         return 0
     {"candidates": cmd_candidates, "select": cmd_select, "validate": cmd_validate,
-     "merge-validate": cmd_merge_validate}[a.stage](a)
+     "merge-validate": cmd_merge_validate, "stage-src": cmd_stage_src}[a.stage](a)
     return 0
 
 
