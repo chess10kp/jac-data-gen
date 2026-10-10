@@ -1,0 +1,11 @@
+{
+  "id": "nat-l1-seed-vault-regrow",
+  "kind": "native",
+  "level": 1,
+  "source": "hand-authored",
+  "gates": ["check", "test"],
+  "target_paths": ["vault.jac"],
+  "jac_version": "0.37.25",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "provenance": {"author": "claude (hand-authored pilot)", "created": "2026-10-10", "title": "Seed vault regrow planning", "domain": "seed bank curation", "constructs": ["node", "walker accumulation", "dict report", "Root exit"], "inspiration": "none (original)"}
+}

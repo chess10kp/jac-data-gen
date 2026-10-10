@@ -1,0 +1,11 @@
+{
+  "id": "nat-l1-kiln-cone-yield",
+  "kind": "native",
+  "level": 1,
+  "source": "hand-authored",
+  "gates": ["check", "test"],
+  "target_paths": ["kiln.jac"],
+  "jac_version": "0.37.25",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "provenance": {"author": "claude (hand-authored pilot)", "created": "2026-10-10", "title": "Pottery kiln cone yield", "domain": "ceramics studio kiln log", "constructs": ["node", "obj result type", "walker aggregation", "typed report list"], "inspiration": "none (original)"}
+}

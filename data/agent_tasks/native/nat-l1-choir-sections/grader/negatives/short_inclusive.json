@@ -1,0 +1,1 @@
+{"why": "short uses <= minimum", "edits": [{"file": "choir.jac", "old": "if self.counts[p.name] < self.minimum {", "new": "if self.counts[p.name] <= self.minimum {"}]}

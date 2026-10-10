@@ -1,0 +1,1 @@
+{"why": "ignores glaze faults", "edits": [{"file": "kiln.jac", "old": "stat.losses += here.cracked + here.glaze_faults;", "new": "stat.losses += here.cracked;"}]}

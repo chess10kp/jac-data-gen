@@ -1,0 +1,1 @@
+{"why": "yield as loss percentage", "edits": [{"file": "kiln.jac", "old": "s.yield_pct = (s.pieces - s.losses) * 100 // s.pieces;", "new": "s.yield_pct = 100 - s.losses * 100 // s.pieces;"}]}

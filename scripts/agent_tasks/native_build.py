@@ -66,12 +66,74 @@ def cmd_validate(a) -> int:
             if not a.force and prev and prev.get("hash") == h and prev.get("validated"):
                 print(f"=== {t.name}: cached VALIDATED (hash {h}), skip")
                 continue
-            r = validate(t, a.jac, a.repeats)
+            try:
+                r = validate(t, a.jac, a.repeats)
+            except Exception as e:  # harness/authoring error: record, keep going
+                r = {"id": t.name, "level": None, "hash": h, "validated": False, "ok": [],
+                     "fail": [f"harness error: {type(e).__name__}: {e}"], "n_alternatives": 0, "n_negatives": 0}
+                print(f"=== {t.name}: HARNESS ERROR {e}")
             fh.write(json.dumps(r) + "\n")
             fh.flush()
             bad += not r["validated"]
     print(f"shard {a.shard}: {len(tasks)} tasks, {bad} not validated")
     return 0
+
+
+REQUIRED_TASK_KEYS = ["id", "kind", "level", "source", "gates", "target_paths", "jac_version", "license", "provenance"]
+ALLOWED_GATES = {"check", "run", "test", "start", "fidelity", "behavioral"}
+
+
+def lint_task(t: Path) -> list[str]:
+    """Cheap static checks (no jac): schema, files, mutant anchors."""
+    errs: list[str] = []
+    try:
+        meta = json.loads((t / "task.json").read_text())
+    except Exception as e:
+        return [f"task.json: {e}"]
+    errs += [f"task.json missing {k}" for k in REQUIRED_TASK_KEYS if k not in meta]
+    if meta.get("id") != t.name:
+        errs.append("id != dir name")
+    if meta.get("kind") != "native" or meta.get("level") not in (1, 2, 3, 4, 5):
+        errs.append("bad kind/level")
+    if not set(meta.get("gates", [])) <= ALLOWED_GATES:
+        errs.append(f"bad gates {meta.get('gates')}")
+    for f in ["request.md", "grader/tests.jac", "grader/notes.md"]:
+        if not (t / f).exists():
+            errs.append(f"missing {f}")
+    if not (t / "starter").is_dir():
+        errs.append("missing starter/")
+    ref = t / "grader" / "reference"
+    for tp in meta.get("target_paths", []):
+        if not (ref / tp).exists():
+            errs.append(f"reference missing {tp}")
+    for alt in (t / "grader" / "alternatives").glob("*"):
+        for tp in meta.get("target_paths", []):
+            if not (alt / tp).exists() and not (t / "starter" / tp).exists():
+                errs.append(f"alt {alt.name} missing {tp}")
+    for neg in (t / "grader" / "negatives").glob("*.json"):
+        try:
+            spec = json.loads(neg.read_text())
+        except Exception as e:
+            errs.append(f"{neg.name}: {e}")
+            continue
+        for ed in spec["edits"]:
+            src = (ref / ed["file"]).read_text() if (ref / ed["file"]).exists() else ""
+            if src.count(ed["old"]) != 1:
+                errs.append(f"{neg.name}: anchor x{src.count(ed['old'])} in {ed['file']}: {ed['old'][:50]!r}")
+    req = (t / "request.md").read_text().lower() if (t / "request.md").exists() else ""
+    for w in ("hidden test", "grader", "mutant", "negatives/"):
+        if w in req:
+            errs.append(f"request.md leaks {w!r}")
+    return errs
+
+
+def cmd_lint(a) -> int:
+    bad = 0
+    for t in task_dirs():
+        errs = lint_task(t)
+        bad += bool(errs)
+        print(f"{'OK ' if not errs else 'ERR'} {t.name}" + "".join(f"\n    {e}" for e in errs))
+    return 1 if bad else 0
 
 
 def cmd_merge(a) -> int:
@@ -147,8 +209,9 @@ def main() -> int:
     m.add_argument("run_dir")
     m.add_argument("--run-id", default="")
     sp.add_parser("manifest")
+    sp.add_parser("lint")
     a = ap.parse_args()
-    return {"validate": cmd_validate, "merge": cmd_merge, "manifest": cmd_manifest}[a.cmd](a)
+    return {"validate": cmd_validate, "merge": cmd_merge, "manifest": cmd_manifest, "lint": cmd_lint}[a.cmd](a)
 
 
 if __name__ == "__main__":

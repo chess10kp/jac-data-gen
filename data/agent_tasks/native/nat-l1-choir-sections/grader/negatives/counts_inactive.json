@@ -1,0 +1,1 @@
+{"why": "counts inactive singers", "edits": [{"file": "choir.jac", "old": "if here.active and here.rehearsals >= 2 {", "new": "if here.rehearsals >= 2 {"}]}

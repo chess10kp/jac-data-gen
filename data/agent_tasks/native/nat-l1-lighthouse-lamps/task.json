@@ -1,0 +1,11 @@
+{
+  "id": "nat-l1-lighthouse-lamps",
+  "kind": "native",
+  "level": 1,
+  "source": "hand-authored",
+  "gates": ["check", "test"],
+  "target_paths": ["keepers.jac"],
+  "jac_version": "0.37.25",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "provenance": {"author": "claude (hand-authored pilot)", "created": "2026-10-10", "title": "Lighthouse lamp night shift", "domain": "lighthouse maintenance", "constructs": ["enum", "node", "walker mutating here", "walker has params", "Root exit report"], "inspiration": "none (original)"}
+}
