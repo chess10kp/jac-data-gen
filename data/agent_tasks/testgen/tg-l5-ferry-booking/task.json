@@ -19,24 +19,13 @@
     ],
     "scope": null,
     "n_candidates": 47,
-    "n_mechanical_sites": 51,
+    "n_mechanical_sites": 54,
     "n_source_negatives": 7,
-    "n_hand": 0,
-    "stats": {
-      "n_candidates": 0,
-      "n_stillborn": 0,
-      "n_presumed_equivalent": 0,
-      "n_eligible": 0,
-      "ref_kill": null,
-      "oracle_kill": null,
-      "trivial_kill": null,
-      "starter_kill": null,
-      "ref_survivors": []
-    }
+    "n_hand": 0
   },
   "provenance": {
     "source_task": "native/nat-l5-ferry-booking",
-    "source_hash": "3d60536e10f902ff",
+    "source_hash": "60ab51e097df9f83",
     "variant": "fresh",
     "title": "Tests for ferry reservations",
     "domain": "ferry reservations",

@@ -1,0 +1,16 @@
+[project]
+name = "shipping_quote"
+version = "0.1.0"
+description = "Jac library project"
+entry-point = "main.jac"
+kind = "cli"
+jac-version = "==0.36.1"
+
+[dependencies]
+
+[dev-dependencies]
+watchdog = ">=3.0.0"
+
+[build]
+# keep plain modules on the Python (server) backend; see grader/notes.md
+default_codespace = "server"

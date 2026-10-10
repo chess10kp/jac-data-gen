@@ -21,22 +21,11 @@
     "n_candidates": 43,
     "n_mechanical_sites": 44,
     "n_source_negatives": 0,
-    "n_hand": 3,
-    "stats": {
-      "n_candidates": 0,
-      "n_stillborn": 0,
-      "n_presumed_equivalent": 0,
-      "n_eligible": 0,
-      "ref_kill": null,
-      "oracle_kill": null,
-      "trivial_kill": null,
-      "starter_kill": null,
-      "ref_survivors": []
-    }
+    "n_hand": 3
   },
   "provenance": {
     "source_task": "app/app-l1-shipping-quote",
-    "source_hash": "0ed2f861a5297c6e",
+    "source_hash": "f0e499cf7bc31d9d",
     "variant": "fresh",
     "title": "Tests for parcel shipping",
     "domain": "parcel shipping",

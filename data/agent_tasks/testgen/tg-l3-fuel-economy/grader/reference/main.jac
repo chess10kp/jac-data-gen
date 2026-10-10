@@ -20,8 +20,12 @@ def find_vehicle(plate: str) -> Vehicle | None {
     return None;
 }
 
+def odometer_of(f: FillUp) -> int {
+    return f.odometer;
+}
+
 def fills_of(v: Vehicle) -> list[FillUp] {
-    return sorted([f for f in [v -->[?:FillUp]]], key=lambda (f: FillUp) -> int { return f.odometer; });
+    return sorted([f for f in [v -->[?:FillUp]]], key=odometer_of);
 }
 
 walker AddVehicle {

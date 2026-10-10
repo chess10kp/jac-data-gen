@@ -2,3 +2,8 @@
 name = "warehouse"
 version = "0.1.0"
 entry-point = "main"
+
+[build]
+# keep plain modules (and test modules) on the Python (server) backend:
+# jac 0.36.1 native compilation silently gives wrong answers in tests
+default_codespace = "server"

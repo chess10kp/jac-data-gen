@@ -21,22 +21,11 @@
     "n_candidates": 47,
     "n_mechanical_sites": 48,
     "n_source_negatives": 7,
-    "n_hand": 0,
-    "stats": {
-      "n_candidates": 0,
-      "n_stillborn": 0,
-      "n_presumed_equivalent": 0,
-      "n_eligible": 0,
-      "ref_kill": null,
-      "oracle_kill": null,
-      "trivial_kill": null,
-      "starter_kill": null,
-      "ref_survivors": []
-    }
+    "n_hand": 0
   },
   "provenance": {
     "source_task": "native/nat-l3-tool-library",
-    "source_hash": "a3d97527dfda237e",
+    "source_hash": "e350748eae7dcbf6",
     "variant": "fresh",
     "title": "Tests for tool library",
     "domain": "tool library",

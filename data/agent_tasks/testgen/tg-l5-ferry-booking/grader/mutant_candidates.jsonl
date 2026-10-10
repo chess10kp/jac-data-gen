@@ -1,47 +1,47 @@
-{"source": "mechanical", "op": "negate if", "line": 25, "edits": [{"file": "app.jac", "offset": 418, "old": "self.vehicle == Vehicle.VAN", "new": "not (self.vehicle == Vehicle.VAN)"}], "id": "c00"}
-{"source": "mechanical", "op": "cmp ==->!=", "line": 25, "edits": [{"file": "app.jac", "offset": 431, "old": "==", "new": "!="}], "id": "c01"}
-{"source": "mechanical", "op": "int 2->3", "line": 26, "edits": [{"file": "app.jac", "offset": 467, "old": "2", "new": "3"}], "id": "c02"}
-{"source": "mechanical", "op": "int 2->1", "line": 26, "edits": [{"file": "app.jac", "offset": 467, "old": "2", "new": "1"}], "id": "c03"}
+{"source": "mechanical", "op": "cmp ==->!=", "line": 25, "edits": [{"file": "app.jac", "offset": 431, "old": "==", "new": "!="}], "id": "c00"}
+{"source": "mechanical", "op": "int 2->3", "line": 26, "edits": [{"file": "app.jac", "offset": 467, "old": "2", "new": "3"}], "id": "c01"}
+{"source": "mechanical", "op": "int 2->1", "line": 26, "edits": [{"file": "app.jac", "offset": 467, "old": "2", "new": "1"}], "id": "c02"}
+{"source": "mechanical", "op": "int 1->0", "line": 28, "edits": [{"file": "app.jac", "offset": 495, "old": "1", "new": "0"}], "id": "c03"}
 {"source": "mechanical", "op": "negate if", "line": 28, "edits": [{"file": "app.jac", "offset": 500, "old": "self.vehicle == Vehicle.CAR else 0;\n    }\n\n    def foot_use -> int", "new": "not (self.vehicle == Vehicle.CAR else 0;\n    }\n\n    def foot_use -> int)"}], "id": "c04"}
-{"source": "mechanical", "op": "cmp ==->!=", "line": 28, "edits": [{"file": "app.jac", "offset": 513, "old": "==", "new": "!="}], "id": "c05"}
-{"source": "mechanical", "op": "int 0->1", "line": 28, "edits": [{"file": "app.jac", "offset": 533, "old": "0", "new": "1"}], "id": "c06"}
-{"source": "mechanical", "op": "cmp ==->!=", "line": 32, "edits": [{"file": "app.jac", "offset": 616, "old": "==", "new": "!="}], "id": "c07"}
-{"source": "mechanical", "op": "int 0->1", "line": 32, "edits": [{"file": "app.jac", "offset": 637, "old": "0", "new": "1"}], "id": "c08"}
-{"source": "mechanical", "op": "edge -->-><--", "line": 36, "edits": [{"file": "app.jac", "offset": 669, "old": "-->", "new": "<--"}], "id": "c09"}
-{"source": "mechanical", "op": "connect ++>-><++", "line": 39, "edits": [{"file": "app.jac", "offset": 788, "old": "++>", "new": "<++"}], "id": "c10"}
-{"source": "mechanical", "op": "edge -->-><--", "line": 43, "edits": [{"file": "app.jac", "offset": 936, "old": "-->", "new": "<--"}], "id": "c11"}
-{"source": "mechanical", "op": "cmp ==->!=", "line": 44, "edits": [{"file": "app.jac", "offset": 972, "old": "==", "new": "!="}], "id": "c12"}
-{"source": "mechanical", "op": "int 1->0", "line": 55, "edits": [{"file": "app.jac", "offset": 1146, "old": "1", "new": "0"}], "id": "c13"}
-{"source": "mechanical", "op": "const False->True", "line": 60, "edits": [{"file": "app.jac", "offset": 1271, "old": "False", "new": "True"}], "id": "c14"}
-{"source": "mechanical", "op": "edge -->-><--", "line": 63, "edits": [{"file": "app.jac", "offset": 1367, "old": "-->", "new": "<--"}], "id": "c15"}
-{"source": "mechanical", "op": "negate if", "line": 63, "edits": [{"file": "app.jac", "offset": 1398, "old": "b.ref == self.ref]", "new": "not (b.ref == self.ref])"}], "id": "c16"}
-{"source": "mechanical", "op": "const False->True", "line": 64, "edits": [{"file": "app.jac", "offset": 1445, "old": "False", "new": "True"}], "id": "c17"}
-{"source": "mechanical", "op": "negate if", "line": 67, "edits": [{"file": "app.jac", "offset": 1521, "old": "self.vehicle not in [v.name for v in Vehicle]", "new": "not (self.vehicle not in [v.name for v in Vehicle])"}], "id": "c18"}
-{"source": "mechanical", "op": "not-in->in", "line": 67, "edits": [{"file": "app.jac", "offset": 1534, "old": "not in", "new": "in"}], "id": "c19"}
-{"source": "mechanical", "op": "const False->True", "line": 68, "edits": [{"file": "app.jac", "offset": 1595, "old": "False", "new": "True"}], "id": "c20"}
-{"source": "mechanical", "op": "arith +->-", "line": 73, "edits": [{"file": "app.jac", "offset": 1834, "old": "+", "new": "-"}], "id": "c21"}
-{"source": "mechanical", "op": "arith +->-", "line": 74, "edits": [{"file": "app.jac", "offset": 1900, "old": "+", "new": "-"}], "id": "c22"}
-{"source": "mechanical", "op": "bool or->and", "line": 75, "edits": [{"file": "app.jac", "offset": 1948, "old": "or", "new": "and"}], "id": "c23"}
-{"source": "mechanical", "op": "cmp >->>=", "line": 75, "edits": [{"file": "app.jac", "offset": 1956, "old": ">", "new": ">="}], "id": "c24"}
-{"source": "mechanical", "op": "const False->True", "line": 76, "edits": [{"file": "app.jac", "offset": 1999, "old": "False", "new": "True"}], "id": "c25"}
-{"source": "mechanical", "op": "const True->False", "line": 80, "edits": [{"file": "app.jac", "offset": 2110, "old": "True", "new": "False"}], "id": "c26"}
-{"source": "mechanical", "op": "const False->True", "line": 86, "edits": [{"file": "app.jac", "offset": 2202, "old": "False", "new": "True"}], "id": "c27"}
-{"source": "mechanical", "op": "stmt-del visit", "line": 89, "edits": [{"file": "app.jac", "offset": 2250, "old": "visit [-->[?:Sailing]];", "new": ""}], "id": "c28"}
-{"source": "mechanical", "op": "edge -->-><--", "line": 89, "edits": [{"file": "app.jac", "offset": 2257, "old": "-->", "new": "<--"}], "id": "c29"}
-{"source": "mechanical", "op": "cmp ==->!=", "line": 94, "edits": [{"file": "app.jac", "offset": 2374, "old": "==", "new": "!="}], "id": "c30"}
-{"source": "mechanical", "op": "stmt-del del", "line": 95, "edits": [{"file": "app.jac", "offset": 2404, "old": "del b;", "new": ""}], "id": "c31"}
-{"source": "mechanical", "op": "negate if", "line": 111, "edits": [{"file": "app.jac", "offset": 2702, "old": "s is not None else [];\n        report", "new": "not (s is not None else [];\n        report)"}], "id": "c32"}
-{"source": "mechanical", "op": "not-drop", "line": 111, "edits": [{"file": "app.jac", "offset": 2707, "old": "not ", "new": ""}], "id": "c33"}
-{"source": "mechanical", "op": "call sorted->list", "line": 115, "edits": [{"file": "app.jac", "offset": 2871, "old": "sorted", "new": "list"}], "id": "c34"}
-{"source": "mechanical", "op": "stmt-del visit", "line": 125, "edits": [{"file": "app.jac", "offset": 3046, "old": "visit [-->[?:Sailing, day == self.day]];", "new": ""}], "id": "c35"}
-{"source": "mechanical", "op": "edge -->-><--", "line": 125, "edits": [{"file": "app.jac", "offset": 3053, "old": "-->", "new": "<--"}], "id": "c36"}
-{"source": "mechanical", "op": "arith -->+", "line": 132, "edits": [{"file": "app.jac", "offset": 3261, "old": "-", "new": "+"}], "id": "c37"}
-{"source": "mechanical", "op": "arith -->+", "line": 133, "edits": [{"file": "app.jac", "offset": 3338, "old": "-", "new": "+"}], "id": "c38"}
-{"source": "mechanical", "op": "call sorted->list", "line": 138, "edits": [{"file": "app.jac", "offset": 3440, "old": "sorted", "new": "list"}], "id": "c39"}
-{"source": "source-negative", "op": "neg accepts_lowercase_vehicle", "why": "accepts lower-case vehicle names", "edits": [{"file": "app.jac", "offset": 1518, "old": "if self.vehicle not in [v.name for v in Vehicle] {", "new": "if self.vehicle.upper() not in [v.name for v in Vehicle] {"}, {"file": "app.jac", "offset": 1694, "old": "vehicle=Vehicle[self.vehicle]", "new": "vehicle=Vehicle[self.vehicle.upper()]"}], "id": "c40"}
-{"source": "source-negative", "op": "neg cancel_noop", "why": "cancel reports ok without deleting", "edits": [{"file": "app.jac", "offset": 2388, "old": "                del b;\n", "new": ""}], "id": "c41"}
-{"source": "source-negative", "op": "neg capacity_off_by_one", "why": "strict capacity", "edits": [{"file": "app.jac", "offset": 1926, "old": "if cars > s.car_slots or foot > s.foot_slots {", "new": "if cars >= s.car_slots or foot >= s.foot_slots {"}], "id": "c42"}
+{"source": "mechanical", "op": "cmp ==->!=", "line": 32, "edits": [{"file": "app.jac", "offset": 616, "old": "==", "new": "!="}], "id": "c05"}
+{"source": "mechanical", "op": "int 0->1", "line": 32, "edits": [{"file": "app.jac", "offset": 637, "old": "0", "new": "1"}], "id": "c06"}
+{"source": "mechanical", "op": "edge -->-><--", "line": 36, "edits": [{"file": "app.jac", "offset": 669, "old": "-->", "new": "<--"}], "id": "c07"}
+{"source": "mechanical", "op": "connect ++>-><++", "line": 39, "edits": [{"file": "app.jac", "offset": 788, "old": "++>", "new": "<++"}], "id": "c08"}
+{"source": "mechanical", "op": "negate if", "line": 45, "edits": [{"file": "app.jac", "offset": 1030, "old": "m.name == label", "new": "not (m.name == label)"}], "id": "c09"}
+{"source": "mechanical", "op": "cmp ==->!=", "line": 45, "edits": [{"file": "app.jac", "offset": 1037, "old": "==", "new": "!="}], "id": "c10"}
+{"source": "mechanical", "op": "edge -->-><--", "line": 53, "edits": [{"file": "app.jac", "offset": 1174, "old": "-->", "new": "<--"}], "id": "c11"}
+{"source": "mechanical", "op": "cmp ==->!=", "line": 54, "edits": [{"file": "app.jac", "offset": 1210, "old": "==", "new": "!="}], "id": "c12"}
+{"source": "mechanical", "op": "int 1->0", "line": 65, "edits": [{"file": "app.jac", "offset": 1384, "old": "1", "new": "0"}], "id": "c13"}
+{"source": "mechanical", "op": "const False->True", "line": 70, "edits": [{"file": "app.jac", "offset": 1509, "old": "False", "new": "True"}], "id": "c14"}
+{"source": "mechanical", "op": "edge -->-><--", "line": 73, "edits": [{"file": "app.jac", "offset": 1605, "old": "-->", "new": "<--"}], "id": "c15"}
+{"source": "mechanical", "op": "negate if", "line": 77, "edits": [{"file": "app.jac", "offset": 1759, "old": "self.vehicle not in [v.name for v in Vehicle]", "new": "not (self.vehicle not in [v.name for v in Vehicle])"}], "id": "c16"}
+{"source": "mechanical", "op": "not-in->in", "line": 77, "edits": [{"file": "app.jac", "offset": 1772, "old": "not in", "new": "in"}], "id": "c17"}
+{"source": "mechanical", "op": "const False->True", "line": 78, "edits": [{"file": "app.jac", "offset": 1833, "old": "False", "new": "True"}], "id": "c18"}
+{"source": "mechanical", "op": "bool or->and", "line": 81, "edits": [{"file": "app.jac", "offset": 1939, "old": "or", "new": "and"}], "id": "c19"}
+{"source": "mechanical", "op": "arith +->-", "line": 84, "edits": [{"file": "app.jac", "offset": 2115, "old": "+", "new": "-"}], "id": "c20"}
+{"source": "mechanical", "op": "arith +->-", "line": 85, "edits": [{"file": "app.jac", "offset": 2181, "old": "+", "new": "-"}], "id": "c21"}
+{"source": "mechanical", "op": "negate if", "line": 86, "edits": [{"file": "app.jac", "offset": 2210, "old": "cars > s.car_slots or foot > s.foot_slots", "new": "not (cars > s.car_slots or foot > s.foot_slots)"}], "id": "c22"}
+{"source": "mechanical", "op": "bool or->and", "line": 86, "edits": [{"file": "app.jac", "offset": 2229, "old": "or", "new": "and"}], "id": "c23"}
+{"source": "mechanical", "op": "cmp >->>=", "line": 86, "edits": [{"file": "app.jac", "offset": 2237, "old": ">", "new": ">="}], "id": "c24"}
+{"source": "mechanical", "op": "const False->True", "line": 87, "edits": [{"file": "app.jac", "offset": 2280, "old": "False", "new": "True"}], "id": "c25"}
+{"source": "mechanical", "op": "const True->False", "line": 91, "edits": [{"file": "app.jac", "offset": 2391, "old": "True", "new": "False"}], "id": "c26"}
+{"source": "mechanical", "op": "const False->True", "line": 97, "edits": [{"file": "app.jac", "offset": 2483, "old": "False", "new": "True"}], "id": "c27"}
+{"source": "mechanical", "op": "stmt-del visit", "line": 100, "edits": [{"file": "app.jac", "offset": 2531, "old": "visit [-->[?:Sailing]];", "new": ""}], "id": "c28"}
+{"source": "mechanical", "op": "edge -->-><--", "line": 100, "edits": [{"file": "app.jac", "offset": 2538, "old": "-->", "new": "<--"}], "id": "c29"}
+{"source": "mechanical", "op": "cmp ==->!=", "line": 105, "edits": [{"file": "app.jac", "offset": 2655, "old": "==", "new": "!="}], "id": "c30"}
+{"source": "mechanical", "op": "stmt-del del", "line": 106, "edits": [{"file": "app.jac", "offset": 2685, "old": "del b;", "new": ""}], "id": "c31"}
+{"source": "mechanical", "op": "negate if", "line": 122, "edits": [{"file": "app.jac", "offset": 2983, "old": "s is not None else [];\n        report", "new": "not (s is not None else [];\n        report)"}], "id": "c32"}
+{"source": "mechanical", "op": "not-drop", "line": 122, "edits": [{"file": "app.jac", "offset": 2988, "old": "not ", "new": ""}], "id": "c33"}
+{"source": "mechanical", "op": "call sorted->list", "line": 126, "edits": [{"file": "app.jac", "offset": 3152, "old": "sorted", "new": "list"}], "id": "c34"}
+{"source": "mechanical", "op": "stmt-del visit", "line": 136, "edits": [{"file": "app.jac", "offset": 3327, "old": "visit [-->[?:Sailing, day == self.day]];", "new": ""}], "id": "c35"}
+{"source": "mechanical", "op": "edge -->-><--", "line": 136, "edits": [{"file": "app.jac", "offset": 3334, "old": "-->", "new": "<--"}], "id": "c36"}
+{"source": "mechanical", "op": "arith -->+", "line": 143, "edits": [{"file": "app.jac", "offset": 3542, "old": "-", "new": "+"}], "id": "c37"}
+{"source": "mechanical", "op": "arith -->+", "line": 144, "edits": [{"file": "app.jac", "offset": 3619, "old": "-", "new": "+"}], "id": "c38"}
+{"source": "mechanical", "op": "call sorted->list", "line": 149, "edits": [{"file": "app.jac", "offset": 3721, "old": "sorted", "new": "list"}], "id": "c39"}
+{"source": "source-negative", "op": "neg accepts_lowercase_vehicle", "why": "accepts lower-case vehicle names", "edits": [{"file": "app.jac", "offset": 1756, "old": "if self.vehicle not in [v.name for v in Vehicle] {", "new": "if self.vehicle.upper() not in [v.name for v in Vehicle] {"}, {"file": "app.jac", "offset": 1904, "old": "kind = vehicle_named(self.vehicle) or Vehicle.FOOT;", "new": "kind = vehicle_named(self.vehicle.upper()) or Vehicle.FOOT;"}], "id": "c40"}
+{"source": "source-negative", "op": "neg cancel_noop", "why": "cancel reports ok without deleting", "edits": [{"file": "app.jac", "offset": 2669, "old": "                del b;\n", "new": ""}], "id": "c41"}
+{"source": "source-negative", "op": "neg capacity_off_by_one", "why": "strict capacity", "edits": [{"file": "app.jac", "offset": 2207, "old": "if cars > s.car_slots or foot > s.foot_slots {", "new": "if cars >= s.car_slots or foot >= s.foot_slots {"}], "id": "c42"}
 {"source": "source-negative", "op": "neg car_passengers_use_seats", "why": "vehicle passengers counted as foot", "edits": [{"file": "app.jac", "offset": 577, "old": "return self.passengers if self.vehicle == Vehicle.FOOT else 0;", "new": "return self.passengers;"}], "id": "c43"}
-{"source": "source-negative", "op": "neg dup_ref_same_sailing_only", "why": "duplicate ref only checked on the same sailing", "edits": [{"file": "app.jac", "offset": 1346, "old": "if [b for b in [root -->[?:Sailing] ->:Holds:->] if b.ref == self.ref] {", "new": "if [b for b in [s ->:Holds:->] if b.ref == self.ref] {"}], "id": "c44"}
-{"source": "source-negative", "op": "neg summary_all_days", "why": "day filter ignored", "edits": [{"file": "app.jac", "offset": 3046, "old": "visit [-->[?:Sailing, day == self.day]];", "new": "visit [-->[?:Sailing]];"}], "id": "c45"}
+{"source": "source-negative", "op": "neg dup_ref_same_sailing_only", "why": "duplicate ref only checked on the same sailing", "edits": [{"file": "app.jac", "offset": 1584, "old": "if [b for b in [root -->[?:Sailing] ->:Holds:->] if b.ref == self.ref] {", "new": "if [b for b in [s ->:Holds:->] if b.ref == self.ref] {"}], "id": "c44"}
+{"source": "source-negative", "op": "neg summary_all_days", "why": "day filter ignored", "edits": [{"file": "app.jac", "offset": 3327, "old": "visit [-->[?:Sailing, day == self.day]];", "new": "visit [-->[?:Sailing]];"}], "id": "c45"}
 {"source": "source-negative", "op": "neg van_one_slot", "why": "van counted as one car slot", "edits": [{"file": "app.jac", "offset": 407, "old": "        if self.vehicle == Vehicle.VAN {\n            return 2;\n        }\n", "new": ""}], "id": "c46"}

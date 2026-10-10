@@ -14,30 +14,30 @@
 {"source": "mechanical", "op": "const False->True", "line": 58, "edits": [{"file": "main.jac", "offset": 1140, "old": "False", "new": "True"}], "id": "c13"}
 {"source": "mechanical", "op": "edge -->-><--", "line": 61, "edits": [{"file": "main.jac", "offset": 1212, "old": "-->", "new": "<--"}], "id": "c14"}
 {"source": "mechanical", "op": "negate if", "line": 61, "edits": [{"file": "main.jac", "offset": 1230, "old": "m.name == self.member];\n        m = found[0] if found else here ++> Member(name=self.member);\n        if b in [m ->:Loan:->]", "new": "not (m.name == self.member];\n        m = found[0] if found else here ++> Member(name=self.member);\n        if b in [m ->:Loan:->])"}], "id": "c15"}
-{"source": "mechanical", "op": "int 0->1", "line": 62, "edits": [{"file": "main.jac", "offset": 1272, "old": "0", "new": "1"}], "id": "c16"}
-{"source": "mechanical", "op": "negate if", "line": 62, "edits": [{"file": "main.jac", "offset": 1278, "old": "found else here ++> Member(name=self.member);\n        if b in [m ->:Loan:->]", "new": "not (found else here ++> Member(name=self.member);\n        if b in [m ->:Loan:->])"}], "id": "c17"}
-{"source": "mechanical", "op": "connect ++>-><++", "line": 62, "edits": [{"file": "main.jac", "offset": 1294, "old": "++>", "new": "<++"}], "id": "c18"}
-{"source": "mechanical", "op": "negate if", "line": 63, "edits": [{"file": "main.jac", "offset": 1335, "old": "b in [m ->:Loan:->]", "new": "not (b in [m ->:Loan:->])"}], "id": "c19"}
-{"source": "mechanical", "op": "const False->True", "line": 64, "edits": [{"file": "main.jac", "offset": 1383, "old": "False", "new": "True"}], "id": "c20"}
-{"source": "mechanical", "op": "arith +->-", "line": 67, "edits": [{"file": "main.jac", "offset": 1475, "old": "+", "new": "-"}], "id": "c21"}
-{"source": "mechanical", "op": "int 14->15", "line": 67, "edits": [{"file": "main.jac", "offset": 1501, "old": "14", "new": "15"}], "id": "c22"}
-{"source": "mechanical", "op": "int 14->13", "line": 67, "edits": [{"file": "main.jac", "offset": 1501, "old": "14", "new": "13"}], "id": "c23"}
-{"source": "mechanical", "op": "const True->False", "line": 69, "edits": [{"file": "main.jac", "offset": 1574, "old": "True", "new": "False"}], "id": "c24"}
-{"source": "mechanical", "op": "edge -->-><--", "line": 78, "edits": [{"file": "main.jac", "offset": 1722, "old": "-->", "new": "<--"}], "id": "c25"}
-{"source": "mechanical", "op": "cmp ==->!=", "line": 79, "edits": [{"file": "main.jac", "offset": 1761, "old": "==", "new": "!="}], "id": "c26"}
-{"source": "mechanical", "op": "cmp ==->!=", "line": 81, "edits": [{"file": "main.jac", "offset": 1850, "old": "==", "new": "!="}], "id": "c27"}
-{"source": "mechanical", "op": "stmt-del del", "line": 82, "edits": [{"file": "main.jac", "offset": 1889, "old": "del [edge m ->:Loan:-> b];", "new": ""}], "id": "c28"}
-{"source": "mechanical", "op": "const True->False", "line": 83, "edits": [{"file": "main.jac", "offset": 1954, "old": "True", "new": "False"}], "id": "c29"}
-{"source": "mechanical", "op": "const False->True", "line": 89, "edits": [{"file": "main.jac", "offset": 2079, "old": "False", "new": "True"}], "id": "c30"}
-{"source": "mechanical", "op": "stmt-del report", "line": 98, "edits": [{"file": "main.jac", "offset": 2209, "old": "report available_copies(b) if b is not None else 0;", "new": ""}], "id": "c31"}
-{"source": "mechanical", "op": "not-drop", "line": 98, "edits": [{"file": "main.jac", "offset": 2244, "old": "not ", "new": ""}], "id": "c32"}
-{"source": "mechanical", "op": "int 0->1", "line": 98, "edits": [{"file": "main.jac", "offset": 2258, "old": "0", "new": "1"}], "id": "c33"}
-{"source": "mechanical", "op": "stmt-del visit", "line": 107, "edits": [{"file": "main.jac", "offset": 2388, "old": "visit [here -->[?:Member]];", "new": ""}], "id": "c34"}
-{"source": "mechanical", "op": "edge -->-><--", "line": 107, "edits": [{"file": "main.jac", "offset": 2400, "old": "-->", "new": "<--"}], "id": "c35"}
-{"source": "mechanical", "op": "negate if", "line": 113, "edits": [{"file": "main.jac", "offset": 2560, "old": "e.due < self.date", "new": "not (e.due < self.date)"}], "id": "c36"}
-{"source": "mechanical", "op": "cmp <-><=", "line": 113, "edits": [{"file": "main.jac", "offset": 2566, "old": "<", "new": "<="}], "id": "c37"}
-{"source": "mechanical", "op": "stmt-del self.rows.append({", "line": 114, "edits": [{"file": "main.jac", "offset": 2600, "old": "self.rows.append({\"member\": here.name, \"isbn\": b.isbn, \"due\": e.due});", "new": ""}], "id": "c38"}
-{"source": "mechanical", "op": "call sorted->list", "line": 121, "edits": [{"file": "main.jac", "offset": 2762, "old": "sorted", "new": "list"}], "id": "c39"}
+{"source": "mechanical", "op": "negate if", "line": 62, "edits": [{"file": "main.jac", "offset": 1278, "old": "found else here ++> Member(name=self.member);\n        if b in [m ->:Loan:->]", "new": "not (found else here ++> Member(name=self.member);\n        if b in [m ->:Loan:->])"}], "id": "c16"}
+{"source": "mechanical", "op": "connect ++>-><++", "line": 62, "edits": [{"file": "main.jac", "offset": 1294, "old": "++>", "new": "<++"}], "id": "c17"}
+{"source": "mechanical", "op": "negate if", "line": 63, "edits": [{"file": "main.jac", "offset": 1335, "old": "b in [m ->:Loan:->]", "new": "not (b in [m ->:Loan:->])"}], "id": "c18"}
+{"source": "mechanical", "op": "const False->True", "line": 64, "edits": [{"file": "main.jac", "offset": 1383, "old": "False", "new": "True"}], "id": "c19"}
+{"source": "mechanical", "op": "arith +->-", "line": 67, "edits": [{"file": "main.jac", "offset": 1475, "old": "+", "new": "-"}], "id": "c20"}
+{"source": "mechanical", "op": "int 14->15", "line": 67, "edits": [{"file": "main.jac", "offset": 1501, "old": "14", "new": "15"}], "id": "c21"}
+{"source": "mechanical", "op": "int 14->13", "line": 67, "edits": [{"file": "main.jac", "offset": 1501, "old": "14", "new": "13"}], "id": "c22"}
+{"source": "mechanical", "op": "const True->False", "line": 69, "edits": [{"file": "main.jac", "offset": 1574, "old": "True", "new": "False"}], "id": "c23"}
+{"source": "mechanical", "op": "edge -->-><--", "line": 78, "edits": [{"file": "main.jac", "offset": 1722, "old": "-->", "new": "<--"}], "id": "c24"}
+{"source": "mechanical", "op": "cmp ==->!=", "line": 79, "edits": [{"file": "main.jac", "offset": 1761, "old": "==", "new": "!="}], "id": "c25"}
+{"source": "mechanical", "op": "cmp ==->!=", "line": 81, "edits": [{"file": "main.jac", "offset": 1850, "old": "==", "new": "!="}], "id": "c26"}
+{"source": "mechanical", "op": "edge -->-><--", "line": 82, "edits": [{"file": "main.jac", "offset": 1895, "old": "-->", "new": "<--"}], "id": "c27"}
+{"source": "mechanical", "op": "const True->False", "line": 83, "edits": [{"file": "main.jac", "offset": 1940, "old": "True", "new": "False"}], "id": "c28"}
+{"source": "mechanical", "op": "const False->True", "line": 89, "edits": [{"file": "main.jac", "offset": 2065, "old": "False", "new": "True"}], "id": "c29"}
+{"source": "mechanical", "op": "stmt-del report", "line": 98, "edits": [{"file": "main.jac", "offset": 2195, "old": "report available_copies(b) if b is not None else 0;", "new": ""}], "id": "c30"}
+{"source": "mechanical", "op": "not-drop", "line": 98, "edits": [{"file": "main.jac", "offset": 2230, "old": "not ", "new": ""}], "id": "c31"}
+{"source": "mechanical", "op": "int 0->1", "line": 98, "edits": [{"file": "main.jac", "offset": 2244, "old": "0", "new": "1"}], "id": "c32"}
+{"source": "mechanical", "op": "stmt-del visit", "line": 111, "edits": [{"file": "main.jac", "offset": 2473, "old": "visit [here -->[?:Member]];", "new": ""}], "id": "c33"}
+{"source": "mechanical", "op": "edge -->-><--", "line": 111, "edits": [{"file": "main.jac", "offset": 2485, "old": "-->", "new": "<--"}], "id": "c34"}
+{"source": "mechanical", "op": "negate if", "line": 117, "edits": [{"file": "main.jac", "offset": 2645, "old": "e.due < self.date", "new": "not (e.due < self.date)"}], "id": "c35"}
+{"source": "mechanical", "op": "cmp <-><=", "line": 117, "edits": [{"file": "main.jac", "offset": 2651, "old": "<", "new": "<="}], "id": "c36"}
+{"source": "mechanical", "op": "stmt-del self.rows.append({", "line": 118, "edits": [{"file": "main.jac", "offset": 2685, "old": "self.rows.append({\"member\": here.name, \"isbn\": b.isbn, \"due\": e.due});", "new": ""}], "id": "c37"}
+{"source": "mechanical", "op": "stmt-del report", "line": 125, "edits": [{"file": "main.jac", "offset": 2840, "old": "report sorted(self.rows, key=due_then_member);", "new": ""}], "id": "c38"}
+{"source": "mechanical", "op": "call sorted->list", "line": 125, "edits": [{"file": "main.jac", "offset": 2847, "old": "sorted", "new": "list"}], "id": "c39"}
 {"source": "hand", "op": "hand h0", "why": "13-day loans", "edits": [{"file": "main.jac", "offset": 1477, "old": "datetime.timedelta(days=14)", "new": "datetime.timedelta(days=13)"}], "id": "c40"}
-{"source": "hand", "op": "hand h1", "why": "due today counted overdue", "edits": [{"file": "main.jac", "offset": 2557, "old": "if e.due < self.date {", "new": "if e.due <= self.date {"}], "id": "c41"}
-{"source": "hand", "op": "hand h2", "why": "overdue sorted by member", "edits": [{"file": "main.jac", "offset": 2832, "old": "return (r[\"due\"], r[\"member\"]);", "new": "return (r[\"member\"], r[\"due\"]);"}], "id": "c42"}
+{"source": "hand", "op": "hand h1", "why": "due today counted overdue", "edits": [{"file": "main.jac", "offset": 2642, "old": "if e.due < self.date {", "new": "if e.due <= self.date {"}], "id": "c41"}
+{"source": "hand", "op": "hand h2", "why": "overdue sorted by member", "edits": [{"file": "main.jac", "offset": 2320, "old": "return (r[\"due\"], r[\"member\"]);", "new": "return (r[\"member\"], r[\"due\"]);"}], "id": "c42"}

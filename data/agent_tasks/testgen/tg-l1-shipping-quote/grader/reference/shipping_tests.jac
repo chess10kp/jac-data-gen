@@ -21,8 +21,11 @@ test "volumetric weight wins when larger" {
 
 test "non-positive inputs rejected" {
     for args in [(0.0, 1.0, 1.0, 1.0), (1.0, 0.0, 1.0, 1.0), (1.0, 1.0, -1.0, 1.0), (1.0, 1.0, 1.0, 0.0)] {
-        with testraises(ValueError) {
+        try {
             billable_weight(args[0], args[1], args[2], args[3]);
+            assert False, "expected ValueError";
+        } except ValueError {
+            assert True;
         }
     }
 }
@@ -46,14 +49,23 @@ test "quotes are rounded to cents" {
 }
 
 test "quote errors" {
-    with testraises(ValueError) {
+    try {
         quote(1.0, "mars");
+        assert False, "expected ValueError";
+    } except ValueError {
+        assert True;
     }
-    with testraises(ValueError) {
+    try {
         quote(0.0, "domestic");
+        assert False, "expected ValueError";
+    } except ValueError {
+        assert True;
     }
-    with testraises(ValueError) {
+    try {
         quote(-2.0, "regional");
+        assert False, "expected ValueError";
+    } except ValueError {
+        assert True;
     }
 }
 
@@ -64,8 +76,11 @@ test "free shipping thresholds" {
     assert free_shipping(99.99, "regional") == False;
     assert free_shipping(60.0, "regional") == False;
     assert free_shipping(10000.0, "international") == False;
-    with testraises(ValueError) {
+    try {
         free_shipping(10.0, "moon");
+        assert False, "expected ValueError";
+    } except ValueError {
+        assert True;
     }
 }
 

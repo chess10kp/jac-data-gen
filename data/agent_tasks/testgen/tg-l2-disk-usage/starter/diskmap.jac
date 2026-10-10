@@ -25,6 +25,10 @@ walker DiskUsage {
     }
 }
 
+def size_desc_then_path(t: tuple[int, str]) -> tuple[int, str] {
+    return (-t[0], t[1]);
+}
+
 walker LargeFiles {
     has min_size: int = 0;
     has paths: dict[str, str] = {};
@@ -48,7 +52,7 @@ walker LargeFiles {
     }
 
     can finish with exit {
-        ordered = sorted(self.found, key=lambda (t: tuple[int, str]) -> tuple[int, str] { return (-t[0], t[1]); });
+        ordered = sorted(self.found, key=size_desc_then_path);
         report [p for (_, p) in ordered];
     }
 }

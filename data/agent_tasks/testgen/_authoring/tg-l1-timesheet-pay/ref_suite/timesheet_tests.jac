@@ -17,8 +17,11 @@ test "parse_clock" {
 
 test "parse_clock rejects malformed times" {
     for bad in ["24:00", "12:60", "7:05", "07-05", "0705", "aa:bb", "07:5", "007:05"] {
-        with testraises(ValueError) {
+        try {
             parse_clock(bad);
+            assert False, "expected ValueError";
+        } except ValueError {
+            assert True;
         }
     }
 }
@@ -32,8 +35,11 @@ test "spans including whitespace and overnight" {
 
 test "parse_span rejects malformed spans" {
     for bad in ["09:00", "09:00-10:00-11:00", "09:00-", "x-y"] {
-        with testraises(ValueError) {
+        try {
             parse_span(bad);
+            assert False, "expected ValueError";
+        } except ValueError {
+            assert True;
         }
     }
 }

@@ -79,7 +79,7 @@ walker ReturnBook {
             if m.name == self.member {
                 for b in [m ->:Loan:->] {
                     if b.isbn == self.isbn {
-                        del [edge m ->:Loan:-> b];
+                        m del --> b;
                         report {"ok": True};
                         return;
                     }
@@ -97,6 +97,10 @@ walker Available {
         b = find_book(self.isbn);
         report available_copies(b) if b is not None else 0;
     }
+}
+
+def due_then_member(r: dict[str, str]) -> tuple[str, str] {
+    return (r["due"], r["member"]);
 }
 
 walker Overdue {
@@ -118,7 +122,7 @@ walker Overdue {
     }
 
     can finish with exit {
-        report sorted(self.rows, key=lambda (r: dict[str, str]) -> tuple[str, str] { return (r["due"], r["member"]); });
+        report sorted(self.rows, key=due_then_member);
     }
 }
 

@@ -46,22 +46,11 @@
     "n_candidates": 43,
     "n_mechanical_sites": 42,
     "n_source_negatives": 0,
-    "n_hand": 3,
-    "stats": {
-      "n_candidates": 43,
-      "n_stillborn": 3,
-      "n_presumed_equivalent": 2,
-      "n_eligible": 38,
-      "ref_kill": 1.0,
-      "oracle_kill": 0.8421,
-      "trivial_kill": 0.0,
-      "starter_kill": 0.0526,
-      "ref_survivors": []
-    }
+    "n_hand": 3
   },
   "provenance": {
     "source_task": "app/app-l3-tagged-bookmarks",
-    "source_hash": "3bac2935a99f8105",
+    "source_hash": "4b3ba189ef54365e",
     "variant": "extend",
     "title": "Tests for bookmarks",
     "domain": "bookmarks",

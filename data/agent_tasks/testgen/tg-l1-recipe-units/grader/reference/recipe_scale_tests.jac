@@ -28,14 +28,23 @@ test "same servings keeps quantities" {
 }
 
 test "non-positive servings rejected" {
-    with testraises(ValueError) {
+    try {
         scale_recipe([], 0, 2);
+        assert False, "expected ValueError";
+    } except ValueError {
+        assert True;
     }
-    with testraises(ValueError) {
+    try {
         scale_recipe([], 2, 0);
+        assert False, "expected ValueError";
+    } except ValueError {
+        assert True;
     }
-    with testraises(ValueError) {
+    try {
         scale_recipe([], -1, 2);
+        assert False, "expected ValueError";
+    } except ValueError {
+        assert True;
     }
 }
 
@@ -53,17 +62,29 @@ test "weight conversions" {
 }
 
 test "cross-family and unknown units are rejected" {
-    with testraises(ValueError) {
+    try {
         convert(1.0, "cup", "g");
+        assert False, "expected ValueError";
+    } except ValueError {
+        assert True;
     }
-    with testraises(ValueError) {
+    try {
         convert(1.0, "kg", "ml");
+        assert False, "expected ValueError";
+    } except ValueError {
+        assert True;
     }
-    with testraises(ValueError) {
+    try {
         convert(1.0, "pinch", "g");
+        assert False, "expected ValueError";
+    } except ValueError {
+        assert True;
     }
-    with testraises(ValueError) {
+    try {
         convert(1.0, "g", "pinch");
+        assert False, "expected ValueError";
+    } except ValueError {
+        assert True;
     }
 }
 

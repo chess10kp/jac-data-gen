@@ -40,7 +40,7 @@ test "odometer must strictly increase" {
     fill("car1", 1000, 30.0);
     same = fill("car1", 1000, 5.0);
     assert same["ok"] == False;
-    assert "1000" in same["error"];
+    assert "1000" in str(same["error"]);
     back = fill("car1", 999, 5.0);
     assert back["ok"] == False;
     assert fill("car1", 1001, 5.0)["ok"] == True;

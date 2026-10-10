@@ -21,22 +21,11 @@
     "n_candidates": 31,
     "n_mechanical_sites": 28,
     "n_source_negatives": 0,
-    "n_hand": 3,
-    "stats": {
-      "n_candidates": 0,
-      "n_stillborn": 0,
-      "n_presumed_equivalent": 0,
-      "n_eligible": 0,
-      "ref_kill": null,
-      "oracle_kill": null,
-      "trivial_kill": null,
-      "starter_kill": null,
-      "ref_survivors": []
-    }
+    "n_hand": 3
   },
   "provenance": {
     "source_task": "app/app-l1-recipe-scaler",
-    "source_hash": "3fa37262d0456552",
+    "source_hash": "968e5eee9714d641",
     "variant": "fresh",
     "title": "Tests for recipe unit conversion",
     "domain": "recipe unit conversion",

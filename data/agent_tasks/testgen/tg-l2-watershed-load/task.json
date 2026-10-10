@@ -21,18 +21,7 @@
     "n_candidates": 22,
     "n_mechanical_sites": 16,
     "n_source_negatives": 6,
-    "n_hand": 0,
-    "stats": {
-      "n_candidates": 22,
-      "n_stillborn": 2,
-      "n_presumed_equivalent": 1,
-      "n_eligible": 19,
-      "ref_kill": 1.0,
-      "oracle_kill": 0.9474,
-      "trivial_kill": 0.0,
-      "starter_kill": 0.0526,
-      "ref_survivors": []
-    }
+    "n_hand": 0
   },
   "provenance": {
     "source_task": "native/nat-l2-watershed-upstream",

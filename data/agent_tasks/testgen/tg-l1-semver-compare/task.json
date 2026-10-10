@@ -38,22 +38,11 @@
     "n_candidates": 43,
     "n_mechanical_sites": 52,
     "n_source_negatives": 0,
-    "n_hand": 3,
-    "stats": {
-      "n_candidates": 0,
-      "n_stillborn": 0,
-      "n_presumed_equivalent": 0,
-      "n_eligible": 0,
-      "ref_kill": null,
-      "oracle_kill": null,
-      "trivial_kill": null,
-      "starter_kill": null,
-      "ref_survivors": []
-    }
+    "n_hand": 3
   },
   "provenance": {
     "source_task": "app/app-l1-semver-tools",
-    "source_hash": "f645a0b945d6f67b",
+    "source_hash": "0182edec1db8d702",
     "variant": "fresh",
     "title": "Tests for semantic versions",
     "domain": "semantic versions",

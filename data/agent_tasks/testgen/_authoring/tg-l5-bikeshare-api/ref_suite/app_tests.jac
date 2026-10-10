@@ -1,5 +1,5 @@
 import tempfile;
-import from jaclang.testing.testing { JacTestClient }
+import from jaclang.runtimelib.testing { JacTestClient }
 
 def client -> JacTestClient {
     c = JacTestClient.from_file("app.jac", base_path=tempfile.mkdtemp());
@@ -7,16 +7,22 @@ def client -> JacTestClient {
     return c;
 }
 
+"""Response body; some server versions wrap it in a {"data": ...} envelope."""
+def payload(resp: any) -> dict[str, any] {
+    body = resp.json();
+    return body["data"] if "data" in body and isinstance(body["data"], dict) else body;
+}
+
 def call(c: JacTestClient, name: str, body: dict[str, any]) -> any {
     resp = c.post("/function/" + name, json=body);
     assert resp.status_code == 200, f"{name}: {resp.status_code} {resp.text}";
-    return resp.json()["data"]["result"];
+    return payload(resp)["result"];
 }
 
 def walk(c: JacTestClient, name: str, body: dict[str, any]) -> any {
     resp = c.post("/walker/" + name, json=body);
     assert resp.status_code == 200, f"{name}: {resp.status_code} {resp.text}";
-    reports = resp.json()["data"]["reports"];
+    reports = payload(resp)["reports"];
     assert len(reports) == 1;
     return reports[0];
 }

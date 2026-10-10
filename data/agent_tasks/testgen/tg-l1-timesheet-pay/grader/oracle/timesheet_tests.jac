@@ -9,8 +9,11 @@ test "parse spans" {
 
 test "parse rejects bad spans" {
     for bad in ["9-5", "25:00-26:00", "09:60-10:00", "0900", "09:00-", "ab:cd-ef:gh"] {
-        with testraises(ValueError) {
+        try {
             parse_span(bad);
+            assert False, "expected ValueError";
+        } except ValueError {
+            assert True;
         }
     }
 }

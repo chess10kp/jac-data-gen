@@ -83,7 +83,9 @@ walker:pub rent_bike {
         if rd is None {
             rd = root ++> Rider(name=self.rider);
         }
-        del [edge st ->:Docked:-> bike];
+        for doomed in [edge st ->:Docked:-> bike] {
+            del doomed;
+        }
         rd +>:Riding(since=self.minute):+> bike;
         report {"ok": True, "bike": bike.serial};
     }
@@ -112,7 +114,9 @@ walker:pub return_bike {
         }
         bike = bikes[0];
         bike.km += self.km;
-        del [edge rd ->:Riding:-> bike];
+        for doomed in [edge rd ->:Riding:-> bike] {
+            del doomed;
+        }
         st +>:Docked():+> bike;
         report {"ok": True, "bike": bike.serial};
     }
