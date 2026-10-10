@@ -175,6 +175,8 @@ def jachacks_units(nonsf: Path) -> list[dict]:
                 if sp is None:
                     continue
             rels = sorted(str(p.relative_to(root)) for p in closure(sp, root))
+            if any(part.startswith(".") for r in rels for part in r.split("/")):
+                continue  # hidden dirs (vendored docs, tooling) -- also dropped by CI artifacts
             if len(rels) > MAX_FILES:
                 continue
             chars = sum((root / r).stat().st_size for r in rels)
@@ -480,7 +482,10 @@ def evaluate(u: dict, cdir: Path, nonsf: Path | None) -> dict:
     have = {str(p.relative_to(ref)) for p in G.jac_files(ref)}
     norm = {G._norm(h): h for h in have}
     targets = sorted({t if t in have else norm.get(G._norm(t), t) for t in targets} & have)
-    inv = G.inventory(ref, targets)
+    inv = G.inventory(ref, targets, starter=st)
+    if sum(min(inv["body"].get(t, 0), inv["starter_body"].get(G._norm(t), 0)) for t in targets) < 20:
+        res["reason"] = "no function bodies in target files (nothing a stub could hollow)"
+        return res
     (cdir / "symbols.json").write_text(json.dumps(inv, indent=1))
     res.update({"broken_paths": broken_starter, "target_paths": targets})
     # calibration: write a throwaway task.json so G.grade can run
@@ -505,6 +510,7 @@ def evaluate(u: dict, cdir: Path, nonsf: Path | None) -> dict:
     shutil.rmtree(tdir)
     res["calibration"] = {k: {"pass": v["pass"], "check": v["check"]["ok"],
                               "sym": v["symbols"]["ratio"], "mass": v["mass"]["ratio"],
+                              "body": v["mass"]["body_ratio"],
                               "min_file": v["mass"]["min_file"], "reasons": v["reasons"],
                               **({"test": v["test"]["ok"]} if "test" in v else {})}
                           for k, v in cal.items()}
@@ -597,6 +603,14 @@ REQ_JH = [
     "Hey — picked up this {title} code again and the compiler hates it now. Get `jac check` "
     "to zero errors. Don't delete or hollow out functions/walkers to get there; port them.",
 ]
+REQ_DRIFT = [
+    "This project stopped compiling after upgrading jac — get `jac check` passing again without "
+    "removing functionality.",
+    "We bumped the Jac toolchain to {jv} and now `jac check` fails on this code that was clean "
+    "before. Please update it for the new checker; keep all behaviour and public names.",
+    "After the jac upgrade our {title} module throws type/syntax errors under `jac check`. Fix "
+    "them properly (no deleting code, no blanket ignores).",
+]
 REQ_OSP = [
     "I wrote this Jac program (main.jac) but it doesn't compile — `jac check` fails. Please fix it "
     "so it checks clean and still does what it's supposed to. Here's what it's for:\n\n> {prompt}",
@@ -679,38 +693,60 @@ def cmd_select(a) -> None:
     meta = repo_meta()
     ev = eval_lines()
 
-    # dedupe: identical starter error signature + same reverted contents
-    def sig(r):
-        return sid(r["unit"].get("repo", ""), json.dumps(r["starter"]["codes"], sort_keys=True),
-                   str(r["starter"]["n_errors"]))
+    # dedupe: identical (repo, starter error signature) = near-identical task
+    def sig(repo, st):
+        return sid(repo or "", json.dumps(st["codes"], sort_keys=True), str(st["n_errors"]))
 
-    seen_sig = {sig(existing[i]["_cand"]) for i in existing if "_cand" in existing[i]}
-    per_repo = Counter(e.get("repo") for e in existing.values())
-    jh = [c for c in cands if c["source"] == "jachacks"]
-    osp = [c for c in cands if c["source"] == "osp"]
-    # diversity: round-robin over repos, small/medium first, then by error code variety
-    jh.sort(key=lambda c: (c["starter"]["n_errors"] > 40, -len(c["starter"]["codes"]), c["cid"]))
-    osp.sort(key=lambda c: (c["unit"]["error_code"], c["cid"]))
+    seen_sig, per_repo = set(), Counter()
+    for tid in existing:
+        tj = OUT / tid / "task.json"
+        if tj.exists():
+            t = json.loads(tj.read_text())
+            repo = t["provenance"].get("repo", "")
+            seen_sig.add(sig(repo, t["starter_errors"]))
+            per_repo[repo] += 1
     n_osp = round(a.target * a.osp_share)
+    n_drift = round(a.target * a.drift_share)
+    n_jh = a.target - n_osp - n_drift
+    have = Counter(("osp" if r.get("source", "").startswith("osp") else
+                    "drift" if "drift" in r.get("source", "") else "jh")
+                   for r in existing.values() if r.get("validated"))
+
+    def pref(c):  # medium first, then error-code variety
+        n = c["starter"]["n_errors"]
+        return (not 2 <= n <= 40, -len(c["starter"]["codes"]), n, c["cid"])
+
     picked: list[dict] = []
+    for bucket, pool, cap in (("jh", [c for c in cands if c["source"] == "jachacks" and not c.get("drift")], n_jh),
+                              ("drift", [c for c in cands if c.get("drift")], n_drift)):
+        # round-robin over repos so one big repo can't dominate
+        by_repo = defaultdict(list)
+        for c in sorted(pool, key=pref):
+            by_repo[c["unit"]["repo"]].append(c)
+        got = have[bucket]
+        while got < cap and any(by_repo.values()):
+            for repo in sorted(by_repo, key=lambda r: pref(by_repo[r][0]) if by_repo[r] else (9,)):
+                if got >= cap or not by_repo[repo]:
+                    continue
+                c = by_repo[repo].pop(0)
+                if per_repo[repo] >= TASKS_PER_REPO or sig(repo, c["starter"]) in seen_sig \
+                        or c["cid"] in existing:
+                    continue
+                picked.append(c)
+                per_repo[repo] += 1
+                seen_sig.add(sig(repo, c["starter"]))
+                got += 1
     code_seen = Counter()
-    for c in jh:
-        if len([p for p in picked if p["source"] == "jachacks"]) >= a.target - n_osp:
-            break
-        repo = c["unit"]["repo"]
-        if per_repo[repo] >= TASKS_PER_REPO or sig(c) in seen_sig:
-            continue
-        picked.append(c)
-        per_repo[repo] += 1
-        seen_sig.add(sig(c))
-    for c in osp:
-        if len([p for p in picked if p["source"] == "osp"]) >= n_osp:
+    got = have["osp"]
+    for c in sorted([c for c in cands if c["source"] == "osp"], key=lambda c: (pref(c), c["cid"])):
+        if got >= n_osp:
             break
         k = c["unit"]["error_code"]
-        if code_seen[k] >= 3:
+        if code_seen[k] >= 2 or c["cid"] in existing:
             continue
         code_seen[k] += 1
         picked.append(c)
+        got += 1
     random_req = lambda c, pool: pool[int(sid(c["cid"]), 16) % len(pool)]  # noqa: E731
 
     rows = dict(existing)
@@ -752,19 +788,24 @@ def cmd_select(a) -> None:
             source = "osp_repair_code_fix"
         else:
             rm = meta.get(u["repo"], {})
-            req = random_req(c, REQ_JH).format(title=rm.get("title", "our"))
+            pool = REQ_DRIFT if c.get("drift") else REQ_JH
+            req = random_req(c, pool).format(title=rm.get("title", "our"), jv=JAC_VERSION)
             prov = {"repo": u["repo"], "repo_url": rm.get("repo_url"), "edition": rm.get("edition"),
                     "seed_module": u["seed"], "reverted_files": u["reverted"],
                     "original": "data/jachacks_{spring,2026}_jac_files_filtered.jsonl",
-                    "reference": "data/jachacks_nonsf (0.36.1 repair, re-verified at 0.37.25)"}
+                    "reference": "data/jachacks_nonsf (0.36.1 repair) + mechanical 0.37 migration",
+                    "starter": ("0.36.1-green repaired code, unmigrated" if c.get("drift")
+                                else "hackathon original for reverted files, 0.36.1 repair elsewhere"),
+                    "reference_migration": c.get("migration")}
             lic = "upstream repo license (public hackathon submission; see repo_url)"
-            source = f"jachacks_{rm.get('edition', 'nonsf')}"
+            source = f"jachacks_{rm.get('edition', 'nonsf')}" + ("_toolchain_drift" if c.get("drift") else "")
         task = {"id": tid, "kind": "fix", "level": level, "source": source, "gates": gates,
                 "target_paths": c["target_paths"], "broken_paths": c["broken_paths"],
                 "jac_version": JAC_VERSION, "license": lic, "provenance": prov,
                 "starter_errors": {"n_errors": st["n_errors"], "codes": st["codes"],
                                    "n_files": len(st["broken_files"])},
-                "gate_thresholds": {"symbols": G.T_SYM, "mass": G.T_MASS, "mass_file": G.T_MASS_FILE}}
+                "gate_thresholds": {"symbols": G.T_SYM, "mass": G.T_MASS, "body": G.T_BODY,
+                                    "body_file": G.T_BODY_FILE}}
         (tdir / "task.json").write_text(json.dumps(task, indent=1) + "\n")
         (tdir / "request.md").write_text(req.strip() + "\n")
         notes = [f"# {tid}", "", f"Source: {source}. Level {level}.", "",
@@ -776,7 +817,7 @@ def cmd_select(a) -> None:
                  "Calibration at build time (CI):"]
         for k, v in c["calibration"].items():
             notes.append(f"- {k}: pass={v['pass']} check={v['check']} sym={v['sym']} "
-                         f"mass={v['mass']} min_file={v['min_file']}"
+                         f"mass={v['mass']} body={v.get('body')} min_file_body={v['min_file']}"
                          + (f" test={v['test']}" if "test" in v else ""))
         if c["source"] == "osp":
             notes += ["", "grader/tests.jac is the verified annex test suite rewritten as a separate "
@@ -785,8 +826,7 @@ def cmd_select(a) -> None:
         (tdir / "grader" / "notes.md").write_text("\n".join(notes) + "\n")
         rows[tid] = {"id": tid, "level": level, "source": source, "gates": gates,
                      "validated": True, "reason": "ci-candidates: starter fails, reference passes, "
-                     "gate calibrated", "repo": u.get("repo"), "_cand": {
-                         "unit": {"repo": u.get("repo", "")}, "starter": st}}
+                     "gate calibrated"}
     with open(MANIFEST, "w") as g:
         for r in sorted(rows.values(), key=lambda r: r["id"]):
             g.write(json.dumps(r) + "\n")
@@ -821,6 +861,7 @@ def cmd_validate(a) -> None:
                 cal["starter_profile"] = G.grade(td, td / "starter", run_check_too=False)
             r["calibration"] = {k: {"pass": v["pass"], "check": v["check"]["ok"],
                                     "sym": v["symbols"]["ratio"], "mass": v["mass"]["ratio"],
+                              "body": v["mass"]["body_ratio"],
                                     "min_file": v["mass"]["min_file"], "reasons": v["reasons"]}
                                 for k, v in cal.items()}
             r["validated"] = (r["starter_fails"] and cal["reference"]["pass"]
@@ -885,6 +926,7 @@ def main() -> int:
     ap.add_argument("--runs", nargs="*", default=[])
     ap.add_argument("--target", type=int, default=40)
     ap.add_argument("--osp-share", type=float, default=0.3)
+    ap.add_argument("--drift-share", type=float, default=0.15)
     a = ap.parse_args()
     if a.stage == "units":
         ju, ou = jachacks_units(Path(a.nonsf)), osp_units()

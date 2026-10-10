@@ -118,7 +118,11 @@ def jac_check(tree: Path, timeout=1200) -> dict:
     elif passed is None:
         crash = out[-600:]
     ok = crash is None and failed == 0 and not errors
-    return {"ok": ok, "passed": passed, "failed": failed, "n_errors": len(errors),
+    raw = ""
+    if not ok and not errors:
+        keep = [l for l in out.splitlines() if re.search(r"Error|error|✖|FAILED|-->", l)]
+        raw = "\n".join(keep[:40])[-3000:]
+    return {"raw": raw, "ok": ok, "passed": passed, "failed": failed, "n_errors": len(errors),
             "codes": dict(Counter(e["code"] for e in errors)), "errors": errors,
             "failed_files": sorted(f for f, s in status.items() if s == "FAILED"),
             "secs": round(dt, 1), "crash": crash}
@@ -449,7 +453,15 @@ def score_repo_ci(r: dict, repaired_root: Path | None, out: Path) -> dict:
                     n_diff += 1
                     q.parent.mkdir(parents=True, exist_ok=True)
                     shutil.copy2(p, q)
-            res["repair_overlay"] = {"files": n_over, "changed": n_diff}
+            # the 0.36.1 repair renamed some X.cl.jac / X.sv.jac -> X.jac; drop the stale originals
+            n_drop = 0
+            for q in list(rep.rglob("*.jac")):
+                rel = q.relative_to(rep)
+                base = re.sub(r"\.(cl|sv|na)\.jac$", ".jac", str(rel))
+                if base != str(rel) and not (rep_src / rel).exists() and (rep_src / base).exists():
+                    q.unlink()
+                    n_drop += 1
+            res["repair_overlay"] = {"files": n_over, "changed": n_diff, "dropped_renamed": n_drop}
             trees.append(("repaired", rep))
         checks = {}
         final = None

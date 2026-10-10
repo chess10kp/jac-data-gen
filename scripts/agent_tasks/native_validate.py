@@ -79,6 +79,17 @@ def _copytree(src: Path, dst: Path) -> None:
                         ignore=shutil.ignore_patterns("__jac_gen__", ".jac", "__pycache__"))
 
 
+LOG_DIR: Path | None = Path(os.environ["NATIVE_LOG_DIR"]) if os.environ.get("NATIVE_LOG_DIR") else None
+
+
+def save_log(task_id: str, label: str, text: str) -> None:
+    if LOG_DIR is None:
+        return
+    d = LOG_DIR / task_id
+    d.mkdir(parents=True, exist_ok=True)
+    (d / f"{label.replace(':', '_')}.txt").write_text(text)
+
+
 class Task:
     def __init__(self, task_dir: Path, jac: str):
         self.dir = task_dir
@@ -155,6 +166,7 @@ class Task:
         rc, out = _run([self.jac, "test", TEST_MODULE], wd, self.timeout)
         import re
         ok = rc == 0 and re.search(r"\b[1-9]\d* passed", out) is not None and re.search(r"\b[1-9]\d* (failed|errors?)\b", out) is None
+        self.last_test_out = out
         return ok, out[-1500:]
 
     def run_steps(self, wd: Path) -> tuple[bool, str]:
@@ -275,6 +287,7 @@ def validate(task_dir: Path, jac: str = "jac", repeats: int = 3, log: Callable[[
                 raise GateError(f"{label}: contracts: {conout}")
             p, tout = t.test(wd)
             if not p:
+                save_log(t.meta["id"], label + "_test", t.last_test_out)
                 raise GateError(f"{label}: hidden tests FAILED\n{tout}")
             if has_run:
                 r, rout = t.run_steps(wd)
@@ -323,7 +336,11 @@ def validate(task_dir: Path, jac: str = "jac", repeats: int = 3, log: Callable[[
             ok.append(f"NEG {name}: {status}")
 
     # 3. determinism
-    outcomes = [ws("reference", "", lambda wd: t.test(wd)[0]) for _ in range(max(1, repeats))]
+    outcomes = []
+    for i in range(max(1, repeats)):
+        outcomes.append(ws("reference", "", lambda wd: t.test(wd)[0]))
+        if not outcomes[-1]:
+            save_log(t.meta["id"], f"det_{i}", t.last_test_out)
     if len(set(outcomes)) != 1 or not outcomes[0]:
         fail.append(f"DET reference unstable across {repeats} runs: {outcomes}")
     else:
