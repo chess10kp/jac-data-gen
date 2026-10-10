@@ -1,0 +1,42 @@
+{
+ "id": "osp-iss-andyv99-collabboard-e07e2b56",
+ "kind": "fix",
+ "level": 4,
+ "source": "osp_repair_code_fix",
+ "gates": [
+  "check",
+  "test",
+  "fidelity"
+ ],
+ "target_paths": [
+  "main.jac"
+ ],
+ "broken_paths": [
+  "main.jac"
+ ],
+ "jac_version": "0.37.25",
+ "license": "synthetic (generated in-house; repo license)",
+ "provenance": {
+  "dataset": "data/osp_repair/code_fix.jsonl",
+  "row_id": "codefix__iss_AndyV99__collabboard__154",
+  "target_id": "iss_AndyV99__collabboard__154",
+  "broken_generator": "minimax",
+  "fixed_generator": "minimax/minimax-m3:free",
+  "original_error": "\u2716 Error: error[E1117]: Node/edge ability trigger must be a walker, got \"BoardRoute\""
+ },
+ "starter_errors": {
+  "n_errors": 18,
+  "codes": {
+   "E1099": 8,
+   "E2086": 6,
+   "E1117": 4
+  },
+  "n_files": 1
+ },
+ "gate_thresholds": {
+  "symbols": 0.9,
+  "mass": 0.7,
+  "body": 0.6,
+  "body_file": 0.4
+ }
+}

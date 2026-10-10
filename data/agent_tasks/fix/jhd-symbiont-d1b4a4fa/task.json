@@ -1,0 +1,51 @@
+{
+ "id": "jhd-symbiont-d1b4a4fa",
+ "kind": "fix",
+ "level": 4,
+ "source": "jachacks_spring_toolchain_drift",
+ "gates": [
+  "check",
+  "fidelity"
+ ],
+ "target_paths": [
+  "symbiont.jac"
+ ],
+ "broken_paths": [
+  "symbiont.jac"
+ ],
+ "jac_version": "0.37.25",
+ "license": "upstream repo license (public hackathon submission; see repo_url)",
+ "provenance": {
+  "repo": "midhunrajcharles__Symbiont",
+  "repo_url": "https://github.com/midhunrajcharles/Symbiont",
+  "edition": "spring",
+  "seed_module": "symbiont.jac",
+  "reverted_files": [
+   "symbiont.jac"
+  ],
+  "original": "data/jachacks_{spring,2026}_jac_files_filtered.jsonl",
+  "reference": "data/jachacks_nonsf (0.36.1 repair) + mechanical 0.37 migration",
+  "starter": "0.36.1-green repaired code, unmigrated",
+  "reference_migration": {
+   "ok": true,
+   "rounds": 1,
+   "edits": 22,
+   "renames": 0,
+   "left": {}
+  }
+ },
+ "starter_errors": {
+  "n_errors": 22,
+  "codes": {
+   "E1036": 19,
+   "E2086": 3
+  },
+  "n_files": 1
+ },
+ "gate_thresholds": {
+  "symbols": 0.9,
+  "mass": 0.7,
+  "body": 0.6,
+  "body_file": 0.4
+ }
+}

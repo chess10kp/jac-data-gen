@@ -1,0 +1,56 @@
+{
+ "id": "jh-jaccareroute-d116a0ca",
+ "kind": "fix",
+ "level": 4,
+ "source": "jachacks_spring",
+ "gates": [
+  "check",
+  "fidelity"
+ ],
+ "target_paths": [
+  "backend/main.jac"
+ ],
+ "broken_paths": [
+  "backend/main.jac"
+ ],
+ "jac_version": "0.37.25",
+ "license": "upstream repo license (public hackathon submission; see repo_url)",
+ "provenance": {
+  "repo": "danhpham2000__JacCareRoute",
+  "repo_url": "https://github.com/danhpham2000/JacCareRoute",
+  "edition": "spring",
+  "seed_module": "backend/main.jac",
+  "reverted_files": [
+   "backend/main.jac"
+  ],
+  "original": "data/jachacks_{spring,2026}_jac_files_filtered.jsonl",
+  "reference": "data/jachacks_nonsf (0.36.1 repair) + mechanical 0.37 migration",
+  "starter": "hackathon original for reverted files, 0.36.1 repair elsewhere",
+  "reference_migration": {
+   "ok": true,
+   "rounds": 1,
+   "edits": 19,
+   "renames": 0,
+   "left": {}
+  }
+ },
+ "starter_errors": {
+  "n_errors": 26,
+  "codes": {
+   "E1036": 12,
+   "E2086": 5,
+   "E0013": 4,
+   "E0002": 2,
+   "E0001": 1,
+   "E0004": 1,
+   "E1053": 1
+  },
+  "n_files": 1
+ },
+ "gate_thresholds": {
+  "symbols": 0.9,
+  "mass": 0.7,
+  "body": 0.6,
+  "body_file": 0.4
+ }
+}

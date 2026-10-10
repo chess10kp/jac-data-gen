@@ -1,0 +1,50 @@
+{
+ "id": "jh-healthgraph-jachacks-d7913f4d",
+ "kind": "fix",
+ "level": 1,
+ "source": "jachacks_spring",
+ "gates": [
+  "check",
+  "fidelity"
+ ],
+ "target_paths": [
+  "main.jac"
+ ],
+ "broken_paths": [
+  "main.jac"
+ ],
+ "jac_version": "0.37.25",
+ "license": "upstream repo license (public hackathon submission; see repo_url)",
+ "provenance": {
+  "repo": "Aditya0049__healthgraph-jachacks",
+  "repo_url": "https://github.com/Aditya0049/healthgraph-jachacks",
+  "edition": "spring",
+  "seed_module": "main.jac",
+  "reverted_files": [
+   "main.jac"
+  ],
+  "original": "data/jachacks_{spring,2026}_jac_files_filtered.jsonl",
+  "reference": "data/jachacks_nonsf (0.36.1 repair) + mechanical 0.37 migration",
+  "starter": "hackathon original for reverted files, 0.36.1 repair elsewhere",
+  "reference_migration": {
+   "ok": true,
+   "rounds": 0,
+   "edits": 0,
+   "renames": 0,
+   "left": {}
+  }
+ },
+ "starter_errors": {
+  "n_errors": 2,
+  "codes": {
+   "E1053": 2
+  },
+  "n_files": 1
+ },
+ "gate_thresholds": {
+  "symbols": 0.9,
+  "mass": 0.7,
+  "body": 0.6,
+  "body_file": 0.4
+ }
+}

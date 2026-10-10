@@ -1,0 +1,52 @@
+{
+ "toplevel_names": [],
+ "mass": {
+  "main.jac": 724
+ },
+ "body": {
+  "main.jac": 267
+ },
+ "target_paths": [
+  "main.jac"
+ ],
+ "symbols_dropped_not_in_starter": [],
+ "starter_mass": {
+  "main.jac": 698
+ },
+ "starter_body": {
+  "main.jac": 268
+ },
+ "symbols": [
+  "ability:BoardInspector.audit_attempt",
+  "ability:BoardInspector.audit_objective",
+  "ability:BoardInspector.audit_task",
+  "ability:BoardInspector.detect_cycle",
+  "ability:BoardInspector.finish",
+  "ability:BoardInspector.start",
+  "edge:AssignedTo",
+  "edge:Decomposes",
+  "edge:DependsOn",
+  "edge:Produces",
+  "field:Agent.name",
+  "field:Agent.role",
+  "field:Attempt.note",
+  "field:Attempt.outcome",
+  "field:BoardInspector.cycle_found",
+  "field:BoardInspector.objective_count",
+  "field:BoardInspector.ready_count",
+  "field:BoardInspector.task_count",
+  "field:BoardInspector.visited_tasks",
+  "field:Objective.goal",
+  "field:Objective.title",
+  "field:Task.attempt_count",
+  "field:Task.context",
+  "field:Task.evidence",
+  "field:Task.state",
+  "field:Task.title",
+  "node:Agent",
+  "node:Attempt",
+  "node:Objective",
+  "node:Task",
+  "walker:BoardInspector"
+ ]
+}

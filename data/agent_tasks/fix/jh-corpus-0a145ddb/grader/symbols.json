@@ -1,0 +1,47 @@
+{
+ "toplevel_names": [
+  "BlockReason",
+  "Verdict",
+  "block_result",
+  "confirm_result",
+  "pass_result"
+ ],
+ "mass": {
+  "policies/builtin/_base.jac": 188,
+  "policies/builtin/context_poisoning.jac": 179
+ },
+ "body": {
+  "policies/builtin/_base.jac": 62,
+  "policies/builtin/context_poisoning.jac": 68
+ },
+ "target_paths": [
+  "policies/builtin/context_poisoning.jac"
+ ],
+ "symbols_dropped_not_in_starter": [],
+ "starter_mass": {
+  "policies/builtin/_base.jac": 188,
+  "policies/builtin/context_poisoning.jac": 178
+ },
+ "starter_body": {
+  "policies/builtin/_base.jac": 62,
+  "policies/builtin/context_poisoning.jac": 68
+ },
+ "symbols": [
+  "ability:CheckMemoryChunk.check",
+  "def:block_result",
+  "def:confirm_result",
+  "def:pass_result",
+  "enum:BlockReason",
+  "enum:Verdict",
+  "field:CheckMemoryChunk.chunk_content",
+  "field:CheckMemoryChunk.chunk_id",
+  "field:CheckMemoryChunk.retrieval_query",
+  "field:PolicyResult.block_reason",
+  "field:PolicyResult.message",
+  "field:PolicyResult.policy_name",
+  "field:PolicyResult.requires_confirmation",
+  "field:PolicyResult.verdict",
+  "obj:PolicyResult",
+  "walker:CheckMemoryChunk"
+ ]
+}

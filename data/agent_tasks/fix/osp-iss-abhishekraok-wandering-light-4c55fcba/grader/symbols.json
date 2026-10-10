@@ -1,0 +1,44 @@
+{
+ "toplevel_names": [],
+ "mass": {
+  "main.jac": 672
+ },
+ "body": {
+  "main.jac": 190
+ },
+ "target_paths": [
+  "main.jac"
+ ],
+ "symbols_dropped_not_in_starter": [
+  "field:CycleHunter.visited_labels"
+ ],
+ "starter_mass": {
+  "main.jac": 788
+ },
+ "starter_body": {
+  "main.jac": 229
+ },
+ "symbols": [
+  "ability:CycleHunter.audit",
+  "ability:CycleHunter.begin",
+  "ability:ShortestPath.begin",
+  "ability:ShortestPath.search",
+  "edge:Applies",
+  "edge:Step",
+  "field:Applies.func_name",
+  "field:CycleHunter.no_ops",
+  "field:CycleHunter.revists",
+  "field:CycleHunter.target",
+  "field:ShortestPath.distance",
+  "field:ShortestPath.max_depth",
+  "field:ShortestPath.seen",
+  "field:ShortestPath.target",
+  "field:State.label",
+  "field:State.reachable",
+  "field:Step.func_name",
+  "field:Step.idx",
+  "node:State",
+  "walker:CycleHunter",
+  "walker:ShortestPath"
+ ]
+}

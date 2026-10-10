@@ -1,0 +1,56 @@
+{
+ "id": "jhd-ghostboard-a6e428ee",
+ "kind": "fix",
+ "level": 2,
+ "source": "jachacks_spring_toolchain_drift",
+ "gates": [
+  "check",
+  "fidelity"
+ ],
+ "target_paths": [
+  "client.jac",
+  "models.jac"
+ ],
+ "broken_paths": [
+  "client.jac",
+  "models.jac"
+ ],
+ "jac_version": "0.37.25",
+ "license": "upstream repo license (public hackathon submission; see repo_url)",
+ "provenance": {
+  "repo": "NIKHILJAISWAL123__GhostBoard",
+  "repo_url": "https://github.com/NIKHILJAISWAL123/GhostBoard",
+  "edition": "spring",
+  "seed_module": "main.jac",
+  "reverted_files": [
+   "client.jac",
+   "main.jac",
+   "models.jac",
+   "server.jac"
+  ],
+  "original": "data/jachacks_{spring,2026}_jac_files_filtered.jsonl",
+  "reference": "data/jachacks_nonsf (0.36.1 repair) + mechanical 0.37 migration",
+  "starter": "0.36.1-green repaired code, unmigrated",
+  "reference_migration": {
+   "ok": true,
+   "rounds": 1,
+   "edits": 4,
+   "renames": 0,
+   "left": {}
+  }
+ },
+ "starter_errors": {
+  "n_errors": 4,
+  "codes": {
+   "E2086": 3,
+   "E1036": 1
+  },
+  "n_files": 2
+ },
+ "gate_thresholds": {
+  "symbols": 0.9,
+  "mass": 0.7,
+  "body": 0.6,
+  "body_file": 0.4
+ }
+}

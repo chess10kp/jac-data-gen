@@ -1,0 +1,35 @@
+{
+ "toplevel_names": [],
+ "mass": {
+  "service_test.jac": 253
+ },
+ "body": {
+  "service_test.jac": 147
+ },
+ "target_paths": [
+  "service_test.jac"
+ ],
+ "symbols_dropped_not_in_starter": [],
+ "starter_mass": {
+  "service_test.jac": 250
+ },
+ "starter_body": {
+  "service_test.jac": 147
+ },
+ "symbols": [
+  "ability:analyze.go",
+  "ability:health.go",
+  "field:__specs__.auth",
+  "field:__specs__.auth",
+  "field:__specs__.methods",
+  "field:analyze.contract_text",
+  "field:analyze.jurisdiction",
+  "field:analyze.party_perspective",
+  "field:analyze.title",
+  "field:analyze.token",
+  "obj:__specs__",
+  "obj:__specs__",
+  "walker:analyze",
+  "walker:health"
+ ]
+}

@@ -1,0 +1,46 @@
+{
+ "id": "osp-iss-blamechris-chroxy-9fddf2df",
+ "kind": "fix",
+ "level": 4,
+ "source": "osp_repair_code_fix",
+ "gates": [
+  "check",
+  "test",
+  "fidelity"
+ ],
+ "target_paths": [
+  "main.jac"
+ ],
+ "broken_paths": [
+  "main.jac"
+ ],
+ "jac_version": "0.37.25",
+ "license": "synthetic (generated in-house; repo license)",
+ "provenance": {
+  "dataset": "data/osp_repair/code_fix.jsonl",
+  "row_id": "codefix__iss_blamechris__chroxy__7309",
+  "target_id": "iss_blamechris__chroxy__7309",
+  "broken_generator": "minimax",
+  "fixed_generator": "minimax/minimax-m3:free",
+  "original_error": "[ERROR] Error: error[E0005]: Unexpected token '{'"
+ },
+ "starter_errors": {
+  "n_errors": 15,
+  "codes": {
+   "E2086": 4,
+   "E1036": 3,
+   "E0005": 2,
+   "E0052": 2,
+   "E2015": 2,
+   "E0013": 1,
+   "E1030": 1
+  },
+  "n_files": 1
+ },
+ "gate_thresholds": {
+  "symbols": 0.9,
+  "mass": 0.7,
+  "body": 0.6,
+  "body_file": 0.4
+ }
+}

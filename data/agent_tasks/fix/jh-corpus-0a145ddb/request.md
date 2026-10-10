@@ -1,0 +1,1 @@
+`jac check` is throwing a pile of errors on this module and the code it imports. It was written against an older Jac dialect. Migrate it to current Jac syntax so it checks clean, without stubbing anything out.

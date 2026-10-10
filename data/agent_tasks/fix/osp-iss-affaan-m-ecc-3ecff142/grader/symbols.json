@@ -1,0 +1,56 @@
+{
+ "toplevel_names": [],
+ "mass": {
+  "main.jac": 816
+ },
+ "body": {
+  "main.jac": 305
+ },
+ "target_paths": [
+  "main.jac"
+ ],
+ "symbols_dropped_not_in_starter": [
+  "ability:HostRuntime.is_node_runtime",
+  "ability:HostRuntime.pick_runtime",
+  "ability:HostRuntime.resolve_hook_runtime",
+  "ability:SessionStartExecutor.execute",
+  "ability:SessionStartExecutor.on_host",
+  "edge:Hosts",
+  "edge:Respawns",
+  "edge:Triggers",
+  "field:HookSpec.available",
+  "field:HookSpec.hook_id",
+  "field:HookSpec.profiles",
+  "field:HookSpec.script",
+  "field:HookSpec.title",
+  "field:HookSpec.year",
+  "field:HostRuntime.available",
+  "field:HostRuntime.hook_node_override",
+  "field:HostRuntime.title",
+  "field:HostRuntime.use_exec_path_naively",
+  "field:HostRuntime.year",
+  "field:SessionStartExecutor.available",
+  "field:SessionStartExecutor.current_runtime",
+  "field:SessionStartExecutor.launches",
+  "field:SessionStartExecutor.max_depth",
+  "field:SessionStartExecutor.seen",
+  "field:SessionStartExecutor.title",
+  "field:SessionStartExecutor.year",
+  "node:HookSpec",
+  "node:HostRuntime",
+  "walker:SessionStartExecutor"
+ ],
+ "starter_mass": {
+  "main.jac": 903
+ },
+ "starter_body": {
+  "main.jac": 274
+ },
+ "symbols": [
+  "ability:SessionStartExecutor.start",
+  "field:HostRuntime.bun_version",
+  "field:HostRuntime.exec_path",
+  "field:HostRuntime.release_name",
+  "field:Respawns.reason"
+ ]
+}
