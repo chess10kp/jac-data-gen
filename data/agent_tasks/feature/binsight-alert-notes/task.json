@@ -1,0 +1,24 @@
+{
+  "id": "binsight-alert-notes",
+  "kind": "feature",
+  "level": 3,
+  "source": "jachacks-2026::justinhh4__Binsight",
+  "gates": [
+    "check",
+    "test"
+  ],
+  "jac_version": "0.37.25",
+  "license": "unknown (public hackathon repo, no LICENSE file)",
+  "provenance": {
+    "repo": "justinhh4__Binsight",
+    "github_url": "https://github.com/justinhh4/Binsight",
+    "test_dest": "binsight/jac_app/test_feature_hidden.jac",
+    "interface": "node AlertNote + walkers AddAlertNote/ListAlertNotes",
+    "tree_run": "38065096899"
+  },
+  "target_paths": [
+    "binsight/jac_app/extensions/domain/edges.jac",
+    "binsight/jac_app/extensions/domain/nodes.jac",
+    "binsight/jac_app/extensions/walkers/alert_walkers.jac"
+  ]
+}

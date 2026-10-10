@@ -1,0 +1,38 @@
+{
+  "items": [
+    {
+      "food": "Apple",
+      "category": "fruit",
+      "estimated_weight_oz": 3.5,
+      "estimated_portion_wasted_pct": 60,
+      "estimated_cost_usd": 0.75
+    },
+    {
+      "food": "Orange",
+      "category": "fruit",
+      "estimated_weight_oz": 2.8,
+      "estimated_portion_wasted_pct": 45,
+      "estimated_cost_usd": 0.65
+    },
+    {
+      "food": "Onion",
+      "category": "vegetable",
+      "estimated_weight_oz": 1.2,
+      "estimated_portion_wasted_pct": 30,
+      "estimated_cost_usd": 0.25
+    }
+  ],
+  "summary": {
+    "total_items": 3,
+    "total_estimated_weight_oz": 7.5,
+    "total_estimated_cost_usd": 1.65,
+    "most_wasted_category": "fruit",
+    "waste_severity": "medium"
+  },
+  "recommendations": [
+    "Consider offering smaller fruit portions or cut fruit options to reduce waste",
+    "Implement a 'take what you can eat' policy for whole fruits",
+    "Track which fruits are most commonly wasted to adjust purchasing"
+  ],
+  "notes": "Image shows a compost bin with various food scraps. Most items appear to be fruit peels and cores from apples and oranges, along with some onion scraps. Other vegetable matter visible may be from items not on today's menu. The waste level appears moderate for a dining hall compost bin."
+}

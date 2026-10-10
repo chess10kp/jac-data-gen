@@ -1,0 +1,22 @@
+{
+  "id": "binsight-alert-severity-filter",
+  "kind": "feature",
+  "level": 1,
+  "source": "jachacks-2026::justinhh4__Binsight",
+  "gates": [
+    "check",
+    "test"
+  ],
+  "jac_version": "0.37.25",
+  "license": "unknown (public hackathon repo, no LICENSE file)",
+  "provenance": {
+    "repo": "justinhh4__Binsight",
+    "github_url": "https://github.com/justinhh4/Binsight",
+    "test_dest": "binsight/jac_app/test_feature_hidden.jac",
+    "interface": "walker ListOpenAlerts(min_severity, hall_id) report",
+    "tree_run": "38065096899"
+  },
+  "target_paths": [
+    "binsight/jac_app/extensions/walkers/alert_walkers.jac"
+  ]
+}

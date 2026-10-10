@@ -1,0 +1,22 @@
+{
+  "id": "ghostboard-reporting-lines",
+  "kind": "feature",
+  "level": 3,
+  "source": "jachacks-spring::NIKHILJAISWAL123__GhostBoard",
+  "gates": [
+    "check",
+    "test"
+  ],
+  "jac_version": "0.37.25",
+  "license": "unknown (public hackathon repo, no LICENSE file)",
+  "provenance": {
+    "repo": "NIKHILJAISWAL123__GhostBoard",
+    "github_url": "https://github.com/NIKHILJAISWAL123/GhostBoard",
+    "test_dest": "tests_feature.jac",
+    "interface": "initialize_graph + def:pub get_direct_reports/get_chain_of_command in server.jac",
+    "tree_run": "38065096899"
+  },
+  "target_paths": [
+    "server.jac"
+  ]
+}

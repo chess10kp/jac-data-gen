@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+python-multipart
+pydantic-settings
+requests
+beautifulsoup4
+httpx
+python-dotenv
+anthropic

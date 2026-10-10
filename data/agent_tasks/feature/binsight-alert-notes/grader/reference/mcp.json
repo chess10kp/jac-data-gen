@@ -1,0 +1,11 @@
+{
+    "mcpServers": [
+        {
+            "name": "jac",
+            "command": "/Users/justinhu/Documents/Jac/env/bin/jac",
+            "args": [
+                "mcp"
+            ]
+        }
+    ]
+}

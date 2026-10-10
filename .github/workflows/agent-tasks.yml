@@ -1,0 +1,89 @@
+# Offloads agent-task building/validation (jac check/run/start, repo scoring) to
+# GitHub runners. Push a branch `agent-tasks/<kind>` carrying
+# `.ci/agent-tasks/<kind>.sh` (+ optional `<kind>.json` {"shards": N, "timeout": min});
+# each shard runs the script with SHARD/NSHARDS/OUT set and uploads $OUT.
+# Submit/fetch from a dev box with scripts/agent_tasks/ci_submit.sh / ci_fetch.sh.
+name: agent-tasks
+
+on:
+  push:
+    branches: ['agent-tasks/**']
+
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  JAC_VERSION: 0.37.25
+  JAC_SHA256: a7d29cc7b35cc25b8697510e7d31fcb3403a11451d5693f57e0918a7420cf2c2
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      kind: ${{ steps.p.outputs.kind }}
+      shards: ${{ steps.p.outputs.shards }}
+      timeout: ${{ steps.p.outputs.timeout }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: p
+        run: |
+          kind="${GITHUB_REF_NAME#agent-tasks/}"
+          cfg=".ci/agent-tasks/$kind.json"
+          shards=$(jq -r '.shards // 4' "$cfg" 2>/dev/null || echo 4)
+          timeout=$(jq -r '.timeout // 300' "$cfg" 2>/dev/null || echo 300)
+          echo "kind=$kind" >> "$GITHUB_OUTPUT"
+          echo "shards=$(seq -s, 0 $((shards - 1)) | sed 's/^/[/;s/$/]/')" >> "$GITHUB_OUTPUT"
+          echo "timeout=$timeout" >> "$GITHUB_OUTPUT"
+          test -f ".ci/agent-tasks/$kind.sh" || { echo "missing .ci/agent-tasks/$kind.sh"; exit 1; }
+
+  run:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ fromJSON(needs.plan.outputs.timeout) }}
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(needs.plan.outputs.shards) }}
+    env:
+      KIND: ${{ needs.plan.outputs.kind }}
+      SHARD: ${{ matrix.shard }}
+      NSHARDS: ${{ strategy.job-total }}
+      OUT: ci_out
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        if: env.KIND == 'traj'
+        with:
+          node-version: '24'
+      - name: Install jac ${{ env.JAC_VERSION }}
+        run: |
+          mkdir -p "$HOME/bin"
+          curl -fsSL -o "$HOME/bin/jac" \
+            "https://github.com/jaseci-labs/jac/releases/download/v$JAC_VERSION/jac-$JAC_VERSION-linux-x86_64"
+          echo "$JAC_SHA256  $HOME/bin/jac" | sha256sum -c -
+          chmod +x "$HOME/bin/jac"
+          echo "$HOME/bin" >> "$GITHUB_PATH"
+      - name: Python deps
+        run: |
+          python -m venv .venv
+          if [ -f ".ci/agent-tasks/$KIND.requirements.txt" ]; then
+            .venv/bin/pip install -q -r ".ci/agent-tasks/$KIND.requirements.txt"
+          fi
+      - name: Run shard ${{ matrix.shard }}
+        env:
+          # Model credentials only reach the trajectory runner, never task builders.
+          ZAI_API_KEY: ${{ needs.plan.outputs.kind == 'traj' && secrets.ZAI_API_KEY || '' }}
+        run: |
+          jac --version
+          mkdir -p "$OUT"
+          bash ".ci/agent-tasks/$KIND.sh" 2>&1 | tee "$OUT/shard_$SHARD.log"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ env.KIND }}-shard-${{ matrix.shard }}
+          path: ci_out/
+          retention-days: 14
