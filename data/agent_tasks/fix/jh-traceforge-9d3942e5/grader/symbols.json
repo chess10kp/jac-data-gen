@@ -1,0 +1,30 @@
+{
+ "toplevel_names": [
+  "_render_markdown",
+  "build_parser",
+  "main",
+  "validate_payload"
+ ],
+ "mass": {
+  "scripts/validate_gold_annotations.jac": 1118
+ },
+ "body": {
+  "scripts/validate_gold_annotations.jac": 981
+ },
+ "target_paths": [
+  "scripts/validate_gold_annotations.jac"
+ ],
+ "symbols_dropped_not_in_starter": [],
+ "starter_mass": {
+  "scripts/validate_gold_annotations.jac": 1115
+ },
+ "starter_body": {
+  "scripts/validate_gold_annotations.jac": 978
+ },
+ "symbols": [
+  "def:_render_markdown",
+  "def:build_parser",
+  "def:main",
+  "def:validate_payload"
+ ]
+}

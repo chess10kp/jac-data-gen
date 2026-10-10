@@ -1,0 +1,1 @@
+{"why": "counts appliances that are off", "edits": [{"file": "load.jac", "old": "                if a.on {\n                    watts += a.watts;\n                }", "new": "                watts += a.watts;"}]}

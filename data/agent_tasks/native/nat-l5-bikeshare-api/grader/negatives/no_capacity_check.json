@@ -1,0 +1,1 @@
+{"why": "returns to a full station", "edits": [{"file": "app.jac", "old": "        if len([st ->:Docked:->]) >= st.capacity {", "new": "        if len([st ->:Docked:->]) > st.capacity {"}]}

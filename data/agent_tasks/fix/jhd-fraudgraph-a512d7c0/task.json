@@ -1,0 +1,51 @@
+{
+ "id": "jhd-fraudgraph-a512d7c0",
+ "kind": "fix",
+ "level": 3,
+ "source": "jachacks_spring_toolchain_drift",
+ "gates": [
+  "check",
+  "fidelity"
+ ],
+ "target_paths": [
+  "backend/jac/fraud_agent.jac"
+ ],
+ "broken_paths": [
+  "backend/jac/fraud_agent.jac"
+ ],
+ "jac_version": "0.37.25",
+ "license": "upstream repo license (public hackathon submission; see repo_url)",
+ "provenance": {
+  "repo": "sameeksha-sunilkumar__fraudgraph",
+  "repo_url": "https://github.com/sameeksha-sunilkumar/fraudgraph",
+  "edition": "spring",
+  "seed_module": "backend/jac/fraud_agent.jac",
+  "reverted_files": [
+   "backend/jac/fraud_agent.jac"
+  ],
+  "original": "data/jachacks_{spring,2026}_jac_files_filtered.jsonl",
+  "reference": "data/jachacks_nonsf (0.36.1 repair) + mechanical 0.37 migration",
+  "starter": "0.36.1-green repaired code, unmigrated",
+  "reference_migration": {
+   "ok": true,
+   "rounds": 1,
+   "edits": 11,
+   "renames": 0,
+   "left": {}
+  }
+ },
+ "starter_errors": {
+  "n_errors": 11,
+  "codes": {
+   "E1036": 8,
+   "E2086": 3
+  },
+  "n_files": 1
+ },
+ "gate_thresholds": {
+  "symbols": 0.9,
+  "mass": 0.7,
+  "body": 0.6,
+  "body_file": 0.4
+ }
+}

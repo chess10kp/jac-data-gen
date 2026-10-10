@@ -1,0 +1,112 @@
+{
+ "id": "app-l3-fuel-economy",
+ "level": 3,
+ "source": "hand-authored",
+ "gates": [
+  "check",
+  "test",
+  "run",
+  "behavioral"
+ ],
+ "hash": "cb39da169a58053c",
+ "jac": "jac 0.37.25  (Linux x86_64)",
+ "dedup": {
+  "pass": true,
+  "domain": "vehicle fuel economy log",
+  "domain_hits": [],
+  "max_5gram_containment": 0.0,
+  "nearest_5gram": null,
+  "max_8gram_containment": 0.0,
+  "nearest_8gram": null,
+  "n_eval_docs": 1387
+ },
+ "positive": {
+  "check": {
+   "ok": true,
+   "cmd": "jac check main.jac",
+   "rc": 0,
+   "secs": 1.4,
+   "tail": "  Checking main.jac...\nmain.jac ok [100%]\n============================== 1 passed in 0.95s ===============================",
+   "stdout_tail": "  Checking main.jac...\nmain.jac ok [100%]\n============================== 1 passed in 0.95s ==============================="
+  },
+  "test": {
+   "steps": [
+    {
+     "cmd": "jac test zz_hidden_acceptance.jac",
+     "rc": 0,
+     "secs": 4.0,
+     "tail": "....                                                                     [100%]\n\n4 passed in 3.42s",
+     "stdout_tail": "....                                                                     [100%]\n\n4 passed in 3.42s"
+    }
+   ],
+   "ok": true
+  },
+  "run": {
+   "ok": true,
+   "script": "behavioral.py",
+   "verdict": {
+    "run": true,
+    "behavioral": true,
+    "failures": []
+   },
+   "rc": 0,
+   "tail": "{\"run\": true, \"behavioral\": true, \"failures\": []}\n$ add kx-101\nVehicle(plate='KX-101')\nadded KX-101\n$ fill KX-101 20000 50\n{'ok': True}\nok\n$ economy kx-101\n0.0\nKX-101 0.0 L/100km\n$ fill kx-101 20600 48\n{'ok': True}\nok\n$ fill kx-101 21000 34\n{'ok': True}\nok\n$ economy KX-101\n8.2\nKX-101 8.2 L/100km\n$ fill kx-101 20900 10\n{'ok': False, 'error': 'odometer must exceed 21000'}\nerror: odometer must exceed 21000\n$ fill zz-999 100 10\n{'ok': False, 'error': 'unknown vehicle ZZ-999'}\nerror: unknown vehicle ZZ-999\n$ economy kx-101\n8.2\nKX-101 8.2 L/100km"
+  },
+  "behavioral": {
+   "ok": true,
+   "script": "behavioral.py",
+   "verdict": {
+    "run": true,
+    "behavioral": true,
+    "failures": []
+   },
+   "rc": 0,
+   "tail": "{\"run\": true, \"behavioral\": true, \"failures\": []}\n$ add kx-101\nVehicle(plate='KX-101')\nadded KX-101\n$ fill KX-101 20000 50\n{'ok': True}\nok\n$ economy kx-101\n0.0\nKX-101 0.0 L/100km\n$ fill kx-101 20600 48\n{'ok': True}\nok\n$ fill kx-101 21000 34\n{'ok': True}\nok\n$ economy KX-101\n8.2\nKX-101 8.2 L/100km\n$ fill kx-101 20900 10\n{'ok': False, 'error': 'odometer must exceed 21000'}\nerror: odometer must exceed 21000\n$ fill zz-999 100 10\n{'ok': False, 'error': 'unknown vehicle ZZ-999'}\nerror: unknown vehicle ZZ-999\n$ economy kx-101\n8.2\nKX-101 8.2 L/100km"
+  }
+ },
+ "negative": {
+  "test": {
+   "steps": [
+    {
+     "cmd": "jac test zz_hidden_acceptance.jac",
+     "rc": 1,
+     "secs": 1.4,
+     "tail": "E                                                                        [100%]\n\nFAILED /tmp/appgate_9cnxk1wc/zz_hidden_acceptance.jac::zz_hidden_acceptance.jac\nTraceback (most recent call last):\n  File \"/home/runner/_work/jac/jac/.zig-cache/o/8776b3f32593b10747b6ba6ce20fea8b/payload.tar.zst.work/site/jaclang/testing/impl/test_runner.impl.jac\", line 677, in run_file\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/python/lib/python3.14/importlib/__init__.py\", line 88, in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen importlib._bootstrap>\", line 1406, in _gcd_import\n  File \"<frozen importlib._bootstrap>\", line 1371, in _find_and_load\n  File \"<frozen importlib._bootstrap>\", line 1342, in _find_and_load_unlocked\n  File \"<frozen importlib._bootstrap>\", line 938, in _load_unlocked\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/site/jaclang/meta_importer.py\", line 356, in exec_module\n    self._exec_compiled_module(module, file_path)\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/site/jaclang/meta_importer.py\", line 457, in _exec_compiled_module\n    exec(codeobj, module.__dict__)\n    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/appgate_9cnxk1wc/zz_hidden_acceptance.jac\", line 2, in <module>\n    import from main { AddVehicle, RecordFill, Economy }\n     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nImportError: cannot import name 'AddVehicle' from 'main' (/tmp/appgate_9cnxk1wc/main.jac)\n\n1 error in 0.96s\n\u2716 Error: Tests failed.",
+     "stdout_tail": "    import from main { AddVehicle, RecordFill, Economy }\n     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nImportError: cannot import name 'AddVehicle' from 'main' (/tmp/appgate_9cnxk1wc/main.jac)\n\n1 error in 0.96s"
+    }
+   ],
+   "ok": false
+  },
+  "behavioral": {
+   "ok": false,
+   "script": "behavioral.py",
+   "verdict": {
+    "run": false,
+    "behavioral": false,
+    "failures": [
+     "`jac run main.jac add kx-101` exited 2: Preparing application...\n  Compiling server modules and placement metadata...\nusage: fuel_economy [-h] {greet} ...\nfuel_economy: error: argument command: invalid choice: 'add' (choose from 'greet')\n",
+     "`jac run main.jac fill KX-101 20000 50` exited 2: Preparing application...\n  Restoring prepared application\nusage: fuel_economy [-h] {greet} ...\nfuel_economy: error: argument command: invalid choice: 'fill' (choose from 'greet')\n",
+     "first fill should be ok, got ''",
+     "`jac run main.jac economy kx-101` exited 2: Preparing application...\n  Restoring prepared application\nusage: fuel_economy [-h] {greet} ...\nfuel_economy: error: argument command: invalid choice: 'economy' (choose from 'greet')\n",
+     "economy with one fill should be 0.0, got ''",
+     "`jac run main.jac fill kx-101 20600 48` exited 2: Preparing application...\n  Restoring prepared application\nusage: fuel_economy [-h] {greet} ...\nfuel_economy: error: argument command: invalid choice: 'fill' (choose from 'greet')\n",
+     "`jac run main.jac fill kx-101 21000 34` exited 2: Preparing application...\n  Restoring prepared application\nusage: fuel_economy [-h] {greet} ...\nfuel_economy: error: argument command: invalid choice: 'fill' (choose from 'greet')\n",
+     "`jac run main.jac economy KX-101` exited 2: Preparing application...\n  Restoring prepared application\nusage: fuel_economy [-h] {greet} ...\nfuel_economy: error: argument command: invalid choice: 'economy' (choose from 'greet')\n",
+     "economy should be 8.2, got ''",
+     "`jac run main.jac fill kx-101 20900 10` exited 2: Preparing application...\n  Restoring prepared application\nusage: fuel_economy [-h] {greet} ...\nfuel_economy: error: argument command: invalid choice: 'fill' (choose from 'greet')\n",
+     "lower odometer should be an error, got ''",
+     "`jac run main.jac fill zz-999 100 10` exited 2: Preparing application...\n  Restoring prepared application\nusage: fuel_economy [-h] {greet} ...\nfuel_economy: error: argument command: invalid choice: 'fill' (choose from 'greet')\n",
+     "unknown plate should be an error, got ''",
+     "`jac run main.jac economy kx-101` exited 2: Preparing application...\n  Restoring prepared application\nusage: fuel_economy [-h] {greet} ...\nfuel_economy: error: argument command: invalid choice: 'economy' (choose from 'greet')\n",
+     "rejected fills must not change economy, got ''"
+    ]
+   },
+   "rc": 1,
+   "tail": "{\"run\": false, \"behavioral\": false, \"failures\": [\"`jac run main.jac add kx-101` exited 2: Preparing application...\\n  Compiling server modules and placement metadata...\\nusage: fuel_economy [-h] {greet} ...\\nfuel_economy: error: argument command: invalid choice: 'add' (choose from 'greet')\\n\", \"`jac run main.jac fill KX-101 20000 50` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: fuel_economy [-h] {greet} ...\\nfuel_economy: error: argument command: invalid choice: 'fill' (choose from 'greet')\\n\", \"first fill should be ok, got ''\", \"`jac run main.jac economy kx-101` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: fuel_economy [-h] {greet} ...\\nfuel_economy: error: argument command: invalid choice: 'economy' (choose from 'greet')\\n\", \"economy with one fill should be 0.0, got ''\", \"`jac run main.jac fill kx-101 20600 48` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: fuel_economy [-h] {greet} ...\\nfuel_economy: error: argument command: invalid choice: 'fill' (choose from 'greet')\\n\", \"`jac run main.jac fill kx-101 21000 34` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: fuel_economy [-h] {greet} ...\\nfuel_economy: error: argument command: invalid choice: 'fill' (choose from 'greet')\\n\", \"`jac run main.jac economy KX-101` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: fuel_economy [-h] {greet} ...\\nfuel_economy: error: argument command: invalid choice: 'economy' (choose from 'greet')\\n\", \"economy should be 8.2, got ''\", \"`jac run main.jac fill kx-101 20900 10` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: fuel_economy [-h] {greet} ...\\nfuel_economy: error: argument command: invalid choice: 'fill' (choose from 'greet')\\n\", \"lower odometer should be an error, got ''\", \"`jac run main.jac fill zz-999 100 10` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: fuel_economy [-h] {greet} ...\\nfuel_economy: error: argument command: invalid choice: 'fill' (choose from 'greet')\\n\", \"unknown plate should be an error, got ''\", \"`jac run main.jac economy kx-101` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: fuel_economy [-h] {greet} ...\\nfuel_economy: error: argument command: invalid choice: 'economy' (choose from 'greet')\\n\", \"rejected fills must not change economy, got ''\"]}\n$ add kx-101\n\n$ fill KX-101 20000 50\n\n$ economy kx-101\n\n$ fill kx-101 20600 48\n\n$ fill kx-101 21000 34\n\n$ economy KX-101\n\n$ fill kx-101 20900 10\n\n$ fill zz-999 100 10\n\n$ economy kx-101\n"
+  }
+ },
+ "secs": 36.5,
+ "validated": true,
+ "reason": "reference passes ['behavioral', 'check', 'run', 'test']; starter fails ['behavioral', 'test']; dedup ok",
+ "ci_run": "38063985138"
+}

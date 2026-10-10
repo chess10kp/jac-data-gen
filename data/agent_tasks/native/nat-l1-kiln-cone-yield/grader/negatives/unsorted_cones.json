@@ -1,0 +1,1 @@
+{"why": "cones in insertion order", "edits": [{"file": "kiln.jac", "old": "for cone in sorted(self.totals.keys()) {", "new": "for cone in self.totals.keys() {"}]}

@@ -1,0 +1,1 @@
+{"why": "creates a new bed every time", "edits": [{"file": "greenhouse.jac", "old": "b = beds[0] if beds else root ++> Bed(code=self.bed);", "new": "b = root ++> Bed(code=self.bed);"}]}

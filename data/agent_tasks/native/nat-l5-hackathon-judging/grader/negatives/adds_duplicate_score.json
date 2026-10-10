@@ -1,0 +1,1 @@
+{"why": "rescoring adds another edge", "edits": [{"file": "app.jac", "old": "        if existing {\n            existing[0].points = self.points;\n        } else {\n            j +>:Scored(criterion=self.criterion, points=self.points):+> t;\n        }", "new": "        j +>:Scored(criterion=self.criterion, points=self.points):+> t;"}]}

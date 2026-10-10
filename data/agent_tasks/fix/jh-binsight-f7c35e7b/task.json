@@ -1,0 +1,61 @@
+{
+ "id": "jh-binsight-f7c35e7b",
+ "kind": "fix",
+ "level": 4,
+ "source": "jachacks_2026",
+ "gates": [
+  "check",
+  "fidelity"
+ ],
+ "target_paths": [
+  "binsight/jac_app/extensions/domain/nodes.jac",
+  "binsight/jac_app/extensions/walkers/schedule_walkers.jac"
+ ],
+ "broken_paths": [
+  "binsight/jac_app/extensions/domain/nodes.jac",
+  "binsight/jac_app/extensions/walkers/schedule_walkers.jac"
+ ],
+ "jac_version": "0.37.25",
+ "license": "upstream repo license (public hackathon submission; see repo_url)",
+ "provenance": {
+  "repo": "justinhh4__Binsight",
+  "repo_url": "https://github.com/justinhh4/Binsight",
+  "edition": "2026",
+  "seed_module": "binsight/jac_app/extensions/walkers/schedule_walkers.jac",
+  "reverted_files": [
+   "binsight/jac_app/extensions/domain/nodes.jac",
+   "binsight/jac_app/extensions/walkers/schedule_walkers.jac"
+  ],
+  "original": "data/jachacks_{spring,2026}_jac_files_filtered.jsonl",
+  "reference": "data/jachacks_nonsf (0.36.1 repair) + mechanical 0.37 migration",
+  "starter": "hackathon original for reverted files, 0.36.1 repair elsewhere",
+  "reference_migration": {
+   "ok": true,
+   "rounds": 1,
+   "edits": 4,
+   "renames": 0,
+   "left": {}
+  }
+ },
+ "starter_errors": {
+  "n_errors": 20,
+  "codes": {
+   "E0048": 8,
+   "E2018": 3,
+   "E2004": 2,
+   "E1036": 2,
+   "E0022": 1,
+   "E0002": 1,
+   "E0006": 1,
+   "E1054": 1,
+   "E2086": 1
+  },
+  "n_files": 2
+ },
+ "gate_thresholds": {
+  "symbols": 0.9,
+  "mass": 0.7,
+  "body": 0.6,
+  "body_file": 0.4
+ }
+}

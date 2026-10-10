@@ -1,0 +1,1 @@
+{"why": "donates claimed items too", "edits": [{"file": "app.jac", "old": "if not is_claimed(here) and self.today - here.found_day > self.keep_days {", "new": "if self.today - here.found_day > self.keep_days {"}]}

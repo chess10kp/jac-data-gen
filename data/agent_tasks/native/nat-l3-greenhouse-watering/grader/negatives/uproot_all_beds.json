@@ -1,0 +1,1 @@
+{"why": "uproots the species from every bed", "edits": [{"file": "greenhouse.jac", "old": "        for b in [root -->[?:Bed, code == self.bed]] {\n            for p in [b ->:Grows:->[?:Plant, species == self.species]] {", "new": "        for b in [root -->[?:Bed]] {\n            for p in [b ->:Grows:->[?:Plant, species == self.species]] {"}]}

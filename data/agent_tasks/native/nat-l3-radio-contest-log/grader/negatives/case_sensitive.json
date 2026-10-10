@@ -1,0 +1,1 @@
+{"why": "does not upper-case calls", "edits": [{"file": "contest.jac", "old": "sign = self.call.upper();", "new": "sign = self.call;"}]}

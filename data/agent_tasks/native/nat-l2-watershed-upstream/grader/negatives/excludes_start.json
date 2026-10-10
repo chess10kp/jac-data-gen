@@ -1,0 +1,1 @@
+{"why": "sampled reach not counted", "edits": [{"file": "watershed.jac", "old": "        self.names.append(here.name);\n        self.total_kg += here.load_kg;\n", "new": "        if len(self.seen) > 1 {\n            self.names.append(here.name);\n            self.total_kg += here.load_kg;\n        }\n"}]}

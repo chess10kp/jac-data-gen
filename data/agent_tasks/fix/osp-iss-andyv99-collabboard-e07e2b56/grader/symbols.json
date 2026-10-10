@@ -1,0 +1,61 @@
+{
+ "toplevel_names": [
+  "path_uuid"
+ ],
+ "mass": {
+  "main.jac": 693
+ },
+ "body": {
+  "main.jac": 173
+ },
+ "target_paths": [
+  "main.jac"
+ ],
+ "symbols_dropped_not_in_starter": [],
+ "starter_mass": {
+  "main.jac": 741
+ },
+ "starter_body": {
+  "main.jac": 189
+ },
+ "symbols": [
+  "ability:CascadeMarker.descend",
+  "ability:CascadeMarker.start",
+  "ability:GetRequest.start",
+  "def:path_uuid",
+  "edge:BoardRoute",
+  "edge:CardRoute",
+  "edge:ColumnRoute",
+  "edge:OrgRoute",
+  "edge:Parent",
+  "field:Board.board_id",
+  "field:Board.title",
+  "field:BoardRoute.path_segment",
+  "field:Card.card_id",
+  "field:Card.text",
+  "field:CardRoute.path_segment",
+  "field:CascadeMarker.mark_order",
+  "field:CascadeMarker.visited",
+  "field:Column.column_id",
+  "field:Column.name",
+  "field:ColumnRoute.path_segment",
+  "field:GetRequest.body",
+  "field:GetRequest.param_name",
+  "field:GetRequest.param_value",
+  "field:GetRequest.status",
+  "field:OrgRoute.path_segment",
+  "field:Organization.name",
+  "field:Organization.org_id",
+  "field:StoreProbe.label",
+  "field:StoreProbe.touched",
+  "field:TreeNode.label",
+  "node:Board",
+  "node:Card",
+  "node:Column",
+  "node:Organization",
+  "node:StoreProbe",
+  "node:TreeNode",
+  "walker:CascadeMarker",
+  "walker:GetRequest"
+ ]
+}

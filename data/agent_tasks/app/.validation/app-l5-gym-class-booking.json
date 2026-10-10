@@ -1,0 +1,118 @@
+{
+ "id": "app-l5-gym-class-booking",
+ "level": 5,
+ "source": "hand-authored",
+ "gates": [
+  "check",
+  "test",
+  "start",
+  "behavioral"
+ ],
+ "hash": "d7ffd0dbee16dd7d",
+ "jac": "jac 0.37.25  (Linux x86_64)",
+ "dedup": {
+  "pass": true,
+  "domain": "gym class booking API",
+  "domain_hits": [],
+  "max_5gram_containment": 0.0,
+  "nearest_5gram": null,
+  "max_8gram_containment": 0.0,
+  "nearest_8gram": null,
+  "n_eval_docs": 1387
+ },
+ "positive": {
+  "check": {
+   "ok": true,
+   "cmd": "jac check main.jac",
+   "rc": 0,
+   "secs": 1.7,
+   "tail": "\u26a0 warning[W1037]: Explicit 'any' type annotation disables type checking here; consider a more specific type\n  --> main.jac:45:60\n   43 | }\n   44 | \n   45 | def:pub book_spot(class_id: str, member: str) -> dict[str, any] {\n      |                                                            ^^^\n   46 |     k = find_class(class_id);\n   47 |     if k is None {\n\u26a0 warning[W1037]: Explicit 'any' type annotation disables type checking here; consider a more specific type\n  --> main.jac:60:65\n   58 | }\n   59 | \n   60 | def:pub cancel_booking(class_id: str, member: str) -> dict[str, any] {\n      |                                                                 ^^^\n   61 |     k = find_class(class_id);\n   62 |     if k is None {\n\u26a0 warning[W1037]: Explicit 'any' type annotation disables type checking here; consider a more specific type\n  --> main.jac:75:84\n   73 | \n   74 | def:pub list_classes() -> list[dict[str, any]] {\n   75 |     return sorted([view(k) for k in [root -->[?:Klass]]], key=lambda (v: dict[str, any]) -> str { return v[\"name\"]; });\n      |                                                                                    ^^^\n   76 | }\n   77 | \n\u26a0 warning[W1037]: Explicit 'any' type annotation disables type checking here; consider a more specific type\n  --> main.jac:74:42\n   72 | }\n   73 | \n   74 | def:pub list_classes() -> list[dict[str, any]] {\n      |                                          ^^^\n   75 |     return sorted([view(k) for k in [root -->[?:Klass]]], key=lambda (v: dict[str, any]) -> str { return v[\"name\"]; });\n   76 | }\n\u26a0 warning[W3005]: Empty parentheses can be removed [remove-empty-parens]\n  --> main.jac:74:1\n   72 | }\n   73 | \n   74 | def:pub list_classes() -> list[dict[str, any]] {\n      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n   75 |     return sorted([view(k) for k in [root -->[?:Klass]]], key=lambda (v: dict[str, any]) -> str { return v[\"name\"]; });\n   76 | }",
+   "stdout_tail": "  \u2192 run 'jac guide jac-types' for guidance\n  \u2192 run 'jac guide jac-types' for guidance\n  \u2192 run 'jac guide reference/diagnostics' for guidance\n\n============================== 1 passed in 1.10s ==============================="
+  },
+  "test": {
+   "steps": [
+    {
+     "cmd": "jac test main.jac",
+     "rc": 0,
+     "secs": 3.4,
+     "tail": "...                                                                      [100%]\n\n3 passed in 2.66s",
+     "stdout_tail": "...                                                                      [100%]\n\n3 passed in 2.66s"
+    },
+    {
+     "cmd": "jac test zz_hidden_acceptance.jac",
+     "rc": 0,
+     "secs": 2.6,
+     "tail": ".......                                                                  [100%]\n\n7 passed in 1.80s",
+     "stdout_tail": ".......                                                                  [100%]\n\n7 passed in 1.80s"
+    }
+   ],
+   "own_test_files": [
+    "main.test.jac"
+   ],
+   "ok": true
+  },
+  "start": {
+   "ok": true,
+   "script": "smoke.py",
+   "verdict": {
+    "start": true,
+    "behavioral": true,
+    "failures": []
+   },
+   "rc": 0,
+   "tail": "{\"start\": true, \"behavioral\": true, \"failures\": []}\n---- server.log tail ----\nJac API Server running on http://localhost:40117\n\n  jac dev server v0.37.25\n\n  \u279c  Local:     http://localhost:40117/\n  \u279c  Network:   http://10.1.0.61:40117/\n\n  Server ready (no client)\n\n127.0.0.1 \"GET /healthz HTTP/1.1\" 200 16 0.6ms 7f895f01530d4c5bb8762849dd7afa42\n127.0.0.1 \"POST /function/create_class HTTP/1.1\" 200 199 25.5ms 5bde55d15be84464a020388dedecf0ef\n127.0.0.1 \"POST /function/create_class HTTP/1.1\" 200 192 11.4ms 7484a0bdd7834c83b2ef13172c376433\n127.0.0.1 \"POST /function/create_class HTTP/1.1\" 200 124 8.1ms 471ecaff3b6443f49158a396209907f9\n127.0.0.1 \"POST /function/book_spot HTTP/1.1\" 200 199 18.1ms 0219d28acc434c9e86ee2bb8a8b5b5d0\n127.0.0.1 \"POST /function/book_spot HTTP/1.1\" 200 111 12.9ms 6a4223f2533a4ee197550be5c250f358\n127.0.0.1 \"POST /function/book_spot HTTP/1.1\" 200 199 19.5ms 618cf199ce9d435da47c2915805ae71e\n127.0.0.1 \"POST /function/book_spot HTTP/1.1\" 200 110 14.5ms 58198555c8174ae8bebfbff6aff226db\n127.0.0.1 \"POST /function/roster HTTP/1.1\" 200 98 13.5ms 1908c1d6254a4006882586711eb5646e\n127.0.0.1 \"POST /function/cancel_booking HTTP/1.1\" 200 199 18.7ms 39b72cb1608846c288f07b651795c2ca\n127.0.0.1 \"POST /function/cancel_booking HTTP/1.1\" 200 112 12.9ms 68b4bdec168c494d8de4f45f98f35dc5\n127.0.0.1 \"POST /function/list_classes HTTP/1.1\" 200 311 13.2ms 88e05e9297e546b2ac02172add425f41\n127.0.0.1 \"POST /function/book_spot HTTP/1.1\" 200 110 10.7ms fe55a2ca255b4be8aa7cf746a231f776\n{\"ts\": \"2026-10-10T15:33:02.486565Z\", \"level\": \"WARNING\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"drain: started (signal SIGTERM, budget 10.0s)\"}\n\nShutting down server..."
+  },
+  "behavioral": {
+   "ok": true,
+   "script": "smoke.py",
+   "verdict": {
+    "start": true,
+    "behavioral": true,
+    "failures": []
+   },
+   "rc": 0,
+   "tail": "{\"start\": true, \"behavioral\": true, \"failures\": []}\n---- server.log tail ----\nJac API Server running on http://localhost:40117\n\n  jac dev server v0.37.25\n\n  \u279c  Local:     http://localhost:40117/\n  \u279c  Network:   http://10.1.0.61:40117/\n\n  Server ready (no client)\n\n127.0.0.1 \"GET /healthz HTTP/1.1\" 200 16 0.6ms 7f895f01530d4c5bb8762849dd7afa42\n127.0.0.1 \"POST /function/create_class HTTP/1.1\" 200 199 25.5ms 5bde55d15be84464a020388dedecf0ef\n127.0.0.1 \"POST /function/create_class HTTP/1.1\" 200 192 11.4ms 7484a0bdd7834c83b2ef13172c376433\n127.0.0.1 \"POST /function/create_class HTTP/1.1\" 200 124 8.1ms 471ecaff3b6443f49158a396209907f9\n127.0.0.1 \"POST /function/book_spot HTTP/1.1\" 200 199 18.1ms 0219d28acc434c9e86ee2bb8a8b5b5d0\n127.0.0.1 \"POST /function/book_spot HTTP/1.1\" 200 111 12.9ms 6a4223f2533a4ee197550be5c250f358\n127.0.0.1 \"POST /function/book_spot HTTP/1.1\" 200 199 19.5ms 618cf199ce9d435da47c2915805ae71e\n127.0.0.1 \"POST /function/book_spot HTTP/1.1\" 200 110 14.5ms 58198555c8174ae8bebfbff6aff226db\n127.0.0.1 \"POST /function/roster HTTP/1.1\" 200 98 13.5ms 1908c1d6254a4006882586711eb5646e\n127.0.0.1 \"POST /function/cancel_booking HTTP/1.1\" 200 199 18.7ms 39b72cb1608846c288f07b651795c2ca\n127.0.0.1 \"POST /function/cancel_booking HTTP/1.1\" 200 112 12.9ms 68b4bdec168c494d8de4f45f98f35dc5\n127.0.0.1 \"POST /function/list_classes HTTP/1.1\" 200 311 13.2ms 88e05e9297e546b2ac02172add425f41\n127.0.0.1 \"POST /function/book_spot HTTP/1.1\" 200 110 10.7ms fe55a2ca255b4be8aa7cf746a231f776\n{\"ts\": \"2026-10-10T15:33:02.486565Z\", \"level\": \"WARNING\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"drain: started (signal SIGTERM, budget 10.0s)\"}\n\nShutting down server..."
+  }
+ },
+ "negative": {
+  "test": {
+   "steps": [
+    {
+     "why": "no own test blocks found"
+    },
+    {
+     "cmd": "jac test zz_hidden_acceptance.jac",
+     "rc": 1,
+     "secs": 1.9,
+     "tail": "E                                                                        [100%]\n\nFAILED /tmp/appgate_zo8mgqgv/zz_hidden_acceptance.jac::zz_hidden_acceptance.jac\nTraceback (most recent call last):\n  File \"/home/runner/_work/jac/jac/.zig-cache/o/8776b3f32593b10747b6ba6ce20fea8b/payload.tar.zst.work/site/jaclang/testing/impl/test_runner.impl.jac\", line 677, in run_file\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/python/lib/python3.14/importlib/__init__.py\", line 88, in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen importlib._bootstrap>\", line 1406, in _gcd_import\n  File \"<frozen importlib._bootstrap>\", line 1371, in _find_and_load\n  File \"<frozen importlib._bootstrap>\", line 1342, in _find_and_load_unlocked\n  File \"<frozen importlib._bootstrap>\", line 938, in _load_unlocked\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/site/jaclang/meta_importer.py\", line 356, in exec_module\n    self._exec_compiled_module(module, file_path)\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/site/jaclang/meta_importer.py\", line 457, in _exec_compiled_module\n    exec(codeobj, module.__dict__)\n    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/appgate_zo8mgqgv/zz_hidden_acceptance.jac\", line 2, in <module>\n    import from main { create_class, book_spot, cancel_booking, list_classes, roster }\n     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nImportError: cannot import name 'create_class' from 'main' (/tmp/appgate_zo8mgqgv/main.jac)\n\n1 error in 1.29s\n\u2716 Error: Tests failed.",
+     "stdout_tail": "    import from main { create_class, book_spot, cancel_booking, list_classes, roster }\n     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nImportError: cannot import name 'create_class' from 'main' (/tmp/appgate_zo8mgqgv/main.jac)\n\n1 error in 1.29s"
+    }
+   ],
+   "own_test_files": [],
+   "ok": false
+  },
+  "behavioral": {
+   "ok": false,
+   "script": "smoke.py",
+   "verdict": {
+    "start": true,
+    "behavioral": false,
+    "failures": [
+     "create_class failed: 405 {'detail': 'Method Not Allowed'}",
+     "bad view: None",
+     "book 1 wrong: 405 {'detail': 'Method Not Allowed'}",
+     "book 2 wrong: 405 {'detail': 'Method Not Allowed'}",
+     "roster wrong: {'detail': 'Method Not Allowed'}",
+     "cancel wrong: 405 {'detail': 'Method Not Allowed'}",
+     "list_classes wrong: []"
+    ]
+   },
+   "rc": 1,
+   "tail": "{\"start\": true, \"behavioral\": false, \"failures\": [\"create_class failed: 405 {'detail': 'Method Not Allowed'}\", \"bad view: None\", \"book 1 wrong: 405 {'detail': 'Method Not Allowed'}\", \"book 2 wrong: 405 {'detail': 'Method Not Allowed'}\", \"roster wrong: {'detail': 'Method Not Allowed'}\", \"cancel wrong: 405 {'detail': 'Method Not Allowed'}\", \"list_classes wrong: []\"]}\n---- server.log tail ----\nJac API Server running on http://localhost:54605\n\n  jac dev server v0.37.25\n\n  \u279c  Local:     http://localhost:54605/\n  \u279c  Network:   http://10.1.0.61:54605/\n\n  Server ready (no client)\n\n127.0.0.1 \"GET /healthz HTTP/1.1\" 200 16 0.7ms 25fd43c9b6204f3383f30f6a925ffd2b\n127.0.0.1 \"POST /function/create_class HTTP/1.1\" 405 32 0.6ms ed12b0aad0004c5b90762c9cd42e7bb3\n127.0.0.1 \"POST /function/create_class HTTP/1.1\" 405 32 0.4ms cf512a1c73e54ff2aa8858e0d153913d\n127.0.0.1 \"POST /function/create_class HTTP/1.1\" 405 32 0.4ms e719ab46babc4c39bb500ea6902551d1\n127.0.0.1 \"POST /function/book_spot HTTP/1.1\" 405 32 0.4ms 8a224b2779d04e7c9c02ed44a40206a4\n127.0.0.1 \"POST /function/book_spot HTTP/1.1\" 405 32 0.4ms 3737b051f85e49f38c980ba6862f893b\n127.0.0.1 \"POST /function/book_spot HTTP/1.1\" 405 32 0.4ms 553ba3fdcc1d4f4aa59a2827f3a26542\n127.0.0.1 \"POST /function/book_spot HTTP/1.1\" 405 32 0.4ms 4412cf1416b740f1b9a9d43193c8cb4a\n127.0.0.1 \"POST /function/roster HTTP/1.1\" 405 32 0.3ms ef396837d313429a9f5e76737f90469c\n127.0.0.1 \"POST /function/cancel_booking HTTP/1.1\" 405 32 0.4ms 677155e320604563b6ccc40eaf612d49\n127.0.0.1 \"POST /function/cancel_booking HTTP/1.1\" 405 32 0.3ms 90bf487a5de548fdb49d0b857469ca73\n127.0.0.1 \"POST /function/list_classes HTTP/1.1\" 405 32 0.4ms c1f5b124a2b743768c175d7ea29f1bd2\n127.0.0.1 \"POST /function/book_spot HTTP/1.1\" 405 32 0.4ms 4cfa224b918c4fa68d5a23904a9f82fa\n{\"ts\": \"2026-10-10T15:33:07.535927Z\", \"level\": \"WARNING\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"drain: started (signal SIGTERM, budget 10.0s)\"}\n\nShutting down server..."
+  }
+ },
+ "secs": 16.0,
+ "validated": true,
+ "reason": "reference passes ['behavioral', 'check', 'start', 'test']; starter fails ['behavioral', 'test']; dedup ok",
+ "ci_run": "38063985138"
+}

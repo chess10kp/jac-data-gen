@@ -1,0 +1,33 @@
+{
+ "toplevel_names": [],
+ "mass": {
+  "graph.jac": 112
+ },
+ "body": {
+  "graph.jac": 23
+ },
+ "target_paths": [
+  "graph.jac"
+ ],
+ "symbols_dropped_not_in_starter": [],
+ "starter_mass": {
+  "graph.jac": 98
+ },
+ "starter_body": {
+  "graph.jac": 34
+ },
+ "symbols": [
+  "ability:CyberGraph.init",
+  "edge:Analyzes",
+  "edge:Monitors",
+  "field:CyberGraph.start_node",
+  "field:SecurityTarget.ip_address",
+  "field:SecurityTarget.status",
+  "field:SecurityTarget.vulnerabilities",
+  "field:ThreatIntel.active_threats",
+  "field:ThreatIntel.threat_level",
+  "node:SecurityTarget",
+  "node:ThreatIntel",
+  "obj:CyberGraph"
+ ]
+}

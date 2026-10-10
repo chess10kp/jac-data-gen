@@ -1,0 +1,79 @@
+{
+ "toplevel_names": [
+  "SettingsView",
+  "category_dot",
+  "create_incident_record",
+  "empty_state",
+  "incident_row",
+  "metric_card",
+  "nav_button_classes",
+  "panel_classes",
+  "sidebar_item",
+  "status_classes",
+  "timeline_step",
+  "urgency_classes",
+  "workflow_node"
+ ],
+ "mass": {
+  "settings.jac": 1033,
+  "shared.jac": 1586
+ },
+ "body": {
+  "settings.jac": 1010,
+  "shared.jac": 1114
+ },
+ "target_paths": [
+  "shared.jac"
+ ],
+ "symbols_dropped_not_in_starter": [],
+ "starter_mass": {
+  "settings.jac": 1033,
+  "shared.jac": 1578
+ },
+ "starter_body": {
+  "settings.jac": 1010,
+  "shared.jac": 1114
+ },
+ "symbols": [
+  "def:SettingsView",
+  "def:category_dot",
+  "def:create_incident_record",
+  "def:empty_state",
+  "def:incident_row",
+  "def:metric_card",
+  "def:nav_button_classes",
+  "def:panel_classes",
+  "def:sidebar_item",
+  "def:status_classes",
+  "def:timeline_step",
+  "def:urgency_classes",
+  "def:workflow_node",
+  "field:IncidentRecord.assignee",
+  "field:IncidentRecord.automation",
+  "field:IncidentRecord.category",
+  "field:IncidentRecord.confidence",
+  "field:IncidentRecord.id",
+  "field:IncidentRecord.latency",
+  "field:IncidentRecord.message",
+  "field:IncidentRecord.owner_notification",
+  "field:IncidentRecord.phone",
+  "field:IncidentRecord.property",
+  "field:IncidentRecord.property_code",
+  "field:IncidentRecord.recommended_action",
+  "field:IncidentRecord.status",
+  "field:IncidentRecord.steps",
+  "field:IncidentRecord.summary",
+  "field:IncidentRecord.tenant",
+  "field:IncidentRecord.tenant_reply",
+  "field:IncidentRecord.time",
+  "field:IncidentRecord.timings",
+  "field:IncidentRecord.unit",
+  "field:IncidentRecord.urgency",
+  "field:IncidentStep.detail",
+  "field:IncidentStep.label",
+  "field:IncidentStep.state",
+  "field:IncidentStep.time",
+  "obj:IncidentRecord",
+  "obj:IncidentStep"
+ ]
+}

@@ -1,0 +1,1 @@
+{"why": "counts retired lots as examined", "edits": [{"file": "vault.jac", "old": "        if here.retired {\n            return;\n        }\n        self.examined += 1;\n", "new": "        self.examined += 1;\n        if here.retired {\n            return;\n        }\n"}]}

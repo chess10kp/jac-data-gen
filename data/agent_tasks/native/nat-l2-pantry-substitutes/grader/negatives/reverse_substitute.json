@@ -1,0 +1,1 @@
+{"why": "follows SubstitutesFor backwards", "edits": [{"file": "cookbook.jac", "old": "[ing ->:SubstitutesFor:->]", "new": "[ing <-:SubstitutesFor:<-]"}]}

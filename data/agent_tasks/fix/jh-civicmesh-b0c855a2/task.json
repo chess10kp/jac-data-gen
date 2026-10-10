@@ -1,0 +1,58 @@
+{
+ "id": "jh-civicmesh-b0c855a2",
+ "kind": "fix",
+ "level": 4,
+ "source": "jachacks_spring",
+ "gates": [
+  "check",
+  "fidelity"
+ ],
+ "target_paths": [
+  "civicmesh/walkers/critique.jac"
+ ],
+ "broken_paths": [
+  "civicmesh/graph/edges.jac",
+  "civicmesh/walkers/critique.jac"
+ ],
+ "jac_version": "0.37.25",
+ "license": "upstream repo license (public hackathon submission; see repo_url)",
+ "provenance": {
+  "repo": "Anbu-00001__CivicMesh",
+  "repo_url": "https://github.com/Anbu-00001/CivicMesh",
+  "edition": "spring",
+  "seed_module": "civicmesh/walkers/critique.jac",
+  "reverted_files": [
+   "civicmesh/walkers/critique.jac"
+  ],
+  "original": "data/jachacks_{spring,2026}_jac_files_filtered.jsonl",
+  "reference": "data/jachacks_nonsf (0.36.1 repair) + mechanical 0.37 migration",
+  "starter": "hackathon original for reverted files, 0.36.1 repair elsewhere",
+  "reference_migration": {
+   "ok": true,
+   "rounds": 1,
+   "edits": 11,
+   "renames": 0,
+   "left": {}
+  }
+ },
+ "starter_errors": {
+  "n_errors": 21,
+  "codes": {
+   "E2086": 7,
+   "E0002": 4,
+   "E1036": 4,
+   "E0004": 2,
+   "E0014": 1,
+   "E0022": 1,
+   "E0006": 1,
+   "E1054": 1
+  },
+  "n_files": 2
+ },
+ "gate_thresholds": {
+  "symbols": 0.9,
+  "mass": 0.7,
+  "body": 0.6,
+  "body_file": 0.4
+ }
+}

@@ -1,0 +1,1 @@
+{"why": "return reports ok but leaves the Lent edge", "edits": [{"file": "toollib.jac", "old": "                del [edge holders[0] ->:Lent:-> tool];\n", "new": ""}]}

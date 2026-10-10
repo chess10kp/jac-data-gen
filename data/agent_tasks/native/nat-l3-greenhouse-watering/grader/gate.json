@@ -1,0 +1,7 @@
+{
+  "run_steps": [
+    {"file": "probe_gh_seed.jac", "expect": ["SEEDED=2"]},
+    {"file": "probe_gh_check.jac", "expect": ["DUE=N/fern", "BEDCOUNT=3"]}
+  ],
+  "contracts": [{"name": "PlantIn", "kind": "walker"}, {"name": "WaterBed", "kind": "walker"}, {"name": "DueOn", "kind": "walker"}, {"name": "Uproot", "kind": "walker"}]
+}

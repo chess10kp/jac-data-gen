@@ -1,0 +1,1 @@
+{"why": "new BandLog per contact", "edits": [{"file": "contest.jac", "old": "book = logs[0] if logs else root ++> BandLog(band=self.band);", "new": "book = root ++> BandLog(band=self.band);"}]}

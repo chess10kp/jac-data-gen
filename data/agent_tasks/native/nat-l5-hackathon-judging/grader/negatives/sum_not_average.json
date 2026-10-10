@@ -1,0 +1,1 @@
+{"why": "raw total instead of per-judge average", "edits": [{"file": "app.jac", "old": "score = round(total / len(judges), 2) if judges else 0.0;", "new": "score = float(total);"}]}

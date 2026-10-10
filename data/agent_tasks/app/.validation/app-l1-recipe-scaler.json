@@ -1,0 +1,61 @@
+{
+ "id": "app-l1-recipe-scaler",
+ "level": 1,
+ "source": "hand-authored",
+ "gates": [
+  "check",
+  "test"
+ ],
+ "hash": "d16edc02411c531e",
+ "jac": "jac 0.37.25  (Linux x86_64)",
+ "dedup": {
+  "pass": true,
+  "domain": "cooking unit conversion / recipe scaling",
+  "domain_hits": [],
+  "max_5gram_containment": 0.0,
+  "nearest_5gram": null,
+  "max_8gram_containment": 0.0,
+  "nearest_8gram": null,
+  "n_eval_docs": 1387
+ },
+ "positive": {
+  "check": {
+   "ok": true,
+   "cmd": "jac check recipe_scale.jac",
+   "rc": 0,
+   "secs": 1.6,
+   "tail": "  Checking recipe_scale.jac...\nrecipe_scale.jac ok [100%]\n============================== 1 passed in 1.06s ===============================",
+   "stdout_tail": "  Checking recipe_scale.jac...\nrecipe_scale.jac ok [100%]\n============================== 1 passed in 1.06s ==============================="
+  },
+  "test": {
+   "steps": [
+    {
+     "cmd": "jac test zz_hidden_acceptance.jac",
+     "rc": 0,
+     "secs": 4.0,
+     "tail": "......                                                                   [100%]\n\n6 passed in 3.39s",
+     "stdout_tail": "......                                                                   [100%]\n\n6 passed in 3.39s"
+    }
+   ],
+   "ok": true
+  }
+ },
+ "negative": {
+  "test": {
+   "steps": [
+    {
+     "cmd": "jac test zz_hidden_acceptance.jac",
+     "rc": 0,
+     "secs": 2.1,
+     "tail": "s                                                                        [100%]\n\n1 skipped in 1.42s",
+     "stdout_tail": "s                                                                        [100%]\n\n1 skipped in 1.42s"
+    }
+   ],
+   "ok": false
+  }
+ },
+ "secs": 7.7,
+ "validated": true,
+ "reason": "reference passes ['check', 'test']; starter fails ['test']; dedup ok",
+ "ci_run": "38063985138"
+}

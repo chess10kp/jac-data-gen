@@ -1,0 +1,118 @@
+{
+ "id": "app-l5-pet-adoption",
+ "level": 5,
+ "source": "hand-authored",
+ "gates": [
+  "check",
+  "test",
+  "start",
+  "behavioral"
+ ],
+ "hash": "9128828eba79eb12",
+ "jac": "jac 0.37.25  (Linux x86_64)",
+ "dedup": {
+  "pass": true,
+  "domain": "animal shelter adoption API",
+  "domain_hits": [],
+  "max_5gram_containment": 0.0,
+  "nearest_5gram": null,
+  "max_8gram_containment": 0.0,
+  "nearest_8gram": null,
+  "n_eval_docs": 1387
+ },
+ "positive": {
+  "check": {
+   "ok": true,
+   "cmd": "jac check main.jac",
+   "rc": 0,
+   "secs": 1.3,
+   "tail": "  Checking main.jac...\nmain.jac ok [100%]\n\n=================================== WARNINGS ===================================\n___________________________________ main.jac ___________________________________\n  \u2192 run 'jac guide jac-types' for guidance\n\n============================== 1 passed in 0.86s ===============================\n\u26a0 warning[W1037]: Explicit 'any' type annotation disables type checking here; consider a more specific type\n  --> main.jac:9:27\n    7 |     has status: str = \"available\";\n    8 | \n    9 |     def view -> dict[str, any] {\n      |                           ^^^\n   10 |         return {\"id\": jid(self), \"name\": self.name, \"species\": self.species,\n   11 |                 \"age_years\": self.age_years, \"status\": self.status};",
+   "stdout_tail": "=================================== WARNINGS ===================================\n___________________________________ main.jac ___________________________________\n  \u2192 run 'jac guide jac-types' for guidance\n\n============================== 1 passed in 0.86s ==============================="
+  },
+  "test": {
+   "steps": [
+    {
+     "cmd": "jac test main.jac",
+     "rc": 0,
+     "secs": 2.3,
+     "tail": ".                                                                        [100%]\n\n1 passed in 1.61s",
+     "stdout_tail": ".                                                                        [100%]\n\n1 passed in 1.61s"
+    },
+    {
+     "cmd": "jac test zz_hidden_acceptance.jac",
+     "rc": 0,
+     "secs": 2.1,
+     "tail": ".....                                                                    [100%]\n\n5 passed in 1.46s",
+     "stdout_tail": ".....                                                                    [100%]\n\n5 passed in 1.46s"
+    }
+   ],
+   "own_test_files": [
+    "main.test.jac"
+   ],
+   "ok": true
+  },
+  "start": {
+   "ok": true,
+   "script": "smoke.py",
+   "verdict": {
+    "start": true,
+    "behavioral": true,
+    "failures": []
+   },
+   "rc": 0,
+   "tail": "{\"start\": true, \"behavioral\": true, \"failures\": []}\n---- server.log tail ----\n{'id': '59fd81745949472589b8ee59a2d2d6ea', 'name': 'Ace', 'species': 'dog', 'age_years': 1, 'status': 'available'}\n127.0.0.1 \"POST /walker/add_pet HTTP/1.1\" 200 418 8.4ms 481d578baffc44839eea5916cdbf9f37\n{'id': 'e7cda3a00946408599b007252b73ce11', 'name': 'Tom', 'species': 'cat', 'age_years': 1, 'status': 'available'}\n127.0.0.1 \"POST /walker/add_pet HTTP/1.1\" 200 418 8.2ms 72d13cbd8d9842b8b9a04f9f785a5795\n[{'id': '59fd81745949472589b8ee59a2d2d6ea', 'name': 'Ace', 'species': 'dog', 'age_years': 1, 'status': 'available'}, {'id': '0fe25b04dba9410fb344748d220b8b2c', 'name': 'Rex', 'species': 'dog', 'age_years': 5, 'status': 'available'}]\n127.0.0.1 \"POST /walker/list_available HTTP/1.1\" 200 1000 15.7ms 427469061dc24311b02bf1f6e2a535b6\n[{'id': '59fd81745949472589b8ee59a2d2d6ea', 'name': 'Ace', 'species': 'dog', 'age_years': 1, 'status': 'available'}, {'id': 'e7cda3a00946408599b007252b73ce11', 'name': 'Tom', 'species': 'cat', 'age_years': 1, 'status': 'available'}, {'id': '0fe25b04dba9410fb344748d220b8b2c', 'name': 'Rex', 'species': 'dog', 'age_years': 5, 'status': 'available'}]\n127.0.0.1 \"POST /walker/list_available HTTP/1.1\" 200 1348 9.7ms 188a01e555f943eaa547909d4548acd4\n{'id': '0fe25b04dba9410fb344748d220b8b2c', 'name': 'Rex', 'species': 'dog', 'age_years': 5, 'status': 'adopted'}\n127.0.0.1 \"POST /walker/adopt HTTP/1.1\" 200 428 12.7ms bbbce06f7c104dbd9a010acb37c2f94c\n{'error': 'pet already adopted'}\n127.0.0.1 \"POST /walker/adopt HTTP/1.1\" 200 347 9.4ms f39b67b466174f08914d40e04902311d\n{'error': 'no such pet'}\n127.0.0.1 \"POST /walker/adopt HTTP/1.1\" 200 316 9.0ms 1d79b08e4ff5421fa8cbb56798dad861\n{'id': '59fd81745949472589b8ee59a2d2d6ea', 'name': 'Ace', 'species': 'dog', 'age_years': 1, 'status': 'adopted'}\n127.0.0.1 \"POST /walker/adopt HTTP/1.1\" 200 428 12.9ms a6630bfe75f7416082fecd61e460e2d7\n[{'id': '59fd81745949472589b8ee59a2d2d6ea', 'name': 'Ace', 'species': 'dog', 'age_years': 1, 'status': 'adopted'}, {'id': '0fe25b04dba9410fb344748d220b8b2c', 'name': 'Rex', 'species': 'dog', 'age_years': 5, 'status': 'adopted'}]\n127.0.0.1 \"POST /walker/adopter_pets HTTP/1.1\" 200 512 10.1ms 5d8523c07ce34a86b3c7377026f18618\n[]\n127.0.0.1 \"POST /walker/adopter_pets HTTP/1.1\" 200 285 8.5ms e78b70fd57c04fbdb08100b01a467d55\n[{'id': 'e7cda3a00946408599b007252b73ce11', 'name': 'Tom', 'species': 'cat', 'age_years': 1, 'status': 'available'}]\n127.0.0.1 \"POST /walker/list_available HTTP/1.1\" 200 646 9.6ms 33fa673c4ff04e16a0ae94c46be79ce5\n{\"ts\": \"2026-10-10T15:33:21.260951Z\", \"level\": \"WARNING\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"drain: started (signal SIGTERM, budget 10.0s)\"}\n\nShutting down server..."
+  },
+  "behavioral": {
+   "ok": true,
+   "script": "smoke.py",
+   "verdict": {
+    "start": true,
+    "behavioral": true,
+    "failures": []
+   },
+   "rc": 0,
+   "tail": "{\"start\": true, \"behavioral\": true, \"failures\": []}\n---- server.log tail ----\n{'id': '59fd81745949472589b8ee59a2d2d6ea', 'name': 'Ace', 'species': 'dog', 'age_years': 1, 'status': 'available'}\n127.0.0.1 \"POST /walker/add_pet HTTP/1.1\" 200 418 8.4ms 481d578baffc44839eea5916cdbf9f37\n{'id': 'e7cda3a00946408599b007252b73ce11', 'name': 'Tom', 'species': 'cat', 'age_years': 1, 'status': 'available'}\n127.0.0.1 \"POST /walker/add_pet HTTP/1.1\" 200 418 8.2ms 72d13cbd8d9842b8b9a04f9f785a5795\n[{'id': '59fd81745949472589b8ee59a2d2d6ea', 'name': 'Ace', 'species': 'dog', 'age_years': 1, 'status': 'available'}, {'id': '0fe25b04dba9410fb344748d220b8b2c', 'name': 'Rex', 'species': 'dog', 'age_years': 5, 'status': 'available'}]\n127.0.0.1 \"POST /walker/list_available HTTP/1.1\" 200 1000 15.7ms 427469061dc24311b02bf1f6e2a535b6\n[{'id': '59fd81745949472589b8ee59a2d2d6ea', 'name': 'Ace', 'species': 'dog', 'age_years': 1, 'status': 'available'}, {'id': 'e7cda3a00946408599b007252b73ce11', 'name': 'Tom', 'species': 'cat', 'age_years': 1, 'status': 'available'}, {'id': '0fe25b04dba9410fb344748d220b8b2c', 'name': 'Rex', 'species': 'dog', 'age_years': 5, 'status': 'available'}]\n127.0.0.1 \"POST /walker/list_available HTTP/1.1\" 200 1348 9.7ms 188a01e555f943eaa547909d4548acd4\n{'id': '0fe25b04dba9410fb344748d220b8b2c', 'name': 'Rex', 'species': 'dog', 'age_years': 5, 'status': 'adopted'}\n127.0.0.1 \"POST /walker/adopt HTTP/1.1\" 200 428 12.7ms bbbce06f7c104dbd9a010acb37c2f94c\n{'error': 'pet already adopted'}\n127.0.0.1 \"POST /walker/adopt HTTP/1.1\" 200 347 9.4ms f39b67b466174f08914d40e04902311d\n{'error': 'no such pet'}\n127.0.0.1 \"POST /walker/adopt HTTP/1.1\" 200 316 9.0ms 1d79b08e4ff5421fa8cbb56798dad861\n{'id': '59fd81745949472589b8ee59a2d2d6ea', 'name': 'Ace', 'species': 'dog', 'age_years': 1, 'status': 'adopted'}\n127.0.0.1 \"POST /walker/adopt HTTP/1.1\" 200 428 12.9ms a6630bfe75f7416082fecd61e460e2d7\n[{'id': '59fd81745949472589b8ee59a2d2d6ea', 'name': 'Ace', 'species': 'dog', 'age_years': 1, 'status': 'adopted'}, {'id': '0fe25b04dba9410fb344748d220b8b2c', 'name': 'Rex', 'species': 'dog', 'age_years': 5, 'status': 'adopted'}]\n127.0.0.1 \"POST /walker/adopter_pets HTTP/1.1\" 200 512 10.1ms 5d8523c07ce34a86b3c7377026f18618\n[]\n127.0.0.1 \"POST /walker/adopter_pets HTTP/1.1\" 200 285 8.5ms e78b70fd57c04fbdb08100b01a467d55\n[{'id': 'e7cda3a00946408599b007252b73ce11', 'name': 'Tom', 'species': 'cat', 'age_years': 1, 'status': 'available'}]\n127.0.0.1 \"POST /walker/list_available HTTP/1.1\" 200 646 9.6ms 33fa673c4ff04e16a0ae94c46be79ce5\n{\"ts\": \"2026-10-10T15:33:21.260951Z\", \"level\": \"WARNING\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"drain: started (signal SIGTERM, budget 10.0s)\"}\n\nShutting down server..."
+  }
+ },
+ "negative": {
+  "test": {
+   "steps": [
+    {
+     "why": "no own test blocks found"
+    },
+    {
+     "cmd": "jac test zz_hidden_acceptance.jac",
+     "rc": 1,
+     "secs": 1.5,
+     "tail": "E                                                                        [100%]\n\nFAILED /tmp/appgate_hqfwtbuv/zz_hidden_acceptance.jac::zz_hidden_acceptance.jac\nTraceback (most recent call last):\n  File \"/home/runner/_work/jac/jac/.zig-cache/o/8776b3f32593b10747b6ba6ce20fea8b/payload.tar.zst.work/site/jaclang/testing/impl/test_runner.impl.jac\", line 677, in run_file\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/python/lib/python3.14/importlib/__init__.py\", line 88, in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen importlib._bootstrap>\", line 1406, in _gcd_import\n  File \"<frozen importlib._bootstrap>\", line 1371, in _find_and_load\n  File \"<frozen importlib._bootstrap>\", line 1342, in _find_and_load_unlocked\n  File \"<frozen importlib._bootstrap>\", line 938, in _load_unlocked\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/site/jaclang/meta_importer.py\", line 356, in exec_module\n    self._exec_compiled_module(module, file_path)\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/site/jaclang/meta_importer.py\", line 457, in _exec_compiled_module\n    exec(codeobj, module.__dict__)\n    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/appgate_hqfwtbuv/zz_hidden_acceptance.jac\", line 2, in <module>\n    import from main { add_pet, list_available, adopt, adopter_pets }\n     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nImportError: cannot import name 'add_pet' from 'main' (/tmp/appgate_hqfwtbuv/main.jac). Did you mean: 'add_note'?\n\n1 error in 1.02s\n\u2716 Error: Tests failed.",
+     "stdout_tail": "    import from main { add_pet, list_available, adopt, adopter_pets }\n     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nImportError: cannot import name 'add_pet' from 'main' (/tmp/appgate_hqfwtbuv/main.jac). Did you mean: 'add_note'?\n\n1 error in 1.02s"
+    }
+   ],
+   "own_test_files": [],
+   "ok": false
+  },
+  "behavioral": {
+   "ok": false,
+   "script": "smoke.py",
+   "verdict": {
+    "start": true,
+    "behavioral": false,
+    "failures": [
+     "add_pet wrong: 405 {'detail': 'Method Not Allowed'}",
+     "dog list wrong: {'detail': 'Method Not Allowed'}",
+     "all list wrong: {'detail': 'Method Not Allowed'}",
+     "adopt wrong: 405 {'detail': 'Method Not Allowed'}",
+     "history wrong: {'detail': 'Method Not Allowed'}",
+     "unknown adopter should be empty list: {'detail': 'Method Not Allowed'}",
+     "available after adoptions wrong: {'detail': 'Method Not Allowed'}"
+    ]
+   },
+   "rc": 1,
+   "tail": "{\"start\": true, \"behavioral\": false, \"failures\": [\"add_pet wrong: 405 {'detail': 'Method Not Allowed'}\", \"dog list wrong: {'detail': 'Method Not Allowed'}\", \"all list wrong: {'detail': 'Method Not Allowed'}\", \"adopt wrong: 405 {'detail': 'Method Not Allowed'}\", \"history wrong: {'detail': 'Method Not Allowed'}\", \"unknown adopter should be empty list: {'detail': 'Method Not Allowed'}\", \"available after adoptions wrong: {'detail': 'Method Not Allowed'}\"]}\n---- server.log tail ----\nJac API Server running on http://localhost:52923\n\n  jac dev server v0.37.25\n\n  \u279c  Local:     http://localhost:52923/\n  \u279c  Network:   http://10.1.1.151:52923/\n\n  Server ready (no client)\n\n127.0.0.1 \"GET /healthz HTTP/1.1\" 200 16 0.5ms 759841dfd2ec41d981c776cf822d296a\n127.0.0.1 \"POST /walker/add_pet HTTP/1.1\" 405 32 0.5ms 85fc1ab033d34f0bb1862438ab997708\n127.0.0.1 \"POST /walker/add_pet HTTP/1.1\" 405 32 0.3ms aef89990c1c04c029ad7786ae445386c\n127.0.0.1 \"POST /walker/add_pet HTTP/1.1\" 405 32 0.3ms 246964301593474cb2adbc645630ee6d\n127.0.0.1 \"POST /walker/list_available HTTP/1.1\" 405 32 0.3ms 11c546476c7547a58a5462b2c9b60027\n127.0.0.1 \"POST /walker/list_available HTTP/1.1\" 405 32 0.3ms 1b52651356ef4e4ea4082497e5bed45a\n127.0.0.1 \"POST /walker/adopt HTTP/1.1\" 405 32 0.3ms 9a759b00d89d4aa398d0f969b934413a\n127.0.0.1 \"POST /walker/adopt HTTP/1.1\" 405 32 0.3ms a340fbe1b6054088ba8ad7a722f8b427\n127.0.0.1 \"POST /walker/adopt HTTP/1.1\" 405 32 0.3ms 2cf6dba58b4b4bc888cfdfe29b524c0d\n127.0.0.1 \"POST /walker/adopt HTTP/1.1\" 405 32 0.3ms c6c18f26793048dca41861e40c1314da\n127.0.0.1 \"POST /walker/adopter_pets HTTP/1.1\" 405 32 0.3ms 42578e176691498cad5b954b275876c8\n127.0.0.1 \"POST /walker/adopter_pets HTTP/1.1\" 405 32 0.3ms bcd6b5bd59e946b4970619b55fab3763\n127.0.0.1 \"POST /walker/list_available HTTP/1.1\" 405 32 0.3ms 5426640e3dd54ffa818412686312ea32\n{\"ts\": \"2026-10-10T15:33:24.871669Z\", \"level\": \"WARNING\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"drain: started (signal SIGTERM, budget 10.0s)\"}\n\nShutting down server..."
+  }
+ },
+ "secs": 12.5,
+ "validated": true,
+ "reason": "reference passes ['behavioral', 'check', 'start', 'test']; starter fails ['behavioral', 'test']; dedup ok",
+ "ci_run": "38063985138"
+}

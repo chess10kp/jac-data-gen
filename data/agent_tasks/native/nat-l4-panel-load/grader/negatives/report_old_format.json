@@ -1,0 +1,1 @@
+{"why": "list format unchanged", "edits": [{"file": "reports.jac", "old": "self.lines.append(f\"{here.label}/{o.room}: {a.name}\");", "new": "self.lines.append(f\"{o.room}: {a.name}\");"}]}

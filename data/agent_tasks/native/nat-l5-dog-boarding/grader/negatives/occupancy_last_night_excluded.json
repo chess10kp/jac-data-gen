@@ -1,0 +1,1 @@
+{"why": "last night of stay not counted", "edits": [{"file": "app.jac", "old": "if overlaps(s, self.night, 1) {", "new": "if s.start <= self.night and self.night < s.start + s.nights - 1 {"}]}

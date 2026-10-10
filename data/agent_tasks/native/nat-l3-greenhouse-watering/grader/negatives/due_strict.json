@@ -1,0 +1,1 @@
+{"why": "strict > interval", "edits": [{"file": "greenhouse.jac", "old": "if self.day - p.last_watered >= p.interval_days {", "new": "if self.day - p.last_watered > p.interval_days {"}]}

@@ -1,0 +1,1 @@
+{"why": "any criterion accepted", "edits": [{"file": "app.jac", "old": "if self.criterion not in [c.name for c in Criterion] {", "new": "if self.criterion == \"\" {"}]}

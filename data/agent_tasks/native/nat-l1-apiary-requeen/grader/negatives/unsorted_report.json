@@ -1,0 +1,1 @@
+{"why": "reports in visit order instead of sorted", "edits": [{"file": "apiary.jac", "old": "report sorted(self.flagged);", "new": "report self.flagged;"}]}

@@ -1,0 +1,1 @@
+{"why": "ties broken by name descending", "edits": [{"file": "survey.jac", "old": "self.rows.append((-link.total, sp.name));", "new": "self.rows.append((link.total, sp.name));"}, {"file": "survey.jac", "old": "report [name for (neg, name) in sorted(self.rows)];", "new": "report [name for (neg, name) in sorted(self.rows, reverse=True)];"}]}

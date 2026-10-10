@@ -1,0 +1,1 @@
+{"why": "short list alphabetical instead of declaration order", "edits": [{"file": "choir.jac", "old": "        report self.counts;", "new": "        self.short.sort();\n        report self.counts;"}]}

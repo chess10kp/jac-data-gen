@@ -1,0 +1,24 @@
+{
+ "toplevel_names": [
+  "ProviderCard"
+ ],
+ "mass": {
+  "components/ProviderCard.jac": 289
+ },
+ "body": {
+  "components/ProviderCard.jac": 269
+ },
+ "target_paths": [
+  "components/ProviderCard.jac"
+ ],
+ "symbols_dropped_not_in_starter": [],
+ "starter_mass": {
+  "components/ProviderCard.jac": 284
+ },
+ "starter_body": {
+  "components/ProviderCard.jac": 269
+ },
+ "symbols": [
+  "def:ProviderCard"
+ ]
+}

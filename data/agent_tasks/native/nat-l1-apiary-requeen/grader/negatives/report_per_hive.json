@@ -1,0 +1,1 @@
+{"why": "reports each flagged hive as it is found instead of one list", "edits": [{"file": "apiary.jac", "old": "            self.flagged.append(here.tag);\n", "new": "            self.flagged.append(here.tag);\n            report here.tag;\n"}]}

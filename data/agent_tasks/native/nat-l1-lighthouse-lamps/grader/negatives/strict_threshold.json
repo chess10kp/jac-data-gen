@@ -1,0 +1,1 @@
+{"why": "strict > 90% threshold", "edits": [{"file": "keepers.jac", "old": "here.burn_hours >= 0.9 * here.rated_hours", "new": "here.burn_hours > 0.9 * here.rated_hours"}]}

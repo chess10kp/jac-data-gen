@@ -1,0 +1,123 @@
+{
+ "id": "app-l4-arcade-leaderboard",
+ "level": 4,
+ "source": "hand-authored",
+ "gates": [
+  "check",
+  "test",
+  "start",
+  "behavioral"
+ ],
+ "hash": "1a36ef1cb514e078",
+ "jac": "jac 0.37.25  (Linux x86_64)",
+ "dedup": {
+  "pass": true,
+  "domain": "arcade high score leaderboard API",
+  "domain_hits": [],
+  "max_5gram_containment": 0.0,
+  "nearest_5gram": null,
+  "max_8gram_containment": 0.0,
+  "nearest_8gram": null,
+  "n_eval_docs": 1387
+ },
+ "positive": {
+  "check": {
+   "ok": true,
+   "cmd": "jac check main.jac",
+   "rc": 0,
+   "secs": 1.6,
+   "tail": "  Checking main.jac...\nmain.jac ok [100%]\n\n=================================== WARNINGS ===================================\n___________________________________ main.jac ___________________________________\n  \u2192 run 'jac guide jac-types' for guidance\n\n============================== 1 passed in 1.03s ===============================\n\u26a0 warning[W1037]: Explicit 'any' type annotation disables type checking here; consider a more specific type\n  --> main.jac:15:38\n   13 | }\n   14 | \n   15 | def board(g: Game) -> list[dict[str, any]] {\n      |                                      ^^^\n   16 |     entries = sorted([b for b in [g -->[?:Best]]], key=lambda (b: Best) -> tuple[int, float] { return (-b.score, b.seq); });\n   17 |     return [{\"player\": b.player, \"score\": b.score} for b in entries[:5]];",
+   "stdout_tail": "=================================== WARNINGS ===================================\n___________________________________ main.jac ___________________________________\n  \u2192 run 'jac guide jac-types' for guidance\n\n============================== 1 passed in 1.03s ==============================="
+  },
+  "test": {
+   "steps": [
+    {
+     "cmd": "jac test main.jac",
+     "rc": 0,
+     "secs": 3.6,
+     "tail": "..                                                                       [100%]\n\n2 passed in 2.82s",
+     "stdout_tail": "..                                                                       [100%]\n\n2 passed in 2.82s"
+    },
+    {
+     "cmd": "jac test zz_hidden_acceptance.jac",
+     "rc": 0,
+     "secs": 2.5,
+     "tail": "......                                                                   [100%]\n\n6 passed in 1.71s",
+     "stdout_tail": "......                                                                   [100%]\n\n6 passed in 1.71s"
+    }
+   ],
+   "own_test_files": [
+    "main.test.jac"
+   ],
+   "ok": true
+  },
+  "start": {
+   "ok": true,
+   "script": "smoke.py",
+   "verdict": {
+    "start": true,
+    "behavioral": true,
+    "failures": []
+   },
+   "rc": 0,
+   "tail": "{\"start\": true, \"behavioral\": true, \"failures\": []}\n---- server.log tail ----\n\n  Server ready (no client)\n\n127.0.0.1 \"GET /healthz HTTP/1.1\" 200 16 0.6ms a9ffcf6164844c69b7af92b5675d6b7c\n[{'player': 'ALI', 'score': 300}]\n127.0.0.1 \"POST /walker/submit_score HTTP/1.1\" 200 355 31.4ms 4f65e089607445318a60950d7e6b2882\n[{'player': 'BOB', 'score': 500}, {'player': 'ALI', 'score': 300}]\n127.0.0.1 \"POST /walker/submit_score HTTP/1.1\" 200 386 17.0ms ce2470c875524234ada1f64e662c96f9\n[{'player': 'BOB', 'score': 500}, {'player': 'ALI', 'score': 300}, {'player': 'CAT', 'score': 100}]\n127.0.0.1 \"POST /walker/submit_score HTTP/1.1\" 200 419 19.0ms db64e0a410be4886b9afb2f6645434bf\n[{'player': 'BOB', 'score': 500}, {'player': 'ALI', 'score': 300}, {'player': 'CAT', 'score': 100}]\n127.0.0.1 \"POST /walker/submit_score HTTP/1.1\" 200 418 16.8ms e4269ed7a27a4a00a894b30180f1712c\n[{'player': 'BOB', 'score': 500}, {'player': 'DAN', 'score': 400}, {'player': 'ALI', 'score': 300}, {'player': 'CAT', 'score': 100}]\n127.0.0.1 \"POST /walker/submit_score HTTP/1.1\" 200 452 18.8ms f0c5931235b544de91fd194dd9215f6e\n[{'player': 'BOB', 'score': 500}, {'player': 'DAN', 'score': 400}, {'player': 'ALI', 'score': 300}, {'player': 'EVE', 'score': 200}, {'player': 'CAT', 'score': 100}]\n127.0.0.1 \"POST /walker/submit_score HTTP/1.1\" 200 485 18.9ms 84e8d70e72cf42b683b4723316b0668c\n[{'player': 'BOB', 'score': 500}, {'player': 'DAN', 'score': 400}, {'player': 'ALI', 'score': 300}, {'player': 'FAY', 'score': 250}, {'player': 'EVE', 'score': 200}]\n127.0.0.1 \"POST /walker/submit_score HTTP/1.1\" 200 485 19.7ms 568c50ba369c443fa59b8adb77a8e3d8\n[{'player': 'ZED', 'score': 10}]\n127.0.0.1 \"POST /walker/submit_score HTTP/1.1\" 200 351 17.0ms a12708d746c2488fb9ae411b15402bee\n{'error': 'invalid score'}\n127.0.0.1 \"POST /walker/submit_score HTTP/1.1\" 200 345 11.2ms 53230bc0036c45858ad98bbf5499e0b9\n{\"ts\": \"2026-10-10T15:32:59.852477Z\", \"level\": \"WARNING\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"drain: started (signal SIGTERM, budget 10.0s)\"}\n\nShutting down server..."
+  },
+  "behavioral": {
+   "ok": true,
+   "script": "smoke.py",
+   "verdict": {
+    "start": true,
+    "behavioral": true,
+    "failures": []
+   },
+   "rc": 0,
+   "tail": "{\"start\": true, \"behavioral\": true, \"failures\": []}\n---- server.log tail ----\n\n  Server ready (no client)\n\n127.0.0.1 \"GET /healthz HTTP/1.1\" 200 16 0.6ms a9ffcf6164844c69b7af92b5675d6b7c\n[{'player': 'ALI', 'score': 300}]\n127.0.0.1 \"POST /walker/submit_score HTTP/1.1\" 200 355 31.4ms 4f65e089607445318a60950d7e6b2882\n[{'player': 'BOB', 'score': 500}, {'player': 'ALI', 'score': 300}]\n127.0.0.1 \"POST /walker/submit_score HTTP/1.1\" 200 386 17.0ms ce2470c875524234ada1f64e662c96f9\n[{'player': 'BOB', 'score': 500}, {'player': 'ALI', 'score': 300}, {'player': 'CAT', 'score': 100}]\n127.0.0.1 \"POST /walker/submit_score HTTP/1.1\" 200 419 19.0ms db64e0a410be4886b9afb2f6645434bf\n[{'player': 'BOB', 'score': 500}, {'player': 'ALI', 'score': 300}, {'player': 'CAT', 'score': 100}]\n127.0.0.1 \"POST /walker/submit_score HTTP/1.1\" 200 418 16.8ms e4269ed7a27a4a00a894b30180f1712c\n[{'player': 'BOB', 'score': 500}, {'player': 'DAN', 'score': 400}, {'player': 'ALI', 'score': 300}, {'player': 'CAT', 'score': 100}]\n127.0.0.1 \"POST /walker/submit_score HTTP/1.1\" 200 452 18.8ms f0c5931235b544de91fd194dd9215f6e\n[{'player': 'BOB', 'score': 500}, {'player': 'DAN', 'score': 400}, {'player': 'ALI', 'score': 300}, {'player': 'EVE', 'score': 200}, {'player': 'CAT', 'score': 100}]\n127.0.0.1 \"POST /walker/submit_score HTTP/1.1\" 200 485 18.9ms 84e8d70e72cf42b683b4723316b0668c\n[{'player': 'BOB', 'score': 500}, {'player': 'DAN', 'score': 400}, {'player': 'ALI', 'score': 300}, {'player': 'FAY', 'score': 250}, {'player': 'EVE', 'score': 200}]\n127.0.0.1 \"POST /walker/submit_score HTTP/1.1\" 200 485 19.7ms 568c50ba369c443fa59b8adb77a8e3d8\n[{'player': 'ZED', 'score': 10}]\n127.0.0.1 \"POST /walker/submit_score HTTP/1.1\" 200 351 17.0ms a12708d746c2488fb9ae411b15402bee\n{'error': 'invalid score'}\n127.0.0.1 \"POST /walker/submit_score HTTP/1.1\" 200 345 11.2ms 53230bc0036c45858ad98bbf5499e0b9\n{\"ts\": \"2026-10-10T15:32:59.852477Z\", \"level\": \"WARNING\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"drain: started (signal SIGTERM, budget 10.0s)\"}\n\nShutting down server..."
+  }
+ },
+ "negative": {
+  "test": {
+   "steps": [
+    {
+     "why": "no own test blocks found"
+    },
+    {
+     "cmd": "jac test zz_hidden_acceptance.jac",
+     "rc": 1,
+     "secs": 1.9,
+     "tail": "E                                                                        [100%]\n\nFAILED /tmp/appgate_qhgqlc31/zz_hidden_acceptance.jac::zz_hidden_acceptance.jac\nTraceback (most recent call last):\n  File \"/home/runner/_work/jac/jac/.zig-cache/o/8776b3f32593b10747b6ba6ce20fea8b/payload.tar.zst.work/site/jaclang/testing/impl/test_runner.impl.jac\", line 677, in run_file\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/python/lib/python3.14/importlib/__init__.py\", line 88, in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen importlib._bootstrap>\", line 1406, in _gcd_import\n  File \"<frozen importlib._bootstrap>\", line 1371, in _find_and_load\n  File \"<frozen importlib._bootstrap>\", line 1342, in _find_and_load_unlocked\n  File \"<frozen importlib._bootstrap>\", line 938, in _load_unlocked\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/site/jaclang/meta_importer.py\", line 356, in exec_module\n    self._exec_compiled_module(module, file_path)\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/site/jaclang/meta_importer.py\", line 457, in _exec_compiled_module\n    exec(codeobj, module.__dict__)\n    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/appgate_qhgqlc31/zz_hidden_acceptance.jac\", line 2, in <module>\n    import from main { submit_score }\n     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nImportError: cannot import name 'submit_score' from 'main' (/tmp/appgate_qhgqlc31/main.jac)\n\n1 error in 1.28s\n\u2716 Error: Tests failed.",
+     "stdout_tail": "    import from main { submit_score }\n     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nImportError: cannot import name 'submit_score' from 'main' (/tmp/appgate_qhgqlc31/main.jac)\n\n1 error in 1.28s"
+    }
+   ],
+   "own_test_files": [],
+   "ok": false
+  },
+  "behavioral": {
+   "ok": false,
+   "script": "smoke.py",
+   "verdict": {
+    "start": true,
+    "behavioral": false,
+    "failures": [
+     "submit_score failed: 405 {'detail': 'Method Not Allowed'}",
+     "submit_score failed: 405 {'detail': 'Method Not Allowed'}",
+     "submit_score failed: 405 {'detail': 'Method Not Allowed'}",
+     "board wrong: []",
+     "submit_score failed: 405 {'detail': 'Method Not Allowed'}",
+     "lower score should not change board: []",
+     "submit_score failed: 405 {'detail': 'Method Not Allowed'}",
+     "submit_score failed: 405 {'detail': 'Method Not Allowed'}",
+     "submit_score failed: 405 {'detail': 'Method Not Allowed'}",
+     "top-5 wrong: []",
+     "submit_score failed: 405 {'detail': 'Method Not Allowed'}",
+     "games should be separate: []"
+    ]
+   },
+   "rc": 1,
+   "tail": "{\"start\": true, \"behavioral\": false, \"failures\": [\"submit_score failed: 405 {'detail': 'Method Not Allowed'}\", \"submit_score failed: 405 {'detail': 'Method Not Allowed'}\", \"submit_score failed: 405 {'detail': 'Method Not Allowed'}\", \"board wrong: []\", \"submit_score failed: 405 {'detail': 'Method Not Allowed'}\", \"lower score should not change board: []\", \"submit_score failed: 405 {'detail': 'Method Not Allowed'}\", \"submit_score failed: 405 {'detail': 'Method Not Allowed'}\", \"submit_score failed: 405 {'detail': 'Method Not Allowed'}\", \"top-5 wrong: []\", \"submit_score failed: 405 {'detail': 'Method Not Allowed'}\", \"games should be separate: []\"]}\n---- server.log tail ----\n{\"ts\": \"2026-10-10T15:33:04.005442Z\", \"level\": \"INFO\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"Deploy-health endpoint registered: /admin/ops/deploy\"}\n{\"ts\": \"2026-10-10T15:33:04.005507Z\", \"level\": \"INFO\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"Network endpoint registered: /admin/ops/network\"}\n{\"ts\": \"2026-10-10T15:33:04.005565Z\", \"level\": \"INFO\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"Pod-env endpoint registered: /admin/ops/podenv\"}\nJac API Server running on http://localhost:55893\n\n  jac dev server v0.37.25\n\n  \u279c  Local:     http://localhost:55893/\n  \u279c  Network:   http://10.1.0.235:55893/\n\n  Server ready (no client)\n\n127.0.0.1 \"GET /healthz HTTP/1.1\" 200 16 0.5ms 6d0281ec2daa4aeea7572d5559c47221\n127.0.0.1 \"POST /walker/submit_score HTTP/1.1\" 405 32 0.6ms 24d44c2964d54a548334526280e2fb10\n127.0.0.1 \"POST /walker/submit_score HTTP/1.1\" 405 32 0.4ms 618e98a9479b4f5cb22a9c6161c0c6c5\n127.0.0.1 \"POST /walker/submit_score HTTP/1.1\" 405 32 0.4ms bb9abf57b73744fc8cb44acd63751e78\n127.0.0.1 \"POST /walker/submit_score HTTP/1.1\" 405 32 0.4ms 5c4c439b4b764d11820192452b70d1e8\n127.0.0.1 \"POST /walker/submit_score HTTP/1.1\" 405 32 0.3ms 0bceee43dd404c89bd39aa66cb750587\n127.0.0.1 \"POST /walker/submit_score HTTP/1.1\" 405 32 0.3ms 582071943ead4a57b556846c97938c65\n127.0.0.1 \"POST /walker/submit_score HTTP/1.1\" 405 32 0.3ms 750ad9b2657d43809eb9b044d5fb4bff\n127.0.0.1 \"POST /walker/submit_score HTTP/1.1\" 405 32 0.3ms b36c1cf8322d4dacad1461c9af71b07b\n127.0.0.1 \"POST /walker/submit_score HTTP/1.1\" 405 32 0.4ms cac85c2361c74c16a3fb9db00c53c17a\n{\"ts\": \"2026-10-10T15:33:04.905783Z\", \"level\": \"WARNING\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"drain: started (signal SIGTERM, budget 10.0s)\"}\n\nShutting down server..."
+  }
+ },
+ "secs": 16.0,
+ "validated": true,
+ "reason": "reference passes ['behavioral', 'check', 'start', 'test']; starter fails ['behavioral', 'test']; dedup ok",
+ "ci_run": "38063985138"
+}

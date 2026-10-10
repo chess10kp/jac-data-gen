@@ -1,0 +1,48 @@
+{
+ "toplevel_names": [
+  "SymptomSeverity",
+  "evaluate_diagnoses",
+  "extract_symptoms"
+ ],
+ "mass": {
+  "main.jac": 414
+ },
+ "body": {
+  "main.jac": 217
+ },
+ "target_paths": [
+  "main.jac"
+ ],
+ "symbols_dropped_not_in_starter": [],
+ "starter_mass": {
+  "main.jac": 410
+ },
+ "starter_body": {
+  "main.jac": 213
+ },
+ "symbols": [
+  "ability:DiagnosticWalker.process_patient",
+  "ability:DiagnosticWalker.process_patient_exit",
+  "ability:DiagnosticWalker.process_symptom",
+  "ability:TriageAgent.process_root",
+  "def:evaluate_diagnoses",
+  "def:extract_symptoms",
+  "enum:SymptomSeverity",
+  "field:Diagnosis.condition_name",
+  "field:Diagnosis.confidence",
+  "field:Diagnosis.recommendation",
+  "field:DiagnosticWalker.collected_symptoms",
+  "field:DiagnosticWalker.diagnoses",
+  "field:Patient.age",
+  "field:Patient.name",
+  "field:Symptom.description",
+  "field:Symptom.duration_days",
+  "field:Symptom.severity",
+  "field:TriageAgent.patient_input",
+  "node:Diagnosis",
+  "node:Patient",
+  "node:Symptom",
+  "walker:DiagnosticWalker",
+  "walker:TriageAgent"
+ ]
+}

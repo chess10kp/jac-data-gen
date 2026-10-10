@@ -1,0 +1,1 @@
+{"why": "donates at exactly keep_days", "edits": [{"file": "app.jac", "old": "self.today - here.found_day > self.keep_days", "new": "self.today - here.found_day >= self.keep_days"}]}

@@ -1,0 +1,1 @@
+{"why": "vacancy omits sizes with no free runs", "edits": [{"file": "app.jac", "old": "        for s in Size {\n            self.free[s.name] = 0;\n        }\n", "new": ""}, {"file": "app.jac", "old": "            self.free[here.size.name] += 1;", "new": "            self.free[here.size.name] = self.free.get(here.size.name, 0) + 1;"}]}

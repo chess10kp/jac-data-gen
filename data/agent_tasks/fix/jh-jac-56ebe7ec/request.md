@@ -1,0 +1,1 @@
+Our CI runs `jac check` and it's red on this part of the PharmaGraph codebase. Could you fix the errors? Please make real fixes (syntax/type/import migrations), not deletions — every archetype and ability should survive.

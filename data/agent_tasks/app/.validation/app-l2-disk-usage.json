@@ -1,0 +1,61 @@
+{
+ "id": "app-l2-disk-usage",
+ "level": 2,
+ "source": "hand-authored",
+ "gates": [
+  "check",
+  "test"
+ ],
+ "hash": "5040ed5ccdbd4a92",
+ "jac": "jac 0.37.25  (Linux x86_64)",
+ "dedup": {
+  "pass": true,
+  "domain": "filesystem disk usage tree",
+  "domain_hits": [],
+  "max_5gram_containment": 0.0,
+  "nearest_5gram": null,
+  "max_8gram_containment": 0.0,
+  "nearest_8gram": null,
+  "n_eval_docs": 1387
+ },
+ "positive": {
+  "check": {
+   "ok": true,
+   "cmd": "jac check diskmap.jac",
+   "rc": 0,
+   "secs": 0.7,
+   "tail": "  Checking diskmap.jac...\ndiskmap.jac ok [100%]\n============================== 1 passed in 0.36s ===============================",
+   "stdout_tail": "  Checking diskmap.jac...\ndiskmap.jac ok [100%]\n============================== 1 passed in 0.36s ==============================="
+  },
+  "test": {
+   "steps": [
+    {
+     "cmd": "jac test zz_hidden_acceptance.jac",
+     "rc": 0,
+     "secs": 3.5,
+     "tail": ".....                                                                    [100%]\n\n5 passed in 3.17s",
+     "stdout_tail": ".....                                                                    [100%]\n\n5 passed in 3.17s"
+    }
+   ],
+   "ok": true
+  }
+ },
+ "negative": {
+  "test": {
+   "steps": [
+    {
+     "cmd": "jac test zz_hidden_acceptance.jac",
+     "rc": 1,
+     "secs": 1.0,
+     "tail": "E                                                                        [100%]\n\nFAILED /tmp/appgate_bj552o68/zz_hidden_acceptance.jac::zz_hidden_acceptance.jac\nTraceback (most recent call last):\n  File \"/home/runner/_work/jac/jac/.zig-cache/o/8776b3f32593b10747b6ba6ce20fea8b/payload.tar.zst.work/site/jaclang/testing/impl/test_runner.impl.jac\", line 677, in run_file\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/python/lib/python3.14/importlib/__init__.py\", line 88, in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen importlib._bootstrap>\", line 1406, in _gcd_import\n  File \"<frozen importlib._bootstrap>\", line 1371, in _find_and_load\n  File \"<frozen importlib._bootstrap>\", line 1342, in _find_and_load_unlocked\n  File \"<frozen importlib._bootstrap>\", line 938, in _load_unlocked\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/site/jaclang/meta_importer.py\", line 356, in exec_module\n    self._exec_compiled_module(module, file_path)\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/site/jaclang/meta_importer.py\", line 411, in _exec_compiled_module\n    raise JacSourceCompileError(\n        f\"{file_path} failed to compile:\\n{details}\", file_path\n    )\njaclang.meta_importer.JacSourceCompileError: /tmp/appgate_bj552o68/zz_hidden_acceptance.jac failed to compile:\nerror[E1032]: Type is Unknown, cannot access attribute \"reports\"\n  --> /tmp/appgate_bj552o68/zz_hidden_acceptance.jac:34:37\n   32 |     home = build();\n   33 |     pics = [f for f in [home -->[?:Folder]] if f.name == \"pics\"][0];\n   34 |     assert (pics spawn DiskUsage()).reports[0] == 58000;\n      |                                     ^^^^^^^\n   35 | }\n   36 | \nerror[E1032]: Type is Unknown, cannot access attribute \"reports\"\n  --> /tmp/appgate_bj552o68/zz_hidden_acceptance.jac:48:53\n   46 |     home = build();\n   47 |     pics = [f for f in [home -->[?:Folder]] if f.name == \"pics\"][0];\n   48 |     assert list((pics spawn LargeFiles(min_size=1)).reports[0]) == [\"pics/trip/map.tar.gz\", \"pics/cat.jpg\", \"pics/trip/beach.JPG\"];\n      |                                                     ^^^^^^^\n   49 | }\n   50 |\n\n1 error in 0.60s\n\u2716 Error: Tests failed.",
+     "stdout_tail": "      |                                                     ^^^^^^^\n   49 | }\n   50 |\n\n1 error in 0.60s"
+    }
+   ],
+   "ok": false
+  }
+ },
+ "secs": 5.2,
+ "validated": true,
+ "reason": "reference passes ['check', 'test']; starter fails ['test']; dedup ok",
+ "ci_run": "38063985138"
+}

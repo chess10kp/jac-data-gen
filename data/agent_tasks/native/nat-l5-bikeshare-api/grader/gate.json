@@ -1,0 +1,13 @@
+{
+  "timeout_s": 300,
+  "start": {
+    "entry": "app.jac",
+    "requests": [
+      {"path": "/function/add_station", "json": {"code": "P1", "capacity": 2}, "expect": ["\"ok\":true"]},
+      {"path": "/function/add_bike", "json": {"station": "P1", "serial": "X1", "km": 3.0}, "expect": ["\"ok\":true"]},
+      {"path": "/walker/rent_bike", "json": {"station": "P1", "rider": "probe", "minute": 1}, "expect": ["X1"]},
+      {"path": "/walker/network_status", "json": {}, "expect": ["P1", "\"free\":2"]}
+    ]
+  },
+  "contracts": [{"name": "rent_bike", "kind": "walker"}, {"name": "return_bike", "kind": "walker"}, {"name": "network_status", "kind": "walker"}]
+}

@@ -1,0 +1,1 @@
+{"why": "swaps the two ranks instead of shifting", "edits": [{"file": "challenge.jac", "old": "            for p in [root -->[?:Player]] {\n                if p.rank >= old_d and p.rank < old_c {\n                    p.rank += 1;\n                }\n            }\n", "new": "            d.rank = old_c;\n"}]}

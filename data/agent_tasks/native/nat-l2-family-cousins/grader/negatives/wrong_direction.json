@@ -1,0 +1,1 @@
+{"why": "walks down instead of up for grandparents", "edits": [{"file": "family.jac", "old": "grandparents = [me <-:ParentOf:<- <-:ParentOf:<-];", "new": "grandparents = [me ->:ParentOf:-> ->:ParentOf:->];"}]}

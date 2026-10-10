@@ -1,0 +1,11 @@
+{
+  "id": "nat-l1-choir-sections",
+  "kind": "native",
+  "level": 1,
+  "source": "hand-authored",
+  "gates": ["check", "test"],
+  "target_paths": ["choir.jac"],
+  "jac_version": "0.37.25",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "provenance": {"author": "claude (hand-authored pilot)", "created": "2026-10-10", "title": "Choir section balance", "domain": "community choir rostering", "constructs": ["enum iteration", "node", "walker", "dict keyed by enum name", "Root exit"], "inspiration": "none (original)"}
+}

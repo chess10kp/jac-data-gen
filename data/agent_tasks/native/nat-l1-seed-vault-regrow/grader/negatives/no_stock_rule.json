@@ -1,0 +1,1 @@
+{"why": "ignores stock rule", "edits": [{"file": "vault.jac", "old": "if too_old or weak or low_stock {", "new": "if too_old or weak {"}]}

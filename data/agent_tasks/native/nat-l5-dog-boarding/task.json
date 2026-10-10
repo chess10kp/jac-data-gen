@@ -1,0 +1,11 @@
+{
+  "id": "nat-l5-dog-boarding",
+  "kind": "native",
+  "level": 5,
+  "source": "hand-authored",
+  "gates": ["check", "test", "start"],
+  "target_paths": ["app.jac"],
+  "jac_version": "0.37.25",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "provenance": {"author": "claude (hand-authored pilot)", "created": "2026-10-10", "title": "Dog boarding kennel bookings API", "domain": "pet boarding kennel", "constructs": ["walker:pub endpoints", "ordered enum comparison", "interval overlap over edges", "best-fit selection", "node deletion", "per-request persistence"], "inspiration": "none (original)"}
+}

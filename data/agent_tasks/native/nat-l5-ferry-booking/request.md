@@ -1,0 +1,8 @@
+I'm building the reservation backend for a small island ferry as a Jac service (`app.jac`). Sailings can be created with `add_sailing`; bookings hang off their sailing via `Holds` edges. Please add four `walker:pub` endpoints (REST: `POST /walker/<name>`, body → `has` fields, the client reads `data.reports[0]`). State lives in the graph under `root` and must persist across requests.
+
+Deck usage: a `CAR` booking uses 1 car slot, a `VAN` uses 2 car slots, and a `FOOT` booking uses one foot slot **per passenger** (passengers travelling in a car or van don't use foot slots).
+
+1. **`book`** — body `{"sailing": code, "ref": str, "vehicle": "FOOT"|"CAR"|"VAN", "passengers": int}`. Errors, checked in this order, reported as `{"ok": false, "reason": ...}`: `"unknown sailing"`; `"duplicate ref"` if that booking reference exists on **any** sailing; `"bad vehicle"` if the vehicle isn't one of the `Vehicle` names; `"sold out"` if the booking doesn't fit in the remaining capacity. On success store a `Booking` under the sailing and report `{"ok": true, "ref": ref}`.
+2. **`cancel`** — body `{"ref": str}`. Find the booking on whichever sailing holds it, delete the booking node, report `{"ok": true}`; if no such booking, `{"ok": false}`.
+3. **`manifest`** — body `{"sailing": code}`. Report `{"cars": <car slots used>, "foot": <foot slots used>, "refs": <sorted booking refs>}`; for an unknown sailing report `{"cars": 0, "foot": 0, "refs": []}`.
+4. **`day_summary`** — body `{"day": int}`. Visit the sailings and report one list, sorted by sailing code, with `{"code": ..., "free_car": ..., "free_foot": ...}` for each sailing on that day.

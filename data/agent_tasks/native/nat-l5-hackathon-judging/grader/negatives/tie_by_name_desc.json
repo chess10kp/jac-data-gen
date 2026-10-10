@@ -1,0 +1,1 @@
+{"why": "ties broken by name descending", "edits": [{"file": "app.jac", "old": "report sorted(self.rows, key=lambda (r: dict[str, any]) { (-r[\"score\"], r[\"team\"]); });", "new": "report sorted(self.rows, key=lambda (r: dict[str, any]) { (r[\"score\"], r[\"team\"]); }, reverse=True);"}]}

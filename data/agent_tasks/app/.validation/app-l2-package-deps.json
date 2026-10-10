@@ -1,0 +1,61 @@
+{
+ "id": "app-l2-package-deps",
+ "level": 2,
+ "source": "hand-authored",
+ "gates": [
+  "check",
+  "test"
+ ],
+ "hash": "660b8bdd2a387cf0",
+ "jac": "jac 0.37.25  (Linux x86_64)",
+ "dedup": {
+  "pass": true,
+  "domain": "package dependency resolution",
+  "domain_hits": [],
+  "max_5gram_containment": 0.0,
+  "nearest_5gram": null,
+  "max_8gram_containment": 0.0,
+  "nearest_8gram": null,
+  "n_eval_docs": 1387
+ },
+ "positive": {
+  "check": {
+   "ok": true,
+   "cmd": "jac check deps.jac",
+   "rc": 0,
+   "secs": 1.1,
+   "tail": "  Checking deps.jac...\ndeps.jac ok [100%]\n============================== 1 passed in 0.78s ===============================",
+   "stdout_tail": "  Checking deps.jac...\ndeps.jac ok [100%]\n============================== 1 passed in 0.78s ==============================="
+  },
+  "test": {
+   "steps": [
+    {
+     "cmd": "jac test zz_hidden_acceptance.jac",
+     "rc": 0,
+     "secs": 7.0,
+     "tail": ".....                                                                    [100%]\n\n5 passed in 6.53s",
+     "stdout_tail": ".....                                                                    [100%]\n\n5 passed in 6.53s"
+    }
+   ],
+   "ok": true
+  }
+ },
+ "negative": {
+  "test": {
+   "steps": [
+    {
+     "cmd": "jac test zz_hidden_acceptance.jac",
+     "rc": 0,
+     "secs": 1.3,
+     "tail": "s                                                                        [100%]\n\n1 skipped in 0.92s",
+     "stdout_tail": "s                                                                        [100%]\n\n1 skipped in 0.92s"
+    }
+   ],
+   "ok": false
+  }
+ },
+ "secs": 9.5,
+ "validated": true,
+ "reason": "reference passes ['check', 'test']; starter fails ['test']; dedup ok",
+ "ci_run": "38063985138"
+}

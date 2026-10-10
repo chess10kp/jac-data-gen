@@ -1,0 +1,1 @@
+{"why": "records zero-qty lines", "edits": [{"file": "picking.jac", "old": "if want > 0 and b.qty > 0 {", "new": "if want > 0 {"}]}

@@ -1,0 +1,1 @@
+{"why": "last_day takes latest submission not latest day", "edits": [{"file": "survey.jac", "old": "link.last_day = max(link.last_day, self.day);", "new": "link.last_day = self.day;"}]}

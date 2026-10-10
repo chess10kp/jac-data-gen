@@ -1,0 +1,1 @@
+{"why": "riding edge not removed on return", "edits": [{"file": "app.jac", "old": "        del [edge rd ->:Riding:-> bike];\n", "new": ""}]}

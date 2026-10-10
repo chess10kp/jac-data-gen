@@ -1,0 +1,50 @@
+{
+ "id": "jh-chainrx-e973df9e",
+ "kind": "fix",
+ "level": 1,
+ "source": "jachacks_2026",
+ "gates": [
+  "check",
+  "fidelity"
+ ],
+ "target_paths": [
+  "components/CaffeineBackground.jac"
+ ],
+ "broken_paths": [
+  "components/CaffeineBackground.cl.jac"
+ ],
+ "jac_version": "0.37.25",
+ "license": "upstream repo license (public hackathon submission; see repo_url)",
+ "provenance": {
+  "repo": "JoeyBrar__ChainRX",
+  "repo_url": "https://github.com/JoeyBrar/ChainRX",
+  "edition": "2026",
+  "seed_module": "components/CaffeineBackground.jac",
+  "reverted_files": [
+   "components/CaffeineBackground.cl.jac"
+  ],
+  "original": "data/jachacks_{spring,2026}_jac_files_filtered.jsonl",
+  "reference": "data/jachacks_nonsf (0.36.1 repair) + mechanical 0.37 migration",
+  "starter": "hackathon original for reverted files, 0.36.1 repair elsewhere",
+  "reference_migration": {
+   "ok": true,
+   "rounds": 0,
+   "edits": 0,
+   "renames": 0,
+   "left": {}
+  }
+ },
+ "starter_errors": {
+  "n_errors": 1,
+  "codes": {
+   "E-file": 1
+  },
+  "n_files": 1
+ },
+ "gate_thresholds": {
+  "symbols": 0.9,
+  "mass": 0.7,
+  "body": 0.6,
+  "body_file": 0.4
+ }
+}

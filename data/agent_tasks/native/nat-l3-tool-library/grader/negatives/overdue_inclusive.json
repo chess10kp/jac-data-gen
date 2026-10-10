@@ -1,0 +1,1 @@
+{"why": "overdue uses <= today (not strict)", "edits": [{"file": "toollib.jac", "old": "loan.due_day < self.today", "new": "loan.due_day <= self.today"}]}

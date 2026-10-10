@@ -1,0 +1,116 @@
+{
+ "id": "app-l4-event-rsvp",
+ "level": 4,
+ "source": "hand-authored",
+ "gates": [
+  "check",
+  "test",
+  "start",
+  "behavioral"
+ ],
+ "hash": "4b8f01a867f7394f",
+ "jac": "jac 0.37.25  (Linux x86_64)",
+ "dedup": {
+  "pass": true,
+  "domain": "community event RSVP API",
+  "domain_hits": [],
+  "max_5gram_containment": 0.0,
+  "nearest_5gram": null,
+  "max_8gram_containment": 0.0,
+  "nearest_8gram": null,
+  "n_eval_docs": 1387
+ },
+ "positive": {
+  "check": {
+   "ok": true,
+   "cmd": "jac check main.jac",
+   "rc": 0,
+   "secs": 1.7,
+   "tail": "  Checking main.jac...\nmain.jac ok [100%]\n\n=================================== WARNINGS ===================================\n___________________________________ main.jac ___________________________________\n  \u2192 run 'jac guide jac-types' for guidance\n\n============================== 1 passed in 1.09s ===============================\n\u26a0 warning[W1037]: Explicit 'any' type annotation disables type checking here; consider a more specific type\n  --> main.jac:17:37\n   15 | }\n   16 | \n   17 | def summary(ev: Event) -> dict[str, any] {\n      |                                     ^^^\n   18 |     attending: list[str] = [];\n   19 |     declined: list[str] = [];",
+   "stdout_tail": "=================================== WARNINGS ===================================\n___________________________________ main.jac ___________________________________\n  \u2192 run 'jac guide jac-types' for guidance\n\n============================== 1 passed in 1.09s ==============================="
+  },
+  "test": {
+   "steps": [
+    {
+     "cmd": "jac test rsvp_checks.jac",
+     "rc": 0,
+     "secs": 4.0,
+     "tail": "..                                                                       [100%]\n\n2 passed in 3.17s",
+     "stdout_tail": "..                                                                       [100%]\n\n2 passed in 3.17s"
+    },
+    {
+     "cmd": "jac test zz_hidden_acceptance.jac",
+     "rc": 0,
+     "secs": 2.5,
+     "tail": "....                                                                     [100%]\n\n4 passed in 1.74s",
+     "stdout_tail": "....                                                                     [100%]\n\n4 passed in 1.74s"
+    }
+   ],
+   "own_test_files": [
+    "rsvp_checks.jac"
+   ],
+   "ok": true
+  },
+  "start": {
+   "ok": true,
+   "script": "smoke.py",
+   "verdict": {
+    "start": true,
+    "behavioral": true,
+    "failures": []
+   },
+   "rc": 0,
+   "tail": "{\"start\": true, \"behavioral\": true, \"failures\": []}\n---- server.log tail ----\nJac API Server running on http://localhost:39563\n\n  jac dev server v0.37.25\n\n  \u279c  Local:     http://localhost:39563/\n  \u279c  Network:   http://10.1.0.175:39563/\n\n  Server ready (no client)\n\n127.0.0.1 \"GET /healthz HTTP/1.1\" 200 16 0.6ms 66d80e653e774cbcac8e8b038817ba77\n{'event': 'spring-cleanup', 'headcount': 1, 'attending': ['Sam'], 'declined': []}\n127.0.0.1 \"POST /walker/rsvp HTTP/1.1\" 200 406 35.6ms 96bf1e36d3324428913b007e9aab01ab\n{'event': 'spring-cleanup', 'headcount': 3, 'attending': ['Dana Lee', 'Sam'], 'declined': []}\n127.0.0.1 \"POST /walker/rsvp HTTP/1.1\" 200 423 23.1ms 9d79915e3ede489791a317e63e056a3b\n{'event': 'spring-cleanup', 'headcount': 3, 'attending': ['Dana Lee', 'Sam'], 'declined': ['alex']}\n127.0.0.1 \"POST /walker/rsvp HTTP/1.1\" 200 426 24.8ms 195c2a066bf443b1b2fde33a032905a7\n{'event': 'spring-cleanup', 'headcount': 2, 'attending': ['Dana Lee'], 'declined': ['alex', 'SAM']}\n127.0.0.1 \"POST /walker/rsvp HTTP/1.1\" 200 427 27.2ms ca86fd7a0ccf424faded6708e9bce411\n{'error': 'plus_ones must be between 0 and 3'}\n127.0.0.1 \"POST /walker/rsvp HTTP/1.1\" 200 371 10.3ms 4c4029fdd4084ee9b184b31297bfb98e\n{'event': 'fall-fair', 'headcount': 3, 'attending': ['Zed'], 'declined': []}\n127.0.0.1 \"POST /walker/rsvp HTTP/1.1\" 200 396 23.2ms 91bc0fddda4f49ccab5e8a7c137a038c\n{\"ts\": \"2026-10-10T15:33:05.602349Z\", \"level\": \"WARNING\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"drain: started (signal SIGTERM, budget 10.0s)\"}\n\nShutting down server..."
+  },
+  "behavioral": {
+   "ok": true,
+   "script": "smoke.py",
+   "verdict": {
+    "start": true,
+    "behavioral": true,
+    "failures": []
+   },
+   "rc": 0,
+   "tail": "{\"start\": true, \"behavioral\": true, \"failures\": []}\n---- server.log tail ----\nJac API Server running on http://localhost:39563\n\n  jac dev server v0.37.25\n\n  \u279c  Local:     http://localhost:39563/\n  \u279c  Network:   http://10.1.0.175:39563/\n\n  Server ready (no client)\n\n127.0.0.1 \"GET /healthz HTTP/1.1\" 200 16 0.6ms 66d80e653e774cbcac8e8b038817ba77\n{'event': 'spring-cleanup', 'headcount': 1, 'attending': ['Sam'], 'declined': []}\n127.0.0.1 \"POST /walker/rsvp HTTP/1.1\" 200 406 35.6ms 96bf1e36d3324428913b007e9aab01ab\n{'event': 'spring-cleanup', 'headcount': 3, 'attending': ['Dana Lee', 'Sam'], 'declined': []}\n127.0.0.1 \"POST /walker/rsvp HTTP/1.1\" 200 423 23.1ms 9d79915e3ede489791a317e63e056a3b\n{'event': 'spring-cleanup', 'headcount': 3, 'attending': ['Dana Lee', 'Sam'], 'declined': ['alex']}\n127.0.0.1 \"POST /walker/rsvp HTTP/1.1\" 200 426 24.8ms 195c2a066bf443b1b2fde33a032905a7\n{'event': 'spring-cleanup', 'headcount': 2, 'attending': ['Dana Lee'], 'declined': ['alex', 'SAM']}\n127.0.0.1 \"POST /walker/rsvp HTTP/1.1\" 200 427 27.2ms ca86fd7a0ccf424faded6708e9bce411\n{'error': 'plus_ones must be between 0 and 3'}\n127.0.0.1 \"POST /walker/rsvp HTTP/1.1\" 200 371 10.3ms 4c4029fdd4084ee9b184b31297bfb98e\n{'event': 'fall-fair', 'headcount': 3, 'attending': ['Zed'], 'declined': []}\n127.0.0.1 \"POST /walker/rsvp HTTP/1.1\" 200 396 23.2ms 91bc0fddda4f49ccab5e8a7c137a038c\n{\"ts\": \"2026-10-10T15:33:05.602349Z\", \"level\": \"WARNING\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"drain: started (signal SIGTERM, budget 10.0s)\"}\n\nShutting down server..."
+  }
+ },
+ "negative": {
+  "test": {
+   "steps": [
+    {
+     "why": "no own test blocks found"
+    },
+    {
+     "cmd": "jac test zz_hidden_acceptance.jac",
+     "rc": 1,
+     "secs": 2.0,
+     "tail": "E                                                                        [100%]\n\nFAILED /tmp/appgate_zoi56ybz/zz_hidden_acceptance.jac::zz_hidden_acceptance.jac\nTraceback (most recent call last):\n  File \"/home/runner/_work/jac/jac/.zig-cache/o/8776b3f32593b10747b6ba6ce20fea8b/payload.tar.zst.work/site/jaclang/testing/impl/test_runner.impl.jac\", line 677, in run_file\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/python/lib/python3.14/importlib/__init__.py\", line 88, in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen importlib._bootstrap>\", line 1406, in _gcd_import\n  File \"<frozen importlib._bootstrap>\", line 1371, in _find_and_load\n  File \"<frozen importlib._bootstrap>\", line 1342, in _find_and_load_unlocked\n  File \"<frozen importlib._bootstrap>\", line 938, in _load_unlocked\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/site/jaclang/meta_importer.py\", line 356, in exec_module\n    self._exec_compiled_module(module, file_path)\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/site/jaclang/meta_importer.py\", line 457, in _exec_compiled_module\n    exec(codeobj, module.__dict__)\n    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/appgate_zoi56ybz/zz_hidden_acceptance.jac\", line 2, in <module>\n    import from main { rsvp }\n     ^^^^^^^^^^^^^^^^^^^^^^^^\nImportError: cannot import name 'rsvp' from 'main' (/tmp/appgate_zoi56ybz/main.jac)\n\n1 error in 1.32s\n\u2716 Error: Tests failed.",
+     "stdout_tail": "    import from main { rsvp }\n     ^^^^^^^^^^^^^^^^^^^^^^^^\nImportError: cannot import name 'rsvp' from 'main' (/tmp/appgate_zoi56ybz/main.jac)\n\n1 error in 1.32s"
+    }
+   ],
+   "own_test_files": [],
+   "ok": false
+  },
+  "behavioral": {
+   "ok": false,
+   "script": "smoke.py",
+   "verdict": {
+    "start": true,
+    "behavioral": false,
+    "failures": [
+     "rsvp failed: 405 {'detail': 'Method Not Allowed'}",
+     "summary wrong: {}",
+     "lists wrong: {}",
+     "changed rsvp wrong: {}",
+     "second event wrong: {}"
+    ]
+   },
+   "rc": 1,
+   "tail": "{\"start\": true, \"behavioral\": false, \"failures\": [\"rsvp failed: 405 {'detail': 'Method Not Allowed'}\", \"summary wrong: {}\", \"lists wrong: {}\", \"changed rsvp wrong: {}\", \"second event wrong: {}\"]}\n---- server.log tail ----\n{\"ts\": \"2026-10-10T15:33:11.346775Z\", \"level\": \"INFO\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"Log query endpoints registered: /admin/logs/{,services,trace/{id}}\"}\n{\"ts\": \"2026-10-10T15:33:11.346881Z\", \"level\": \"INFO\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"Trace query endpoints registered: /admin/traces/{,services,{id}}\"}\n{\"ts\": \"2026-10-10T15:33:11.346950Z\", \"level\": \"INFO\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"Ops self-check endpoint registered: /admin/ops/health\"}\n{\"ts\": \"2026-10-10T15:33:11.347015Z\", \"level\": \"INFO\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"Deploy-health endpoint registered: /admin/ops/deploy\"}\n{\"ts\": \"2026-10-10T15:33:11.347084Z\", \"level\": \"INFO\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"Network endpoint registered: /admin/ops/network\"}\n{\"ts\": \"2026-10-10T15:33:11.347145Z\", \"level\": \"INFO\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"Pod-env endpoint registered: /admin/ops/podenv\"}\nJac API Server running on http://localhost:44973\n\n  jac dev server v0.37.25\n\n  \u279c  Local:     http://localhost:44973/\n  \u279c  Network:   http://10.1.0.175:44973/\n\n  Server ready (no client)\n\n127.0.0.1 \"GET /healthz HTTP/1.1\" 200 16 0.7ms 901f9539e3424309b6b674b0781a782b\n127.0.0.1 \"POST /walker/rsvp HTTP/1.1\" 405 32 0.6ms 55ae7eff6a304898ad1cd2bfc2602c38\n127.0.0.1 \"POST /walker/rsvp HTTP/1.1\" 405 32 0.4ms 573fdf4e7517450faf22c99141661a05\n127.0.0.1 \"POST /walker/rsvp HTTP/1.1\" 405 32 0.4ms e08025c2cb674393b82492f2e8de4924\n127.0.0.1 \"POST /walker/rsvp HTTP/1.1\" 405 32 0.4ms 9bdeae9ae1a246fd854701e9bbbeb9dc\n127.0.0.1 \"POST /walker/rsvp HTTP/1.1\" 405 32 0.4ms e1e1905a0d4d4cdeb9c56262a2bd14ea\n127.0.0.1 \"POST /walker/rsvp HTTP/1.1\" 405 32 0.4ms 3db01966869a4a3e9c73e1ea8e38ba5a\n{\"ts\": \"2026-10-10T15:33:11.728849Z\", \"level\": \"WARNING\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"drain: started (signal SIGTERM, budget 10.0s)\"}\n\nShutting down server..."
+  }
+ },
+ "secs": 17.6,
+ "validated": true,
+ "reason": "reference passes ['behavioral', 'check', 'start', 'test']; starter fails ['behavioral', 'test']; dedup ok",
+ "ci_run": "38063985138"
+}

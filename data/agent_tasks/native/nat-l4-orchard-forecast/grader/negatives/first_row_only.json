@@ -1,0 +1,1 @@
+{"why": "only walks the first row", "edits": [{"file": "harvest.jac", "old": "        visit [here ->:HasRow:->];", "new": "        visit [here ->:HasRow:->][:1];"}]}

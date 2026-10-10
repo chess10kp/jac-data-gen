@@ -1,0 +1,47 @@
+{
+ "id": "osp-iss-raydocs-aureo-1da51139",
+ "kind": "fix",
+ "level": 5,
+ "source": "osp_repair_code_fix",
+ "gates": [
+  "check",
+  "test",
+  "fidelity"
+ ],
+ "target_paths": [
+  "main.jac"
+ ],
+ "broken_paths": [
+  "main.jac"
+ ],
+ "jac_version": "0.37.25",
+ "license": "synthetic (generated in-house; repo license)",
+ "provenance": {
+  "dataset": "data/osp_repair/code_fix.jsonl",
+  "row_id": "codefix__iss_raydocs__Aureo__26",
+  "target_id": "iss_raydocs__Aureo__26",
+  "broken_generator": "minimax",
+  "fixed_generator": "minimax/minimax-m3:free",
+  "original_error": "\u2716 Error: error[E0004]: Unexpected token in expression: '-->'"
+ },
+ "starter_errors": {
+  "n_errors": 39,
+  "codes": {
+   "E0002": 16,
+   "E0004": 9,
+   "E0003": 4,
+   "E2086": 4,
+   "E0077": 3,
+   "E0013": 1,
+   "E1036": 1,
+   "E1010": 1
+  },
+  "n_files": 1
+ },
+ "gate_thresholds": {
+  "symbols": 0.9,
+  "mass": 0.7,
+  "body": 0.6,
+  "body_file": 0.4
+ }
+}

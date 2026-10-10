@@ -1,0 +1,1 @@
+{"why": "colour compared case-sensitively", "edits": [{"file": "app.jac", "old": "and here.color.lower() == self.color.lower()", "new": "and here.color == self.color"}]}

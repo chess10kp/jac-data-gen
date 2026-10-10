@@ -1,0 +1,1 @@
+{"why": "adds instead of multiplying", "edits": [{"file": "contest.jac", "old": "report self.qsos * self.mults;", "new": "report self.qsos + self.mults;"}]}

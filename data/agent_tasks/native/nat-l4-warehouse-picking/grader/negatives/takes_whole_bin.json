@@ -1,0 +1,1 @@
+{"why": "takes the whole bin", "edits": [{"file": "picking.jac", "old": "take = min(want, b.qty);", "new": "take = b.qty;"}]}

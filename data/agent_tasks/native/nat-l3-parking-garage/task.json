@@ -1,0 +1,11 @@
+{
+  "id": "nat-l3-parking-garage",
+  "kind": "native",
+  "level": 3,
+  "source": "hand-authored",
+  "gates": ["check", "test", "run"],
+  "target_paths": ["garage.jac"],
+  "jac_version": "0.37.25",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "provenance": {"author": "claude (hand-authored pilot)", "created": "2026-10-10", "title": "Multi-level parking garage", "domain": "parking operations", "constructs": ["typed edges", "node deletion", "obj result", "ordering by node field", "persistence across spawns and processes"], "inspiration": "none (original)"}
+}

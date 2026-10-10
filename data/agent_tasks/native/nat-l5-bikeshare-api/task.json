@@ -1,0 +1,11 @@
+{
+  "id": "nat-l5-bikeshare-api",
+  "kind": "native",
+  "level": 5,
+  "source": "hand-authored",
+  "gates": ["check", "test", "start"],
+  "target_paths": ["app.jac"],
+  "jac_version": "0.37.25",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "provenance": {"author": "claude (hand-authored pilot)", "created": "2026-10-10", "title": "Bike-share dock service API", "domain": "bike-share operations", "constructs": ["walker:pub endpoints", "def:pub endpoints", "per-request persistence on user root", "typed edges", "edge delete + reconnect", "traversing report endpoints"], "inspiration": "none (original)"}
+}

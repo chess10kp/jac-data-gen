@@ -1,0 +1,1 @@
+{"why": "due day ignores loan_days", "edits": [{"file": "toollib.jac", "old": "due = self.day + self.loan_days;", "new": "due = self.day + 7;"}]}

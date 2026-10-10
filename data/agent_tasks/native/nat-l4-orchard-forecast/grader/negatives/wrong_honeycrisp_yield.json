@@ -1,0 +1,1 @@
+{"why": "honeycrisp yield 35", "edits": [{"file": "model/varieties.jac", "old": "    \"HONEYCRISP\": 30.0", "new": "    \"HONEYCRISP\": 35.0"}]}

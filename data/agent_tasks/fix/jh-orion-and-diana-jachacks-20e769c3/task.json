@@ -1,0 +1,54 @@
+{
+ "id": "jh-orion-and-diana-jachacks-20e769c3",
+ "kind": "fix",
+ "level": 3,
+ "source": "jachacks_spring",
+ "gates": [
+  "check",
+  "fidelity"
+ ],
+ "target_paths": [
+  "v2/orion.jac"
+ ],
+ "broken_paths": [
+  "v2/orion.jac"
+ ],
+ "jac_version": "0.37.25",
+ "license": "upstream repo license (public hackathon submission; see repo_url)",
+ "provenance": {
+  "repo": "Luxaris__Orion-and-Diana-JacHacks",
+  "repo_url": "https://github.com/Luxaris/Orion-and-Diana-JacHacks",
+  "edition": "spring",
+  "seed_module": "v2/orion.jac",
+  "reverted_files": [
+   "v2/orion.jac"
+  ],
+  "original": "data/jachacks_{spring,2026}_jac_files_filtered.jsonl",
+  "reference": "data/jachacks_nonsf (0.36.1 repair) + mechanical 0.37 migration",
+  "starter": "hackathon original for reverted files, 0.36.1 repair elsewhere",
+  "reference_migration": {
+   "ok": true,
+   "rounds": 0,
+   "edits": 0,
+   "renames": 0,
+   "left": {}
+  }
+ },
+ "starter_errors": {
+  "n_errors": 8,
+  "codes": {
+   "E1030": 3,
+   "E0002": 2,
+   "E0005": 1,
+   "E0001": 1,
+   "E1116": 1
+  },
+  "n_files": 1
+ },
+ "gate_thresholds": {
+  "symbols": 0.9,
+  "mass": 0.7,
+  "body": 0.6,
+  "body_file": 0.4
+ }
+}

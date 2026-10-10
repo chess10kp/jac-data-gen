@@ -1,0 +1,1 @@
+{"why": "retired lots included", "edits": [{"file": "vault.jac", "old": "        if here.retired {\n            return;\n        }\n", "new": ""}]}

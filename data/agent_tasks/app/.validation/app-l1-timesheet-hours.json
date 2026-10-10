@@ -1,0 +1,61 @@
+{
+ "id": "app-l1-timesheet-hours",
+ "level": 1,
+ "source": "hand-authored",
+ "gates": [
+  "check",
+  "test"
+ ],
+ "hash": "d564d3dfc4bae471",
+ "jac": "jac 0.37.25  (Linux x86_64)",
+ "dedup": {
+  "pass": true,
+  "domain": "shift timesheet and overtime pay",
+  "domain_hits": [],
+  "max_5gram_containment": 0.0,
+  "nearest_5gram": null,
+  "max_8gram_containment": 0.0,
+  "nearest_8gram": null,
+  "n_eval_docs": 1387
+ },
+ "positive": {
+  "check": {
+   "ok": true,
+   "cmd": "jac check timesheet.jac",
+   "rc": 0,
+   "secs": 0.9,
+   "tail": "  Checking timesheet.jac...\ntimesheet.jac ok [100%]\n============================== 1 passed in 0.50s ===============================",
+   "stdout_tail": "  Checking timesheet.jac...\ntimesheet.jac ok [100%]\n============================== 1 passed in 0.50s ==============================="
+  },
+  "test": {
+   "steps": [
+    {
+     "cmd": "jac test zz_hidden_acceptance.jac",
+     "rc": 0,
+     "secs": 2.8,
+     "tail": ".....                                                                    [100%]\n\n5 passed in 2.33s",
+     "stdout_tail": ".....                                                                    [100%]\n\n5 passed in 2.33s"
+    }
+   ],
+   "ok": true
+  }
+ },
+ "negative": {
+  "test": {
+   "steps": [
+    {
+     "cmd": "jac test zz_hidden_acceptance.jac",
+     "rc": 0,
+     "secs": 1.4,
+     "tail": "s                                                                        [100%]\n\n1 skipped in 0.86s",
+     "stdout_tail": "s                                                                        [100%]\n\n1 skipped in 0.86s"
+    }
+   ],
+   "ok": false
+  }
+ },
+ "secs": 5.1,
+ "validated": true,
+ "reason": "reference passes ['check', 'test']; starter fails ['test']; dedup ok",
+ "ci_run": "38063985138"
+}

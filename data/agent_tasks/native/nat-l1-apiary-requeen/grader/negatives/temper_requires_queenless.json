@@ -1,0 +1,1 @@
+{"why": "aggressive colonies only flagged when also queenless (and instead of or)", "edits": [{"file": "apiary.jac", "old": "queenless_and_weak or here.temper >= 4", "new": "(not here.queen_seen) and (here.brood_frames < 3 or here.temper >= 4)"}]}

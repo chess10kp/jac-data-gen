@@ -1,0 +1,1 @@
+{"why": "assumes 120V", "edits": [{"file": "load.jac", "old": "amps = round(watts / self.volts, 2);", "new": "amps = round(watts / 120.0, 2);"}]}

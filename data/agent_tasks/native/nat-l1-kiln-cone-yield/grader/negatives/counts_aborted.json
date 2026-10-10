@@ -1,0 +1,1 @@
+{"why": "counts aborted firings", "edits": [{"file": "kiln.jac", "old": "if here.aborted or here.pieces == 0 {", "new": "if here.pieces == 0 {"}]}

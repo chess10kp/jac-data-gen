@@ -1,0 +1,1 @@
+{"why": "rounds instead of floor", "edits": [{"file": "kiln.jac", "old": "s.yield_pct = (s.pieces - s.losses) * 100 // s.pieces;", "new": "s.yield_pct = round((s.pieces - s.losses) * 100 / s.pieces);"}]}

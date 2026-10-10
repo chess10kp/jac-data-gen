@@ -1,0 +1,1 @@
+{"why": "drops seasonal channels in the wet season too", "edits": [{"file": "watershed.jac", "old": "            visit [here <-:FlowsInto:<-];\n", "new": "            visit [here <-:FlowsInto:seasonal == False:<-];\n"}]}

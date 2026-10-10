@@ -1,0 +1,116 @@
+{
+ "id": "app-l3-library-loans",
+ "level": 3,
+ "source": "hand-authored",
+ "gates": [
+  "check",
+  "test",
+  "run",
+  "behavioral"
+ ],
+ "hash": "b4cbc7f8a5c61c05",
+ "jac": "jac 0.37.25  (Linux x86_64)",
+ "dedup": {
+  "pass": true,
+  "domain": "community lending library loans",
+  "domain_hits": [],
+  "max_5gram_containment": 0.0,
+  "nearest_5gram": null,
+  "max_8gram_containment": 0.0,
+  "nearest_8gram": null,
+  "n_eval_docs": 1387
+ },
+ "positive": {
+  "check": {
+   "ok": true,
+   "cmd": "jac check main.jac",
+   "rc": 0,
+   "secs": 4.0,
+   "tail": "  Checking main.jac...\nmain.jac ok [100%]\n============================== 1 passed in 3.44s ===============================",
+   "stdout_tail": "  Checking main.jac...\nmain.jac ok [100%]\n============================== 1 passed in 3.44s ==============================="
+  },
+  "test": {
+   "steps": [
+    {
+     "cmd": "jac test zz_hidden_acceptance.jac",
+     "rc": 0,
+     "secs": 5.3,
+     "tail": "....                                                                     [100%]\n\n4 passed in 4.52s",
+     "stdout_tail": "....                                                                     [100%]\n\n4 passed in 4.52s"
+    }
+   ],
+   "ok": true
+  },
+  "run": {
+   "ok": true,
+   "script": "behavioral.py",
+   "verdict": {
+    "run": true,
+    "behavioral": true,
+    "failures": []
+   },
+   "rc": 0,
+   "tail": "{\"run\": true, \"behavioral\": true, \"failures\": []}\n$ add-book 111 2 Dune Messiah\nBook(isbn='111', title='Dune Messiah', copies=2)\nadded 111\n$ checkout ann 111 2026-02-01\n{'ok': True, 'due': '2026-02-15'}\ndue 2026-02-15\n$ checkout bob 111 2026-02-03\n{'ok': True, 'due': '2026-02-17'}\ndue 2026-02-17\n$ checkout cy 111 2026-02-03\n{'ok': False}\nunavailable\n$ available 111\n0\n0\n$ overdue 2026-02-16\n[{'member': 'ann', 'isbn': '111', 'due': '2026-02-15'}]\nann 111 2026-02-15\n$ return ann 111\n{'ok': True}\nreturned\n$ available 111\n1\n1\n$ overdue 2026-02-16\n[]\nnone overdue\n$ return ann 111\n{'ok': False}\nno such loan"
+  },
+  "behavioral": {
+   "ok": true,
+   "script": "behavioral.py",
+   "verdict": {
+    "run": true,
+    "behavioral": true,
+    "failures": []
+   },
+   "rc": 0,
+   "tail": "{\"run\": true, \"behavioral\": true, \"failures\": []}\n$ add-book 111 2 Dune Messiah\nBook(isbn='111', title='Dune Messiah', copies=2)\nadded 111\n$ checkout ann 111 2026-02-01\n{'ok': True, 'due': '2026-02-15'}\ndue 2026-02-15\n$ checkout bob 111 2026-02-03\n{'ok': True, 'due': '2026-02-17'}\ndue 2026-02-17\n$ checkout cy 111 2026-02-03\n{'ok': False}\nunavailable\n$ available 111\n0\n0\n$ overdue 2026-02-16\n[{'member': 'ann', 'isbn': '111', 'due': '2026-02-15'}]\nann 111 2026-02-15\n$ return ann 111\n{'ok': True}\nreturned\n$ available 111\n1\n1\n$ overdue 2026-02-16\n[]\nnone overdue\n$ return ann 111\n{'ok': False}\nno such loan"
+  }
+ },
+ "negative": {
+  "test": {
+   "steps": [
+    {
+     "cmd": "jac test zz_hidden_acceptance.jac",
+     "rc": 1,
+     "secs": 2.2,
+     "tail": "E                                                                        [100%]\n\nFAILED /tmp/appgate_2yd87ebr/zz_hidden_acceptance.jac::zz_hidden_acceptance.jac\nTraceback (most recent call last):\n  File \"/home/runner/_work/jac/jac/.zig-cache/o/8776b3f32593b10747b6ba6ce20fea8b/payload.tar.zst.work/site/jaclang/testing/impl/test_runner.impl.jac\", line 677, in run_file\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/python/lib/python3.14/importlib/__init__.py\", line 88, in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen importlib._bootstrap>\", line 1406, in _gcd_import\n  File \"<frozen importlib._bootstrap>\", line 1371, in _find_and_load\n  File \"<frozen importlib._bootstrap>\", line 1342, in _find_and_load_unlocked\n  File \"<frozen importlib._bootstrap>\", line 938, in _load_unlocked\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/site/jaclang/meta_importer.py\", line 356, in exec_module\n    self._exec_compiled_module(module, file_path)\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/site/jaclang/meta_importer.py\", line 457, in _exec_compiled_module\n    exec(codeobj, module.__dict__)\n    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/appgate_2yd87ebr/zz_hidden_acceptance.jac\", line 2, in <module>\n    import from main { AddBook, Checkout, ReturnBook, Available, Overdue }\n     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nImportError: cannot import name 'AddBook' from 'main' (/tmp/appgate_2yd87ebr/main.jac)\n\n1 error in 1.47s\n\u2716 Error: Tests failed.",
+     "stdout_tail": "    import from main { AddBook, Checkout, ReturnBook, Available, Overdue }\n     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nImportError: cannot import name 'AddBook' from 'main' (/tmp/appgate_2yd87ebr/main.jac)\n\n1 error in 1.47s"
+    }
+   ],
+   "ok": false
+  },
+  "behavioral": {
+   "ok": false,
+   "script": "behavioral.py",
+   "verdict": {
+    "run": false,
+    "behavioral": false,
+    "failures": [
+     "`jac run main.jac add-book 111 2 Dune Messiah` exited 2: Preparing application...\n  Compiling server modules and placement metadata...\nusage: library_loans [-h] {greet} ...\nlibrary_loans: error: argument command: invalid choice: 'add-book' (choose from 'greet')\n",
+     "`jac run main.jac checkout ann 111 2026-02-01` exited 2: Preparing application...\n  Restoring prepared application\nusage: library_loans [-h] {greet} ...\nlibrary_loans: error: argument command: invalid choice: 'checkout' (choose from 'greet')\n",
+     "ann checkout should be due 2026-02-15, got ''",
+     "`jac run main.jac checkout bob 111 2026-02-03` exited 2: Preparing application...\n  Restoring prepared application\nusage: library_loans [-h] {greet} ...\nlibrary_loans: error: argument command: invalid choice: 'checkout' (choose from 'greet')\n",
+     "bob checkout should be due 2026-02-17, got ''",
+     "`jac run main.jac checkout cy 111 2026-02-03` exited 2: Preparing application...\n  Restoring prepared application\nusage: library_loans [-h] {greet} ...\nlibrary_loans: error: argument command: invalid choice: 'checkout' (choose from 'greet')\n",
+     "third checkout of 2 copies should be unavailable, got ''",
+     "`jac run main.jac available 111` exited 2: Preparing application...\n  Restoring prepared application\nusage: library_loans [-h] {greet} ...\nlibrary_loans: error: argument command: invalid choice: 'available' (choose from 'greet')\n",
+     "available should be 0, got ''",
+     "`jac run main.jac overdue 2026-02-16` exited 2: Preparing application...\n  Restoring prepared application\nusage: library_loans [-h] {greet} ...\nlibrary_loans: error: argument command: invalid choice: 'overdue' (choose from 'greet')\n",
+     "only ann overdue on 02-16, got ''",
+     "`jac run main.jac return ann 111` exited 2: Preparing application...\n  Restoring prepared application\nusage: library_loans [-h] {greet} ...\nlibrary_loans: error: argument command: invalid choice: 'return' (choose from 'greet')\n",
+     "return should print returned, got ''",
+     "`jac run main.jac available 111` exited 2: Preparing application...\n  Restoring prepared application\nusage: library_loans [-h] {greet} ...\nlibrary_loans: error: argument command: invalid choice: 'available' (choose from 'greet')\n",
+     "available should be 1 after return, got ''",
+     "`jac run main.jac overdue 2026-02-16` exited 2: Preparing application...\n  Restoring prepared application\nusage: library_loans [-h] {greet} ...\nlibrary_loans: error: argument command: invalid choice: 'overdue' (choose from 'greet')\n",
+     "nothing overdue after return, got ''",
+     "`jac run main.jac return ann 111` exited 2: Preparing application...\n  Restoring prepared application\nusage: library_loans [-h] {greet} ...\nlibrary_loans: error: argument command: invalid choice: 'return' (choose from 'greet')\n",
+     "second return should print no such loan, got ''"
+    ]
+   },
+   "rc": 1,
+   "tail": "{\"run\": false, \"behavioral\": false, \"failures\": [\"`jac run main.jac add-book 111 2 Dune Messiah` exited 2: Preparing application...\\n  Compiling server modules and placement metadata...\\nusage: library_loans [-h] {greet} ...\\nlibrary_loans: error: argument command: invalid choice: 'add-book' (choose from 'greet')\\n\", \"`jac run main.jac checkout ann 111 2026-02-01` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: library_loans [-h] {greet} ...\\nlibrary_loans: error: argument command: invalid choice: 'checkout' (choose from 'greet')\\n\", \"ann checkout should be due 2026-02-15, got ''\", \"`jac run main.jac checkout bob 111 2026-02-03` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: library_loans [-h] {greet} ...\\nlibrary_loans: error: argument command: invalid choice: 'checkout' (choose from 'greet')\\n\", \"bob checkout should be due 2026-02-17, got ''\", \"`jac run main.jac checkout cy 111 2026-02-03` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: library_loans [-h] {greet} ...\\nlibrary_loans: error: argument command: invalid choice: 'checkout' (choose from 'greet')\\n\", \"third checkout of 2 copies should be unavailable, got ''\", \"`jac run main.jac available 111` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: library_loans [-h] {greet} ...\\nlibrary_loans: error: argument command: invalid choice: 'available' (choose from 'greet')\\n\", \"available should be 0, got ''\", \"`jac run main.jac overdue 2026-02-16` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: library_loans [-h] {greet} ...\\nlibrary_loans: error: argument command: invalid choice: 'overdue' (choose from 'greet')\\n\", \"only ann overdue on 02-16, got ''\", \"`jac run main.jac return ann 111` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: library_loans [-h] {greet} ...\\nlibrary_loans: error: argument command: invalid choice: 'return' (choose from 'greet')\\n\", \"return should print returned, got ''\", \"`jac run main.jac available 111` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: library_loans [-h] {greet} ...\\nlibrary_loans: error: argument command: invalid choice: 'available' (choose from 'greet')\\n\", \"available should be 1 after return, got ''\", \"`jac run main.jac overdue 2026-02-16` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: library_loans [-h] {greet} ...\\nlibrary_loans: error: argument command: invalid choice: 'overdue' (choose from 'greet')\\n\", \"nothing overdue after return, got ''\", \"`jac run main.jac return ann 111` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: library_loans [-h] {greet} ...\\nlibrary_loans: error: argument command: invalid choice: 'return' (choose from 'greet')\\n\", \"second return should print no such loan, got ''\"]}\n$ add-book 111 2 Dune Messiah\n\n$ checkout ann 111 2026-02-01\n\n$ checkout bob 111 2026-02-03\n\n$ checkout cy 111 2026-02-03\n\n$ available 111\n\n$ overdue 2026-02-16\n\n$ return ann 111\n\n$ available 111\n\n$ overdue 2026-02-16\n\n$ return ann 111\n"
+  }
+ },
+ "secs": 60.6,
+ "validated": true,
+ "reason": "reference passes ['behavioral', 'check', 'run', 'test']; starter fails ['behavioral', 'test']; dedup ok",
+ "ci_run": "38063985138"
+}

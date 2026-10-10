@@ -1,0 +1,1 @@
+{"why": "allows same plate twice", "edits": [{"file": "garage.jac", "old": "        if find_car(self.plate) is not None {\n            report Ticket(ok=False, reason=\"already inside\");\n            return;\n        }\n", "new": ""}]}

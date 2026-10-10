@@ -1,0 +1,1 @@
+{"why": "swaps even when ingredient is in pantry", "edits": [{"file": "cookbook.jac", "old": "            if ing.name in have {\n                continue;\n            }\n", "new": ""}]}

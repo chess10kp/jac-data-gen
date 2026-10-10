@@ -181,12 +181,37 @@ def _zen_invoke(prompt: str, sysprompt: str, model: str,
     return {"result": "", "is_error": True, "error": last}, None
 
 
+def _devin_invoke(prompt: str, model: str,
+                  timeout: float) -> tuple[dict | None, str | None]:
+    """Call the local Devin CLI (print mode) via llm_backend.DevinBackend.
+
+    DevinBackend already retries internally; a returned error has survived
+    those attempts, so map it to is_error=True (deterministic, fail fast)
+    except timeouts which stay transient. Returns the same cursor-agent-shaped
+    payload as _zen_invoke."""
+    from llm_backend import DevinBackend
+    text, err, usage = DevinBackend().call("", prompt, model,
+                                           timeout=int(timeout), tries=3)
+    if text is None:
+        if err and "not found" in err:
+            return None, "spawn"
+        if err and "timeout" in err:
+            return None, "timeout"
+        return {"result": "", "is_error": True,
+                "error": f"devin: {err}"}, None
+    return {"result": text, "is_error": False,
+            "usage": {"inputTokens": int(usage.get("inputTokens") or 0),
+                      "outputTokens": int(usage.get("outputTokens") or 0)}}, None
+
+
 def _pick_transport(model: str, transport: str) -> str:
-    """auto: free models route to the zen gateway, everything else to
-    cursor-agent (unchanged default behavior)."""
+    """auto: free models route to the zen gateway, swe-* models to the local
+    devin CLI, everything else to cursor-agent."""
     if transport != "auto":
         return transport
-    return "zen" if model.endswith("-free") else "cursor"
+    if model.endswith("-free"):
+        return "zen"
+    return "devin" if model.startswith("swe-") else "cursor"
 
 
 # Transient = worth a retry with backoff: gateway hiccup, cut stream, OOM-killed
@@ -221,6 +246,8 @@ def call_agent(batch_file: str, *, pipeline: str, model: str, run_id: str,
     for attempt in range(max_attempts):
         if transport == "zen":
             d, err = _zen_invoke(prompt, sysprompt, model, timeout)
+        elif transport == "devin":
+            d, err = _devin_invoke(prompt, model, timeout)
         else:
             d, err = _invoke(prompt, model, workspace, tmpdir, timeout)
         if err == "spawn":
@@ -331,6 +358,8 @@ def run_composer(pipeline: str, args: argparse.Namespace,
     if transport == "zen":
         print(f"[composer] transport=zen gateway {ZEN_BASE} "
               f"(system prompt sent as system role)", flush=True)
+    elif transport == "devin":
+        print("[composer] transport=devin local CLI (print mode)", flush=True)
 
     def work(bf: Path) -> None:
         cand, _usage = call_agent(
@@ -383,6 +412,8 @@ def add_common_args(ap: argparse.ArgumentParser) -> None:
     ap.add_argument("--workspace", default=os.environ.get("CURSOR_WS", "/tmp/cursor_ws"))
     ap.add_argument("--max-attempts", type=int, default=3,
                     help="retries for transient failures (timeout/cut stream)")
-    ap.add_argument("--transport", choices=["auto", "cursor", "zen"], default="auto",
+    ap.add_argument("--transport", choices=["auto", "cursor", "zen", "devin"],
+                    default="auto",
                     help="model transport; auto routes *-free models to the "
-                         "opencode zen gateway, others to cursor-agent")
+                         "opencode zen gateway, swe-* models to the local "
+                         "devin CLI, others to cursor-agent")

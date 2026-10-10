@@ -1,0 +1,1 @@
+{"why": "van counted as one car slot", "edits": [{"file": "app.jac", "old": "        if self.vehicle == Vehicle.VAN {\n            return 2;\n        }\n", "new": ""}]}

@@ -1,0 +1,1 @@
+{"why": "only direct feeders", "edits": [{"file": "watershed.jac", "old": "        if self.dry_season {\n            visit", "new": "        if len(self.seen) > 1 {\n            return;\n        }\n        if self.dry_season {\n            visit"}]}

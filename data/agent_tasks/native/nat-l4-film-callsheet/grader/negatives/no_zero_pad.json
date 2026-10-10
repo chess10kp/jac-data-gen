@@ -1,0 +1,1 @@
+{"why": "no zero padding", "edits": [{"file": "callsheet.jac", "old": "return f\"{minutes // 60:02d}:{minutes % 60:02d}\";", "new": "return f\"{minutes // 60}:{minutes % 60:02d}\";"}]}

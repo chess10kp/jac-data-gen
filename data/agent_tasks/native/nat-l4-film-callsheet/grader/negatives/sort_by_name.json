@@ -1,0 +1,1 @@
+{"why": "sorted by name only", "edits": [{"file": "callsheet.jac", "old": "for (t, name, dept) in sorted(rows)]", "new": "for (t, name, dept) in sorted(rows, key=lambda (r: tuple[int, str, str]) { r[1]; })]"}]}

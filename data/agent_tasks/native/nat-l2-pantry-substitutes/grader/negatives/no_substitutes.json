@@ -1,0 +1,1 @@
+{"why": "ignores substitutes", "edits": [{"file": "cookbook.jac", "old": "            options = sorted([s.name for s in [ing ->:SubstitutesFor:->] if s.name in have]);", "new": "            options: list[str] = [];"}]}

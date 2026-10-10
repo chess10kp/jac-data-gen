@@ -1,0 +1,1 @@
+{"why": "progress treats one criterion as done", "edits": [{"file": "app.jac", "old": "if len(done) < 3 {", "new": "if len(done) < 1 {"}]}

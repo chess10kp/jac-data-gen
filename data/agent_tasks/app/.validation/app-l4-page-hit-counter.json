@@ -1,0 +1,117 @@
+{
+ "id": "app-l4-page-hit-counter",
+ "level": 4,
+ "source": "hand-authored",
+ "gates": [
+  "check",
+  "test",
+  "start",
+  "behavioral"
+ ],
+ "hash": "90bed053a80674d0",
+ "jac": "jac 0.37.25  (Linux x86_64)",
+ "dedup": {
+  "pass": true,
+  "domain": "blog page hit counter API",
+  "domain_hits": [],
+  "max_5gram_containment": 0.0,
+  "nearest_5gram": null,
+  "max_8gram_containment": 0.0,
+  "nearest_8gram": null,
+  "n_eval_docs": 1387
+ },
+ "positive": {
+  "check": {
+   "ok": true,
+   "cmd": "jac check main.jac",
+   "rc": 0,
+   "secs": 0.9,
+   "tail": "  Checking main.jac...\nmain.jac ok [100%]\n============================== 1 passed in 0.43s ===============================",
+   "stdout_tail": "  Checking main.jac...\nmain.jac ok [100%]\n============================== 1 passed in 0.43s ==============================="
+  },
+  "test": {
+   "steps": [
+    {
+     "cmd": "jac test main.jac",
+     "rc": 0,
+     "secs": 4.4,
+     "tail": "..                                                                       [100%]\n\n2 passed in 3.71s",
+     "stdout_tail": "..                                                                       [100%]\n\n2 passed in 3.71s"
+    },
+    {
+     "cmd": "jac test zz_hidden_acceptance.jac",
+     "rc": 0,
+     "secs": 2.0,
+     "tail": ".....                                                                    [100%]\n\n5 passed in 1.22s",
+     "stdout_tail": ".....                                                                    [100%]\n\n5 passed in 1.22s"
+    }
+   ],
+   "own_test_files": [
+    "main.test.jac"
+   ],
+   "ok": true
+  },
+  "start": {
+   "ok": true,
+   "script": "smoke.py",
+   "verdict": {
+    "start": true,
+    "behavioral": true,
+    "failures": []
+   },
+   "rc": 0,
+   "tail": "{\"start\": true, \"behavioral\": true, \"failures\": []}\n---- server.log tail ----\nJac API Server running on http://localhost:36001\n\n  jac dev server v0.37.25\n\n  \u279c  Local:     http://localhost:36001/\n  \u279c  Network:   http://10.1.0.42:36001/\n\n  Server ready (no client)\n\n127.0.0.1 \"GET /healthz HTTP/1.1\" 200 16 0.5ms a9ae247abc084a49b48099b193ff701c\n{'page': '/hello', 'visits': 1}\n127.0.0.1 \"POST /walker/record_visit HTTP/1.1\" 200 318 22.8ms a92fb77bda734b74afca8731c1946af5\n{'page': '/hello', 'visits': 2}\n127.0.0.1 \"POST /walker/record_visit HTTP/1.1\" 200 318 10.5ms 20a579edeedc4baa9a59bc15dcc617ee\n{'page': '/hello', 'visits': 3}\n127.0.0.1 \"POST /walker/record_visit HTTP/1.1\" 200 318 9.9ms f9d12e08a828426b92d085b02a6db2bb\n{'page': '/Hello', 'visits': 1}\n127.0.0.1 \"POST /walker/record_visit HTTP/1.1\" 200 318 10.0ms 738b9887112a4ed7b3594499e2b604c7\n{'page': '/hello', 'visits': 4}\n127.0.0.1 \"POST /walker/record_visit HTTP/1.1\" 200 320 10.1ms b7a78b6cd5ad4434bd2ad89df3800bc3\n{'error': 'page required'}\n127.0.0.1 \"POST /walker/record_visit HTTP/1.1\" 200 307 7.5ms 31f1e03e1e194ef9b549f11855603b98\n{\"ts\": \"2026-10-10T15:32:51.955708Z\", \"level\": \"WARNING\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"drain: started (signal SIGTERM, budget 10.0s)\"}\n\nShutting down server..."
+  },
+  "behavioral": {
+   "ok": true,
+   "script": "smoke.py",
+   "verdict": {
+    "start": true,
+    "behavioral": true,
+    "failures": []
+   },
+   "rc": 0,
+   "tail": "{\"start\": true, \"behavioral\": true, \"failures\": []}\n---- server.log tail ----\nJac API Server running on http://localhost:36001\n\n  jac dev server v0.37.25\n\n  \u279c  Local:     http://localhost:36001/\n  \u279c  Network:   http://10.1.0.42:36001/\n\n  Server ready (no client)\n\n127.0.0.1 \"GET /healthz HTTP/1.1\" 200 16 0.5ms a9ae247abc084a49b48099b193ff701c\n{'page': '/hello', 'visits': 1}\n127.0.0.1 \"POST /walker/record_visit HTTP/1.1\" 200 318 22.8ms a92fb77bda734b74afca8731c1946af5\n{'page': '/hello', 'visits': 2}\n127.0.0.1 \"POST /walker/record_visit HTTP/1.1\" 200 318 10.5ms 20a579edeedc4baa9a59bc15dcc617ee\n{'page': '/hello', 'visits': 3}\n127.0.0.1 \"POST /walker/record_visit HTTP/1.1\" 200 318 9.9ms f9d12e08a828426b92d085b02a6db2bb\n{'page': '/Hello', 'visits': 1}\n127.0.0.1 \"POST /walker/record_visit HTTP/1.1\" 200 318 10.0ms 738b9887112a4ed7b3594499e2b604c7\n{'page': '/hello', 'visits': 4}\n127.0.0.1 \"POST /walker/record_visit HTTP/1.1\" 200 320 10.1ms b7a78b6cd5ad4434bd2ad89df3800bc3\n{'error': 'page required'}\n127.0.0.1 \"POST /walker/record_visit HTTP/1.1\" 200 307 7.5ms 31f1e03e1e194ef9b549f11855603b98\n{\"ts\": \"2026-10-10T15:32:51.955708Z\", \"level\": \"WARNING\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"drain: started (signal SIGTERM, budget 10.0s)\"}\n\nShutting down server..."
+  }
+ },
+ "negative": {
+  "test": {
+   "steps": [
+    {
+     "why": "no own test blocks found"
+    },
+    {
+     "cmd": "jac test zz_hidden_acceptance.jac",
+     "rc": 1,
+     "secs": 1.4,
+     "tail": "E                                                                        [100%]\n\nFAILED /tmp/appgate_x4s3q_ed/zz_hidden_acceptance.jac::zz_hidden_acceptance.jac\nTraceback (most recent call last):\n  File \"/home/runner/_work/jac/jac/.zig-cache/o/8776b3f32593b10747b6ba6ce20fea8b/payload.tar.zst.work/site/jaclang/testing/impl/test_runner.impl.jac\", line 677, in run_file\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/python/lib/python3.14/importlib/__init__.py\", line 88, in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen importlib._bootstrap>\", line 1406, in _gcd_import\n  File \"<frozen importlib._bootstrap>\", line 1371, in _find_and_load\n  File \"<frozen importlib._bootstrap>\", line 1342, in _find_and_load_unlocked\n  File \"<frozen importlib._bootstrap>\", line 938, in _load_unlocked\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/site/jaclang/meta_importer.py\", line 356, in exec_module\n    self._exec_compiled_module(module, file_path)\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/site/jaclang/meta_importer.py\", line 457, in _exec_compiled_module\n    exec(codeobj, module.__dict__)\n    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/appgate_x4s3q_ed/zz_hidden_acceptance.jac\", line 2, in <module>\n    import from main { record_visit }\n     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nImportError: cannot import name 'record_visit' from 'main' (/tmp/appgate_x4s3q_ed/main.jac)\n\n1 error in 0.90s\n\u2716 Error: Tests failed.",
+     "stdout_tail": "    import from main { record_visit }\n     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nImportError: cannot import name 'record_visit' from 'main' (/tmp/appgate_x4s3q_ed/main.jac)\n\n1 error in 0.90s"
+    }
+   ],
+   "own_test_files": [],
+   "ok": false
+  },
+  "behavioral": {
+   "ok": false,
+   "script": "smoke.py",
+   "verdict": {
+    "start": true,
+    "behavioral": false,
+    "failures": [
+     "record_visit failed: 405 {'detail': 'Method Not Allowed'}",
+     "first visit wrong: None",
+     "visit 2 wrong: None",
+     "visit 3 wrong: None",
+     "/Hello should be separate: None",
+     "trimmed page should count as /hello: None"
+    ]
+   },
+   "rc": 1,
+   "tail": "{\"start\": true, \"behavioral\": false, \"failures\": [\"record_visit failed: 405 {'detail': 'Method Not Allowed'}\", \"first visit wrong: None\", \"visit 2 wrong: None\", \"visit 3 wrong: None\", \"/Hello should be separate: None\", \"trimmed page should count as /hello: None\"]}\n---- server.log tail ----\n{\"ts\": \"2026-10-10T15:32:55.462578Z\", \"level\": \"INFO\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"Log query endpoints registered: /admin/logs/{,services,trace/{id}}\"}\n{\"ts\": \"2026-10-10T15:32:55.462645Z\", \"level\": \"INFO\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"Trace query endpoints registered: /admin/traces/{,services,{id}}\"}\n{\"ts\": \"2026-10-10T15:32:55.462688Z\", \"level\": \"INFO\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"Ops self-check endpoint registered: /admin/ops/health\"}\n{\"ts\": \"2026-10-10T15:32:55.462727Z\", \"level\": \"INFO\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"Deploy-health endpoint registered: /admin/ops/deploy\"}\n{\"ts\": \"2026-10-10T15:32:55.462767Z\", \"level\": \"INFO\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"Network endpoint registered: /admin/ops/network\"}\n{\"ts\": \"2026-10-10T15:32:55.462801Z\", \"level\": \"INFO\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"Pod-env endpoint registered: /admin/ops/podenv\"}\nJac API Server running on http://localhost:54037\n\n  jac dev server v0.37.25\n\n  \u279c  Local:     http://localhost:54037/\n  \u279c  Network:   http://10.1.0.42:54037/\n\n  Server ready (no client)\n\n127.0.0.1 \"GET /healthz HTTP/1.1\" 200 16 0.5ms 46d7b80be2184b048d32c296397ede35\n127.0.0.1 \"POST /walker/record_visit HTTP/1.1\" 405 32 0.5ms e9ec605d7f2c4ec6ad2c55b926053a53\n127.0.0.1 \"POST /walker/record_visit HTTP/1.1\" 405 32 0.3ms cd3304a4b0714cfbbd87b15ff145a333\n127.0.0.1 \"POST /walker/record_visit HTTP/1.1\" 405 32 0.3ms e8238806143a4157ad6e4d26eaa96b5e\n127.0.0.1 \"POST /walker/record_visit HTTP/1.1\" 405 32 0.3ms c80068aea11044ceb81b0de9f7833ff4\n127.0.0.1 \"POST /walker/record_visit HTTP/1.1\" 405 32 0.3ms bdfa539b5bd54518b6ebb746439d85ae\n127.0.0.1 \"POST /walker/record_visit HTTP/1.1\" 405 32 0.3ms 5ca46af9bf4f4caca0e30d263f5e7f90\n{\"ts\": \"2026-10-10T15:32:56.468824Z\", \"level\": \"WARNING\", \"service\": \"unknown\", \"trace_id\": null, \"msg\": \"drain: started (signal SIGTERM, budget 10.0s)\"}\n\nShutting down server..."
+  }
+ },
+ "secs": 13.9,
+ "validated": true,
+ "reason": "reference passes ['behavioral', 'check', 'start', 'test']; starter fails ['behavioral', 'test']; dedup ok",
+ "ci_run": "38063985138"
+}

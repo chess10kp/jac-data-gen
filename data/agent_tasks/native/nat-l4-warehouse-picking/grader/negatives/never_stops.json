@@ -1,0 +1,1 @@
+{"why": "walks every aisle even when satisfied", "edits": [{"file": "picking.jac", "old": "        if any([n > 0 for n in self.outstanding.values()]) {\n            visit [here ->:NextAisle:->];\n        }", "new": "        visit [here ->:NextAisle:->];"}]}

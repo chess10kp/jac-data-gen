@@ -1,0 +1,1 @@
+{"why": "follows edges downstream", "edits": [{"file": "watershed.jac", "old": "visit [here <-:FlowsInto:<-];", "new": "visit [here ->:FlowsInto:->];"}, {"file": "watershed.jac", "old": "visit [here <-:FlowsInto:seasonal == False:<-];", "new": "visit [here ->:FlowsInto:seasonal == False:->];"}]}

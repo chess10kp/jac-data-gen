@@ -1,0 +1,1 @@
+{"why": "short lists filled skus with 0", "edits": [{"file": "picking.jac", "old": "self.short = {sku: n for (sku, n) in self.outstanding.items() if n > 0};", "new": "self.short = dict(self.outstanding);"}]}

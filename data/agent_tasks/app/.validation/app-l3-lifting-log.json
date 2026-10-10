@@ -1,0 +1,111 @@
+{
+ "id": "app-l3-lifting-log",
+ "level": 3,
+ "source": "hand-authored",
+ "gates": [
+  "check",
+  "test",
+  "run",
+  "behavioral"
+ ],
+ "hash": "54c8605106b45b91",
+ "jac": "jac 0.37.25  (Linux x86_64)",
+ "dedup": {
+  "pass": true,
+  "domain": "weightlifting personal records log",
+  "domain_hits": [],
+  "max_5gram_containment": 0.0,
+  "nearest_5gram": null,
+  "max_8gram_containment": 0.0,
+  "nearest_8gram": null,
+  "n_eval_docs": 1387
+ },
+ "positive": {
+  "check": {
+   "ok": true,
+   "cmd": "jac check main.jac",
+   "rc": 0,
+   "secs": 1.0,
+   "tail": "  Checking main.jac...\nmain.jac ok [100%]\n============================== 1 passed in 0.65s ===============================",
+   "stdout_tail": "  Checking main.jac...\nmain.jac ok [100%]\n============================== 1 passed in 0.65s ==============================="
+  },
+  "test": {
+   "steps": [
+    {
+     "cmd": "jac test zz_hidden_acceptance.jac",
+     "rc": 0,
+     "secs": 3.8,
+     "tail": "....                                                                     [100%]\n\n4 passed in 3.29s",
+     "stdout_tail": "....                                                                     [100%]\n\n4 passed in 3.29s"
+    }
+   ],
+   "ok": true
+  },
+  "run": {
+   "ok": true,
+   "script": "behavioral.py",
+   "verdict": {
+    "run": true,
+    "behavioral": true,
+    "failures": []
+   },
+   "rc": 0,
+   "tail": "{\"run\": true, \"behavioral\": true, \"failures\": []}\n$ log bench 2026-03-01 60 5\nSetEntry(date='2026-03-01', weight=60.0, reps=5)\nlogged bench 60x5\n$ log Bench 2026-03-03 65 3\nSetEntry(date='2026-03-03', weight=65.0, reps=3)\nlogged bench 65x3\n$ log deadlift 2026-03-02 120 5\nSetEntry(date='2026-03-02', weight=120.0, reps=5)\nlogged deadlift 120x5\n$ best bench\n{'e1rm': 71.5, 'date': '2026-03-03'}\nbench 71.5 on 2026-03-03\n$ log bench 2026-03-08 70 5\nSetEntry(date='2026-03-08', weight=70.0, reps=5)\nlogged bench 70x5\n$ best BENCH\n{'e1rm': 81.7, 'date': '2026-03-08'}\nbench 81.7 on 2026-03-08\n$ volume bench 2026-03-02\n545.0\n545.0\n$ volume deadlift 2026-01-01\n600.0\n600.0\n$ best curl\n{'e1rm': 0.0, 'date': ''}\nno sets for curl"
+  },
+  "behavioral": {
+   "ok": true,
+   "script": "behavioral.py",
+   "verdict": {
+    "run": true,
+    "behavioral": true,
+    "failures": []
+   },
+   "rc": 0,
+   "tail": "{\"run\": true, \"behavioral\": true, \"failures\": []}\n$ log bench 2026-03-01 60 5\nSetEntry(date='2026-03-01', weight=60.0, reps=5)\nlogged bench 60x5\n$ log Bench 2026-03-03 65 3\nSetEntry(date='2026-03-03', weight=65.0, reps=3)\nlogged bench 65x3\n$ log deadlift 2026-03-02 120 5\nSetEntry(date='2026-03-02', weight=120.0, reps=5)\nlogged deadlift 120x5\n$ best bench\n{'e1rm': 71.5, 'date': '2026-03-03'}\nbench 71.5 on 2026-03-03\n$ log bench 2026-03-08 70 5\nSetEntry(date='2026-03-08', weight=70.0, reps=5)\nlogged bench 70x5\n$ best BENCH\n{'e1rm': 81.7, 'date': '2026-03-08'}\nbench 81.7 on 2026-03-08\n$ volume bench 2026-03-02\n545.0\n545.0\n$ volume deadlift 2026-01-01\n600.0\n600.0\n$ best curl\n{'e1rm': 0.0, 'date': ''}\nno sets for curl"
+  }
+ },
+ "negative": {
+  "test": {
+   "steps": [
+    {
+     "cmd": "jac test zz_hidden_acceptance.jac",
+     "rc": 1,
+     "secs": 1.1,
+     "tail": "E                                                                        [100%]\n\nFAILED /tmp/appgate_agv23094/zz_hidden_acceptance.jac::zz_hidden_acceptance.jac\nTraceback (most recent call last):\n  File \"/home/runner/_work/jac/jac/.zig-cache/o/8776b3f32593b10747b6ba6ce20fea8b/payload.tar.zst.work/site/jaclang/testing/impl/test_runner.impl.jac\", line 677, in run_file\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/python/lib/python3.14/importlib/__init__.py\", line 88, in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen importlib._bootstrap>\", line 1406, in _gcd_import\n  File \"<frozen importlib._bootstrap>\", line 1371, in _find_and_load\n  File \"<frozen importlib._bootstrap>\", line 1342, in _find_and_load_unlocked\n  File \"<frozen importlib._bootstrap>\", line 938, in _load_unlocked\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/site/jaclang/meta_importer.py\", line 356, in exec_module\n    self._exec_compiled_module(module, file_path)\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/.cache/jac/rt/f562f1257227d66d/site/jaclang/meta_importer.py\", line 457, in _exec_compiled_module\n    exec(codeobj, module.__dict__)\n    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/appgate_agv23094/zz_hidden_acceptance.jac\", line 2, in <module>\n    import from main { LogSet, PersonalBest, Volume }\n     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nImportError: cannot import name 'LogSet' from 'main' (/tmp/appgate_agv23094/main.jac)\n\n1 error in 0.71s\n\u2716 Error: Tests failed.",
+     "stdout_tail": "    import from main { LogSet, PersonalBest, Volume }\n     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nImportError: cannot import name 'LogSet' from 'main' (/tmp/appgate_agv23094/main.jac)\n\n1 error in 0.71s"
+    }
+   ],
+   "ok": false
+  },
+  "behavioral": {
+   "ok": false,
+   "script": "behavioral.py",
+   "verdict": {
+    "run": false,
+    "behavioral": false,
+    "failures": [
+     "`jac run main.jac log bench 2026-03-01 60 5` exited 2: Preparing application...\n  Compiling server modules and placement metadata...\nusage: lifting_log [-h] {greet} ...\nlifting_log: error: argument command: invalid choice: 'log' (choose from 'greet')\n",
+     "`jac run main.jac log Bench 2026-03-03 65 3` exited 2: Preparing application...\n  Restoring prepared application\nusage: lifting_log [-h] {greet} ...\nlifting_log: error: argument command: invalid choice: 'log' (choose from 'greet')\n",
+     "`jac run main.jac log deadlift 2026-03-02 120 5` exited 2: Preparing application...\n  Restoring prepared application\nusage: lifting_log [-h] {greet} ...\nlifting_log: error: argument command: invalid choice: 'log' (choose from 'greet')\n",
+     "`jac run main.jac best bench` exited 2: Preparing application...\n  Restoring prepared application\nusage: lifting_log [-h] {greet} ...\nlifting_log: error: argument command: invalid choice: 'best' (choose from 'greet')\n",
+     "bench best should be 71.5 on 2026-03-03, got ''",
+     "`jac run main.jac log bench 2026-03-08 70 5` exited 2: Preparing application...\n  Restoring prepared application\nusage: lifting_log [-h] {greet} ...\nlifting_log: error: argument command: invalid choice: 'log' (choose from 'greet')\n",
+     "`jac run main.jac best BENCH` exited 2: Preparing application...\n  Restoring prepared application\nusage: lifting_log [-h] {greet} ...\nlifting_log: error: argument command: invalid choice: 'best' (choose from 'greet')\n",
+     "bench best should update to 81.7 on 2026-03-08, got ''",
+     "`jac run main.jac volume bench 2026-03-02` exited 2: Preparing application...\n  Restoring prepared application\nusage: lifting_log [-h] {greet} ...\nlifting_log: error: argument command: invalid choice: 'volume' (choose from 'greet')\n",
+     "bench volume since 03-02 should be 545, got ''",
+     "`jac run main.jac volume deadlift 2026-01-01` exited 2: Preparing application...\n  Restoring prepared application\nusage: lifting_log [-h] {greet} ...\nlifting_log: error: argument command: invalid choice: 'volume' (choose from 'greet')\n",
+     "deadlift volume should be 600, got ''",
+     "`jac run main.jac best curl` exited 2: Preparing application...\n  Restoring prepared application\nusage: lifting_log [-h] {greet} ...\nlifting_log: error: argument command: invalid choice: 'best' (choose from 'greet')\n",
+     "unknown exercise should print 'no sets ...', got ''"
+    ]
+   },
+   "rc": 1,
+   "tail": "{\"run\": false, \"behavioral\": false, \"failures\": [\"`jac run main.jac log bench 2026-03-01 60 5` exited 2: Preparing application...\\n  Compiling server modules and placement metadata...\\nusage: lifting_log [-h] {greet} ...\\nlifting_log: error: argument command: invalid choice: 'log' (choose from 'greet')\\n\", \"`jac run main.jac log Bench 2026-03-03 65 3` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: lifting_log [-h] {greet} ...\\nlifting_log: error: argument command: invalid choice: 'log' (choose from 'greet')\\n\", \"`jac run main.jac log deadlift 2026-03-02 120 5` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: lifting_log [-h] {greet} ...\\nlifting_log: error: argument command: invalid choice: 'log' (choose from 'greet')\\n\", \"`jac run main.jac best bench` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: lifting_log [-h] {greet} ...\\nlifting_log: error: argument command: invalid choice: 'best' (choose from 'greet')\\n\", \"bench best should be 71.5 on 2026-03-03, got ''\", \"`jac run main.jac log bench 2026-03-08 70 5` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: lifting_log [-h] {greet} ...\\nlifting_log: error: argument command: invalid choice: 'log' (choose from 'greet')\\n\", \"`jac run main.jac best BENCH` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: lifting_log [-h] {greet} ...\\nlifting_log: error: argument command: invalid choice: 'best' (choose from 'greet')\\n\", \"bench best should update to 81.7 on 2026-03-08, got ''\", \"`jac run main.jac volume bench 2026-03-02` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: lifting_log [-h] {greet} ...\\nlifting_log: error: argument command: invalid choice: 'volume' (choose from 'greet')\\n\", \"bench volume since 03-02 should be 545, got ''\", \"`jac run main.jac volume deadlift 2026-01-01` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: lifting_log [-h] {greet} ...\\nlifting_log: error: argument command: invalid choice: 'volume' (choose from 'greet')\\n\", \"deadlift volume should be 600, got ''\", \"`jac run main.jac best curl` exited 2: Preparing application...\\n  Restoring prepared application\\nusage: lifting_log [-h] {greet} ...\\nlifting_log: error: argument command: invalid choice: 'best' (choose from 'greet')\\n\", \"unknown exercise should print 'no sets ...', got ''\"]}\n$ log bench 2026-03-01 60 5\n\n$ log Bench 2026-03-03 65 3\n\n$ log deadlift 2026-03-02 120 5\n\n$ best bench\n\n$ log bench 2026-03-08 70 5\n\n$ best BENCH\n\n$ volume bench 2026-03-02\n\n$ volume deadlift 2026-01-01\n\n$ best curl\n"
+  }
+ },
+ "secs": 27.2,
+ "validated": true,
+ "reason": "reference passes ['behavioral', 'check', 'run', 'test']; starter fails ['behavioral', 'test']; dedup ok",
+ "ci_run": "38063985138"
+}

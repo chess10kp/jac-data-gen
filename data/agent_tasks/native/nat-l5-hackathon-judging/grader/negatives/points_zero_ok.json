@@ -1,0 +1,1 @@
+{"why": "0 points allowed", "edits": [{"file": "app.jac", "old": "if self.points < 1 or self.points > 10 {", "new": "if self.points < 0 or self.points > 10 {"}]}

@@ -1,0 +1,1 @@
+{"why": "uses 100% of rating", "edits": [{"file": "load.jac", "old": "if amps > 0.8 * here.amps {", "new": "if amps > here.amps {"}]}

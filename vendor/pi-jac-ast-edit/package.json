@@ -1,0 +1,19 @@
+{
+  "name": "pi-jac-ast-edit",
+  "version": "0.1.0",
+  "description": "AST-native Jac editing tool for pi: surgical tree-sitter operations by symbol name, atomic batches, re-parse validation.",
+  "keywords": [
+    "pi-package"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "pi": {
+    "extensions": [
+      "./extensions/jac-ast-edit.ts"
+    ]
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "typebox": "*"
+  }
+}

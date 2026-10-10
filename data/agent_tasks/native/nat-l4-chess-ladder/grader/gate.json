@@ -1,0 +1,26 @@
+{
+ "run_steps": [
+  {
+   "file": "main.jac",
+   "expect": [
+    "rejected: out of range",
+    "ladder: Ada > Eli > Ben > Cyd > Dov",
+    "dov-cyd: 0-1"
+   ]
+  }
+ ],
+ "contracts": [
+  {
+   "name": "RecordMatch",
+   "kind": "walker"
+  },
+  {
+   "name": "Standings",
+   "kind": "walker"
+  },
+  {
+   "name": "HeadToHead",
+   "kind": "walker"
+  }
+ ]
+}

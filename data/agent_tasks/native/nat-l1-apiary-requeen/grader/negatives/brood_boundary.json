@@ -1,0 +1,1 @@
+{"why": "uses <= 3 instead of < 3 brood frames", "edits": [{"file": "apiary.jac", "old": "here.brood_frames < 3", "new": "here.brood_frames <= 3"}]}

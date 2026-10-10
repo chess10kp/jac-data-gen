@@ -1,0 +1,13 @@
+[project]
+name = "lifting_log"
+version = "0.1.0"
+description = "Command-line Jac project"
+entry-point = "main"
+kind = "cli"
+jac-version = "==0.37.25"
+
+[dependencies]
+
+[dev-dependencies]
+[dev-dependencies.pypi]
+watchdog = ">=3.0.0"

@@ -1,0 +1,1 @@
+{"why": "touching stays treated as overlapping", "edits": [{"file": "app.jac", "old": "return s.start < start + nights and start < s.start + s.nights;", "new": "return s.start <= start + nights and start <= s.start + s.nights;"}]}

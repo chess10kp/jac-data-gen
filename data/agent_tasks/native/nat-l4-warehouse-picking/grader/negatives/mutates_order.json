@@ -1,0 +1,1 @@
+{"why": "works directly on the caller's order", "edits": [{"file": "picking.jac", "old": "self.outstanding = dict(self.order);", "new": "self.outstanding = self.order;"}]}

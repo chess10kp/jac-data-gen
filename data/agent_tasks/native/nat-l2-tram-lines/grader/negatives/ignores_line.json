@@ -1,0 +1,1 @@
+{"why": "follows any line's hop", "edits": [{"file": "tramway.jac", "old": "        for hop in [edge here ->:Track:line == self.line:->] {\n            nxt = [here ->:Track:line == self.line:->];", "new": "        for hop in [edge here ->:Track:->][:1] {\n            nxt = [here ->:Track:->];"}]}

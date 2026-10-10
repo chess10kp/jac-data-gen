@@ -1,0 +1,1 @@
+{"why": "fewer than max_sites", "edits": [{"file": "survey.jac", "old": "if len([here <-:Sighted:<-]) <= self.max_sites {", "new": "if len([here <-:Sighted:<-]) < self.max_sites {"}]}

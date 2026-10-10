@@ -1,0 +1,11 @@
+{
+  "id": "nat-l4-chess-ladder",
+  "kind": "native",
+  "level": 4,
+  "source": "hand-authored",
+  "gates": ["check", "test", "run"],
+  "target_paths": ["challenge.jac"],
+  "jac_version": "0.37.25",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "provenance": {"author": "claude (hand-authored pilot)", "created": "2026-10-10", "title": "Chess club challenge ladder", "domain": "club ladder rankings", "constructs": ["multi-module with existing entry point", "typed edge history with fields", "bulk node update", "bidirectional edge reads", "obj results"], "inspiration": "none (original)"}
+}
