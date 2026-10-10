@@ -185,17 +185,19 @@ class Task:
 
     def start(self, ws: Path) -> tuple[bool, str]:
         smoke = self.grader / "smoke.py"
-        rc, out = _run([sys.executable, str(smoke), str(ws)], ws, float(self.gate.get("smoke_timeout_s", 600)))
-        last = out.strip().splitlines()[-1] if out.strip() else ""
+        try:
+            p = subprocess.run([sys.executable, str(smoke), str(ws)], cwd=ws, capture_output=True, text=True,
+                               timeout=float(self.gate.get("smoke_timeout_s", 600)), stdin=subprocess.DEVNULL)
+            rc, sout, serr = p.returncode, p.stdout, p.stderr
+        except subprocess.TimeoutExpired:
+            return False, "smoke timeout"
+        last = sout.strip().splitlines()[-1] if sout.strip() else ""
         try:
             v = json.loads(last)
         except ValueError:
             v = {}
         ok = rc == 0 and bool(v.get("start")) and bool(v.get("behavioral"))
-        if ok:
-            return ok, last
-        # stdout (verdict) first, server log tail after
-        return ok, (last + "\n" + out[-1500:]) if last.startswith("{") else out[-2000:]
+        return ok, last if ok else (last + "\n" + serr[-1500:])
 
     # ------------------------------------------------------------------ grade
     def grade(self, cand: Path, gates: list[str] | None = None) -> dict:
