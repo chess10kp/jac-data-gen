@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3-Step Form Wizard</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .wizard {
+    background: #fff;
+    width: 100%;
+    max-width: 520px;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    padding: 36px;
+  }
+  .progress { display: flex; align-items: flex-start; margin-bottom: 32px; }
+  .progress-step { display: flex; flex-direction: column; align-items: center; flex: 1; }
+  .progress-circle {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: #e0e0e0; color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: 14px; transition: all 0.3s ease;
+  }
+  .progress-step.active .progress-circle { background: #667eea; }
+  .progress-step.done .progress-circle { background: #28a745; }
+  .progress-label { margin-top: 8px; font-size: 12px; color: #888; font-weight: 500; }
+  .progress-step.active .progress-label { color: #667eea; font-weight: 600; }
+  .progress-line { flex: 1; height: 3px; background: #e0e0e0; margin: 21px 6px; }
+  .progress-line.done { background: #28a745; }
+
+  .step { display: none; }
+  .step.active { display: block; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  h1 { font-size: 22px; margin-bottom: 6px; color: #333; }
+  .subtitle { color: #888; font-size: 14px; margin-bottom: 24px; }
+
+  .field { margin-bottom: 20px; }
+  label { display: block; font-size: 14px; font-weight: 600; color: #444; margin-bottom: 6px; }
+  input[type="text"], input[type="email"] {
+    width: 100%; padding: 11px 14px;
+    border: 2px solid #e0e0e0; border-radius: 8px;
+    font-size: 15px; transition: border-color 0.2s;
+  }
+  input:focus { outline: none; border-color: #667eea; }
+  input.invalid { border-color: #dc3545; }
+  .error { display: none; color: #dc3545; font-size: 13px; margin-top: 5px; }
+  .error.show { display: block; }
+
+  .radio-group { margin-top: 4px; }
+  .radio-option {
+    display: flex; align-items: center; margin-bottom: 12px;
+    padding: 12px 16px; border: 2px solid #e0e0e0; border-radius: 8px;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .radio-option:hover { border-color: #667eea; }
+  .radio-option.selected { border-color: #667eea; background: #f5f6ff; }
+  .radio-option input { margin-right: 12px; }
+  .radio-option .plan-name { font-weight: 600; color: #333; }
+  .radio-option .plan-desc { font-size: 12px; color: #888; margin-top: 2px; }
+
+  .actions { display: flex; justify-content: space-between; margin-top: 28px; }
+  button {
+    padding: 11px 24px; border: none; border-radius: 8px;
+    font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-back { background: #e9ecef; color: #555; }
+  .btn-back:hover { background: #dde0e3; }
+  .btn-next { background: #667eea; color: #fff; }
+  .btn-next:hover { background: #5568d3; }
+  .btn-submit { background: #28a745; color: #fff; }
+  .btn-submit:hover { background: #218838; }
+
+  .summary-row { display: flex; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid #eee; }
+  .summary-row:last-child { border-bottom: none; }
+  .summary-label { color: #888; font-size: 14px; }
+  .summary-value { font-weight: 600; color: #333; text-align: right; }
+
+  .submitted { display: none; text-align: center; padding: 40px 20px; }
+  .submitted.show { display: block; }
+  .checkmark {
+    width: 64px; height: 64px; border-radius: 50%; background: #28a745; color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px; margin: 0 auto 20px;
+  }
+  .submitted h2 { font-size: 24px; color: #333; margin-bottom: 8px; }
+  .submitted p { color: #888; }
+</style>
+</head>
+<body>
+  <div class="wizard">
+    <div class="progress">
+      <div class="progress-step active" data-step="1">
+        <div class="progress-circle">1</div>
+        <div class="progress-label">Details</div>
+      </div>
+      <div class="progress-line"></div>
+      <div class="progress-step" data-step="2">
+        <div class="progress-circle">2</div>
+        <div class="progress-label">Plan</div>
+      </div>
+      <div class="progress-line"></div>
+      <div class="progress-step" data-step="3">
+        <div class="progress-circle">3</div>
+        <div class="progress-label">Confirm</div>
+      </div>
+    </div>
+
+    <form id="wizardForm">
+      <div class="step active" data-step="1">
+        <h1>Get started</h1>
+        <p class="subtitle">Tell us a bit about yourself.</p>
+
+        <div class="field">
+          <label for="name">Name</label>
+          <input type="text" id="name" name="name" placeholder="Your full name">
+          <span class="error" id="nameError">Please enter your name.</span>
+        </div>
+
+        <div class="field">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" placeholder="you@example.com">
+          <span class="error" id="emailError">Please enter a valid email address.</span>
+        </div>
+
+        <div class="actions">
+          <span></span>
+          <button type="button" class="btn-next" id="nextBtn">Next</button>
+        </div>
+      </div>
+
+      <div class="step" data-step="2">
+        <h1>Choose a plan</h1>
+        <p class="subtitle">Select the plan that fits you best.</p>
+
+        <div class="field">
+          <label>Plan</label>
+          <div class="radio-group">
+            <label class="radio-option" data-plan="Free">
+              <input type="radio" name="plan" value="Free">
+              <span>
+                <span class="plan-name">Free</span>
+                <span class="plan-desc">Get started for free</span>
+              </span>
+            </label>
+            <label class="radio-option" data-plan="Pro">
+              <input type="radio" name="plan" value="Pro">
+              <span>
+                <span class="plan-name">Pro</span>
+                <span class="plan-desc">Advanced features</span>
+              </span>
+            </label>
+            <label class="radio-option" data-plan="Team">
+              <input type="radio" name="plan" value="Team">
+              <span>
+                <span class="plan-name">Team</span>
+                <span class="plan-desc">For teams &amp; collaboration</span>
+              </span>
+            </label>
+          </div>
+          <span class="error" id="planError">Please select a plan.</span>
+        </div>
+
+        <div class="actions">
+          <button type="button" class="btn-back" id="backBtn">Back</button>
+          <button type="button" class="btn-next" id="nextBtn2">Next</button>
+        </div>
+      </div>
+
+      <div class="step" data-step="3">
+        <h1>Confirm your details</h1>
+        <p class="subtitle">Review everything before submitting.</p>
+
+        <div class="summary">
+          <div class="summary-row">
+            <span class="summary-label">Name</span>
+            <span class="summary-value" id="summaryName">—</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Email</span>
+            <span class="summary-value" id="summaryEmail">—</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Plan</span>
+            <span class="summary-value" id="summaryPlan">—</span>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button type="button" class="btn-back" id="backBtn2">Back</button>
+          <button type="button" class="btn-submit" id="submitBtn">Submit</button>
+        </div>
+      </div>
+    </form>
+
+    <div class="submitted" id="submitted">
+      <div class="checkmark">✓</div>
+      <h2>Submitted!</h2>
+      <p>Thank you for signing up.</p>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      var form = document.getElementById('wizardForm');
+      var submitted = document.getElementById('submitted');
+      var steps = document.querySelectorAll('.step');
+      var progressSteps = document.querySelectorAll('.progress-step');
+      var progressLines = document.querySelectorAll('.progress-line');
+      var currentStep = 1;
+
+      var nameInput = document.getElementById('name');
+      var emailInput = document.getElementById('email');
+      var nameError = document.getElementById('nameError');
+      var emailError = document.getElementById('emailError');
+      var planError = document.getElementById('planError');
+
+      var radioOptions = document.querySelectorAll('.radio-option');
+
+      function getSelectedPlan() {
+        var checked = document.querySelector('input[name="plan"]:checked');
+        return checked ? checked.value : null;
+      }
+
+      function updateRadioSelection() {
+        radioOptions.forEach(function(opt) {
+          var input = opt.querySelector('input');
+          if (input.checked) opt.classList.add('selected');
+          else opt.classList.remove('selected');
+        });
+      }
+
+      radioOptions.forEach(function(opt) {
+        opt.addEventListener('click', function(e) {
+          if (e.target.tagName === 'INPUT') {
+            e.preventDefault();
+            e.target.checked = true;
+            updateRadioSelection();
+          }
+        });
+      });
+
+      function validateStep1() {
+        var valid = true;
+
+        var name = nameInput.value.trim();
+        if (name === '') {
+          nameInput.classList.add('invalid');
+          nameError.classList.add('show');
+          valid = false;
+        } else {
+          nameInput.classList.remove('invalid');
+          nameError.classList.remove('show');
+        }
+
+        var email = emailInput.value.trim();
+        if (email === '' || email.indexOf('@') === -1) {
+          emailInput.classList.add('invalid');
+          emailError.classList.add('show');
+          valid = false;
+        } else {
+          emailInput.classList.remove('invalid');
+          emailError.classList.remove('show');
+        }
+
+        return valid;
+      }
+
+      function validateStep2() {
+        var plan = getSelectedPlan();
+        if (!plan) {
+          planError.classList.add('show');
+          return false;
+        }
+        planError.classList.remove('show');
+        return true;
+      }
+
+      function showStep(step) {
+        currentStep = step;
+        steps.forEach(function(s) {
+          s.classList.toggle('active', parseInt(s.getAttribute('data-step')) === step);
+        });
+
+        progressSteps.forEach(function(ps) {
+          var psStep = parseInt(ps.getAttribute('data-step'));
+          ps.classList.toggle('active', psStep === step);
+          ps.classList.toggle('done', psStep < step);
+        });
+        progressLines.forEach(function(line, i) {
+          line.classList.toggle('done', i < step - 1);
+        });
+      }
+
+      function next() {
+        if (currentStep === 1) {
+          if (validateStep1()) showStep(2);
+        } else if (currentStep === 2) {
+          if (validateStep2()) {
+            showStep(3);
+            updateSummary();
+          }
+        }
+      }
+
+      function back() {
+        if (currentStep === 2) showStep(1);
+        else if (currentStep === 3) showStep(2);
+      }
+
+      function updateSummary() {
+        document.getElementById('summaryName').textContent = nameInput.value.trim();
+        document.getElementById('summaryEmail').textContent = emailInput.value.trim();
+        document.getElementById('summaryPlan').textContent = getSelectedPlan();
+      }
+
+      document.getElementById('nextBtn').addEventListener('click', next);
+      document.getElementById('nextBtn2').addEventListener('click', next);
+      document.getElementById('backBtn').addEventListener('click', back);
+      document.getElementById('backBtn2').addEventListener('click', back);
+      document.getElementById('submitBtn').addEventListener('click', function() {
+        submitted.classList.add('show');
+        form.style.display = 'none';
+      });
+    })();
+  </script>
+</body>
+</html>

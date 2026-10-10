@@ -135,3 +135,7 @@ docs/osp_prompt_injection_onepager.out
 # --- local tool state ---
 .pi/
 .jac309shim/
+
+# --- ast_edit dataset generator scratch (regenerable) ---
+ast/work/
+*.org

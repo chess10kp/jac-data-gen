@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Challenge</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    color: #333;
+  }
+  .card {
+    background: #fff;
+    width: 100%;
+    max-width: 640px;
+    border-radius: 18px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    padding: 36px;
+  }
+  h1 {
+    text-align: center;
+    color: #4a3b8f;
+    margin-bottom: 8px;
+    font-size: 28px;
+  }
+  .subtitle {
+    text-align: center;
+    color: #888;
+    margin-bottom: 28px;
+    font-size: 15px;
+  }
+  .hidden { display: none; }
+  .progress {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    font-size: 14px;
+    color: #764ba2;
+    font-weight: 600;
+  }
+  .progress-bar {
+    height: 8px;
+    background: #eee;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    width: 0%;
+    transition: width 0.4s ease;
+  }
+  .question-text {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 22px;
+    line-height: 1.4;
+    color: #2d2d44;
+  }
+  .options {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .option {
+    padding: 16px 18px;
+    border: 2px solid #e2e2f0;
+    border-radius: 12px;
+    background: #fafafe;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.18s ease;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .option:hover:not(.locked) {
+    border-color: #764ba2;
+    background: #f5f0ff;
+    transform: translateX(4px);
+  }
+  .option .letter {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: #eef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 13px;
+    color: #555;
+    flex-shrink: 0;
+  }
+  .option.selected {
+    border-color: #764ba2;
+    background: #f5f0ff;
+  }
+  .option.selected .letter { background: #764ba2; color: #fff; }
+  .option.locked { cursor: default; opacity: 0.95; }
+  .footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  #timer {
+    font-size: 14px;
+    font-weight: 700;
+    color: #4a3b8f;
+    background: #f0f0fa;
+    padding: 8px 16px;
+    border-radius: 20px;
+    min-width: 60px;
+    text-align: center;
+  }
+  #timer.warning { color: #e74c3c; background: #fdecea; animation: pulse 0.6s infinite; }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+  }
+  .btn {
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    color: #fff;
+    border: none;
+    padding: 14px 32px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(118,75,162,0.4); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+  .btn.secondary { background: #eee; color: #555; }
+  .start-screen, .result-screen { text-align: center; }
+  .start-screen p { color: #666; margin-bottom: 28px; line-height: 1.6; }
+  .result-score {
+    font-size: 56px;
+    font-weight: 800;
+    color: #4a3b8f;
+    margin: 10px 0;
+  }
+  .result-message { color: #666; margin-bottom: 28px; font-size: 16px; }
+  .review-item {
+    border: 1px solid #e8e8f0;
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 14px;
+  }
+  .review-item.correct { border-left: 5px solid #27ae60; }
+  .review-item.wrong { border-left: 5px solid #e74c3c; }
+  .review-q { font-weight: 600; margin-bottom: 12px; color: #2d2d44; }
+  .review-answer { font-size: 14px; margin-bottom: 6px; }
+  .review-answer .label { font-weight: 700; }
+  .review-answer.correct { color: #27ae60; }
+  .review-answer.wrong { color: #e74c3c; }
+  .review-answer .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    margin-left: 6px;
+  }
+  .badge.correct { background: #e8f8f0; color: #27ae60; }
+  .badge.wrong { background: #fdecea; color: #e74c3c; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <!-- START SCREEN -->
+    <div id="start-screen" class="start-screen">
+      <h1>🧠 Quiz Challenge</h1>
+      <p class="subtitle">Test your knowledge! You have 15 seconds per question.</p>
+      <p>Answer 5 multiple-choice questions. Select an option, then press <strong>Next</strong>. Unanswered questions auto-advance when time runs out.</p>
+      <button id="start-btn" class="btn">Start quiz</button>
+    </div>
+
+    <!-- QUIZ SCREEN -->
+    <div id="quiz-screen" class="hidden">
+      <div class="progress">
+        <span id="question-counter">Question 1 of 5</span>
+        <span id="timer">15s</span>
+      </div>
+      <div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
+      <div id="question-text" class="question-text"></div>
+      <div id="options" class="options"></div>
+      <div class="footer">
+        <button id="next-btn" class="btn" disabled>Next</button>
+      </div>
+    </div>
+
+    <!-- RESULT SCREEN -->
+    <div id="result-screen" class="result-screen hidden">
+      <h1>🎉 Results</h1>
+      <div id="result-score" class="result-score">0 / 5</div>
+      <p id="result-message" class="result-message"></p>
+      <button id="restart-btn" class="btn" style="margin-bottom:20px;">Review answers</button>
+      <div id="review" class="hidden"></div>
+    </div>
+  </div>
+
+<script>
+  const questions = [
+    {
+      question: "What is the capital of France?",
+      options: ["Paris", "London", "Berlin", "Madrid"],
+      correct: 0
+    },
+    {
+      question: "Which planet is known as the Red Planet?",
+      options: ["Venus", "Mars", "Jupiter", "Saturn"],
+      correct: 1
+    },
+    {
+      question: "What is the value of 7 × 8?",
+      options: ["54", "48", "56", "64"],
+      correct: 2
+    },
+    {
+      question: "Who wrote the play 'Romeo and Juliet'?",
+      options: ["Charles Dickens", "William Shakespeare", "Leo Tolstoy", "Jane Austen"],
+      correct: 1
+    },
+    {
+      question: "What is the largest ocean on Earth?",
+      options: ["Atlantic", "Indian", "Pacific", "Arctic"],
+      correct: 2
+    }
+  ];
+
+  const TIME_PER_QUESTION = 15;
+  const letters = ["A", "B", "C", "D"];
+
+  const startScreen = document.getElementById("start-screen");
+  const quizScreen = document.getElementById("quiz-screen");
+  const resultScreen = document.getElementById("result-screen");
+  const startBtn = document.getElementById("start-btn");
+  const nextBtn = document.getElementById("next-btn");
+  const restartBtn = document.getElementById("restart-btn");
+  const questionText = document.getElementById("question-text");
+  const optionsEl = document.getElementById("options");
+  const questionCounter = document.getElementById("question-counter");
+  const timerEl = document.getElementById("timer");
+  const progressFill = document.getElementById("progress-fill");
+  const resultScore = document.getElementById("result-score");
+  const resultMessage = document.getElementById("result-message");
+  const reviewEl = document.getElementById("review");
+
+  let current = 0;
+  let userAnswers = [];
+  let timerInterval = null;
+  let timeLeft = TIME_PER_QUESTION;
+  let answered = false;
+
+  function startQuiz() {
+    startScreen.classList.add("hidden");
+    quizScreen.classList.remove("hidden");
+    current = 0;
+    userAnswers = new Array(questions.length).fill(-1);
+    renderQuestion();
+  }
+
+  function renderQuestion() {
+    answered = false;
+    timeLeft = TIME_PER_QUESTION;
+    const q = questions[current];
+
+    questionCounter.textContent = `Question ${current + 1} of ${questions.length}`;
+    questionText.textContent = q.question;
+    nextBtn.disabled = true;
+    nextBtn.textContent = current === questions.length - 1 ? "Finish" : "Next";
+    progressFill.style.width = ((current) / questions.length * 100) + "%";
+
+    optionsEl.innerHTML = "";
+    q.options.forEach((opt, i) => {
+      const el = document.createElement("div");
+      el.className = "option";
+      el.innerHTML = `<span class="letter">${letters[i]}</span><span>${opt}</span>`;
+      el.addEventListener("click", () => selectOption(i));
+      optionsEl.appendChild(el);
+    });
+
+    updateTimer();
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+      timeLeft--;
+      updateTimer();
+      if (timeLeft <= 0) {
+        clearInterval(timerInterval);
+        autoAdvance();
+      }
+    }, 1000);
+  }
+
+  function updateTimer() {
+    timerEl.textContent = timeLeft + "s";
+    timerEl.classList.toggle("warning", timeLeft <= 5);
+  }
+
+  function selectOption(i) {
+    if (answered) return;
+    answered = true;
+    userAnswers[current] = i;
+
+    const options = optionsEl.querySelectorAll(".option");
+    options.forEach((opt, idx) => {
+      opt.classList.add("locked");
+      if (idx === questions[current].correct) {
+        opt.classList.add("correct");
+      }
+      if (idx === i) {
+        opt.classList.add("selected");
+      }
+    });
+    nextBtn.disabled = false;
+  }
+
+  function autoAdvance() {
+    if (answered) return;
+    answered = true;
+    nextBtn.disabled = false;
+    nextBtn.textContent = current === questions.length - 1 ? "Finish" : "Next";
+  }
+
+  function nextQuestion() {
+    clearInterval(timerInterval);
+    current++;
+    if (current < questions.length) {
+      renderQuestion();
+    } else {
+      showResults();
+    }
+  }
+
+  function computeScore() {
+    let score = 0;
+    questions.forEach((q, i) => {
+      if (userAnswers[i] === q.correct) score++;
+    });
+    return score;
+  }
+
+  function showResults() {
+    quizScreen.classList.add("hidden");
+    resultScreen.classList.remove("hidden");
+    const score = computeScore();
+    resultScore.textContent = `${score} / ${questions.length}`;
+    const pct = score / questions.length;
+    if (pct === 1) resultMessage.textContent = "Perfect score! Outstanding! 🏆";
+    else if (pct >= 0.6) resultMessage.textContent = "Great job! You know your stuff. 🌟";
+    else if (pct >= 0.4) resultMessage.textContent = "Not bad! A few to review. 👍";
+    else resultMessage.textContent = "Keep practicing — you'll get there! 💪";
+    buildReview();
+  }
+
+  function buildReview() {
+    reviewEl.innerHTML = "";
+    questions.forEach((q, i) => {
+      const userAnswer = userAnswers[i];
+      const isCorrect = userAnswer === q.correct;
+      const item = document.createElement("div");
+      item.className = "review-item " + (isCorrect ? "correct" : "wrong");
+
+      let userText = "";
+      if (userAnswer === -1) {
+        userText = `<span class="review-answer wrong"><span class="label">Your answer:</span> Not answered</span>`;
+      } else if (isCorrect) {
+        userText = `<span class="review-answer correct"><span class="label">Your answer:</span> ${q.options[userAnswer]} <span class="badge correct">Correct</span></span>`;
+      } else {
+        userText = `<span class="review-answer wrong"><span class="label">Your answer:</span> ${q.options[userAnswer]} <span class="badge wrong">Wrong</span></span>`;
+      }
+
+      item.innerHTML = `
+        <div class="review-q">${i + 1}. ${q.question}</div>
+        <div class="review-answer correct"><span class="label">Correct answer:</span> ${q.options[q.correct]} <span class="badge correct">✓</span></div>
+        ${userText}
+      `;
+      reviewEl.appendChild(item);
+    });
+    reviewEl.classList.remove("hidden");
+  }
+
+  startBtn.addEventListener("click", startQuiz);
+  nextBtn.addEventListener("click", nextQuestion);
+  restartBtn.addEventListener("click", () => {
+    reviewEl.classList.add("hidden");
+    resultScreen.classList.add("hidden");
+    startScreen.classList.remove("hidden");
+  });
+</script>
+</body>
+</html>

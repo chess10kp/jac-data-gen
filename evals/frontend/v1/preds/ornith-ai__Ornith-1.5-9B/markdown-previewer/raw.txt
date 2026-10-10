@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Markdown Previewer</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: #f5f6f8;
+    color: #24292f;
+  }
+  header {
+    padding: 12px 20px;
+    background: #2f333a;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 0 0 auto;
+  }
+  header h1 { font-size: 18px; margin: 0; font-weight: 600; }
+  .toolbar { margin-left: auto; display: flex; gap: 8px; }
+  button {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    background: #444a54;
+    color: #fff;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  button:hover { background: #5a616d; }
+  button:active { background: #6b7280; }
+  .panes {
+    flex: 1 1 auto;
+    display: flex;
+    min-height: 0;
+  }
+  .pane {
+    flex: 1 1 50%;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .pane-label {
+    padding: 6px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #9aa0aa;
+    background: #eef0f3;
+    border-bottom: 1px solid #dfe2e6;
+    flex: 0 0 auto;
+  }
+  #editor, #preview {
+    flex: 1 1 auto;
+    border: none;
+    outline: none;
+    padding: 16px;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    overflow: auto;
+  }
+  #editor {
+    background: #ffffff;
+    color: #24292f;
+    border-right: 1px solid #dfe2e6;
+    resize: none;
+  }
+  #preview {
+    background: #ffffff;
+    color: #24292f;
+  }
+  #preview h1 { font-size: 2em; border-bottom: 1px solid #eaecef; padding-bottom: 0.3em; }
+  #preview h2 { font-size: 1.5em; border-bottom: 1px solid #eaecef; padding-bottom: 0.3em; }
+  #preview pre { background: #f6f8fa; padding: 12px; border-radius: 6px; overflow: auto; }
+  #preview code { background: #f6f8fa; padding: 2px 4px; border-radius: 4px; font-family: inherit; }
+  #preview pre code { background: none; padding: 0; }
+  #preview a { color: #0366d6; text-decoration: none; }
+  #preview a:hover { text-decoration: underline; }
+  #preview ul { padding-left: 2em; }
+  #preview li { margin: 4px 0; }
+  #preview blockquote { margin: 0; padding: 0 1em; color: #6a737d; border-left: 3px solid #dfe2e6; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Markdown Previewer</h1>
+  <div class="toolbar">
+    <button id="copyBtn">Copy HTML</button>
+    <button id="clearBtn">Clear</button>
+  </div>
+</header>
+<div class="panes">
+  <div class="pane">
+    <div class="pane-label">Editor</div>
+    <textarea id="editor" placeholder="Type markdown here..."></textarea>
+  </div>
+  <div class="pane">
+    <div class="pane-label">Preview</div>
+    <div id="preview"></div>
+  </div>
+</div>
+<script>
+  function escapeHtml(str) {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  function processInline(text) {
+    text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+    text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    text = text.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    text = text.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2">$1</a>');
+    return text;
+  }
+
+  function renderMarkdown(text) {
+    text = escapeHtml(text);
+    const lines = text.split('\n');
+    const htmlLines = [];
+    let inList = false;
+
+    for (let i = 0; i < lines.length; i++) {
+      let line = lines[i];
+
+      const h1 = line.match(/^#\s+(.*)$/);
+      if (h1) {
+        htmlLines.push('<h1>' + processInline(h1[1]) + '</h1>');
+        inList = false;
+        continue;
+      }
+      const h2 = line.match(/^##\s+(.*)$/);
+      if (h2) {
+        htmlLines.push('<h2>' + processInline(h2[1]) + '</h2>');
+        inList = false;
+        continue;
+      }
+      const list = line.match(/^-\s+(.*)$/);
+      if (list) {
+        if (!inList) {
+          htmlLines.push('<ul>');
+          inList = true;
+        }
+        htmlLines.push('<li>' + processInline(list[1]) + '</li>');
+        continue;
+      }
+
+      if (line.trim() === '') {
+        if (inList) {
+          htmlLines.push('</ul>');
+          inList = false;
+        }
+        continue;
+      }
+
+      if (inList) {
+        htmlLines.push('</ul>');
+        inList = false;
+      }
+      htmlLines.push('<p>' + processInline(line) + '</p>');
+    }
+
+    if (inList) {
+      htmlLines.push('</ul>');
+    }
+
+    return htmlLines.join('\n');
+  }
+
+  const editor = document.getElementById('editor');
+  const preview = document.getElementById('preview');
+
+  editor.addEventListener('input', function() {
+    preview.innerHTML = renderMarkdown(editor.value);
+  });
+
+  document.getElementById('copyBtn').addEventListener('click', function() {
+    navigator.clipboard.writeText(preview.innerHTML).catch(function() {});
+  });
+
+  document.getElementById('clearBtn').addEventListener('click', function() {
+    editor.value = '';
+    preview.innerHTML = '';
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Infinite Canvas Shape Editor</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  body { background: #1e1e2e; color: #e0e0e0; }
+  #stage { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+  #stage.panning { cursor: grab; }
+  #stage.moving { cursor: move; }
+  #stage.resizing { cursor: nwse-resize; }
+
+  #toolbar {
+    position: absolute; top: 12px; left: 12px;
+    display: flex; gap: 8px; align-items: center;
+    background: #2b2b3d; padding: 8px; border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  }
+  .btn {
+    border: none; background: #3a3a52; color: #e0e0e0;
+    padding: 8px 14px; border-radius: 6px; cursor: pointer;
+    font-size: 13px; font-weight: 500; transition: background 0.15s;
+  }
+  .btn:hover { background: #4a4a66; }
+  .btn:active { background: #5a5a7a; }
+
+  #zoom-indicator {
+    position: absolute; bottom: 12px; right: 12px;
+    display: flex; gap: 8px; align-items: center;
+    background: #2b2b3d; padding: 8px 12px; border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4); font-size: 13px;
+  }
+  #zoom-value { min-width: 48px; text-align: center; font-variant-numeric: tabular-nums; }
+
+  #hint {
+    position: absolute; bottom: 12px; left: 12px;
+    background: #2b2b3d; padding: 8px 12px; border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4); font-size: 12px; color: #aaa;
+    max-width: 280px; line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+  <div id="toolbar">
+    <button class="btn" id="btn-rect">Rectangle</button>
+    <button class="btn" id="btn-ellipse">Ellipse</button>
+  </div>
+  <canvas id="stage"></canvas>
+  <div id="zoom-indicator">
+    <span id="zoom-value">100%</span>
+    <button class="btn" id="btn-reset">Reset view</button>
+  </div>
+  <div id="hint">
+    Middle-drag or Space+drag to pan · Wheel to zoom · Click to select · Drag to move · Corner handles to resize · Delete to remove
+  </div>
+
+  <script>
+    (function() {
+      const canvas = document.getElementById('stage');
+      const ctx = canvas.getContext('2d');
+      const zoomValueEl = document.getElementById('zoom-value');
+
+      let width = 0, height = 0;
+      let panX = 0, panY = 0;
+      let zoom = 1;
+      let shapes = [];
+      let selected = null;
+      let spaceDown = false;
+      let mode = null;
+      let dragStart = null;
+
+      function resize() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+        draw();
+      }
+      window.addEventListener('resize', resize);
+
+      function screenToWorld(sx, sy) {
+        return { x: (sx - width/2) / zoom + panX, y: (sy - height/2) / zoom + panY };
+      }
+      function worldToScreen(wx, wy) {
+        return { x: (wx - panX) * zoom + width/2, y: (wy - panY) * zoom + height/2 };
+      }
+
+      function resetView() {
+        panX = 0; panY = 0; zoom = 1;
+        selected = null;
+        draw();
+      }
+
+      function updateZoomIndicator() {
+        zoomValueEl.textContent = Math.round(zoom * 100) + '%';
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, width, height);
+        drawGrid();
+        shapes.forEach(function(s, i) {
+          const p = worldToScreen(s.x, s.y);
+          const w = s.w * zoom;
+          const h = s.h * zoom;
+          ctx.save();
+          if (i === selected) {
+            ctx.strokeStyle = '#6c8cff';
+            ctx.lineWidth = 2 / zoom;
+            ctx.setLineDash([6 / zoom, 4 / zoom]);
+            ctx.strokeRect(p.x, p.y, w, h);
+            ctx.setLineDash([]);
+          }
+          ctx.fillStyle = s.type === 'rect' ? 'rgba(108,140,255,0.25)' : 'rgba(255,140,140,0.25)';
+          ctx.strokeStyle = s.type === 'rect' ? '#6c8cff' : '#ff8c8c';
+          ctx.lineWidth = 2 / zoom;
+          if (s.type === 'rect') {
+            ctx.fillRect(p.x, p.y, w, h);
+          } else {
+            ctx.beginPath();
+            ctx.ellipse(p.x + w/2, p.y + h/2, Math.abs(w/2), Math.abs(h/2), 0, 0, Math.PI*2);
+            ctx.fill();
+            ctx.stroke();
+          }
+          ctx.restore();
+        });
+        drawHandles();
+      }
+
+      function drawGrid() {
+        const step = 50;
+        const tl = screenToWorld(0, 0);
+        const br = screenToWorld(width, height);
+        const startX = Math.floor(tl.x / step) * step;
+        const startY = Math.floor(tl.y / step) * step;
+        ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let x = startX; x <= br.x; x += step) {
+          const p = worldToScreen(x, 0);
+          ctx.moveTo(p.x, 0);
+          ctx.lineTo(p.x, height);
+        }
+        for (let y = startY; y <= br.y; y += step) {
+          const p = worldToScreen(0, y);
+          ctx.moveTo(0, p.y);
+          ctx.lineTo(width, p.y);
+        }
+        ctx.stroke();
+        const origin = worldToScreen(0, 0);
+        ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+        ctx.beginPath();
+        ctx.moveTo(origin.x - 15, origin.y);
+        ctx.lineTo(origin.x + 15, origin.y);
+        ctx.moveTo(origin.x, origin.y - 15);
+        ctx.lineTo(origin.x, origin.y + 15);
+        ctx.stroke();
+      }
+
+      function drawHandles() {
+        if (selected === null) return;
+        const s = shapes[selected];
+        const p = worldToScreen(s.x, s.y);
+        const w = s.w * zoom;
+        const h = s.h * zoom;
+        const size = 8 / zoom;
+        const handles = [
+          {x: p.x, y: p.y},
+          {x: p.x + w, y: p.y},
+          {x: p.x, y: p.y + h},
+          {x: p.x + w, y: p.y + h}
+        ];
+        ctx.fillStyle = '#ffffff';
+        ctx.strokeStyle = '#6c8cff';
+        handles.forEach(function(h) {
+          ctx.fillRect(h.x - size/2, h.y - size/2, size, size);
+          ctx.strokeRect(h.x - size/2, h.y - size/2, size, size);
+        });
+      }
+
+      function hitTestShape(worldX, worldY) {
+        for (let i = shapes.length - 1; i >= 0; i--) {
+          const s = shapes[i];
+          if (s.type === 'rect') {
+            if (worldX >= s.x && worldX <= s.x + s.w && worldY >= s.y && worldY <= s.y + s.h) return i;
+          } else {
+            const cx = s.x + s.w/2, cy = s.y + s.h/2;
+            const rx = Math.abs(s.w/2), ry = Math.abs(s.h/2);
+            if (rx > 0 && ry > 0 && ((worldX-cx)/rx)**2 + ((worldY-cy)/ry)**2 <= 1) return i;
+          }
+        }
+        return -1;
+      }
+
+      function hitTestHandle(worldX, worldY) {
+        if (selected === null) return null;
+        const s = shapes[selected];
+        const p = worldToScreen(s.x, s.y);
+        const w = s.w * zoom;
+        const h = s.h * zoom;
+        const reach = 8;
+        const handles = [
+          {x: p.x, y: p.y},
+          {x: p.x + w, y: p.y},
+          {x: p.x, y: p.y + h},
+          {x: p.x + w, y: p.y + h}
+        ];
+        for (let i = 0; i < handles.length; i++) {
+          if (Math.abs(worldX - handles[i].x) < reach && Math.abs(worldY - handles[i].y) < reach) return i;
+        }
+        return null;
+      }
+
+      function resizeShape(s, handle, mx, my) {
+        if (s.type === 'rect') {
+          switch(handle) {
+            case 0: s.x = mx; s.y = my; s.w = dragStart.sxWorld.x - mx; s.h = dragStart.sxWorld.y - my; break;
+            case 1: s.w = mx - dragStart.sxWorld.x; s.h = my - dragStart.sxWorld.y; s.y = dragStart.sxWorld.y - s.h; break;
+            case 2: s.x = mx; s.w = mx - dragStart.sxWorld.x; s.y = my; s.h = dragStart.sxWorld.y - my; break;
+            case 3: s.w = mx - dragStart.sxWorld.x; s.h = my - dragStart.sxWorld.y; break;
+          }
+        } else {
+          const cx = dragStart.sxWorld.x + dragStart.sxWorld.w/2;
+          const cy = dragStart.sxWorld.y + dragStart.sxWorld.h/2;
+          const newRx = Math.abs(mx - cx);
+          const newRy = Math.abs(my - cy);
+          s.w = newRx / zoom * 2;
+          s.h = newRy / zoom * 2;
+        }
+      }
+
+      function startPan(e) {
+        mode = 'pan';
+        dragStart = {sx: e.clientX, sy: e.clientY, panX: panX, panY: panY};
+        canvas.classList.add('panning');
+        e.preventDefault();
+      }
+
+      function startMove() {
+        const world = screenToWorld(dragStart.sx, dragStart.sy);
+        dragStart = {sx: dragStart.sx, sy: dragStart.sy, shapeIndex: selected, sxWorld: {x: world.x, y: world.y}};
+        mode = 'move';
+        canvas.classList.add('moving');
+      }
+
+      function startResize(handle) {
+        const world = screenToWorld(dragStart.sx, dragStart.sy);
+        dragStart = {sx: dragStart.sx, sy: dragStart.sy, handle: handle, shapeIndex: selected, sxWorld: {x: world.x, y: world.y}};
+        mode = 'resize';
+        canvas.classList.add('resizing');
+      }
+
+      canvas.addEventListener('mousedown', function(e) {
+        if (e.button === 1) { e.preventDefault(); startPan(e); return; }
+        if (e.button === 0) {
+          if (spaceDown) { startPan(e); return; }
+          const world = screenToWorld(e.clientX, e.clientY);
+          const handle = hitTestHandle(world.x, world.y);
+          if (handle !== null) { startResize(handle); return; }
+          const idx = hitTestShape(world.x, world.y);
+          if (idx !== -1) {
+            selected = idx;
+            startMove();
+          } else {
+            selected = null;
+          }
+          draw();
+        }
+      });
+
+      canvas.addEventListener('mousemove', function(e) {
+        if (mode === 'pan') {
+          const dx = e.clientX - dragStart.sx;
+          const dy = e.clientY - dragStart.sy;
+          panX = dragStart.panX - dx / zoom;
+          panY = dragStart.panY - dy / zoom;
+          draw();
+          return;
+        }
+        if (mode === 'move') {
+          const world = screenToWorld(e.clientX, e.clientY);
+          const dx = world.x - dragStart.sxWorld.x;
+          const dy = world.y - dragStart.sxWorld.y;
+          const s = shapes[dragStart.shapeIndex];
+          s.x = dragStart.sxWorld.x + dx;
+          s.y = dragStart.sxWorld.y + dy;
+          draw();
+          return;
+        }
+        if (mode === 'resize') {
+          const world = screenToWorld(e.clientX, e.clientY);
+          const s = shapes[dragStart.shapeIndex];
+          resizeShape(s, dragStart.handle, world.x, world.y);
+          draw();
+          return;
+        }
+      });
+
+      canvas.addEventListener('mouseup', function() {
+        mode = null;
+        canvas.classList.remove('panning', 'moving', 'resizing');
+      });
+
+      canvas.addEventListener('wheel', function(e) {
+        e.preventDefault();
+        const worldBefore = screenToWorld(e.clientX, e.clientY);
+        if (e.deltaY < 0) zoom *= 1.1;
+        else zoom /= 1.1;
+        zoom = Math.max(0.02, Math.min(200, zoom));
+        panX = worldBefore.x - (e.clientX - width/2) / zoom;
+        panY = worldBefore.y - (e.clientY - height/2) / zoom;
+        updateZoomIndicator();
+        draw();
+      }, {passive: false});
+
+      document.getElementById('btn-rect').addEventListener('click', function() { createShape('rect'); });
+      document.getElementById('btn-ellipse').addEventListener('click', function() { createShape('ellipse'); });
+      document.getElementById('btn-reset').addEventListener('click', resetView);
+
+      function createShape(type) {
+        const world = screenToWorld(width/2, height/2);
+        const s = {type: type, x: world.x - 50, y: world.y - 40, w: 100, h: 80};
+        shapes.push(s);
+        selected = shapes.length - 1;
+        draw();
+      }
+
+      document.addEventListener('keydown', function(e) {
+        if (e.code === 'Space') {
+          spaceDown = true;
+          e.preventDefault();
+          canvas.style.cursor = 'grab';
+        }
+        if (e.key === 'Delete' || e.key === 'Backspace') {
+          if (selected !== null) {
+            shapes.splice(selected, 1);
+            selected = null;
+            draw();
+          }
+        }
+      });
+      document.addEventListener('keyup', function(e) {
+        if (e.code === 'Space') {
+          spaceDown = false;
+          canvas.style.cursor = 'grab';
+        }
+      });
+      document.addEventListener('selectstart', function(e) { e.preventDefault(); });
+
+      resize();
+    })();
+  </script>
+</body>
+</html>

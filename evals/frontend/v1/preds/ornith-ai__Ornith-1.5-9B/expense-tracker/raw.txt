@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Expense Tracker</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #f4f6f9;
+    color: #1f2933;
+    margin: 0;
+    padding: 24px;
+  }
+  .container { max-width: 720px; margin: 0 auto; }
+  h1 { font-size: 24px; margin: 0 0 20px; }
+  form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-end;
+    background: #fff;
+    padding: 16px;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+  }
+  .field { display: flex; flex-direction: column; }
+  .field label { font-size: 12px; font-weight: 600; margin-bottom: 4px; color: #52606d; }
+  input, select {
+    padding: 9px 10px;
+    border: 1px solid #cbd2d9;
+    border-radius: 8px;
+    font-size: 14px;
+    background: #fff;
+  }
+  button {
+    padding: 9px 16px;
+    border: none;
+    border-radius: 8px;
+    background: #3b82f6;
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  button:hover { background: #2563eb; }
+  .row { flex: 1; min-width: 120px; }
+  table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  th, td { padding: 10px 12px; text-align: left; font-size: 14px; }
+  th { background: #f1f3f5; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #52606d; }
+  td.amount { text-align: right; font-variant-numeric: tabular-nums; }
+  td.actions { text-align: right; }
+  .del { background: #ef4444; padding: 6px 10px; font-size: 12px; }
+  .del:hover { background: #dc2626; }
+  .total-wrap { display: flex; align-items: center; justify-content: space-between; margin: 16px 0; background: #fff; padding: 14px 18px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  #total { font-size: 20px; font-weight: 700; color: #1f2933; }
+  .chart-wrap { background: #fff; padding: 16px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  svg { width: 100%; height: auto; }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 12px; font-size: 12px; color: #52606d; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+  .empty { text-align: center; color: #9aa5b1; padding: 20px; font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Expense Tracker</h1>
+  <form id="form">
+    <div class="field row">
+      <label for="amount">Amount</label>
+      <input type="number" id="amount" min="0" step="0.01" required>
+    </div>
+    <div class="field row">
+      <label for="category">Category</label>
+      <select id="category">
+        <option value="Food">Food</option>
+        <option value="Transport">Transport</option>
+        <option value="Fun">Fun</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    <div class="field row">
+      <label for="note">Note</label>
+      <input type="text" id="note" placeholder="optional">
+    </div>
+    <button type="submit">Add</button>
+  </form>
+
+  <div class="total-wrap">
+    <div>
+      <div style="font-size:12px;color:#52606d;">Total</div>
+      <div id="total">$0.00</div>
+    </div>
+    <div class="field" style="align-self:flex-end;">
+      <label for="filter">Filter</label>
+      <select id="filter">
+        <option value="All">All</option>
+        <option value="Food">Food</option>
+        <option value="Transport">Transport</option>
+        <option value="Fun">Fun</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+  </div>
+
+  <table id="expenses">
+    <thead>
+      <tr>
+        <th>Category</th>
+        <th>Note</th>
+        <th style="text-align:right;">Amount</th>
+        <th style="text-align:right;">Actions</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+
+  <div class="chart-wrap">
+    <svg id="chart" viewBox="0 0 400 200" preserveAspectRatio="xMidYMid meet"></svg>
+    <div class="legend" id="legend"></div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var STORAGE_KEY = "expenses";
+    var CATEGORIES = ["Food", "Transport", "Fun", "Other"];
+    var COLORS = { Food: "#3b82f6", Transport: "#10b981", Fun: "#f59e0b", Other: "#8b5cf6" };
+
+    var form = document.getElementById("form");
+    var amountInput = document.getElementById("amount");
+    var categoryInput = document.getElementById("category");
+    var noteInput = document.getElementById("note");
+    var filterInput = document.getElementById("filter");
+    var tbody = document.getElementById("tbody");
+    var totalEl = document.getElementById("total");
+    var chart = document.getElementById("chart");
+    var legend = document.getElementById("legend");
+
+    function load() {
+      try {
+        var raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch (e) { return []; }
+    }
+    function save(rows) {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(rows)); } catch (e) {}
+    }
+
+    function fmt(n) {
+      return "$" + n.toFixed(2);
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, function (m) {
+        return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m];
+      });
+    }
+
+    function sumFor(category, list) {
+      return list.filter(function (r) { return r.category === category; }).reduce(function (a, r) { return a + r.amount; }, 0);
+    }
+
+    function render() {
+      var rows = load();
+      var filter = filterInput.value;
+      var visible = rows.filter(function (r) { return filter === "All" || r.category === filter; });
+
+      tbody.innerHTML = "";
+      if (visible.length === 0) {
+        var empty = document.createElement("tr");
+        var td = document.createElement("td");
+        td.className = "empty";
+        td.colSpan = 4;
+        td.textContent = "No expenses to show.";
+        empty.appendChild(td);
+        tbody.appendChild(empty);
+      } else {
+        visible.forEach(function (r) {
+          var tr = document.createElement("tr");
+          tr.innerHTML =
+            '<td>' + escapeHtml(r.category) + '</td>' +
+            '<td>' + escapeHtml(r.note || "") + '</td>' +
+            '<td class="amount">' + fmt(r.amount) + '</td>' +
+            '<td class="actions"><button class="del" data-idx="' + r.idx + '">Delete</button></td>';
+          tbody.appendChild(tr);
+        });
+      }
+
+      var total = 0;
+      visible.forEach(function (r) { total += r.amount; });
+      totalEl.textContent = fmt(total);
+
+      renderChart(visible);
+    }
+
+    function renderChart(visible) {
+      chart.innerHTML = "";
+      var max = 0;
+      CATEGORIES.forEach(function (c) {
+        var t = sumFor(c, visible);
+        if (t > max) max = t;
+      });
+
+      var W = 400, H = 200;
+      var padTop = 20, padBottom = 30, padLeft = 10, padRight = 10;
+      var chartW = W - padLeft - padRight;
+      var chartH = H - padTop - padBottom;
+      var barW = chartW / CATEGORIES.length;
+
+      var baseline = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      baseline.setAttribute("x1", padLeft);
+      baseline.setAttribute("y1", padTop + chartH);
+      baseline.setAttribute("x2", padLeft + chartW);
+      baseline.setAttribute("y2", padTop + chartH);
+      baseline.setAttribute("stroke", "#e5e7eb");
+      baseline.setAttribute("stroke-width", "1");
+      chart.appendChild(baseline);
+
+      CATEGORIES.forEach(function (c, i) {
+        var t = sumFor(c, visible);
+        var h = max > 0 ? (t / max) * chartH : 0;
+        var x = padLeft + i * barW + 2;
+        var y = padTop + chartH - h;
+
+        var rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        rect.setAttribute("x", x);
+        rect.setAttribute("y", y);
+        rect.setAttribute("width", barW - 4);
+        rect.setAttribute("height", Math.max(h, 0));
+        rect.setAttribute("rx", 3);
+        rect.setAttribute("fill", COLORS[c]);
+        chart.appendChild(rect);
+
+        var val = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        val.setAttribute("x", x + (barW - 4) / 2);
+        val.setAttribute("y", Math.max(y - 4, padTop + 14));
+        val.setAttribute("text-anchor", "middle");
+        val.setAttribute("font-size", "11");
+        val.setAttribute("fill", "#52606d");
+        val.textContent = fmt(t);
+        chart.appendChild(val);
+
+        var label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        label.setAttribute("x", x + (barW - 4) / 2);
+        label.setAttribute("y", H - 10);
+        label.setAttribute("text-anchor", "middle");
+        label.setAttribute("font-size", "11");
+        label.setAttribute("fill", "#52606d");
+        label.textContent = c;
+        chart.appendChild(label);
+      });
+
+      legend.innerHTML = "";
+      CATEGORIES.forEach(function (c) {
+        var span = document.createElement("span");
+        span.innerHTML = '<span class="swatch" style="background:' + COLORS[c] + '"></span>' + c;
+        legend.appendChild(span);
+      });
+    }
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var amount = parseFloat(amountInput.value);
+      if (isNaN(amount) || amount < 0) return;
+      var rows = load();
+      rows.push({
+        idx: Date.now() + "-" + Math.random().toString(36).slice(2, 6),
+        category: categoryInput.value,
+        amount: amount,
+        note: noteInput.value.trim()
+      });
+      save(rows);
+      amountInput.value = "";
+      noteInput.value = "";
+      render();
+    });
+
+    tbody.addEventListener("click", function (e) {
+      var btn = e.target.closest("button.del");
+      if (!btn) return;
+      var idx = btn.getAttribute("data-idx");
+      var rows = load();
+      var newRows = rows.filter(function (r) { return r.idx !== idx; });
+      save(newRows);
+      render();
+    });
+
+    filterInput.addEventListener("change", render);
+
+    render();
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Drawing App</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    margin: 0;
+    background: #f0f2f5;
+    color: #1a1a2e;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 24px;
+  }
+  h1 { font-size: 1.4rem; margin: 0 0 16px; font-weight: 600; }
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px;
+    background: #fff;
+    padding: 12px 18px;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    margin-bottom: 16px;
+  }
+  .group { display: flex; align-items: center; gap: 8px; }
+  .group-label { font-size: 0.8rem; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+  .swatches { display: flex; gap: 8px; }
+  .swatch {
+    width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
+    border: 2px solid transparent; transition: transform 0.1s, border-color 0.1s;
+  }
+  .swatch:hover { transform: scale(1.1); }
+  .swatch.active { border-color: #1a1a2e; box-shadow: 0 0 0 2px #fff inset; }
+  .size-group { min-width: 120px; }
+  input[type="range"] { width: 120px; accent-color: #4f6df0; }
+  .size-value { font-size: 0.85rem; color: #4f6df0; font-weight: 600; min-width: 24px; }
+  button {
+    font-size: 0.9rem; padding: 8px 16px; border-radius: 8px; border: none;
+    background: #4f6df0; color: #fff; cursor: pointer; font-weight: 600;
+    transition: background 0.15s, opacity 0.15s;
+  }
+  button:hover { background: #3f57d4; }
+  button:disabled { background: #c9d0e0; cursor: not-allowed; }
+  button.clear { background: #ef4444; }
+  button.clear:hover { background: #dc2626; }
+  .canvas-wrap {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    padding: 8px;
+  }
+  #board {
+    display: block;
+    background: #ffffff;
+    border-radius: 8px;
+    cursor: crosshair;
+    touch-action: none;
+  }
+</style>
+</head>
+<body>
+  <h1>Drawing App</h1>
+  <div class="toolbar">
+    <div class="group">
+      <span class="group-label">Color</span>
+      <div class="swatches" id="swatches"></div>
+    </div>
+    <div class="group size-group">
+      <span class="group-label">Size</span>
+      <input type="range" id="size" min="1" max="40" value="4">
+      <span class="size-value" id="sizeValue">4</span>
+    </div>
+    <div class="group">
+      <button id="undo">Undo</button>
+      <button id="clear" class="clear">Clear</button>
+    </div>
+  </div>
+  <div class="canvas-wrap">
+    <canvas id="board" width="900" height="500"></canvas>
+  </div>
+  <script>
+    const canvas = document.getElementById('board');
+    const ctx = canvas.getContext('2d');
+    const swatchesEl = document.getElementById('swatches');
+    const sizeEl = document.getElementById('size');
+    const sizeValueEl = document.getElementById('sizeValue');
+    const undoBtn = document.getElementById('undo');
+    const clearBtn = document.getElementById('clear');
+
+    const colors = ['#000000', '#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#8b5cf6', '#ec4899'];
+    let currentColor = colors[0];
+    let currentSize = 4;
+    let strokes = [];
+    let currentStroke = null;
+    let drawing = false;
+
+    function render() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (const s of strokes) {
+        if (s.points.length === 0) continue;
+        ctx.strokeStyle = s.color;
+        ctx.lineWidth = s.size;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        ctx.moveTo(s.points[0].x, s.points[0].y);
+        for (let i = 1; i < s.points.length; i++) {
+          ctx.lineTo(s.points[i].x, s.points[i].y);
+        }
+        ctx.stroke();
+      }
+    }
+
+    function getPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const point = e.touches ? e.touches[0] : e;
+      return {
+        x: (point.clientX - rect.left) * scaleX,
+        y: (point.clientY - rect.top) * scaleY
+      };
+    }
+
+    function startStroke(e) {
+      drawing = true;
+      currentStroke = { points: [getPos(e)], color: currentColor, size: currentSize };
+      render();
+    }
+
+    function moveStroke(e) {
+      if (!drawing) return;
+      const pos = getPos(e);
+      currentStroke.points.push(pos);
+      render();
+      e.preventDefault();
+    }
+
+    function endStroke() {
+      if (!drawing) return;
+      drawing = false;
+      if (currentStroke && currentStroke.points.length > 0) {
+        strokes.push(currentStroke);
+      }
+      currentStroke = null;
+      updateUndo();
+    }
+
+    function updateUndo() {
+      undoBtn.disabled = strokes.length === 0;
+    }
+
+    function undo() {
+      if (strokes.length === 0) return;
+      strokes.pop();
+      render();
+      updateUndo();
+    }
+
+    function clearAll() {
+      strokes = [];
+      render();
+      updateUndo();
+    }
+
+    colors.forEach((c, i) => {
+      const el = document.createElement('div');
+      el.className = 'swatch' + (i === 0 ? ' active' : '');
+      el.style.background = c;
+      el.addEventListener('click', () => {
+        currentColor = c;
+        document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+        el.classList.add('active');
+      });
+      swatchesEl.appendChild(el);
+    });
+
+    sizeEl.addEventListener('input', () => {
+      currentSize = parseInt(sizeEl.value, 10);
+      sizeValueEl.textContent = currentSize;
+    });
+
+    undoBtn.addEventListener('click', undo);
+    clearBtn.addEventListener('click', clearAll);
+
+    canvas.addEventListener('mousedown', startStroke);
+    canvas.addEventListener('mousemove', moveStroke);
+    window.addEventListener('mouseup', endStroke);
+    canvas.addEventListener('touchstart', startStroke, { passive: false });
+    canvas.addEventListener('touchmove', moveStroke, { passive: false });
+    window.addEventListener('touchend', endStroke);
+
+    render();
+  </script>
+</body>
+</html>

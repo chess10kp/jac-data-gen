@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+.block{min-height:1.4em;padding:4px 8px;border:1px solid transparent;outline:none;white-space:pre-wrap}
+.block:focus{border-color:#99f}
+.b-h1{font-size:1.6em;font-weight:700}
+.b-ul{padding-left:22px}
+#slash{position:fixed;background:#fff;border:1px solid #ccc;z-index:9;display:none}
+#slash div{padding:6px 12px;cursor:pointer}
+#slash div:hover{background:#eef}
+</style>
+</head>
+<body>
+<div id="doc"></div>
+<div id="slash"></div>
+<script>
+const doc = document.getElementById('doc');
+const slash = document.getElementById('slash');
+const KEY = 'doc';
+
+function load(){
+  try{
+    const raw = localStorage.getItem(KEY);
+    if(raw){ const p = JSON.parse(raw); if(Array.isArray(p)) return p; }
+  }catch(e){}
+  return [{type:'default', text:''}];
+}
+
+let blocks = load();
+
+function save(){ localStorage.setItem(KEY, JSON.stringify(blocks)); }
+
+function render(focusIndex){
+  doc.innerHTML = '';
+  blocks.forEach((b,i)=>{
+    const el = document.createElement('div');
+    el.className = 'block b-' + b.type;
+    el.contentEditable = 'true';
+    el.dataset.i = i;
+    el.textContent = b.text;
+    doc.appendChild(el);
+    attach(el, i);
+  });
+  if(focusIndex != null) focusBlock(focusIndex);
+}
+
+function attach(el, i){
+  el.addEventListener('input', ()=>{
+    blocks[i].text = el.textContent;
+    save();
+    handleInput(el, i);
+  });
+  el.addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter'){ e.preventDefault(); splitBlock(el, i); }
+    else if(e.key === 'Backspace'){
+      if(el.textContent === ''){ e.preventDefault(); deleteBlock(i); }
+      else if(el.selectionStart === 0){ e.preventDefault(); mergeBlock(i); }
+    }
+    else if(e.key === 'ArrowUp'){ e.preventDefault(); moveCaret(i-1); }
+    else if(e.key === 'ArrowDown'){ e.preventDefault(); moveCaret(i+1); }
+  });
+}
+
+function handleInput(el, i){
+  const text = el.textContent;
+  const atStart = el.selectionStart === 0 && el.selectionEnd === 0;
+  if(text.startsWith('/')){
+    if(atStart) showSlash(el, i);
+    else hideSlash();
+  } else {
+    hideSlash();
+    applyMarkdown(el, i);
+  }
+}
+
+function applyMarkdown(el, i){
+  const text = el.textContent;
+  if(text.startsWith('# ') && el.selectionStart === 2) convert(i, 'h1');
+  else if(text.startsWith('- ') && el.selectionStart === 2) convert(i, 'ul');
+  else if(text.startsWith('[] ') && el.selectionStart === 3) convert(i, 'todo');
+}
+
+function convert(i, type){
+  blocks[i].type = type;
+  save();
+  render(i);
+}
+
+function showSlash(el, i){
+  const opts = [
+    {label:'Heading', type:'h1'},
+    {label:'Bulleted list', type:'ul'},
+    {label:'Todo', type:'todo'}
+  ];
+  slash.innerHTML = '';
+  opts.forEach(o=>{
+    const d = document.createElement('div');
+    d.textContent = o.label;
+    d.onclick = ()=>{ hideSlash(); blocks[i].text = blocks[i].text.replace(/^\/+/, ''); convert(i, o.type); };
+    slash.appendChild(d);
+  });
+  const r = el.getBoundingClientRect();
+  slash.style.left = r.left + 'px';
+  slash.style.top = (r.bottom + 4) + 'px';
+  slash.style.display = 'block';
+}
+
+function hideSlash(){ slash.style.display = 'none'; }
+
+document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') hideSlash(); });
+
+function splitBlock(el, i){
+  const sel = window.getSelection();
+  const range = sel.getRangeAt(0);
+  const full = el.textContent;
+  const off = range.startOffset;
+  const after = full.slice(off);
+  blocks.splice(i+1, 0, {type: blocks[i].type, text: after});
+  save();
+  const newEl = doc.querySelector('.block[data-i="'+(i+1)+'"]');
+  if(newEl){ newEl.focus(); placeCaret(newEl, 0); }
+}
+
+function mergeBlock(i){
+  if(i > 0){
+    const prev = blocks[i-1];
+    prev.text += blocks[i].text;
+    blocks.splice(i, 1);
+    save();
+    const prevEl = doc.querySelector('.block[data-i="'+(i-1)+'"]');
+    if(prevEl){ prevEl.focus(); placeCaret(prevEl, prevEl.textContent.length); }
+  }
+}
+
+function deleteBlock(i){
+  if(i > 0){
+    blocks.splice(i, 1);
+    save();
+    const prevEl = doc.querySelector('.block[data-i="'+(i-1)+'"]');
+    if(prevEl){ prevEl.focus(); placeCaret(prevEl, prevEl.textContent.length); }
+  } else {
+    blocks.splice(i, 1);
+    save();
+    render();
+  }
+}
+
+function placeCaret(el, index){
+  const range = document.createRange();
+  range.setStart(el, 0);
+  range.setEnd(el, index);
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+}
+
+function moveCaret(i){
+  if(i < 0 || i >= blocks.length) return;
+  const el = doc.querySelector('.block[data-i="'+i+'"]');
+  if(el){ el.focus(); placeCaret(el, el.textContent.length); }
+}
+
+function focusBlock(i){
+  const el = doc.querySelector('.block[data-i="'+i+'"]');
+  if(el){ el.focus(); placeCaret(el, el.textContent.length); }
+}
+
+render(0);
+</script>
+</body>
+</html>

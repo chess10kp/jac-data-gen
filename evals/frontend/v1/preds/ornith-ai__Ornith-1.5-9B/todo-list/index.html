@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Todo List</title>
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 40px 16px;
+    color: #2d3436;
+  }
+
+  .container {
+    background: #ffffff;
+    width: 100%;
+    max-width: 520px;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+  }
+
+  header {
+    padding: 28px 28px 20px;
+    border-bottom: 1px solid #f0f0f5;
+  }
+
+  header h1 {
+    font-size: 26px;
+    font-weight: 700;
+    color: #2d3436;
+    letter-spacing: -0.5px;
+  }
+
+  header p {
+    margin-top: 6px;
+    font-size: 14px;
+    color: #8b95a5;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 10px;
+    padding: 20px 28px;
+  }
+
+  #new-todo {
+    flex: 1;
+    padding: 12px 14px;
+    font-size: 15px;
+    border: 2px solid #e4e7ee;
+    border-radius: 10px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  #new-todo:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+  }
+
+  .add-btn {
+    padding: 12px 22px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #fff;
+    background: #667eea;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.05s;
+  }
+
+  .add-btn:hover {
+    background: #5568d3;
+  }
+
+  .add-btn:active {
+    transform: scale(0.97);
+  }
+
+  ul#todo-list {
+    list-style: none;
+    padding: 8px 0 24px;
+  }
+
+  ul#todo-list li {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 28px;
+    transition: background 0.15s;
+  }
+
+  ul#todo-list li:hover {
+    background: #f7f8fc;
+  }
+
+  ul#todo-list li .toggle {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    cursor: pointer;
+    accent-color: #667eea;
+  }
+
+  ul#todo-list li .text {
+    flex: 1;
+    font-size: 15px;
+    word-break: break-word;
+    transition: color 0.2s, opacity 0.2s;
+  }
+
+  ul#todo-list li.done .text {
+    color: #b0b8c7;
+    text-decoration: line-through;
+  }
+
+  ul#todo-list li .delete {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    font-size: 18px;
+    line-height: 1;
+    color: #b0b8c7;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: color 0.15s, background 0.15s;
+  }
+
+  ul#todo-list li .delete:hover {
+    color: #e17055;
+    background: #fdecea;
+  }
+
+  .empty-state {
+    text-align: center;
+    color: #b0b8c7;
+    font-size: 15px;
+    padding: 32px 20px;
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>My Todos</h1>
+      <p>Stay organized, one task at a time.</p>
+    </header>
+    <div class="input-row">
+      <input id="new-todo" type="text" placeholder="What needs to be done?" autocomplete="off">
+      <button class="add-btn" id="add-btn">Add</button>
+    </div>
+    <ul id="todo-list"></ul>
+  </div>
+
+  <script>
+    (function () {
+      var STORAGE_KEY = "todos";
+      var input = document.getElementById("new-todo");
+      var addBtn = document.getElementById("add-btn");
+      var list = document.getElementById("todo-list");
+
+      function loadTodos() {
+        var raw = null;
+        try {
+          raw = localStorage.getItem(STORAGE_KEY);
+        } catch (e) {
+          raw = null;
+        }
+        if (!raw) return [];
+        try {
+          var parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) return parsed;
+        } catch (e) {
+          return [];
+        }
+        return [];
+      }
+
+      function saveTodos(todos) {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
+        } catch (e) {
+          // ignore storage errors
+        }
+      }
+
+      function render() {
+        var todos = loadTodos();
+        list.innerHTML = "";
+
+        if (todos.length === 0) {
+          var empty = document.createElement("li");
+          empty.className = "empty-state";
+          empty.textContent = "No todos yet. Add one above!";
+          list.appendChild(empty);
+          return;
+        }
+
+        todos.forEach(function (todo) {
+          var li = document.createElement("li");
+          if (todo.done) li.classList.add("done");
+
+          var checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.className = "toggle";
+          checkbox.checked = !!todo.done;
+          checkbox.addEventListener("change", function () {
+            var index = todos.indexOf(todo);
+            if (index !== -1) {
+              todo.done = checkbox.checked;
+              saveTodos(todos);
+            }
+          });
+
+          var span = document.createElement("span");
+          span.className = "text";
+          span.textContent = todo.text;
+
+          var delBtn = document.createElement("button");
+          delBtn.className = "delete";
+          delBtn.innerHTML = "\u2715";
+          delBtn.title = "Delete";
+          delBtn.addEventListener("click", function () {
+            var index = todos.indexOf(todo);
+            if (index !== -1) {
+              todos.splice(index, 1);
+              saveTodos(todos);
+            }
+          });
+
+          li.appendChild(checkbox);
+          li.appendChild(span);
+          li.appendChild(delBtn);
+          list.appendChild(li);
+        });
+      }
+
+      function addTodo() {
+        var text = input.value.trim();
+        if (text === "") return;
+
+        var todos = loadTodos();
+        todos.push({ text: text, done: false });
+        saveTodos(todos);
+        input.value = "";
+        input.focus();
+        render();
+      }
+
+      addBtn.addEventListener("click", addTodo);
+      input.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+          addTodo();
+        }
+      });
+
+      render();
+    })();
+  </script>
+</body>
+</html>

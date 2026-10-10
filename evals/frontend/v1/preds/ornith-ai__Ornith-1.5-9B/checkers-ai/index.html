@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checkers — Red vs AI</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at 50% 0%, #3a3a4a, #1a1a22);
+    color: #eee;
+    padding: 20px;
+  }
+  h1 { margin: 0 0 4px; font-weight: 700; letter-spacing: 1px; }
+  .subtitle { color: #aaa; font-size: 14px; margin: 0 0 16px; }
+  #status { font-size: 22px; font-weight: 600; margin: 6px 0; min-height: 30px; transition: color .2s; }
+  #counter { font-size: 15px; color: #bbb; margin-bottom: 12px; }
+  #board {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    width: min(88vw, 560px);
+    height: min(88vw, 560px);
+    border: 10px solid #5a3a1a;
+    border-radius: 8px;
+    box-shadow: 0 12px 32px rgba(0,0,0,.55);
+    user-select: none;
+  }
+  .square {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: default;
+  }
+  .light { background: #e9d8ad; }
+  .dark { background: #7a4a20; }
+  .square.selectable { cursor: pointer; }
+  .square.selected { box-shadow: inset 0 0 0 5px #ffd54a; }
+  .square.dest { background: #2f9e40; }
+  .piece {
+    width: 74%;
+    height: 74%;
+    border-radius: 50%;
+    position: relative;
+    box-shadow: inset 0 3px 5px rgba(255,255,255,.35), 0 4px 6px rgba(0,0,0,.45);
+    transition: transform .1s;
+  }
+  .piece.red { background: radial-gradient(circle at 35% 28%, #ff8a8a, #c00 70%); }
+  .piece.black { background: radial-gradient(circle at 35% 28%, #666, #000 70%); }
+  .piece.king::after {
+    content: '👑';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -55%);
+    font-size: clamp(16px, 5.5vw, 34px);
+    line-height: 1;
+    filter: drop-shadow(0 0 2px rgba(0,0,0,.6));
+  }
+  button {
+    margin-top: 16px;
+    padding: 10px 22px;
+    font-size: 16px;
+    border: none;
+    border-radius: 8px;
+    background: #4a8f5a;
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,.35);
+  }
+  button:hover { background: #5aa; }
+  #win {
+    font-size: 30px;
+    font-weight: 800;
+    color: #ffd54a;
+    min-height: 40px;
+    margin-top: 8px;
+  }
+</style>
+</head>
+<body>
+  <h1>Checkers</h1>
+  <p class="subtitle">You are Red (move up). The computer is Black.</p>
+  <div id="status">Red to move</div>
+  <div id="counter">Moves: 0</div>
+  <div id="board"></div>
+  <div id="win"></div>
+  <button onclick="newGame()">New Game</button>
+<script>
+  const SIZE = 8;
+  let board = [];
+  let selected = null;
+  let gameOver = false;
+  let moveCounter = 0;
+  let aiThinking = false;
+
+  function inBounds(r, c) { return r >= 0 && r < 8 && c >= 0 && c < 8; }
+  function isKing(p) { return p === 'RK' || p === 'BK'; }
+  function isEnemy(p, self) { if (!p) return false; return p[0] !== self[0]; }
+  function getDirections(p) {
+    if (isKing(p)) return [[-1,-1],[-1,1],[1,-1],[1,1]];
+    if (p[0] === 'R') return [[-1,-1],[-1,1]];
+    return [[1,-1],[1,1]];
+  }
+
+  function getMultiMoves(b, r, c) {
+    const piece = b[r][c];
+    if (!piece) return [];
+    const results = [];
+    const dirs = getDirections(piece);
+    for (const [dr, dc] of dirs) {
+      const jr = r + 2*dr, jc = c + 2*dc;
+      const mr = r + dr, mc = c + dc;
+      if (inBounds(jr, jc) && !b[jr][jc] && b[mr][mc] && isEnemy(b[mr][mc], piece)) {
+        const saved = b[mr][mc];
+        b[mr][mc] = null;
+        b[r][c] = null;
+        b[jr][jc] = piece;
+        const more = getMultiMoves(b, jr, jc);
+        if (more.length > 0) {
+          for (const m of more) {
+            results.push({from:{r,c}, to:m.to, captures:[{r:mr,c:mc}, ...m.captures]});
+          }
+        } else {
+          results.push({from:{r,c}, to:{r:jr,c:jc}, captures:[{r:mr,c:mc}]});
+        }
+        b[jr][jc] = null;
+        b[r][c] = null;
+        b[mr][mc] = saved;
+      }
+    }
+    return results;
+  }
+
+  function getLegalMoves(b, player) {
+    const moves = [];
+    const isRed = player === 'R';
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const piece = b[r][c];
+        if (!piece) continue;
+        if (isRed && piece[0] !== 'R') continue;
+        if (!isRed && piece[0] !== 'B') continue;
+        const pieceMoves = getMultiMoves(b, r, c);
+        if (pieceMoves.length > 0) {
+          for (const m of pieceMoves) {
+            moves.push({piece, from:{r,c}, to:m.to, captures:m.captures});
+          }
+        }
+      }
+    }
+    return moves;
+  }
+
+  function applyMove(b, move) {
+    b[move.from.r][move.from.c] = null;
+    if (move.captures) for (const cap of move.captures) b[cap.r][cap.c] = null;
+    let np = move.piece;
+    if (move.piece[0] === 'R' && move.to.r === 0) np = 'RK';
+    if (move.piece[0] === 'B' && move.to.r === 7) np = 'BK';
+    b[move.to.r][move.to.c] = np;
+  }
+
+  function newGame() {
+    board = Array.from({length: 8}, () => Array(8).fill(null));
+    for (let r = 5; r < 8; r++)
+      for (let c = 0; c < 8; c++)
+        if ((r + c) % 2 === 1) board[r][c] = 'R';
+    for (let r = 0; r < 3; r++)
+      for (let c = 0; c < 8; c++)
+        if ((r + c) % 2 === 1) board[r][c] = 'B';
+    selected = null;
+    gameOver = false;
+    moveCounter = 0;
+    aiThinking = false;
+    document.getElementById('win').textContent = '';
+    render();
+    updateStatus();
+  }
+
+  function updateStatus() {
+    document.getElementById('counter').textContent = 'Moves: ' + moveCounter;
+    document.getElementById('status').textContent = gameOver ? 'Game over' : 'Red to move';
+  }
+
+  function anyRedCanCapture(b) {
+    for (let r = 0; r < 8; r++)
+      for (let c = 0; c < 8; c++) {
+        const p = b[r][c];
+        if (p && p[0] === 'R' && getMultiMoves(b, r, c).some(m => m.captures.length > 0)) return true;
+      }
+    return false;
+  }
+
+  function pieceCanCapture(b, r, c) {
+    return getMultiMoves(b, r, c).some(m => m.captures.length > 0);
+  }
+
+  function movesForSelected(sel) {
+    const pieceMoves = getMultiMoves(board, sel.r, sel.c);
+    if (pieceMoves.length === 0) return [];
+    const moves = [];
+    for (const m of pieceMoves) {
+      moves.push({from:{r:sel.r,c:sel.c}, to:m.to, captures:m.captures});
+    }
+    const hasCapture = moves.some(m => m.captures.length > 0);
+    if (hasCapture) return moves.filter(m => m.captures.length > 0);
+    return moves;
+  }
+
+  function getAIResponse(b) {
+    const moves = getLegalMoves(b, 'B');
+    if (moves.length === 0) return null;
+    const hasCapture = moves.some(m => m.captures.length > 0);
+    const candidates = hasCapture ? moves.filter(m => m.captures.length > 0) : moves;
+    const chosen = candidates[Math.floor(Math.random() * candidates.length)];
+    return chosen;
+  }
+
+  function aiTurn() {
+    aiThinking = true;
+    const move = getAIResponse(board);
+    if (!move) {
+      gameOver = true;
+      document.getElementById('win').textContent = 'Red wins!';
+      aiThinking = false;
+      updateStatus();
+      return;
+    }
+    applyMove(board, move);
+    moveCounter++;
+    aiThinking = false;
+    render();
+    updateStatus();
+    if (!gameOver) humanTurn();
+  }
+
+  function humanTurn() {
+    if (gameOver) return;
+    const moves = getLegalMoves(board, 'R');
+    if (moves.length === 0) {
+      gameOver = true;
+      document.getElementById('win').textContent = 'Black wins!';
+      updateStatus();
+      return;
+    }
+    render();
+  }
+
+  function onSquareClick(r, c) {
+    if (gameOver || aiThinking) return;
+    const piece = board[r][c];
+    if (piece && piece[0] === 'R') {
+      if (anyRedCanCapture(board) && !pieceCanCapture(board, r, c)) return;
+      selected = {r, c};
+      render();
+      return;
+    }
+    if (selected) {
+      const moves = movesForSelected(selected);
+      if (moves.length > 0) {
+        const move = moves.find(m => m.to.r === r && m.to.c === c);
+        if (move) {
+          applyMove(board, move);
+          moveCounter++;
+          selected = null;
+          render();
+          updateStatus();
+          aiTurn();
+        }
+      }
+    }
+  }
+
+  function render() {
+    const boardEl = document.getElementById('board');
+    boardEl.innerHTML = '';
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const sq = document.createElement('div');
+        sq.className = 'square ' + ((r + c) % 2 === 1 ? 'dark' : 'light');
+        const piece = board[r][c];
+        if (piece) {
+          const p = document.createElement('div');
+          p.className = 'piece ' + piece[0].toLowerCase();
+          if (isKing(piece)) p.classList.add('king');
+          sq.appendChild(p);
+        }
+        if (selected && selected.r === r && selected.c === c) {
+          sq.classList.add('selected');
+        }
+        if (selected) {
+          const moves = movesForSelected(selected);
+          for (const m of moves) {
+            if (m.to.r === r && m.to.c === c) {
+              sq.classList.add('dest');
+              sq.classList.add('selectable');
+            }
+          }
+        }
+        if (sq.classList.contains('dark') && !sq.classList.contains('selected') && !sq.classList.contains('dest')) {
+          sq.classList.add('selectable');
+        }
+        sq.addEventListener('click', () => onSquareClick(r, c));
+        boardEl.appendChild(sq);
+      }
+    }
+  }
+
+  newGame();
+</script>
+</body>
+</html>

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>25:00 - Focus</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    color: #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+  }
+  .card {
+    background: rgba(30, 41, 59, 0.7);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(148, 163, 184, 0.15);
+    border-radius: 24px;
+    padding: 48px 56px;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.45);
+    text-align: center;
+    width: 100%;
+    max-width: 440px;
+  }
+  h1 {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #94a3b8;
+    margin-bottom: 32px;
+  }
+  #phase {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #38bdf8;
+    margin-bottom: 24px;
+    min-height: 22px;
+  }
+  #clock {
+    font-size: 88px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 2px;
+    line-height: 1;
+    margin-bottom: 8px;
+    font-family: "SF Mono", "Roboto Mono", ui-monospace, Menlo, Consolas, monospace;
+  }
+  #clock.break { color: #4ade80; }
+  #clock.focus { color: #e2e8f0; }
+  .controls {
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    margin-top: 36px;
+  }
+  button {
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    border: none;
+    border-radius: 12px;
+    padding: 14px 28px;
+    cursor: pointer;
+    transition: transform 0.12s ease, background 0.2s ease, opacity 0.2s ease;
+    color: #0f172a;
+  }
+  button:active { transform: scale(0.96); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  #start { background: #22c55e; flex: 1; }
+  #start:hover:not(:disabled) { background: #16a34a; }
+  #pause { background: #f59e0b; flex: 1; }
+  #pause:hover:not(:disabled) { background: #d97706; }
+  #reset { background: #475569; flex: 1; }
+  #reset:hover:not(:disabled) { background: #334155; }
+  .hint {
+    margin-top: 28px;
+    font-size: 12px;
+    color: #64748b;
+    line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>Pomodoro</h1>
+    <div id="phase">Focus</div>
+    <div id="clock" class="focus">25:00</div>
+    <div class="controls">
+      <button id="start">Start</button>
+      <button id="pause" disabled>Pause</button>
+      <button id="reset">Reset</button>
+    </div>
+    <div class="hint">Focus: 25 min &nbsp;·&nbsp; Break: 5 min</div>
+  </div>
+
+  <script>
+    (function () {
+      var FOCUS_SECONDS = 25 * 60;
+      var BREAK_SECONDS = 5 * 60;
+
+      var clockEl = document.getElementById('clock');
+      var phaseEl = document.getElementById('phase');
+      var startBtn = document.getElementById('start');
+      var pauseBtn = document.getElementById('pause');
+      var resetBtn = document.getElementById('reset');
+
+      var totalSeconds = FOCUS_SECONDS;
+      var phase = 'focus';
+      var running = false;
+      var paused = false;
+      var intervalId = null;
+
+      function phaseLabel() {
+        return phase.charAt(0).toUpperCase() + phase.slice(1);
+      }
+
+      function formatTime(seconds) {
+        var mins = Math.floor(seconds / 60);
+        var secs = seconds % 60;
+        return String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+      }
+
+      function render() {
+        clockEl.textContent = formatTime(totalSeconds);
+        phaseEl.textContent = phaseLabel();
+        clockEl.className = phase === 'break' ? 'break' : 'focus';
+        document.title = formatTime(totalSeconds) + ' - ' + phaseLabel();
+      }
+
+      function tick() {
+        if (paused) return;
+        totalSeconds--;
+        if (totalSeconds <= 0) {
+          totalSeconds = 0;
+          if (phase === 'focus') {
+            phase = 'break';
+            totalSeconds = BREAK_SECONDS;
+          } else {
+            phase = 'focus';
+            totalSeconds = FOCUS_SECONDS;
+          }
+        }
+        render();
+      }
+
+      function start() {
+        if (running) return;
+        running = true;
+        paused = false;
+        intervalId = setInterval(tick, 1000);
+        startBtn.disabled = true;
+        pauseBtn.disabled = false;
+        render();
+      }
+
+      function pause() {
+        if (!running) return;
+        running = false;
+        paused = true;
+        clearInterval(intervalId);
+        intervalId = null;
+        startBtn.disabled = false;
+        pauseBtn.disabled = true;
+        render();
+      }
+
+      function reset() {
+        running = false;
+        paused = false;
+        clearInterval(intervalId);
+        intervalId = null;
+        totalSeconds = FOCUS_SECONDS;
+        phase = 'focus';
+        startBtn.disabled = false;
+        pauseBtn.disabled = true;
+        render();
+      }
+
+      startBtn.addEventListener('click', start);
+      pauseBtn.addEventListener('click', pause);
+      resetBtn.addEventListener('click', reset);
+
+      render();
+    })();
+  </script>
+</body>
+</html>

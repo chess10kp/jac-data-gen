@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Color Picker</title>
+<style>
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #f0f2f5;
+    color: #1a1a1a;
+  }
+  .app {
+    background: #ffffff;
+    padding: 32px 36px 40px;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+    text-align: center;
+  }
+  h1 {
+    margin: 0 0 24px;
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+  }
+  .swatches {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 32px;
+  }
+  .swatch {
+    width: 56px;
+    height: 56px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+  }
+  .swatch:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+  }
+  .swatch:focus-visible {
+    outline: 3px solid #3b82f6;
+    outline-offset: 3px;
+  }
+  .swatch.active {
+    outline: 3px solid #1a1a1a;
+    outline-offset: 2px;
+  }
+  .preview-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+  #preview {
+    width: 200px;
+    height: 200px;
+    border-radius: 14px;
+    background-color: #e5e7eb;
+    transition: background-color 0.18s ease;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+  }
+  #color-name {
+    font-size: 18px;
+    font-weight: 600;
+    min-height: 24px;
+  }
+</style>
+</head>
+<body>
+  <div class="app">
+    <h1>Color Picker</h1>
+    <div class="swatches">
+      <button class="swatch" data-color="red" style="background-color: #ef4444;" aria-label="Red"></button>
+      <button class="swatch" data-color="orange" style="background-color: #f97316;" aria-label="Orange"></button>
+      <button class="swatch" data-color="yellow" style="background-color: #eab308;" aria-label="Yellow"></button>
+      <button class="swatch" data-color="green" style="background-color: #22c55e;" aria-label="Green"></button>
+      <button class="swatch" data-color="blue" style="background-color: #3b82f6;" aria-label="Blue"></button>
+      <button class="swatch" data-color="purple" style="background-color: #a855f7;" aria-label="Purple"></button>
+    </div>
+    <div class="preview-area">
+      <div id="preview"></div>
+      <div id="color-name">Select a color</div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var swatches = document.querySelectorAll('.swatch');
+      var preview = document.getElementById('preview');
+      var colorName = document.getElementById('color-name');
+
+      swatches.forEach(function (swatch) {
+        swatch.addEventListener('click', function () {
+          var color = swatch.getAttribute('data-color');
+          preview.style.backgroundColor = color;
+          colorName.textContent = color.charAt(0).toUpperCase() + color.slice(1);
+          swatches.forEach(function (s) {
+            s.classList.remove('active');
+          });
+          swatch.classList.add('active');
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

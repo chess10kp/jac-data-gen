@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kanban Board</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #eef1f6;
+    color: #1f2430;
+    min-height: 100vh;
+    padding: 32px 20px;
+  }
+  .app {
+    max-width: 1140px;
+    margin: 0 auto;
+  }
+  header { margin-bottom: 28px; }
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 18px;
+  }
+  .add-row {
+    display: flex;
+    gap: 12px;
+  }
+  #task-input {
+    flex: 1;
+    padding: 13px 16px;
+    font-size: 15px;
+    border: 1px solid #d3d9e2;
+    border-radius: 10px;
+    outline: none;
+    background: #fff;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  #task-input:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+  }
+  .add-btn {
+    padding: 13px 24px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #fff;
+    background: #6366f1;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.05s;
+  }
+  .add-btn:hover { background: #4f46e5; }
+  .add-btn:active { transform: translateY(1px); }
+  .board {
+    display: flex;
+    gap: 22px;
+  }
+  .column {
+    flex: 1;
+    background: #e6e9f0;
+    border-radius: 14px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+  }
+  .column-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .column-title {
+    font-size: 17px;
+    font-weight: 700;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 28px;
+    padding: 0 10px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #4338ca;
+    background: #e0e7ff;
+    border-radius: 999px;
+  }
+  .cards {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 60px;
+  }
+  .card {
+    background: #fff;
+    border-radius: 11px;
+    padding: 14px 16px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    animation: pop 0.15s ease;
+  }
+  @keyframes pop {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .card-text {
+    flex: 1;
+    word-break: break-word;
+    line-height: 1.4;
+  }
+  .card-buttons {
+    display: flex;
+    gap: 8px;
+  }
+  .move-left, .move-right {
+    width: 34px;
+    height: 34px;
+    font-size: 16px;
+    font-weight: 700;
+    border: 1px solid #d3d9e2;
+    background: #f7f8fb;
+    border-radius: 8px;
+    cursor: pointer;
+    color: #374151;
+    transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+  }
+  .move-left:hover:not(:disabled) { background: #eef2ff; border-color: #6366f1; }
+  .move-right:hover:not(:disabled) { background: #eef2ff; border-color: #6366f1; }
+  .move-left:disabled, .move-right:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Kanban Board</h1>
+    <div class="add-row">
+      <input type="text" id="task-input" placeholder="Add a new task..." />
+      <button class="add-btn" id="add-btn">Add</button>
+    </div>
+  </header>
+  <div class="board">
+    <section class="column" data-col="todo">
+      <div class="column-header">
+        <span class="column-title">Todo</span>
+        <span class="badge">0</span>
+      </div>
+      <div class="cards"></div>
+    </section>
+    <section class="column" data-col="doing">
+      <div class="column-header">
+        <span class="column-title">Doing</span>
+        <span class="badge">0</span>
+      </div>
+      <div class="cards"></div>
+    </section>
+    <section class="column" data-col="done">
+      <div class="column-header">
+        <span class="column-title">Done</span>
+        <span class="badge">0</span>
+      </div>
+      <div class="cards"></div>
+    </section>
+  </div>
+</div>
+<script>
+  function createCard(text) {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.dataset.col = 'todo';
+    card.textContent = text;
+    const moveLeft = document.createElement('button');
+    moveLeft.className = 'move-left';
+    moveLeft.textContent = '\u2190';
+    const moveRight = document.createElement('button');
+    moveRight.className = 'move-right';
+    moveRight.textContent = '\u2192';
+    card.appendChild(moveLeft);
+    card.appendChild(moveRight);
+    updateButtons(card);
+    return card;
+  }
+
+  function addCard(text) {
+    const todoCol = document.querySelector('.column[data-col="todo"]');
+    const card = createCard(text);
+    todoCol.querySelector('.cards').appendChild(card);
+    updateBadges();
+  }
+
+  function updateButtons(card) {
+    const col = card.dataset.col;
+    const moveLeft = card.querySelector('.move-left');
+    const moveRight = card.querySelector('.move-right');
+    if (col === 'todo') {
+      moveLeft.disabled = true;
+      moveRight.disabled = false;
+    } else if (col === 'done') {
+      moveLeft.disabled = false;
+      moveRight.disabled = true;
+    } else {
+      moveLeft.disabled = false;
+      moveRight.disabled = false;
+    }
+  }
+
+  function moveCard(card, direction) {
+    const currentCol = card.dataset.col;
+    if (direction === 'right') {
+      if (currentCol === 'done') return;
+      card.dataset.col = 'done';
+    } else {
+      if (currentCol === 'todo') return;
+      card.dataset.col = 'todo';
+    }
+    const col = document.querySelector('.column[data-col="' + card.dataset.col + '"]');
+    col.querySelector('.cards').appendChild(card);
+    updateButtons(card);
+    updateBadges();
+  }
+
+  function updateBadges() {
+    document.querySelectorAll('.column').forEach(function(col) {
+      const count = col.querySelectorAll('.card').length;
+      const badge = col.querySelector('.badge');
+      if (badge) badge.textContent = count;
+    });
+  }
+
+  document.getElementById('add-btn').addEventListener('click', function() {
+    const input = document.getElementById('task-input');
+    const text = input.value.trim();
+    if (text) {
+      addCard(text);
+      input.value = '';
+      input.focus();
+    }
+  });
+
+  document.getElementById('task-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      document.getElementById('add-btn').click();
+    }
+  });
+
+  document.querySelectorAll('.move-left').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      const card = this.closest('.card');
+      moveCard(card, 'left');
+    });
+  });
+
+  document.querySelectorAll('.move-right').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      const card = this.closest('.card');
+      moveCard(card, 'right');
+    });
+  });
+
+  updateBadges();
+</script>
+</body>
+</html>

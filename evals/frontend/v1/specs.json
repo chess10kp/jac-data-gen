@@ -1,0 +1,262 @@
+[
+  {
+    "id": "counter-color-picker",
+    "tier": 0,
+    "name": "Counter / color picker",
+    "spec": "Build a single-page color picker. Show a row of six color swatch buttons (red, orange, yellow, green, blue, purple), each a <button class=\"swatch\"> with a data-color attribute and its background set to that color. Below them render a 200px square <div id=\"preview\"> and a label <div id=\"color-name\"> showing the current color name. Clicking a swatch sets the preview square's background to that color and updates the label text.",
+    "assertions": [
+      "Six .swatch buttons exist, each with a data-color attribute.",
+      "Clicking the green swatch sets #preview background-color to green.",
+      "#color-name text updates to the clicked color name.",
+      "Clicking a second swatch replaces the previous color."
+    ]
+  },
+  {
+    "id": "todo-list",
+    "tier": 0,
+    "name": "Todo list",
+    "spec": "Build a todo list app. An <input id=\"new-todo\"> and an \"Add\" button (or Enter key) append a new <li> to <ul id=\"todo-list\">. Each li contains a <input type=\"checkbox\" class=\"toggle\">, the todo text in a <span class=\"text\">, and a <button class=\"delete\">. Checking the checkbox adds a \"done\" class to the li (unchecking removes it). Clicking delete removes the li. Persist the full list (text + done state) to localStorage under key \"todos\" on every change and restore it on load.",
+    "assertions": [
+      "Type 'milk' and press Enter -> an li containing 'milk' exists.",
+      "Clicking a checkbox toggles the .done class on its li.",
+      "Clicking .delete removes the li.",
+      "After reload, todos and their done states persist from localStorage.",
+      "Empty input does not create a todo."
+    ]
+  },
+  {
+    "id": "markdown-previewer",
+    "tier": 0,
+    "name": "Markdown previewer",
+    "spec": "Build a two-pane markdown previewer. Left pane: <textarea id=\"editor\">. Right pane: <div id=\"preview\">. On every keystroke, render the markdown to HTML in the preview. Implement a minimal parser supporting: # and ## headings, **bold**, *italic*, `inline code`, [text](url) links, and unordered lists (- item). Sanitize or escape raw HTML in the input so <script> never executes.",
+    "assertions": [
+      "Typing '# Hi' renders an <h1> containing 'Hi' in #preview.",
+      "Typing '**bold**' renders a <strong> element.",
+      "Typing '- a\\n- b' renders a <ul> with two <li>.",
+      "Preview updates live on input without a submit button.",
+      "Input '<script>alert(1)</script>' does not execute and is visible as text."
+    ]
+  },
+  {
+    "id": "habit-tracker-grid",
+    "tier": 1,
+    "name": "Habit tracker grid",
+    "spec": "Build a habit tracker. Seed five habits (e.g. Water, Exercise, Read, Meditate, Sleep). Render a table where each row is a habit name followed by 7 checkboxes for the last 7 days (label columns with day abbreviations). Clicking a checkbox toggles that day's completion. After each row show a <span class=\"streak\"> with the current consecutive-days streak ending today. Persist to localStorage key \"habits\".",
+    "assertions": [
+      "Grid has 5 rows x 7 checkboxes.",
+      "Clicking a checkbox toggles its checked state.",
+      "Checking today and yesterday shows a streak of at least 2.",
+      "Unchecking today drops the streak to 0.",
+      "State persists across reload."
+    ]
+  },
+  {
+    "id": "kanban-lite",
+    "tier": 1,
+    "name": "Kanban-lite board",
+    "spec": "Build a kanban board with three columns: Todo, Doing, Done, each a <section class=\"column\" data-col=\"todo|doing|done\">. An input at top adds a new card to Todo. Each card is a <div class=\"card\"> containing its text and two buttons <button class=\"move-left\"> and <button class=\"move-right\"> that move the card one column left/right (buttons disabled/hidden at the ends). Show a count badge in each column header.",
+    "assertions": [
+      "Adding 'task A' creates a .card in the todo column.",
+      "move-right moves the card to doing, then done.",
+      "move-right is unavailable in the done column.",
+      "Column count badges update after moves."
+    ]
+  },
+  {
+    "id": "pomodoro",
+    "tier": 1,
+    "name": "Pomodoro timer",
+    "spec": "Build a pomodoro timer. Display mm:ss in <div id=\"clock\"> starting at 25:00 in Focus phase. Buttons: <button id=\"start\">, <button id=\"pause\">, <button id=\"reset\">. When the timer hits 00:00 it auto-switches to a 5:00 Break phase (show phase name in <div id=\"phase\">), then back to Focus. Update document.title to 'mm:ss - Phase' every second. Reset returns to 25:00 Focus. Pause must actually stop the countdown (no leaked intervals).",
+    "assertions": [
+      "Start begins the countdown; clock decrements once per second.",
+      "Pause freezes the clock value.",
+      "document.title contains the current time and phase.",
+      "Reset restores 25:00 and Focus phase.",
+      "After the focus timer reaches 0, phase becomes Break at 5:00 (test may use a shortened duration via console or wait).",
+      "No double-speed ticking after start-pause-start."
+    ]
+  },
+  {
+    "id": "form-wizard",
+    "tier": 1,
+    "name": "Form wizard",
+    "spec": "Build a 3-step form wizard. Step 1: name (required) and email (required, must contain '@'); Step 2: pick a plan via radio buttons (Free/Pro/Team, required); Step 3: confirmation summary showing all entered values, with a Submit button that shows 'Submitted!' and hides the form. A Next button advances only when the current step validates; on failure show per-field error messages in <span class=\"error\"> elements. A Back button returns without validating.",
+    "assertions": [
+      "Next on empty step 1 shows error messages and stays on step 1.",
+      "Valid name+email advances to step 2.",
+      "Step 3 summary contains the entered name and chosen plan.",
+      "Back from step 2 returns to step 1 preserving entered values.",
+      "Submit shows 'Submitted!'."
+    ]
+  },
+  {
+    "id": "expense-tracker",
+    "tier": 1,
+    "name": "Expense tracker",
+    "spec": "Build an expense tracker. A form with amount (number, required), category select (Food/Transport/Fun/Other), and note adds a row to a <table id=\"expenses\"> with a delete button per row. Show the running total of visible rows in <div id=\"total\">. A category filter <select id=\"filter\"> with an 'All' option filters the table and updates the total. Below, render a bar chart as inline SVG (<svg id=\"chart\">) with one <rect> per category scaled to that category's filtered total. Persist rows to localStorage key \"expenses\".",
+    "assertions": [
+      "Adding 12.50 Food creates a table row and updates #total.",
+      "Deleting a row subtracts it from the total.",
+      "Filtering to Food hides non-Food rows and updates #total.",
+      "#chart contains one rect per category with nonzero width for categories that have expenses.",
+      "Rows persist across reload."
+    ]
+  },
+  {
+    "id": "storefront",
+    "tier": 2,
+    "name": "Mini e-commerce storefront",
+    "spec": "Build a mini storefront as a single HTML file with hash routing. Route '#/' shows a grid of at least 6 products (name, price, image placeholder). Clicking a product navigates to '#/product/<id>' with details and an 'Add to cart' button. A cart button in the header opens a <div id=\"cart-drawer\"> listing items with quantity +/- controls and a running total. '#/checkout' shows a form (name, address) whose submit renders an order-success message and empties the cart.",
+    "assertions": [
+      "#/ renders at least 6 product cards.",
+      "Clicking a product navigates to its detail route.",
+      "Add to cart adds the item; cart total reflects it.",
+      "Cart drawer opens and closes.",
+      "Quantity + increases line total.",
+      "Checkout submit shows success and clears the cart."
+    ]
+  },
+  {
+    "id": "notes-app",
+    "tier": 2,
+    "name": "Multi-page notes app",
+    "spec": "Build a notes app. Left sidebar lists note titles; clicking one opens it in an editor pane (title input + body textarea, auto-saves on input). 'New note' button creates an empty note; a delete button removes the selected note. A search box filters the list by title/body substring. Each note supports comma-separated tags; a tag filter dropdown shows only notes having that tag. Persist everything to localStorage key \"notes\".",
+    "assertions": [
+      "New note appears in the list and is editable.",
+      "Typing in the body auto-saves (visible after reselecting the note).",
+      "Search 'foo' hides non-matching notes.",
+      "Tag filter narrows the list correctly.",
+      "Delete removes the note.",
+      "Notes persist across reload."
+    ]
+  },
+  {
+    "id": "quiz-app",
+    "tier": 2,
+    "name": "Quiz with timer",
+    "spec": "Build a quiz app with 5 embedded multiple-choice questions (4 options each, correct answers pinned in the fixture). A 'Start quiz' button begins; each question shows for 15 seconds with a visible countdown <div id=\"timer\">. Selecting an option locks it and advances on click of Next, or auto-advances unanswered when time expires. After the last question show a score screen 'X / 5' and a review section listing each question, the correct answer, and the user's answer with a .correct/.wrong class.",
+    "assertions": [
+      "Start shows question 1 and a decrementing timer.",
+      "Answering a question and pressing Next advances.",
+      "Timer expiry auto-advances.",
+      "Score screen shows the correct computed score.",
+      "Review marks correct and wrong answers."
+    ]
+  },
+  {
+    "id": "dashboard-shell",
+    "tier": 2,
+    "name": "Dashboard shell",
+    "spec": "Build a dashboard shell with a fixed left sidebar containing nav links Overview, Data, Settings. Clicking a link swaps the main content area (client-side, no reload). Overview: three stat cards with numbers. Data: a <table id=\"data-table\"> with at least 8 rows of fixture data. Settings: a form (display name, theme select) that saves to localStorage and shows 'Saved'. Style it like a real dashboard: sidebar, header, card grid.",
+    "assertions": [
+      "Sidebar nav switches the visible page without reload.",
+      "Overview shows 3 stat cards.",
+      "Data page table has >= 8 rows.",
+      "Settings save persists theme to localStorage and shows 'Saved'."
+    ]
+  },
+  {
+    "id": "spreadsheet-lite",
+    "tier": 3,
+    "name": "Spreadsheet-lite",
+    "spec": "Build a 10x10 spreadsheet. Render a table with column headers A-J and row headers 1-10; each body cell is editable (contenteditable or input) with id like cell-A1. Cells display computed values but retain raw input shown while editing (focus shows raw). Support formulas starting with '=': =SUM(A1:A5) over a rectangular range, =A1+B2 arithmetic with +/-/*// of cell refs and numbers, and plain values otherwise. Recalculate dependents when a referenced cell changes. Invalid formulas display '#ERR'.",
+    "assertions": [
+      "Entering 5 in A1 shows 5.",
+      "A2=3, A3==A1+A2 displays 8.",
+      "B1==SUM(A1:A3) displays 16.",
+      "Changing A1 to 10 updates A3 and B1.",
+      "=SUM(ZZ) shows #ERR."
+    ]
+  },
+  {
+    "id": "canvas-drawing",
+    "tier": 3,
+    "name": "Canvas drawing app",
+    "spec": "Build a drawing app on a <canvas id=\"board\">. Dragging the mouse draws freehand strokes. A palette of >= 5 color swatches sets stroke color; a range input sets brush size 1-40. An Undo button removes the last stroke (maintain an undo stack of stroke objects, re-render on undo); a Clear button empties the canvas and stack. Undo is disabled when the stack is empty.",
+    "assertions": [
+      "Dragging paints pixels on the canvas (canvas is non-blank after a stroke).",
+      "Selecting a color changes subsequent stroke color.",
+      "Undo removes the most recent stroke only.",
+      "Clear blanks the canvas and disables Undo."
+    ]
+  },
+  {
+    "id": "step-sequencer",
+    "tier": 3,
+    "name": "Music step-sequencer",
+    "spec": "Build a 16-step drum sequencer. A grid of 4 instrument rows (kick, snare, hat, clap) x 16 step buttons; clicking a step toggles .on. Play/Stop buttons and a BPM input (default 120). While playing, highlight the current step column (.playing class) advancing at the BPM, and synthesize each instrument with WebAudio oscillators/noise (no audio files). Stop halts playback and clears the highlight.",
+    "assertions": [
+      "Grid renders 4x16 toggleable steps.",
+      "Clicking a step toggles .on.",
+      "Play advances the .playing column over time.",
+      "Changing BPM changes step rate.",
+      "Stop removes the highlight and stops scheduling."
+    ]
+  },
+  {
+    "id": "checkers-ai",
+    "tier": 3,
+    "name": "Checkers vs random-move AI",
+    "spec": "Build checkers (8x8, dark squares playable) where the human plays red moving up and the AI plays black. Click a piece then a legal destination; enforce legal moves including mandatory captures and multi-jumps; crown kings at the far row. After each human move the AI picks uniformly at random among its legal moves (prefer captures when mandatory). Show a move counter and declare 'Red wins'/'Black wins' when a side has no legal moves.",
+    "assertions": [
+      "Board renders 12 red and 12 black pieces.",
+      "Illegal moves are rejected (piece stays).",
+      "A forced capture is enforced when available.",
+      "After a human move the AI makes a legal reply.",
+      "Reaching the far row crowns a king."
+    ]
+  },
+  {
+    "id": "chat-ui-mock",
+    "tier": 3,
+    "name": "Chat UI with fake latency",
+    "spec": "Build a chat UI. <div id=\"messages\"> scrollable message list, <input id=\"composer\"> and Send button. On send, append the user message immediately with a 'pending' class (optimistic); after a simulated 800ms latency mark it 'sent'. Randomly fail ~25% of sends: mark the message 'failed' and attach a Retry button that re-sends it. After each successful send, a bot reply 'Echo: <text>' arrives ~1s later. Auto-scroll to bottom on new messages only if the user is already near the bottom; otherwise show a 'New messages' pill.",
+    "assertions": [
+      "Sending appends the message immediately as pending.",
+      "After latency the message becomes sent and a bot echo arrives.",
+      "A failed send shows Retry; retrying re-sends it.",
+      "Scroll pins to bottom when already at bottom.",
+      "When scrolled up, new messages do not move the scroll and the pill appears."
+    ]
+  },
+  {
+    "id": "notion-lite",
+    "tier": 4,
+    "name": "Notion-lite block editor",
+    "spec": "Build a block editor. The document is a list of blocks rendered into <div id=\"doc\">, each block a contenteditable element. Typing Enter splits the block at the caret into a new block below; Backspace at the start merges with the block above; Backspace on an empty block deletes it. Typing '/' at the start of a block opens a slash menu (Heading, Bulleted list, Todo) that converts the block type; markdown shortcuts work too: '# ' converts to heading, '- ' to bullet, '[] ' to todo. Up/Down arrows move caret between blocks. Persist the block tree to localStorage key \"doc\".",
+    "assertions": [
+      "Enter in the middle of a block splits it into two blocks.",
+      "Backspace on an empty block deletes it and moves caret up.",
+      "Typing '# Hello' creates an h1-styled block.",
+      "'/' opens the slash menu and selecting Bullet converts the block.",
+      "Blocks persist across reload."
+    ]
+  },
+  {
+    "id": "figma-lite",
+    "tier": 4,
+    "name": "Figma-lite canvas",
+    "spec": "Build an infinite-canvas shape editor. A <canvas id=\"stage\"> (or transformed div) supports panning via middle-mouse or space+drag and zooming via wheel (zoom centered on cursor). Toolbar buttons create rectangles and ellipses at the viewport center. Click selects a shape (selection outline + 4 corner handles); dragging moves it; dragging a corner handle resizes it; Delete key removes the selection. A zoom indicator shows the current zoom percent and a 'Reset view' button restores 100%/origin.",
+    "assertions": [
+      "Creating a rectangle renders it on the canvas.",
+      "Click selects it showing handles.",
+      "Drag moves the shape; handle drag resizes it.",
+      "Wheel zoom changes the zoom indicator.",
+      "Pan moves the view; Reset view restores it.",
+      "Delete removes the selected shape."
+    ]
+  },
+  {
+    "id": "video-player",
+    "tier": 4,
+    "name": "Video player with custom controls",
+    "spec": "Build a video player with fully custom controls. Source the <video> from a generated or embedded clip (e.g. canvas.captureStream recorded to a blob, or a small data-URI mp4 you embed) so no network is needed. Controls bar: play/pause toggle button, seek bar showing buffered/playhead position with click-to-seek, current-time/duration readout, volume slider, playback-rate selector (0.5x/1x/1.5x/2x), fullscreen button. Keyboard shortcuts: space toggles play, left/right arrows seek -/+5s, 'f' fullscreen, 'm' mute. Hide controls after 2s of mouse inactivity during playback.",
+    "assertions": [
+      "Play starts playback and toggles the button state.",
+      "Seek bar click changes currentTime proportionally.",
+      "Rate selector changes playbackRate.",
+      "Space toggles playback; right arrow seeks forward 5s.",
+      "Time readout matches video.currentTime."
+    ]
+  }
+]

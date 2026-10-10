@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Custom Video Player</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: radial-gradient(circle at 50% 0%, #1b1b26, #0a0a0f 70%);
+    color: #fff;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 24px;
+  }
+  .player {
+    width: 100%;
+    max-width: 860px;
+    background: #000;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 24px 70px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.05);
+    position: relative;
+  }
+  video {
+    display: block;
+    width: 100%;
+    background: #000;
+    aspect-ratio: 16 / 9;
+  }
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: linear-gradient(180deg, rgba(26,26,34,0.98), rgba(16,16,22,0.98));
+    border-top: 1px solid rgba(255,255,255,0.08);
+    transition: opacity .3s ease;
+  }
+  .controls.hidden { opacity: 0; pointer-events: none; }
+  .brand {
+    font-size: 12px;
+    letter-spacing: .5px;
+    color: #8a8aa0;
+    display: none;
+  }
+  button {
+    background: none;
+    border: none;
+    color: #e8e8f0;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    padding: 7px 9px;
+    border-radius: 7px;
+    transition: background .15s ease, transform .1s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  button:hover { background: rgba(255,255,255,0.12); }
+  button:active { transform: scale(0.94); }
+  .play-btn { font-size: 20px; }
+  .seek-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    margin: 0 4px;
+  }
+  .seek-track {
+    position: relative;
+    width: 100%;
+    height: 6px;
+    background: rgba(255,255,255,0.18);
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .seek-fill {
+    position: absolute;
+    left: 0; top: 0; height: 100%;
+    background: linear-gradient(90deg, #4fc3f7, #8e7bff);
+    border-radius: 4px;
+    width: 0%;
+  }
+  .seek-buffered {
+    position: absolute;
+    left: 0; top: 0; height: 100%;
+    background: rgba(255,255,255,0.28);
+    border-radius: 4px;
+    width: 0%;
+  }
+  .seek-track input[type="range"] {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    margin: 0;
+    z-index: 2;
+  }
+  #time {
+    font-variant-numeric: tabular-nums;
+    font-size: 13px;
+    min-width: 96px;
+    color: #c7c7d6;
+    text-align: center;
+    user-select: none;
+  }
+  input[type="range"] { accent-color: #4fc3f7; }
+  .rate { display: flex; gap: 3px; }
+  .rate button {
+    font-size: 12px;
+    padding: 4px 9px;
+    border-radius: 6px;
+    font-weight: 600;
+  }
+  .rate button.active { background: #4fc3f7; color: #06121f; }
+  .spacer { flex: 1; }
+  .vol-wrap { display: flex; align-items: center; gap: 6px; }
+  .vol-wrap input[type="range"] { width: 60px; }
+  .hint {
+    text-align: center;
+    color: #5c5c72;
+    font-size: 12px;
+    margin-top: 14px;
+    letter-spacing: .2px;
+  }
+  .hint kbd {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: inherit;
+    font-size: 11px;
+    color: #b9b9cf;
+  }
+</style>
+</head>
+<body>
+  <div class="player">
+    <video id="video" playsinline></video>
+    <div class="controls" id="controls">
+      <button class="play-btn" id="play" title="Play / Pause (Space)">▶</button>
+
+      <div class="seek-wrap">
+        <div class="seek-track" id="seekTrack">
+          <div class="seek-fill" id="seekFill"></div>
+          <div class="seek-buffered" id="buffered"></div>
+          <input type="range" id="seek" min="0" max="100" step="0.1" value="0" title="Seek">
+        </div>
+      </div>
+
+      <span id="time">0:00 / 0:00</span>
+
+      <div class="vol-wrap">
+        <button id="mute" title="Mute (M)">🔊</button>
+        <input type="range" id="volume" min="0" max="1" step="0.05" value="0.8" title="Volume">
+      </div>
+
+      <div class="rate" id="rate" title="Playback rate">
+        <button data-rate="0.5">0.5x</button>
+        <button data-rate="1" class="active">1x</button>
+        <button data-rate="1.5">1.5x</button>
+        <button data-rate="2">2x</button>
+      </div>
+
+      <div class="spacer"></div>
+
+      <button id="fullscreen" title="Fullscreen (F)">⛶</button>
+    </div>
+  </div>
+
+  <div class="hint">
+    Shortcuts: <kbd>Space</kbd> play · <kbd>←</kbd>/<kbd>→</kbd> seek 5s · <kbd>F</kbd> fullscreen · <kbd>M</kbd> mute
+  </div>
+
+<script>
+(function () {
+  "use strict";
+
+  var video = document.getElementById("video");
+  var playBtn = document.getElementById("play");
+  var seekTrack = document.getElementById("seekTrack");
+  var seekFill = document.getElementById("seekFill");
+  var buffered = document.getElementById("buffered");
+  var seek = document.getElementById("seek");
+  var timeEl = document.getElementById("time");
+  var volume = document.getElementById("volume");
+  var muteBtn = document.getElementById("mute");
+  var rateBtns = document.querySelectorAll("#rate button");
+  var fullscreenBtn = document.getElementById("fullscreen");
+  var controls = document.getElementById("controls");
+
+  // ---- helpers ----
+  function fmt(s) {
+    s = Math.max(0, Math.floor(s || 0));
+    var m = Math.floor(s / 60);
+    var sec = s % 60;
+    return m + ":" + String(sec).padStart(2, "0");
+  }
+
+  function setPlayIcon() {
+    playBtn.textContent = video.paused ? "▶" : "⏸";
+  }
+
+  // ---- generate a short clip from canvas (no network) ----
+  function generateClip() {
+    if (!window.MediaRecorder) {
+      timeEl.textContent = "0:00 / 0:00";
+      return;
+    }
+    var canvas = document.createElement("canvas");
+    canvas.width = 1280;
+    canvas.height = 720;
+    var ctx = canvas.getContext("2d");
+    var stream = canvas.captureStream(30);
+
+    var mime = "video/webm";
+    if (!MediaRecorder.isTypeSupported(mime)) mime = "video/mp4";
+
+    var recorder = new MediaRecorder(stream, {
+      mimeType: mime,
+      videoBitsPerSecond: 3000000
+    });
+    var chunks = [];
+    recorder.ondataavailable = function (e) {
+      if (e.data && e.data.size) chunks.push(e.data);
+    };
+    recorder.onstop = function () {
+      var blob = new Blob(chunks, { type: mime });
+      var url = URL.createObjectURL(blob);
+      video.src = url;
+      video.load();
+    };
+
+    recorder.start();
+    var t = 0;
+    function draw() {
+      t += 0.016;
+      var w = canvas.width, h = canvas.height;
+      var hue = (t * 25) % 360;
+
+      var g = ctx.createLinearGradient(0, 0, w, h);
+      g.addColorStop(0, "hsl(" + hue + ",72%,22%)");
+      g.addColorStop(1, "hsl(" + ((hue + 70) % 360) + ",72%,42%)");
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, h);
+
+      for (var i = 0; i < 12; i++) {
+        var x = (Math.sin(t * 0.5 + i * 0.9) * 0.5 + 0.5) * w;
+        var y = (Math.cos(t * 0.4 + i * 1.1) * 0.5 + 0.5) * h;
+        var r = 42 + Math.sin(t + i) * 22;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fillStyle = "hsla(" + ((hue + i * 32) % 360) + ",88%,62%,0.5)";
+        ctx.fill();
+      }
+
+      ctx.fillStyle = "rgba(255,255,255,0.92)";
+      ctx.font = "bold 72px system-ui, -apple-system, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("Custom Player", w / 2, h / 2 - 18);
+      ctx.font = "600 30px system-ui, -apple-system, sans-serif";
+      ctx.fillStyle = "rgba(255,255,255,0.75)";
+      ctx.fillText("fully custom controls", w / 2, h / 2 + 34);
+
+      requestAnimationFrame(draw);
+    }
+    draw();
+    setTimeout(function () { try { recorder.stop(); } catch (e) {} }, 10000);
+  }
+
+  // ---- play / pause ----
+  function togglePlay() {
+    if (video.paused) video.play().catch(function () {});
+    else video.pause();
+  }
+  playBtn.addEventListener("click", togglePlay);
+  setPlayIcon();
+  video.addEventListener("play", setPlayIcon);
+  video.addEventListener("pause", setPlayIcon);
+
+  // ---- seek bar (fill + buffered) ----
+  function updateSeek() {
+    if (!isFinite(video.duration) || video.duration <= 0) return;
+    var pct = (video.currentTime / video.duration) * 100;
+    seekFill.style.width = Math.min(100, Math.max(0, pct)) + "%";
+    seek.value = Math.min(100, Math.max(0, pct));
+    if (video.buffered.length) {
+      var end = video.buffered.end(video.buffered.length - 1);
+      buffered.style.width = Math.min(100, (end / video.duration) * 100) + "%";
+    }
+  }
+  function updateTime() {
+    timeEl.textContent = fmt(video.currentTime) + " / " + fmt(video.duration);
+  }
+  video.addEventListener("timeupdate", function () { updateTime(); updateSeek(); });
+  video.addEventListener("loadedmetadata", function () { updateTime(); updateSeek(); });
+
+  // click-to-seek on the track
+  seekTrack.addEventListener("click", function (e) {
+    var rect = seekTrack.getBoundingClientRect();
+    var pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    video.currentTime = pct * video.duration;
+  });
+  // drag-to-seek via the range input
+  seek.addEventListener("input", updateSeek);
+
+  // ---- volume ----
+  volume.addEventListener("input", function () {
+    video.volume = parseFloat(volume.value);
+    video.muted = false;
+    muteBtn.textContent = "🔊";
+  });
+  muteBtn.addEventListener("click", function () {
+    video.muted = !video.muted;
+    muteBtn.textContent = video.muted ? "🔇" : "🔊";
+  });
+
+  // ---- playback rate ----
+  rateBtns.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      video.playbackRate = parseFloat(btn.dataset.rate);
+      rateBtns.forEach(function (b) { b.classList.remove("active"); });
+      btn.classList.add("active");
+    });
+  });
+
+  // ---- fullscreen ----
+  function toggleFullscreen() {
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      if (video.requestFullscreen) video.requestFullscreen();
+      else if (video.webkitRequestFullscreen) video.webkitRequestFullscreen();
+      else if (video.parentElement.requestFullscreen) video.parentElement.requestFullscreen();
+    }
+  }
+  fullscreenBtn.addEventListener("click", toggleFullscreen);
+
+  // ---- keyboard shortcuts ----
+  document.addEventListener("keydown", function (e) {
+    if (e.target.tagName === "INPUT") return;
+    switch (e.code) {
+      case "Space":
+        e.preventDefault();
+        togglePlay();
+        break;
+      case "ArrowLeft":
+        e.preventDefault();
+        video.currentTime = Math.max(0, video.currentTime - 5);
+        break;
+      case "ArrowRight":
+        e.preventDefault();
+        video.currentTime = Math.min(video.duration || 0, video.currentTime + 5);
+        break;
+      case "KeyF":
+        toggleFullscreen();
+        break;
+      case "KeyM":
+        video.muted = !video.muted;
+        muteBtn.textContent = video.muted ? "🔇" : "🔊";
+        break;
+    }
+  });
+
+  // ---- auto-hide controls during playback ----
+  var hideTimer = null;
+  function showControls() {
+    controls.classList.remove("hidden");
+    if (video.paused) return;
+    clearTimeout(hideTimer);
+    hideTimer = setTimeout(function () { controls.classList.add("hidden"); }, 2000);
+  }
+  controls.addEventListener("mousemove", showControls);
+  controls.addEventListener("mousedown", showControls);
+  video.addEventListener("mousemove", showControls);
+  video.addEventListener("click", showControls);
+  video.addEventListener("play", showControls);
+  video.addEventListener("pause", function () { controls.classList.remove("hidden"); });
+
+  // ---- init ----
+  generateClip();
+})();
+</script>
+</body>
+</html>

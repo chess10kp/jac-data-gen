@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spreadsheet</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    background: #eef2f7;
+    color: #1e293b;
+  }
+  .app {
+    max-width: 980px;
+    margin: 28px auto;
+    padding: 20px;
+  }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .subtitle { color: #64748b; font-size: 13px; margin: 0 0 18px; line-height: 1.5; }
+  .table-wrap {
+    overflow: auto;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    box-shadow: 0 1px 4px rgba(15,23,42,0.12);
+  }
+  table { border-collapse: collapse; font-size: 14px; }
+  th, td {
+    border: 1px solid #e2e8f0;
+    text-align: right;
+    height: 30px;
+    position: relative;
+  }
+  thead th {
+    background: #f1f5f9;
+    font-weight: 600;
+    text-align: center;
+    border-bottom: 2px solid #cbd5e1;
+  }
+  tbody td.row-header {
+    text-align: center;
+    background: #f1f5f9;
+    font-weight: 600;
+    border-right: 2px solid #cbd5e1;
+  }
+  .cell { width: 96px; }
+  .display {
+    display: block;
+    width: 100%;
+    height: 100%;
+    text-align: right;
+    padding: 4px 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    outline: none;
+    cursor: text;
+  }
+  .edit {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    border: 2px solid #2563eb;
+    outline: none;
+    text-align: right;
+    padding: 4px 6px;
+    font: inherit;
+    box-sizing: border-box;
+    background: #fff;
+  }
+  .edit:focus { border-color: #2563eb; }
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>Spreadsheet</h1>
+  <p class="subtitle">10×10 grid. Enter plain values, arithmetic like <code>=A1+B2</code>, or functions like <code>=SUM(A1:A5)</code>. Press <kbd>Enter</kbd> to move down, <kbd>Tab</kbd> to move right, <kbd>Esc</kbd> to undo.</p>
+  <div class="table-wrap">
+    <table id="table"></table>
+  </div>
+</div>
+<script>
+(function(){
+  var cols = ['A','B','C','D','E','F','G','H','I','J'];
+  var rows = [1,2,3,4,5,6,7,8,9,10];
+  var cells = {};
+
+  function parseRef(ref){
+    var m = ref.match(/^([A-J])([0-9]+)$/);
+    if(!m) throw new Error('Invalid reference');
+    return {col: m[1], row: parseInt(m[2],10)};
+  }
+
+  function rangeCells(spec){
+    var parts = spec.split(':');
+    if(parts.length !== 2) throw new Error('Invalid range');
+    var s = parseRef(parts[0]);
+    var e = parseRef(parts[1]);
+    if(s.col > e.col || (s.col === e.col && s.row > e.row)) throw new Error('Invalid range');
+    var out = [];
+    for(var c = s.col; c <= e.col; c++){
+      for(var r = s.row; r <= e.row; r++){
+        out.push({ref: cols[c-1] + r});
+      }
+    }
+    return out;
+  }
+
+  function getCellValue(ref){
+    var raw = cells[ref];
+    if(raw === undefined || raw === '') return 0;
+    if(typeof raw === 'string' && raw.startsWith('=')) return evalFormula(raw);
+    return parseFloat(raw);
+  }
+
+  function formatValue(v){
+    if(typeof v !== 'number' || isNaN(v) || !isFinite(v)) return '#ERR';
+    if(Number.isInteger(v)) return v.toString();
+    return parseFloat(v.toFixed(10)).toString();
+  }
+
+  function tokenize(formula){
+    var tokens = [];
+    var i = 0, n = formula.length;
+    while(i < n){
+      var c = formula[i];
+      if(c === ' ' || c === '\t') { i++; continue; }
+      if(c === '=') { i++; continue; }
+      if(/[0-9.]/.test(c)){
+        var num = '';
+        while(i < n && /[0-9.]/.test(formula[i])) num += formula[i++];
+        tokens.push({type:'num', value: parseFloat(num)});
+      } else if(/[A-J]/.test(c)){
+        var letters = '';
+        while(i < n && /[A-Z_]/.test(formula[i])) letters += formula[i++];
+        if(i < n && formula[i] === '('){
+          tokens.push({type:'func', value: letters});
+        } else {
+          var row = '';
+          while(i < n && /[0-9]/.test(formula[i])) row += formula[i++];
+          tokens.push({type:'ref', value: letters + row});
+        }
+      } else if(c === ':'){
+        tokens.push({type:'range', value: ':'});
+        i++;
+      } else if('+-*/(),'.indexOf(c) !== -1){
+        tokens.push({type:'op', value: c});
+        i++;
+      } else {
+        throw new Error('Invalid character');
+      }
+    }
+    return tokens;
+  }
+
+  function evalFormula(formula){
+    var expr = formula.startsWith('=') ? formula.slice(1) : formula;
+    var tokens = tokenize(expr);
+    var pos = 0;
+    function peek(){ return tokens[pos]; }
+    function next(){ return tokens[pos++]; }
+
+    function applyOp(op, a, b){
+      switch(op){
+        case '+': return a + b;
+        case '-': return a - b;
+        case '*': return a * b;
+        case '/': return a / b;
+        case '//': return Math.floor(a / b);
+      }
+      throw new Error('Bad operator');
+    }
+
+    function applyFunction(name, args){
+      if(name === 'SUM'){
+        if(args.length !== 1) throw new Error('SUM needs one range');
+        var range = args[0];
+        if(!range || range.type !== 'range') throw new Error('Invalid range');
+        var sum = 0;
+        for(var k = 0; k < range.cells.length; k++){
+          var v = getCellValue(range.cells[k].ref);
+          if(typeof v !== 'number') throw new Error('Invalid cell');
+          sum += v;
+        }
+        return sum;
+      }
+      throw new Error('Unknown function');
+    }
+
+    function parsePrimary(){
+      var tok = peek();
+      if(!tok) throw new Error('Unexpected end');
+      if(tok.type === 'num'){ next(); return tok.value; }
+      if(tok.type === 'ref'){ next(); return tok.value; }
+      if(tok.type === 'range'){ next(); return {type:'range', cells: rangeCells(tok.value)}; }
+      if(tok.type === 'func'){
+        next();
+        var args = [];
+        if(peek() && peek().type === 'op' && peek().value === '('){
+          next();
+          if(peek() && peek().type === 'op' && peek().value === ')'){ next(); }
+          else {
+            args.push(parseRangeExpr());
+            while(peek() && peek().type === 'comma'){ next(); args.push(parseRangeExpr()); }
+            if(!(peek() && peek().type === 'op' && peek().value === ')')) throw new Error('Missing )');
+            next();
+          }
+        }
+        return applyFunction(tok.value, args);
+      }
+      if(tok.type === 'op' && tok.value === '('){
+        next();
+        var v = parseExpr(1);
+        if(!(peek() && peek().type === 'op' && peek().value === ')')) throw new Error('Missing )');
+        next();
+        return v;
+      }
+      throw new Error('Invalid formula');
+    }
+
+    function parseRangeExpr(){
+      var left = parseExpr(1);
+      if(peek() && peek().type === 'range'){
+        next();
+        var right = parseExpr(1);
+        return {type:'range', cells: rangeCells(left + ':' + right)};
+      }
+      return left;
+    }
+
+    function parseUnary(){
+      var tok = peek();
+      if(tok && tok.type === 'op' && tok.value === '-'){ next(); return -parseUnary(); }
+      if(tok && tok.type === 'op' && tok.value === '+'){ next(); return parseUnary(); }
+      return parsePrimary();
+    }
+
+    function parseExpr(minPrec){
+      var left = parseUnary();
+      while(true){
+        var tok = peek();
+        if(tok && tok.type === 'op' && ['+','-','*','/','//'].indexOf(tok.value) !== -1){
+          var prec = (tok.value === '+' || tok.value === '-') ? 1 : 2;
+          if(prec < minPrec) break;
+          next();
+          var right = parseUnary();
+          left = applyOp(tok.value, left, right);
+        } else break;
+      }
+      return left;
+    }
+
+    var result = parseExpr(1);
+    if(pos < tokens.length) throw new Error('Unexpected tokens');
+    return result;
+  }
+
+  function updateDisplay(cellId){
+    var cell = document.getElementById(cellId);
+    var display = cell.querySelector('.display');
+    var raw = cells[cellId];
+    if(raw === undefined || raw === '') { display.textContent = ''; return; }
+    if(typeof raw === 'string' && raw.startsWith('=')){
+      try { display.textContent = formatValue(evalFormula(raw)); }
+      catch(e) { display.textContent = '#ERR'; }
+    } else {
+      display.textContent = raw;
+    }
+  }
+
+  function recalcAll(){
+    for(var key in cells){
+      var raw = cells[key];
+      if(typeof raw === 'string' && raw.startsWith('=')){
+        updateDisplay(key);
+      }
+    }
+  }
+
+  function buildGrid(){
+    var table = document.getElementById('table');
+    var thead = document.createElement('thead');
+    var hrow = document.createElement('tr');
+    hrow.innerHTML = '<th></th>';
+    for(var c = 0; c < cols.length; c++) hrow.innerHTML += '<th>' + cols[c] + '</th>';
+    thead.appendChild(hrow);
+    table.appendChild(thead);
+
+    var tbody = document.createElement('tbody');
+    for(var r = 1; r <= rows.length; r++){
+      var row = document.createElement('tr');
+      var rh = document.createElement('td');
+      rh.className = 'row-header';
+      rh.textContent = r;
+      row.appendChild(rh);
+      for(var cc = 0; cc < cols.length; cc++){
+        var cell = document.createElement('td');
+        cell.className = 'cell';
+        cell.id = 'cell-' + cols[cc] + r;
+        cell.tabIndex = '0';
+        var display = document.createElement('span');
+        display.className = 'display';
+        var input = document.createElement('input');
+        input.className = 'edit';
+        input.type = 'text';
+        cell.appendChild(display);
+        cell.appendChild(input);
+        row.appendChild(cell);
+      }
+      tbody.appendChild(row);
+    }
+    table.appendChild(tbody);
+  }
+
+  function getCellCoords(cellId){
+    var m = cellId.match(/cell-([A-J])([0-9]+)/);
+    return [m[1], parseInt(m[2],10)];
+  }
+
+  function attachCellListeners(cellId){
+    var cell = document.getElementById(cellId);
+    var display = cell.querySelector('.display');
+    var input = cell.querySelector('.edit');
+
+    cell.addEventListener('focus', function(){
+      input.value = (cells[cellId] === undefined || cells[cellId] === '') ? '' : cells[cellId];
+      input.style.display = 'block';
+      input.focus();
+      input.select();
+    });
+
+    input.addEventListener('input', function(){
+      cells[cellId] = input.value;
+      recalcAll();
+    });
+
+    input.addEventListener('change', function(){
+      cells[cellId] = input.value;
+      recalcAll();
+    });
+
+    input.addEventListener('keydown', function(e){
+      if(e.key === 'Enter'){
+        e.preventDefault();
+        var coords = getCellCoords(cellId);
+        var nr = coords[1] + 1;
+        if(nr <= rows.length){
+          document.getElementById('cell-' + coords[0] + nr).querySelector('.edit').focus();
+        }
+      } else if(e.key === 'Tab'){
+        e.preventDefault();
+        var coords = getCellCoords(cellId);
+        var nc = coords[0];
+        var nr = coords[1];
+        if(nc < cols.length){
+          document.getElementById('cell-' + cols[nc+1] + nr).querySelector('.edit').focus();
+        } else {
+          nr += 1;
+          if(nr <= rows.length){
+            document.getElementById('cell-A' + nr).querySelector('.edit').focus();
+          }
+        }
+      } else if(e.key === 'Escape'){
+        e.preventDefault();
+        var coords = getCellCoords(cellId);
+        var pc = coords[0];
+        var nr = coords[1];
+        if(pc > 'A'){
+          document.getElementById('cell-' + cols[pc-2] + nr).querySelector('.edit').focus();
+        } else {
+          nr -= 1;
+          if(nr >= 1){
+            document.getElementById('cell-A' + nr).querySelector('.edit').focus();
+          }
+        }
+      }
+    });
+
+    cell.addEventListener('blur', function(){
+      recalcAll();
+      input.style.display = 'none';
+    });
+  }
+
+  function init(){
+    buildGrid();
+    for(var r = 1; r <= rows.length; r++){
+      for(var c = 0; c < cols.length; c++){
+        attachCellListeners(cols[c] + r);
+      }
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+</body>
+</html>
