@@ -1,0 +1,1 @@
+{"why": "picks alphabetically last substitute", "edits": [{"file": "cookbook.jac", "old": "swaps.append(f\"{ing.name}->{options[0]}\");", "new": "swaps.append(f\"{ing.name}->{options[-1]}\");"}]}

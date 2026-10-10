@@ -1,0 +1,1 @@
+{"why": "plans in visit order", "edits": [{"file": "cookbook.jac", "old": "report sorted(self.plans, key=lambda (p: CookPlan) { p.title; });", "new": "report self.plans;"}]}
