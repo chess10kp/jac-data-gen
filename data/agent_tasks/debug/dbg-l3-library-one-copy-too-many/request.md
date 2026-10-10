@@ -1,0 +1,1 @@
+The library CLI lends out more copies than we own. We have one copy of Ulysses: `jac run main.jac checkout ann <isbn> 2026-04-01` works and `available <isbn>` then says 0 — but Bob can still check it out after that, and then `available` says -1. A checkout when no copy is left must print "unavailable" and not record a loan.

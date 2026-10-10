@@ -23,9 +23,21 @@ node Stay {
 
 edge Hosts: Run --> Stay {}
 
-def:pub add_run(code: str, size: str) -> Run {
-    return root ++> Run(code=code, size=Size[size]);
+"""Look up a Size member by its name (None if there is no such member)."""
+def size_named(label: str) -> Size | None {
+    for m in Size {
+        if m.name == label {
+            return m;
+        }
+    }
+    return None;
 }
+
+def:pub add_run(code: str, size: str) -> Run {
+    return root ++> Run(code=code, size=size_named(size) or Size.SMALL);
+}
+
+glob RANK: dict[str, int] = {"SMALL": 1, "MEDIUM": 2, "LARGE": 3};
 
 def overlaps(s: Stay, start: int, nights: int) -> bool {
     return s.start < start + nights and start < s.start + s.nights;
@@ -47,7 +59,7 @@ walker:pub book_stay {
     has nights: int;
 
     can book with Root entry {
-        if self.size not in [s.name for s in Size] {
+        if self.size not in RANK {
             report {"ok": False, "reason": "bad size"};
             return;
         }
@@ -55,13 +67,13 @@ walker:pub book_stay {
             report {"ok": False, "reason": "bad dates"};
             return;
         }
-        need = Size[self.size].value;
-        options = [r for r in [root -->[?:Run]] if r.size.value >= need and run_free(r, self.start, self.nights)];
+        need = RANK[self.size];
+        options = [r for r in [root -->[?:Run]] if RANK[r.size.name] >= need and run_free(r, self.start, self.nights)];
         if not options {
             report {"ok": False, "reason": "no vacancy"};
             return;
         }
-        best = sorted(options, key=lambda (r: Run) { (r.size.value, r.code); })[0];
+        best = sorted(options, key=lambda (r: Run) { (RANK[r.size.name], r.code); })[0];
         best +>:Hosts():+> Stay(dog=self.dog, start=self.start, nights=self.nights);
         report {"ok": True, "run": best.code};
     }

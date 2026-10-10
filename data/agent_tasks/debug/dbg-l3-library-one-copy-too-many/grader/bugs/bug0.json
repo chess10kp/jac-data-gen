@@ -1,0 +1,11 @@
+{
+ "cls": "off-by-one",
+ "why": "availability check uses < 0 instead of <= 0, so a book with no copies left can still be checked out",
+ "edits": [
+  {
+   "file": "main.jac",
+   "old": "if b is None or available_copies(b) <= 0 {",
+   "new": "if b is None or available_copies(b) < 0 {"
+  }
+ ]
+}

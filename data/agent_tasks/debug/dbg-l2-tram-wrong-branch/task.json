@@ -11,11 +11,12 @@
  "target_paths": [
   "tramway.jac"
  ],
- "jac_version": "0.37.25",
+ "jac_version": "0.36.1",
  "license": "original-authored (jac_llm_data agent-task pool)",
  "provenance": {
   "source_task": "native/nat-l2-tram-lines",
   "source_level": 2,
+  "source_ref_hash": "6b733938b75a1237",
   "title": "Tram line runs and interchange stops",
   "domain": "urban tram timetable",
   "n_bugs": 1,

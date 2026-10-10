@@ -77,7 +77,9 @@ walker Return {
             tool = tools[0];
             holders = [tool <-:Lent:<-];
             if holders {
-                del [edge holders[0] ->:Lent:-> tool];
+                for doomed in [edge holders[0] ->:Lent:-> tool] {
+                    del doomed;
+                }
                 report Receipt(ok=True, reason="");
                 return;
             }

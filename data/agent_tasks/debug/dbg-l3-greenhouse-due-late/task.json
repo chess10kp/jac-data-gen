@@ -12,11 +12,12 @@
  "target_paths": [
   "greenhouse.jac"
  ],
- "jac_version": "0.37.25",
+ "jac_version": "0.36.1",
  "license": "original-authored (jac_llm_data agent-task pool)",
  "provenance": {
   "source_task": "native/nat-l3-greenhouse-watering",
   "source_level": 3,
+  "source_ref_hash": "79e841e4d7bee26a",
   "title": "Greenhouse bed watering schedule",
   "domain": "greenhouse horticulture",
   "n_bugs": 1,

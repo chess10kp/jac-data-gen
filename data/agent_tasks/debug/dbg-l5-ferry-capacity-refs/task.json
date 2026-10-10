@@ -12,11 +12,12 @@
  "target_paths": [
   "app.jac"
  ],
- "jac_version": "0.37.25",
+ "jac_version": "0.36.1",
  "license": "original-authored (jac_llm_data agent-task pool)",
  "provenance": {
   "source_task": "native/nat-l5-ferry-booking",
   "source_level": 5,
+  "source_ref_hash": "0253d922bf94db37",
   "title": "Island ferry booking service",
   "domain": "ferry reservations",
   "n_bugs": 2,

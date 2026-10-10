@@ -12,11 +12,12 @@
  "target_paths": [
   "survey.jac"
  ],
- "jac_version": "0.37.25",
+ "jac_version": "0.36.1",
  "license": "original-authored (jac_llm_data agent-task pool)",
  "provenance": {
   "source_task": "native/nat-l3-bird-survey",
   "source_level": 3,
+  "source_ref_hash": "7292a93f58abc2b8",
   "title": "Volunteer bird survey tallies",
   "domain": "citizen-science bird counts",
   "n_bugs": 1,

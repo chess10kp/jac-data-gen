@@ -4,8 +4,8 @@
  "edits": [
   {
    "file": "app.jac",
-   "old": "key=lambda (r: Run) { (r.size.value, r.code); }",
-   "new": "key=lambda (r: Run) { (r.code, r.size.value); }"
+   "old": "key=lambda (r: Run) { (RANK[r.size.name], r.code); }",
+   "new": "key=lambda (r: Run) { (r.code, RANK[r.size.name]); }"
   }
  ]
 }

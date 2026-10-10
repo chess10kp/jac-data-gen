@@ -12,11 +12,12 @@
  "target_paths": [
   "app.jac"
  ],
- "jac_version": "0.37.25",
+ "jac_version": "0.36.1",
  "license": "original-authored (jac_llm_data agent-task pool)",
  "provenance": {
   "source_task": "native/nat-l5-bikeshare-api",
   "source_level": 5,
+  "source_ref_hash": "dc054318d7f02f3c",
   "title": "Bike-share dock service API",
   "domain": "bike-share operations",
   "n_bugs": 2,

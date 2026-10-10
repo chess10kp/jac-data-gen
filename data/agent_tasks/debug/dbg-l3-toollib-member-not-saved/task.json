@@ -12,11 +12,12 @@
  "target_paths": [
   "toollib.jac"
  ],
- "jac_version": "0.37.25",
+ "jac_version": "0.36.1",
  "license": "original-authored (jac_llm_data agent-task pool)",
  "provenance": {
   "source_task": "native/nat-l3-tool-library",
   "source_level": 3,
+  "source_ref_hash": "90c55a91edcd4ff6",
   "title": "Neighbourhood tool library lending",
   "domain": "community tool lending",
   "n_bugs": 1,

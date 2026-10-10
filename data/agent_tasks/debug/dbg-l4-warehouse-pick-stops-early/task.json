@@ -13,11 +13,12 @@
   "picking.jac",
   "main.jac"
  ],
- "jac_version": "0.37.25",
+ "jac_version": "0.36.1",
  "license": "original-authored (jac_llm_data agent-task pool)",
  "provenance": {
   "source_task": "native/nat-l4-warehouse-picking",
   "source_level": 4,
+  "source_ref_hash": "8e724a33ef5ec91d",
   "title": "Warehouse aisle pick run",
   "domain": "warehouse order picking",
   "n_bugs": 2,

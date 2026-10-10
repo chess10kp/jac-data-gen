@@ -11,11 +11,12 @@
  "target_paths": [
   "cookbook.jac"
  ],
- "jac_version": "0.37.25",
+ "jac_version": "0.36.1",
  "license": "original-authored (jac_llm_data agent-task pool)",
  "provenance": {
   "source_task": "native/nat-l2-pantry-substitutes",
   "source_level": 2,
+  "source_ref_hash": "b9a6a90e64c04510",
   "title": "Cookbook pantry substitutions",
   "domain": "home cooking / recipe graph",
   "n_bugs": 1,

@@ -13,10 +13,10 @@ start <= s.start + s.nights
 ## bug1 [wrong-sort-key]: run preference sorts by code before size, so larger runs are picked before fitting smaller ones
 - app.jac: fix by restoring
 ```
-key=lambda (r: Run) { (r.size.value, r.code); }
+key=lambda (r: Run) { (RANK[r.size.name], r.code); }
 ```
 (injected as)
 ```
-key=lambda (r: Run) { (r.code, r.size.value); }
+key=lambda (r: Run) { (r.code, RANK[r.size.name]); }
 ```
 

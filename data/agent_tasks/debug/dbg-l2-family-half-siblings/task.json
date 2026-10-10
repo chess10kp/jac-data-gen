@@ -11,11 +11,12 @@
  "target_paths": [
   "family.jac"
  ],
- "jac_version": "0.37.25",
+ "jac_version": "0.36.1",
  "license": "original-authored (jac_llm_data agent-task pool)",
  "provenance": {
   "source_task": "native/nat-l2-family-cousins",
   "source_level": 2,
+  "source_ref_hash": "bbfacf44a066f64a",
   "title": "Family tree first cousins",
   "domain": "genealogy",
   "n_bugs": 1,

@@ -27,7 +27,7 @@ def find_book(isbn: str) -> Book | None {
 }
 
 def available_copies(b: Book) -> int {
-    return b.copies - len([edge b ->:Loan:->]);
+    return b.copies - len([edge b <-:Loan:<-]);
 }
 
 walker AddBook {
@@ -54,7 +54,7 @@ walker Checkout {
 
     can lend with Root entry {
         b = find_book(self.isbn);
-        if b is None or available_copies(b) <= 0 {
+        if b is None or available_copies(b) < 0 {
             report {"ok": False};
             return;
         }

@@ -3,10 +3,12 @@
 ## bug0 [wrong-delete-target]: Return deletes the Tool node instead of the Lent edge
 - toollib.jac: fix by restoring
 ```
-del [edge holders[0] ->:Lent:-> tool];
+                for doomed in [edge holders[0] ->:Lent:-> tool] {
+                    del doomed;
+                }
 ```
 (injected as)
 ```
-del tool;
+                del tool;
 ```
 

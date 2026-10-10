@@ -11,11 +11,12 @@
  "target_paths": [
   "vault.jac"
  ],
- "jac_version": "0.37.25",
+ "jac_version": "0.36.1",
  "license": "original-authored (jac_llm_data agent-task pool)",
  "provenance": {
   "source_task": "native/nat-l1-seed-vault-regrow",
   "source_level": 1,
+  "source_ref_hash": "1ec9d07891dfa294",
   "title": "Seed vault regrow planning",
   "domain": "seed bank curation",
   "n_bugs": 1,

@@ -12,11 +12,12 @@
   "harvest.jac",
   "model/varieties.jac"
  ],
- "jac_version": "0.37.25",
+ "jac_version": "0.36.1",
  "license": "original-authored (jac_llm_data agent-task pool)",
  "provenance": {
   "source_task": "native/nat-l4-orchard-forecast",
   "source_level": 4,
+  "source_ref_hash": "cb81c25e0237c0ae",
   "title": "Orchard harvest forecast",
   "domain": "fruit orchard management",
   "n_bugs": 2,

@@ -4,8 +4,8 @@
  "edits": [
   {
    "file": "toollib.jac",
-   "old": "del [edge holders[0] ->:Lent:-> tool];",
-   "new": "del tool;"
+   "old": "                for doomed in [edge holders[0] ->:Lent:-> tool] {\n                    del doomed;\n                }\n",
+   "new": "                del tool;\n"
   }
  ]
 }
