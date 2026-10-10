@@ -517,6 +517,26 @@ def score_repo_ci(r: dict, repaired_root: Path | None, out: Path) -> dict:
             c["errors"] = c["errors"][:60]
         res["checks"] = checks
         fname, ftree = final or trees[-1]
+        # 0.37 runtime migration: the byllm package now ships as jaclang.byllm
+        nb, orig = 0, {}
+        for p in walk(ftree):
+            if p.suffix == ".jac":
+                t = p.read_text(errors="replace")
+                t2 = re.sub(r"\bimport\s+from\s+byllm(?:\.lib|\.llm)?\s*\{", "import from jaclang.byllm.lib {", t)
+                if t2 != t:
+                    orig[p] = t
+                    p.write_text(t2)
+                    nb += 1
+        if nb:
+            res["byllm_rewrite"] = nb
+            if final is not None:
+                c = jac_check(ftree)
+                c["errors"] = c["errors"][:30]
+                res["byllm_check"] = {k: c[k] for k in ("ok", "codes")}
+                if not c["ok"]:  # keep the green tree; record that the rewrite broke it
+                    for p, t in orig.items():
+                        p.write_text(t)
+                    res["byllm_rewrite"] = 0
         res["final_tree"] = fname
         res["green"] = final is not None
         res["code_map"] = code_map(ftree)
