@@ -303,6 +303,7 @@ def cmd_validate(a) -> None:
     out.mkdir(parents=True, exist_ok=True)
     with open(out / "debug_results.jsonl", "a") as f:
         for d in ds:
+            print(f"--- start {d.name} {time.strftime('%H:%M:%S')}", flush=True)
             try:
                 r = validate_one(d, a.jac)
             except Exception as e:

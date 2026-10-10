@@ -104,8 +104,8 @@ def build_task(spec: dict) -> Path:
     (t / "grader").mkdir(parents=True)
     tests = spec["tests"]
     code = spec.get("code") or sorted(
-        p.relative_to(ref).as_posix() for p in ref.rglob("*.jac")
-        if not _is_test_file(p.name) and "__jac_gen__" not in p.parts and ".jac" not in p.parts[:-1])
+        p.relative_to(ref).as_posix() for p in ref.rglob("*.jac") if p.is_file()
+        and not _is_test_file(p.name) and "__jac_gen__" not in p.parts and ".jac" not in p.relative_to(ref).parts[:-1])
     # starter = source starter extras (jac.toml, AGENTS.md ...) + reference code
     starter = t / "starter"
     starter.mkdir()
@@ -131,7 +131,7 @@ def build_task(spec: dict) -> Path:
     # trivial = import-only smoke suite
     (t / "grader" / "trivial").mkdir()
     (t / "grader" / "trivial" / tests).write_text(
-        f"import {spec['trivial_import']};\n\ntest \"module imports\" {{\n    assert True;\n}}\n")
+        f"import {spec['trivial_import']}\n\ntest \"module imports\" {{\n    assert True;\n}}\n")
     shutil.copyfile(auth / "request.md", t / "request.md")
     hand = json.loads((auth / "hand_mutants.json").read_text()) if (auth / "hand_mutants.json").exists() else []
     if (auth / "hand_mutants.json").exists():

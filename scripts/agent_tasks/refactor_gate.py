@@ -101,7 +101,7 @@ def module_files(wd: Path) -> list[Path]:
         rel = p.relative_to(wd)
         if any(part in ("__jac_gen__", ".jac", "node_modules") for part in rel.parts):
             continue
-        if p.name.endswith(".impl.jac") or ".impl" in rel.parts[:-1] or p.name.endswith(".test.jac"):
+        if p.name.endswith(".impl.jac") or any(x.endswith(".impl") for x in rel.parts[:-1]) or p.name.endswith(".test.jac"):
             continue
         if p.name == TEST_MODULE or p.name.startswith("grader_"):
             continue

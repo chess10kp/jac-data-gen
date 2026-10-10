@@ -3,9 +3,28 @@
   "kind": "native",
   "level": 4,
   "source": "hand-authored",
-  "gates": ["check", "test"],
-  "target_paths": ["load.jac", "reports.jac"],
-  "jac_version": "0.37.25",
+  "gates": [
+    "check",
+    "test"
+  ],
+  "target_paths": [
+    "load.jac",
+    "reports.jac"
+  ],
+  "jac_version": "0.36.1",
   "license": "original-authored (jac_llm_data agent-task pool)",
-  "provenance": {"author": "claude (hand-authored pilot)", "created": "2026-10-10", "title": "Household breaker panel load", "domain": "home electrical panel", "constructs": ["multi-module", "edit existing walker", "mixed edge directions", "walker accumulation", "float aggregation"], "inspiration": "none (original)"}
+  "provenance": {
+    "author": "claude (hand-authored pilot)",
+    "created": "2026-10-10",
+    "title": "Household breaker panel load",
+    "domain": "home electrical panel",
+    "constructs": [
+      "multi-module",
+      "edit existing walker",
+      "mixed edge directions",
+      "walker accumulation",
+      "float aggregation"
+    ],
+    "inspiration": "none (original)"
+  }
 }

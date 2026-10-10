@@ -716,35 +716,57 @@ def cmd_select(a) -> None:
         n = c["starter"]["n_errors"]
         return (not 2 <= n <= 40, -len(c["starter"]["codes"]), n, c["cid"])
 
+    def masked(c):  # retired .cl/.sv marker hides every other diagnostic in the file
+        return all(e.startswith("E-file") and "marker was retired" in e for e in c["starter"]["sample"])
+
+    def internal_crash(c):
+        return any("list index out of range" in e or "Traceback" in e for e in c["starter"]["sample"])
+
+    for c in cands:
+        c["_level"] = max(level_of(c["starter"]), 3 if masked(c) else 1)
+    seeds_used = {(json.loads((OUT / t / "task.json").read_text())["provenance"].get("repo"),
+                   json.loads((OUT / t / "task.json").read_text())["provenance"].get("seed_module"))
+                  for t in existing if (OUT / t / "task.json").exists()}
+    n_masked = 0
     picked: list[dict] = []
     for bucket, pool, cap in (("jh", [c for c in cands if c["source"] == "jachacks" and not c.get("drift")], n_jh),
                               ("drift", [c for c in cands if c.get("drift")], n_drift)):
-        # round-robin over repos so one big repo can't dominate
-        by_repo = defaultdict(list)
-        for c in sorted(pool, key=pref):
-            by_repo[c["unit"]["repo"]].append(c)
+        pool = [c for c in pool if not internal_crash(c) and c["cid"] not in existing]
         got = have[bucket]
-        while got < cap and any(by_repo.values()):
-            for repo in sorted(by_repo, key=lambda r: pref(by_repo[r][0]) if by_repo[r] else (9,)):
-                if got >= cap or not by_repo[repo]:
-                    continue
-                c = by_repo[repo].pop(0)
-                if per_repo[repo] >= TASKS_PER_REPO or sig(repo, c["starter"]) in seen_sig \
-                        or c["cid"] in existing:
-                    continue
-                picked.append(c)
-                per_repo[repo] += 1
-                seen_sig.add(sig(repo, c["starter"]))
-                got += 1
+        lvl = 0
+        stall = 0
+        while got < cap and stall < 5:
+            lvl = lvl % 5 + 1
+            opts = [c for c in pool if c["_level"] == lvl
+                    and per_repo[c["unit"]["repo"]] < TASKS_PER_REPO
+                    and sig(c["unit"]["repo"], c["starter"]) not in seen_sig
+                    and (c["unit"]["repo"], c["unit"]["seed"]) not in seeds_used
+                    and not (masked(c) and n_masked >= 4)]
+            if not opts:
+                stall += 1
+                continue
+            stall = 0
+            c = min(opts, key=lambda c: (per_repo[c["unit"]["repo"]], pref(c)))
+            pool.remove(c)
+            picked.append(c)
+            per_repo[c["unit"]["repo"]] += 1
+            seen_sig.add(sig(c["unit"]["repo"], c["starter"]))
+            seeds_used.add((c["unit"]["repo"], c["unit"]["seed"]))
+            n_masked += masked(c)
+            got += 1
     code_seen = Counter()
     got = have["osp"]
-    for c in sorted([c for c in cands if c["source"] == "osp"], key=lambda c: (pref(c), c["cid"])):
-        if got >= n_osp:
+    lvl_seen = Counter()
+    osp_pool = [c for c in cands if c["source"] == "osp" and c["cid"] not in existing]
+    while got < n_osp and osp_pool:
+        # least-represented level first, then fresh error codes
+        c = min(osp_pool, key=lambda c: (code_seen[c["unit"]["error_code"]] >= 2,
+                                         lvl_seen[c["_level"]], code_seen[c["unit"]["error_code"]], c["cid"]))
+        osp_pool.remove(c)
+        if code_seen[c["unit"]["error_code"]] >= 2:
             break
-        k = c["unit"]["error_code"]
-        if code_seen[k] >= 2 or c["cid"] in existing:
-            continue
-        code_seen[k] += 1
+        code_seen[c["unit"]["error_code"]] += 1
+        lvl_seen[c["_level"]] += 1
         picked.append(c)
         got += 1
     random_req = lambda c, pool: pool[int(sid(c["cid"]), 16) % len(pool)]  # noqa: E731
@@ -773,7 +795,7 @@ def cmd_select(a) -> None:
         shutil.copy(src / "symbols.json", tdir / "grader" / "symbols.json")
         u = c["unit"]
         st = c["starter"]
-        level = level_of(st)
+        level = c["_level"]
         gates = ["check", "fidelity"]
         if c["source"] == "osp":
             gates = ["check", "test", "fidelity"]
