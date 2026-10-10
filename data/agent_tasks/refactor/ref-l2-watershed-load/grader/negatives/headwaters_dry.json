@@ -1,0 +1,1 @@
+{"why": "headwaters ignore seasonal inflow", "edits": [{"file": "catchment.jac", "old": "if not [graph[n] <-:FlowsInto:<-]]", "new": "if not [graph[n] <-:FlowsInto:seasonal == False:<-]]"}]}

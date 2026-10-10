@@ -1,0 +1,1 @@
+{"why": "seasonal channels are followed even in the dry season", "edits": [{"file": "catchment.jac", "old": "visit [here <-:FlowsInto:seasonal == False:<-];", "new": "visit [here <-:FlowsInto:<-];"}]}

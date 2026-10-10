@@ -1,0 +1,1 @@
+{"why": "hiring under an unknown manager silently makes a top-level hire", "edits": [{"file": "roster.jac", "old": "    if manager != \"\" and boss is None {\n        return False;\n    }\n", "new": ""}]}

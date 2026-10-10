@@ -1,0 +1,20 @@
+{
+  "id": "ref-l2-org-roster",
+  "kind": "refactor",
+  "level": 2,
+  "source": "hand-authored (de-idiomized starter)",
+  "gates": ["check", "test"],
+  "target_paths": ["roster.jac"],
+  "jac_version": "0.36.1",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "provenance": {"author": "claude (hand-authored)", "created": "2026-10-10", "title": "Team reporting roster", "domain": "org chart / reporting lines", "smell": ["parallel dicts in one bucket node", "isinstance scan", "dict scans for relationships"], "idioms": ["nodes", "typed edge", "incoming edge traversal", "edge deletion", "node deletion"], "inspiration": "data/agent_tasks/app/app-l2-org-chart"},
+  "idiom_gate": "scripts/agent_tasks/refactor_gate.py",
+  "idiom_targets": [
+    {"metric": "arch.node", "op": ">=", "value": 1, "desc": ">=1 node type (employee)"},
+    {"metric": "arch.edge", "op": ">=", "value": 1, "desc": ">=1 typed edge (manages)"},
+    {"metric": "dict_fields", "op": "==", "value": 0, "desc": "no dict-typed fields on nodes/objs"},
+    {"metric": "isinstance_calls", "op": "==", "value": 0, "desc": "no isinstance type scans"},
+    {"metric": "edge_filters", "op": ">=", "value": 3, "desc": ">=3 edge filters / typed hops"},
+    {"metric": "connects", "op": ">=", "value": 2, "desc": ">=2 connect operations"}
+  ]
+}

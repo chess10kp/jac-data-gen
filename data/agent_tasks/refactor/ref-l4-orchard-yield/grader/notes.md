@@ -5,3 +5,4 @@ Idiom targets: node>=3, edge>=1, walker>=2, enum>=1, edge_filters>=1, spawns>=2,
 Quirk (native lowering, module has no root): iterating an enum yields nothing and `Variety("gala")` returns 0 -> parse strings with a `match` returning `Variety | None`. Enum `.value`/`.name`, enum match and `==` work.
 Floats: all yields are multiples of 0.25, so sums are exact regardless of traversal order.
 Negatives: counts_diseased, age_factor_boundary, duplicate_tags, season_ages_twice, slot_ignored.
+Quirk (0.36.1): `disengage` inside an annex `impl Walker.ability` is rejected (E2083 "only valid inside a walker ability"), so Locate stops via a found-guard instead.

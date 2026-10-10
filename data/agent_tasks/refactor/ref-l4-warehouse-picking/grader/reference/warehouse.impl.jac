@@ -40,9 +40,9 @@ impl FindBin.on_aisle {
     hits = [here ->:Holds:->[?:Bin, code == wanted]];
     if hits {
         self.found = hits[0];
-        disengage;
+    } else {
+        visit [here ->:NextAisle:->];
     }
-    visit [here ->:NextAisle:->];
 }
 
 impl OnHand.start {

@@ -1,0 +1,1 @@
+{"why": "a folder may hold two files with the same name", "edits": [{"file": "diskmap.jac", "old": "    if [d -->[?:File, name == wanted]] {\n        return False;\n    }\n", "new": ""}]}

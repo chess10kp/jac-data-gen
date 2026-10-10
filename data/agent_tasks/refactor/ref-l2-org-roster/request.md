@@ -1,0 +1,3 @@
+Hey — `roster.jac` tracks the org as two parallel dicts (`boss` and `pay`) on a `Roster` node we dig out of root with `isinstance`. That made sense as a quick hack but it's a graph and should look like one. Please turn each person into an employee node with their salary, and represent "X manages Y" as a typed edge between employees. Reports, manager lookups and peers should come from edge traversal/filters (incoming edges for "who's my manager"), and transfer/fire should actually rewire or delete edges and nodes rather than editing dict entries.
+
+The public functions — `hire`, `manager_of`, `direct_reports`, `team_cost`, `peers`, `transfer`, `fire` — must keep the same names, parameters and results. People with no manager are passed/returned as `""` as today.

@@ -1,0 +1,1 @@
+{"why": "transfer never detaches from the previous manager", "edits": [{"file": "roster.jac", "old": "    if old is not None {\n        for link in [edge old ->:Manages:-> e] {\n            del link;\n        }\n    }\n", "new": ""}]}

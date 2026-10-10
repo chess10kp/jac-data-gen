@@ -82,15 +82,19 @@ impl Locate.on_orchard {
 }
 
 impl Locate.on_block {
-    visit [here ->:HasRow:->];
+    if self.found is None {
+        visit [here ->:HasRow:->];
+    }
 }
 
 impl Locate.on_row {
+    if self.found is not None {
+        return;
+    }
     wanted = self.tag;
     hits = [t for t in [here ->:Planted:->] if t.tag == wanted];
     if hits {
         self.found = hits[0];
-        disengage;
     }
 }
 

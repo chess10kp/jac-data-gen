@@ -1,0 +1,1 @@
+{"why": "firing drops the team instead of moving it up", "edits": [{"file": "roster.jac", "old": "        for r in [e ->:Manages:->] {\n            up +>:Manages():+> r;\n        }\n", "new": ""}]}

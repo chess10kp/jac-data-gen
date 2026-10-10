@@ -1,0 +1,1 @@
+{"why": "walker never descends into subfolders", "edits": [{"file": "diskmap.jac", "old": "        visit [here -->[?:Folder]];\n", "new": ""}]}

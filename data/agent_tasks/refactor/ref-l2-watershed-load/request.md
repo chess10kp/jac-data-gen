@@ -1,0 +1,3 @@
+The catchment helpers in `catchment.jac` take plain reach/flow records and answer upstream questions, but internally they hand-roll an adjacency dict plus a while-loop stack walk. I'd rather this read as Jac: on each call, load the records into a small throwaway graph (reaches as nodes, flows as a typed edge that knows whether the channel is seasonal) and use a walker spawned on the gauge reach to climb upstream, skipping seasonal channels in the dry season. `headwaters` should come straight from the graph too.
+
+`upstream_reaches`, `upstream_load` and `headwaters` keep their signatures and results; callers keep passing the same record lists. Don't hang the throwaway graph off root.

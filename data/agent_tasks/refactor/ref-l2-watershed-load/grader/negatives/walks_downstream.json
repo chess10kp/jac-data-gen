@@ -1,0 +1,1 @@
+{"why": "walker follows the current downstream instead of upstream", "edits": [{"file": "catchment.jac", "old": "            visit [here <-:FlowsInto:<-];\n", "new": "            visit [here ->:FlowsInto:->];\n"}]}

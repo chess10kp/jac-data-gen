@@ -13,7 +13,7 @@
     "title": "Warehouse pick runs",
     "domain": "warehouse order picking",
     "smell": ["obj with parallel dicts keyed by bin code", "string-typed bin state", "out-parameter list in a private helper", "inline method bodies"],
-    "idioms": ["node facade owning a transient subgraph", "typed edges with fields", "enum", "walkers with disengage", "edge predicates / filters", "separate layout module", "decl + .impl.jac annex"],
+    "idioms": ["node facade owning a transient subgraph", "typed edges with fields", "enum", "walkers", "edge predicates / filters", "separate layout module", "decl + .impl.jac annex"],
     "inspiration": "data/agent_tasks/native/nat-l4-warehouse-picking"
   },
   "idiom_gate": "scripts/agent_tasks/refactor_gate.py",

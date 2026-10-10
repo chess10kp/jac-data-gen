@@ -1,0 +1,1 @@
+{"why": "peers lists the person themselves", "edits": [{"file": "roster.jac", "old": "for x in group if x.name != name]", "new": "for x in group]"}]}

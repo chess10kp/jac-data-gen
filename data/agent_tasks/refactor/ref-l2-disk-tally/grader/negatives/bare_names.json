@@ -1,0 +1,1 @@
+{"why": "big files reported without their folder path", "edits": [{"file": "diskmap.jac", "old": "self.big.append(here.path + \"/\" + f.name);", "new": "self.big.append(f.name);"}]}

@@ -1,0 +1,1 @@
+{"why": "team cost leaves out the manager's own salary", "edits": [{"file": "roster.jac", "old": "return e.salary + sum(", "new": "return sum("}]}

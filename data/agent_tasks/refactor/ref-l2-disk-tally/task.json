@@ -1,0 +1,19 @@
+{
+  "id": "ref-l2-disk-tally",
+  "kind": "refactor",
+  "level": 2,
+  "source": "hand-authored (de-idiomized starter)",
+  "gates": ["check", "test"],
+  "target_paths": ["diskmap.jac"],
+  "jac_version": "0.36.1",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "provenance": {"author": "claude (hand-authored)", "created": "2026-10-10", "title": "Disk usage tally", "domain": "file system disk usage", "smell": ["recursive helper functions over [n -->]", "isinstance dispatch", "duplicated traversal"], "idioms": ["walker traversal", "spawn from facade function", "typed edge filters"], "inspiration": "data/agent_tasks/app/app-l2-disk-usage"},
+  "idiom_gate": "scripts/agent_tasks/refactor_gate.py",
+  "idiom_targets": [
+    {"metric": "arch.walker", "op": ">=", "value": 1, "desc": ">=1 walker does the traversal"},
+    {"metric": "visits", "op": ">=", "value": 1, "desc": "walker descends with visit"},
+    {"metric": "spawns", "op": ">=", "value": 1, "desc": "walker is spawned"},
+    {"metric": "isinstance_calls", "op": "==", "value": 0, "desc": "no isinstance type dispatch"},
+    {"metric": "edge_filters", "op": ">=", "value": 2, "desc": ">=2 typed edge filters"}
+  ]
+}

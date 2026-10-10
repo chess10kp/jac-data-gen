@@ -1,0 +1,3 @@
+In `diskmap.jac` the folder tree is already nodes and edges, but `usage`, `file_count` and `big_files` each go through their own recursive helper that walks `[d -->]` and branches on `isinstance`. That's three copies of the same traversal. Please replace them with a single walker that you spawn on the folder and that tallies what it finds as it moves down into subfolders; the public functions just spawn it and read the result. While you're in there, use typed edge filters for the lookups instead of `isinstance` checks.
+
+Keep `add_folder`, `add_file`, `usage`, `file_count` and `big_files` exactly as they are from the caller's point of view (same arguments, same results, same path format).

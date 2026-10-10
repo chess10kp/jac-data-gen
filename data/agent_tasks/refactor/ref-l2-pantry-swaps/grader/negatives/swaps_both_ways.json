@@ -1,0 +1,1 @@
+{"why": "a swap also lets the replacement stand in for the original", "edits": [{"file": "cookbook.jac", "old": "    o +>:SwapsTo():+> ingredient(replacement);", "new": "    o +>:SwapsTo():+> ingredient(replacement);\n    ingredient(replacement) +>:SwapsTo():+> o;"}]}

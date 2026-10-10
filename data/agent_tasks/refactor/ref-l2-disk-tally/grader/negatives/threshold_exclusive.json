@@ -1,0 +1,1 @@
+{"why": "files exactly at the threshold are not reported", "edits": [{"file": "diskmap.jac", "old": "if f.size >= self.min_size {", "new": "if f.size > self.min_size {"}]}

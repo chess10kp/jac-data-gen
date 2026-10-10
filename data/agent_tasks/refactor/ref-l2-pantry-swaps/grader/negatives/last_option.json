@@ -1,0 +1,1 @@
+{"why": "picks the last alphabetical substitute instead of the first", "edits": [{"file": "cookbook.jac", "old": "out.append(i.name + \"->\" + opts[0]);", "new": "out.append(i.name + \"->\" + opts[-1]);"}]}
