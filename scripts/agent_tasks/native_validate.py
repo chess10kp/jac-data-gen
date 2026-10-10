@@ -154,7 +154,7 @@ class Task:
     def test(self, wd: Path) -> tuple[bool, str]:
         rc, out = _run([self.jac, "test", TEST_MODULE], wd, self.timeout)
         import re
-        ok = rc == 0 and re.search(r"\b[1-9]\d* passed", out) is not None and re.search(r"\b[1-9]\d* failed", out) is None
+        ok = rc == 0 and re.search(r"\b[1-9]\d* passed", out) is not None and re.search(r"\b[1-9]\d* (failed|errors?)\b", out) is None
         return ok, out[-1500:]
 
     def run_steps(self, wd: Path) -> tuple[bool, str]:
@@ -204,8 +204,9 @@ class Task:
                         body = r.read().decode()
                 except urllib.error.HTTPError as e:
                     body = e.read().decode()
+                flat = "".join(body.split())
                 for s in rq.get("expect", []):
-                    if s not in body:
+                    if "".join(s.split()) not in flat:
                         return False, f"request {i} {rq['path']}: expected {s!r} in {body[:500]}"
             return True, f"served on :{port}, {len(spec.get('requests', []))} probes ok"
         finally:
