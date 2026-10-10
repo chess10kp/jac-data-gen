@@ -1,0 +1,20 @@
+{
+  "id": "cvt-l5-guestbook-api",
+  "kind": "convert",
+  "level": 5,
+  "source": "github:okteto/guestbook-api@46e2dc70e8fed55bfa4f764b307361f2873afed1",
+  "gates": ["check", "fidelity", "test", "start"],
+  "target_paths": ["main.jac"],
+  "jac_version": "0.37.25",
+  "license": "MIT",
+  "provenance": {
+    "title": "Guestbook entries API",
+    "domain": "guestbook / visitor messages (FARM: FastAPI + ODMantic)",
+    "upstream": "https://github.com/okteto/guestbook-api",
+    "commit": "46e2dc70e8fed55bfa4f764b307361f2873afed1",
+    "upstream_tests": "test_e2e.py (httpx end-to-end) -> grader/smoke.py + grader/tests.jac",
+    "mapping": "ODMantic Model Entry -> node Entry on root; routes GET / , GET /entries, POST /entry, DELETE /entry/{id} -> walker:pub welcome/retrieve_entries/add_entry/delete_entry; Mongo ObjectId -> jid()",
+    "reference": "hand-written idiomatic Jac port (claude), validated by convert_build",
+    "created": "2026-10-10"
+  }
+}

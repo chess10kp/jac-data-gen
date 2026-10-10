@@ -1,0 +1,36 @@
+{
+ "api": [
+  {
+   "name": "rgb_to_yiq",
+   "kind": "def"
+  },
+  {
+   "name": "yiq_to_rgb",
+   "kind": "def"
+  },
+  {
+   "name": "rgb_to_hls",
+   "kind": "def"
+  },
+  {
+   "name": "hls_to_rgb",
+   "kind": "def"
+  },
+  {
+   "name": "rgb_to_hsv",
+   "kind": "def"
+  },
+  {
+   "name": "hsv_to_rgb",
+   "kind": "def"
+  }
+ ],
+ "forbid_imports": [
+  "colorsys"
+ ],
+ "strip": [
+  "python"
+ ],
+ "timeout_s": 240,
+ "ref_mass": 916
+}

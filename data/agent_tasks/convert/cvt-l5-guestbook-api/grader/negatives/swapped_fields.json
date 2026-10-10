@@ -1,0 +1,1 @@
+{"edits": [{"file": "main.jac", "old": "Entry(name=self.name, `entry=self.entry,", "new": "Entry(name=self.entry, `entry=self.name,"}]}

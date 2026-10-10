@@ -1,0 +1,3 @@
+We're moving some small utility code over to Jac. `python/colorsys.py` is a copy of the stdlib color-system conversions (its unit tests are next to it in `python/test_colorsys.py`).
+
+Please port it to a Jac module `color_spaces.jac` in the project root with the same six public functions and signatures (`rgb_to_yiq`, `yiq_to_rgb`, `rgb_to_hls`, `hls_to_rgb`, `rgb_to_hsv`, `hsv_to_rgb`, each taking three floats and returning a 3-tuple of floats). Behavior must match the Python version exactly, including the clamping in `yiq_to_rgb` and the near-white HLS fix. Write it as real Jac — don't import `colorsys` or the Python file. Make sure `jac check` is clean.

@@ -1,0 +1,1 @@
+{"edits": [{"file": "color_spaces.jac", "old": "rangec / (2.0 - maxc - minc)", "new": "rangec / (2.0 - sumc)"}]}

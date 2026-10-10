@@ -1,0 +1,36 @@
+{
+ "api": [
+  {
+   "name": "Entry",
+   "kind": "node"
+  },
+  {
+   "name": "welcome",
+   "kind": "walker"
+  },
+  {
+   "name": "retrieve_entries",
+   "kind": "walker"
+  },
+  {
+   "name": "add_entry",
+   "kind": "walker"
+  },
+  {
+   "name": "delete_entry",
+   "kind": "walker"
+  }
+ ],
+ "forbid_imports": [
+  "fastapi",
+  "odmantic",
+  "motor",
+  "app"
+ ],
+ "strip": [
+  "python"
+ ],
+ "timeout_s": 300,
+ "smoke_timeout_s": 600,
+ "ref_mass": 249
+}
