@@ -1,0 +1,7 @@
+Could you write a little semantic-versioning helper module in Jac? Call it `semver.jac`. Our release scripts need it.
+
+- `obj Version` with `major: int`, `minor: int`, `patch: int`, and `pre: str` (the pre-release tag, `""` when there isn't one).
+- `parse_version(s: str) -> Version`: accepts `1.2.3`, an optional leading `v` (`v1.2.3`), and an optional pre-release after a dash (`1.2.3-beta.2`). Anything else (missing parts, non-numeric parts, empty pre-release after the dash, etc.) raises `ValueError`.
+- `compare(a: str, b: str) -> int`: -1 / 0 / 1, following the semver precedence rules — numeric fields compare numerically, a pre-release sorts before the plain release (`1.0.0-rc.1 < 1.0.0`), and pre-release tags compare identifier by identifier on the dots: numeric identifiers numerically, alphanumeric ones lexically, numeric before alphanumeric, and a shorter tag sorts first when all its identifiers match (`alpha < alpha.1`).
+- `bump(v: str, part: str) -> str`: `part` is `major`, `minor` or `patch`; lower fields reset to zero and any pre-release tag is dropped. Special case like npm: bumping `patch` on a pre-release just drops the tag (`1.2.3-rc.1` → `1.2.3`). Return without the `v` prefix. Unknown part → `ValueError`.
+- `max_satisfying(versions: list[str], caret_range: str) -> str | None`: for a range like `^1.4.0`, return the highest version (as written in the input list) with the same major that is >= the range's version. Ignore pre-releases. Return `None` when nothing matches.

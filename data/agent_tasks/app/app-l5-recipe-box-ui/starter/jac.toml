@@ -1,0 +1,23 @@
+[project]
+name = "recipe_box_ui"
+version = "0.1.0"
+description = "A full-stack Jac application"
+entry-point = "main"
+kind = "web-app"
+jac-version = "==0.37.25"
+
+[dependencies]
+[dependencies.npm]
+jac-client-node = "1.0.7"
+
+[dependencies.npm.dev]
+"@jac-client/dev-deps" = "1.0.0"
+
+
+
+[dev-dependencies]
+[dev-dependencies.pypi]
+watchdog = ">=3.0.0"
+
+
+[client]

@@ -1,0 +1,29 @@
+{
+  "id": "app-l3-lifting-log",
+  "kind": "app",
+  "level": 3,
+  "source": "hand-authored",
+  "gates": [
+    "check",
+    "test",
+    "run",
+    "behavioral"
+  ],
+  "target_paths": [
+    "main.jac"
+  ],
+  "jac_version": "0.37.25",
+  "license": "MIT",
+  "provenance": {
+    "domain": "weightlifting personal records log",
+    "author": "claude-opus (agent), hand-checked pilot",
+    "created": "2026-10-10",
+    "starter": "jac create (cli kind)",
+    "taxonomy": "JacProjectFactory Factory4Eval levels 1-5",
+    "dedup_checked_against": [
+      "evals/frontend/v1/specs.json",
+      "evals/jac_native/**/prompt.md",
+      "evals/function/v1/public/*.jsonl"
+    ]
+  }
+}
