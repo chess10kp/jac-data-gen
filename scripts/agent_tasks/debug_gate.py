@@ -65,7 +65,7 @@ def _run_killpg(cmd: list[str], cwd: Path, timeout: float, stdout_only: bool = F
 nv._run = _run_killpg  # native_validate.Task gates resolve _run at call time
 
 
-def _jac_json_killpg(ws: Path, *args: str, timeout: int = 180) -> dict:
+def _jac_json_killpg(ws: Path, *args: str, timeout: int = 120) -> dict:
     rc, out = _run_killpg([fix_gate.JAC, "code", *args], ws, timeout, stdout_only=True)
     i = out.find("{")
     try:
@@ -81,12 +81,30 @@ T_MASS = 0.85       # target files keep >=85% of the reference's code tokens
 T_MASS_FILE = 0.75  # and no single target file drops below 75%
 
 
+def _code_view(ws: Path, targets: list[str], dst: Path) -> Path:
+    """Copy of ws for `jac code` analysis without test modules (repro_test.jac,
+    grader_tests.jac, *test*.jac that aren't targets): `jac code map/symbol` was
+    observed to hang on a workspace holding a JacTestClient test module."""
+    nv._copytree(ws, dst)
+    for p in list(dst.rglob("*.jac")):
+        rel = str(p.relative_to(dst))
+        if rel not in targets and ("test" in p.name or p.name == nv.TEST_MODULE):
+            p.unlink()
+    return dst
+
+
 def inventory(ws: Path, targets: list[str]) -> dict:
-    return fix_gate.inventory(ws, targets)
+    with tempfile.TemporaryDirectory(prefix="dbginv_") as tmp:
+        return fix_gate.inventory(_code_view(ws, targets, Path(tmp) / "w"), targets)
 
 
 def fidelity(task_dir: Path, cand: Path, inv: dict | None = None) -> dict:
     inv = inv or json.loads((task_dir / "grader" / "symbols.json").read_text())
+    with tempfile.TemporaryDirectory(prefix="dbgfid_") as tmp:
+        return _fidelity(_code_view(cand, inv["target_paths"], Path(tmp) / "w"), inv)
+
+
+def _fidelity(cand: Path, inv: dict) -> dict:
     syms = fix_gate.archetype_symbols(cand)
     names = []
     for p in fix_gate.jac_files(cand):
