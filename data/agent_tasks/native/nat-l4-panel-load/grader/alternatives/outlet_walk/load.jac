@@ -26,7 +26,7 @@ walker PanelLoad {
         for (label, w) in self.watts.items() {
             amps = round(w / self.volts, 2);
             self.loads[label] = amps;
-            if amps * 10 > self.ratings[label] * 8 {
+            if w * 10 > self.ratings[label] * 8 * self.volts {
                 hot.append(label);
             }
         }

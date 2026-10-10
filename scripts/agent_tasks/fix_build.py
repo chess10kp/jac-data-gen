@@ -17,7 +17,7 @@ Sources
             (reference) + its verified tests, rewritten as a separate hidden
             module grader/tests.jac that imports the target.
 
-Everything is re-verified at the pinned jac (0.37.25): starter must FAIL
+Everything is re-verified at the pinned jac (0.36.1): starter must FAIL
 `jac check`, reference must PASS it (and its tests, for osp); the anti-hollowing
 gate is calibrated per candidate (reference passes, body-stub fails,
 delete-the-broken-files fails).
@@ -50,7 +50,7 @@ REPO = HERE.parents[1]
 sys.path.insert(0, str(HERE))
 import fix_gate as G  # noqa: E402
 
-JAC_VERSION = "0.37.25"
+JAC_VERSION = "0.36.1"
 DATA = REPO / "data"
 OUT = DATA / "agent_tasks" / "fix"
 MANIFEST = OUT / "manifest.jsonl"
@@ -207,8 +207,7 @@ def jachacks_units(nonsf: Path) -> list[dict]:
         units += kept
     for u in units:
         u["cid"] = f"jh-{slug(u['repo'].split('__')[-1])}-{sid(u['repo'], u['seed'])}"
-    drift = [dict(u, drift=True, cid=u["cid"].replace("jh-", "jhd-", 1)) for u in units]
-    return units + drift
+    return units
 
 
 def materialize_jachacks(u: dict, nonsf: Path, dst: Path) -> tuple[Path, Path]:
@@ -305,115 +304,6 @@ def materialize_osp(u: dict, dst: Path) -> tuple[Path, Path]:
 
 
 # --------------------------------------------------------------------------
-# 0.36 -> 0.37 mechanical migration of references
-# --------------------------------------------------------------------------
-GEN_ARGS = {"dict": "[str, any]", "Dict": "[str, any]", "Mapping": "[str, any]",
-            "defaultdict": "[str, any]", "OrderedDict": "[str, any]",
-            "list": "[any]", "List": "[any]", "set": "[any]", "Set": "[any]",
-            "frozenset": "[any]", "Sequence": "[any]", "Iterable": "[any]", "deque": "[any]",
-            "Iterator": "[any]", "tuple": "[any, ...]", "Tuple": "[any, ...]", "type": "[any]",
-            "Optional": "[any]"}
-KW_RE = re.compile(r"'(\w+)' is a keyword and cannot be used")
-GEN_RE = re.compile(r'Generic type "(\w+)" requires explicit type arguments')
-EDGE_RE = re.compile(r"Edge '(\w+)' declares no endpoints")
-MARK_RE = re.compile(r"the \.(\w+)\.jac marker was retired")
-
-
-def _abs(ws: Path, f: str) -> Path:
-    p = Path(f)
-    return p if p.is_absolute() else ws / f
-
-
-def migrate(ws: Path, rounds: int = 5) -> dict:
-    """Apply the mechanical jac 0.36.1 -> 0.37.25 migrations the new checker asks
-    for (bare generics, endpoint-less edges, new keywords, retired .cl/.sv
-    markers). Returns {ok, rounds, edits, renames, left:[codes]}."""
-    edits = renames = 0
-    chk = G.run_check(ws)
-    r = 0
-    while not chk["ok"] and r < rounds:
-        r += 1
-        changed = False
-        per_file: dict[Path, list] = defaultdict(list)
-        kw_files: dict[Path, set] = defaultdict(set)
-        for e in chk["errors"]:
-            if not e["file"]:
-                continue
-            fp = _abs(ws, e["file"])
-            m = MARK_RE.search(e["msg"])
-            if m and fp.exists():
-                new = fp.with_name(fp.name.replace(f".{m.group(1)}.jac", ".jac"))
-                if not new.exists():
-                    fp.rename(new)
-                    renames += 1
-                    changed = True
-                continue
-            if e["line"] is None:
-                continue
-            m = GEN_RE.search(e["msg"])
-            if m and m.group(1) in GEN_ARGS:
-                per_file[fp].append((e["line"], e["col"], "gen", m.group(1)))
-                continue
-            m = EDGE_RE.search(e["msg"])
-            if m:
-                per_file[fp].append((e["line"], e["col"], "edge", m.group(1)))
-                continue
-            m = KW_RE.search(e["msg"])
-            if m:
-                kw_files[fp].add(m.group(1))
-        for fp, items in per_file.items():
-            if not fp.exists():
-                continue
-            lines = fp.read_text().split("\n")
-            for line, col, kind, name in sorted(set(items), reverse=True):
-                L = lines[line - 1]
-                c = col - 1
-                if L[c:c + len(name)] != name:
-                    c = L.find(name)
-                    if c < 0:
-                        continue
-                end = c + len(name)
-                if kind == "gen":
-                    if L[end:end + 1] == "[":
-                        continue
-                    lines[line - 1] = L[:end] + GEN_ARGS[name] + L[end:]
-                else:
-                    rest = L[end:]
-                    if rest.lstrip().startswith("("):
-                        depth, k = 0, end
-                        while k < len(L):
-                            depth += (L[k] == "(") - (L[k] == ")")
-                            k += 1
-                            if depth == 0 and L[k - 1] == ")":
-                                break
-                        end = k
-                    lines[line - 1] = L[:end] + ": any --> any" + L[end:]
-                edits += 1
-                changed = True
-            fp.write_text("\n".join(lines))
-        for fp, words in kw_files.items():
-            if not fp.exists():
-                continue
-            src = fp.read_text()
-            out, i, prev = [], 0, None
-            for m in G._TOK.finditer(src):
-                v = m.group(0)
-                if m.lastgroup == "id" and v in words and prev != ".":
-                    out.append(src[i:m.start()] + "`" + v)
-                    i = m.end()
-                    edits += 1
-                    changed = True
-                if m.lastgroup not in ("bc", "lc"):
-                    prev = v
-            out.append(src[i:])
-            fp.write_text("".join(out))
-        if not changed:
-            break
-        chk = G.run_check(ws)
-    return {"ok": chk["ok"], "rounds": r, "edits": edits, "renames": renames,
-            "left": dict(Counter(e["code"] for e in chk["errors"])), "check": chk}
-
-# --------------------------------------------------------------------------
 # CI: candidates
 # --------------------------------------------------------------------------
 def summarize_errors(chk: dict) -> dict:
@@ -433,21 +323,13 @@ def evaluate(u: dict, cdir: Path, nonsf: Path | None) -> dict:
         st, ref = materialize_osp(u, cdir)
     else:
         st, ref = materialize_jachacks(u, nonsf, cdir)
-    if u.get("drift"):  # toolchain drift: starter = the 0.36.1-green reference as-is
-        shutil.rmtree(st)
-        shutil.copytree(ref, st)
-    res = {"cid": u["cid"], "source": u["source"], "drift": bool(u.get("drift")), "valid": False}
+    res = {"cid": u["cid"], "source": u["source"], "valid": False}
     clean = lambda d: [shutil.rmtree(x, ignore_errors=True) for x in d.rglob(".jac") if x.is_dir()]  # noqa: E731
-    mig = migrate(ref)
+    r_chk = G.run_check(ref)
     clean(ref)
-    res["migration"] = {k: v for k, v in mig.items() if k != "check"}
-    r_chk = mig["check"]
     res["reference"] = summarize_errors(r_chk)
     if not r_chk["ok"]:
-        res["reason"] = f"reference fails check after migration ({r_chk['n_errors']} errors: {mig['left']})"
-        return res
-    if u.get("drift") and not (mig["edits"] or mig["renames"]):
-        res["reason"] = "drift: nothing to migrate"
+        res["reason"] = f"reference fails check ({r_chk['n_errors']} errors)"
         return res
     s_chk = G.run_check(st)
     clean(st)
@@ -475,8 +357,6 @@ def evaluate(u: dict, cdir: Path, nonsf: Path | None) -> dict:
     broken_starter = sorted({_rel(f, st) for f in res["starter"]["broken_files"]})
     if u["source"] == "osp":
         targets = ["main.jac"]
-    elif u.get("drift"):
-        targets = sorted({_rel(f, ref) for f in r_chk_files(res)} | set(broken_starter))
     else:
         targets = sorted({u["starter_map"].get(o, o) for o in u["reverted"]})
     have = {str(p.relative_to(ref)) for p in G.jac_files(ref)}
@@ -603,14 +483,6 @@ REQ_JH = [
     "Hey — picked up this {title} code again and the compiler hates it now. Get `jac check` "
     "to zero errors. Don't delete or hollow out functions/walkers to get there; port them.",
 ]
-REQ_DRIFT = [
-    "This project stopped compiling after upgrading jac — get `jac check` passing again without "
-    "removing functionality.",
-    "We bumped the Jac toolchain to {jv} and now `jac check` fails on this code that was clean "
-    "before. Please update it for the new checker; keep all behaviour and public names.",
-    "After the jac upgrade our {title} module throws type/syntax errors under `jac check`. Fix "
-    "them properly (no deleting code, no blanket ignores).",
-]
 REQ_OSP = [
     "I wrote this Jac program (main.jac) but it doesn't compile — `jac check` fails. Please fix it "
     "so it checks clean and still does what it's supposed to. Here's what it's for:\n\n> {prompt}",
@@ -706,10 +578,9 @@ def cmd_select(a) -> None:
             seen_sig.add(sig(repo, t["starter_errors"]))
             per_repo[repo] += 1
     n_osp = round(a.target * a.osp_share)
-    n_drift = round(a.target * a.drift_share)
-    n_jh = a.target - n_osp - n_drift
+    n_jh = a.target - n_osp
     have = Counter(("osp" if r.get("source", "").startswith("osp") else
-                    "drift" if "drift" in r.get("source", "") else "jh")
+                    "jh")
                    for r in existing.values() if r.get("validated"))
 
     def pref(c):  # medium first, then error-code variety
@@ -729,8 +600,7 @@ def cmd_select(a) -> None:
                   for t in existing if (OUT / t / "task.json").exists()}
     n_masked = 0
     picked: list[dict] = []
-    for bucket, pool, cap in (("jh", [c for c in cands if c["source"] == "jachacks" and not c.get("drift")], n_jh),
-                              ("drift", [c for c in cands if c.get("drift")], n_drift)):
+    for bucket, pool, cap in (("jh", [c for c in cands if c["source"] == "jachacks"], n_jh),):
         pool = [c for c in pool if not internal_crash(c) and c["cid"] not in existing]
         got = have[bucket]
         lvl = 0
@@ -810,17 +680,15 @@ def cmd_select(a) -> None:
             source = "osp_repair_code_fix"
         else:
             rm = meta.get(u["repo"], {})
-            pool = REQ_DRIFT if c.get("drift") else REQ_JH
+            pool = REQ_JH
             req = random_req(c, pool).format(title=rm.get("title", "our"), jv=JAC_VERSION)
             prov = {"repo": u["repo"], "repo_url": rm.get("repo_url"), "edition": rm.get("edition"),
                     "seed_module": u["seed"], "reverted_files": u["reverted"],
                     "original": "data/jachacks_{spring,2026}_jac_files_filtered.jsonl",
-                    "reference": "data/jachacks_nonsf (0.36.1 repair) + mechanical 0.37 migration",
-                    "starter": ("0.36.1-green repaired code, unmigrated" if c.get("drift")
-                                else "hackathon original for reverted files, 0.36.1 repair elsewhere"),
-                    "reference_migration": c.get("migration")}
+                    "reference": "data/jachacks_nonsf (0.36.1 repair, green at 0.36.1)",
+                    "starter": "hackathon original for reverted files, 0.36.1 repair elsewhere"}
             lic = "upstream repo license (public hackathon submission; see repo_url)"
-            source = f"jachacks_{rm.get('edition', 'nonsf')}" + ("_toolchain_drift" if c.get("drift") else "")
+            source = f"jachacks_{rm.get('edition', 'nonsf')}"
         task = {"id": tid, "kind": "fix", "level": level, "source": source, "gates": gates,
                 "target_paths": c["target_paths"], "broken_paths": c["broken_paths"],
                 "jac_version": JAC_VERSION, "license": lic, "provenance": prov,
@@ -834,7 +702,7 @@ def cmd_select(a) -> None:
                  f"Starter at jac {JAC_VERSION}: {st['n_errors']} errors in "
                  f"{len(st['broken_files'])} file(s); codes {st['codes']}.", "",
                  "Sample diagnostics:", *[f"- `{s}`" for s in st["sample"]], "",
-                 "Reference = grader/reference (green at 0.37.25). Grade with:",
+                 f"Reference = grader/reference (green at jac {JAC_VERSION}). Grade with:",
                  f"`python scripts/agent_tasks/fix_gate.py data/agent_tasks/fix/{tid} <workspace>`", "",
                  "Calibration at build time (CI):"]
         for k, v in c["calibration"].items():
@@ -948,7 +816,6 @@ def main() -> int:
     ap.add_argument("--runs", nargs="*", default=[])
     ap.add_argument("--target", type=int, default=40)
     ap.add_argument("--osp-share", type=float, default=0.3)
-    ap.add_argument("--drift-share", type=float, default=0.15)
     a = ap.parse_args()
     if a.stage == "units":
         ju, ou = jachacks_units(Path(a.nonsf)), osp_units()

@@ -25,7 +25,8 @@ walker LogSighting {
             disengage;
         }
         visit [-->[?:Site, name == self.site]] else {
-            visit here ++> Site(name=self.site);
+            fresh = here ++> Site(name=self.site);
+            visit fresh;
         }
     }
 

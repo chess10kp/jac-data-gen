@@ -93,7 +93,9 @@ walker Return {
 
     can check with Member entry {
         for t in [here ->:Lent:->[?:Tool, code == self.code]] {
-            del [edge here ->:Lent:-> t];
+            for doomed in [edge here ->:Lent:-> t] {
+                del doomed;
+            }
             self.done = True;
         }
     }
@@ -130,6 +132,6 @@ walker OverdueReport {
 
     can finish with Root exit {
         ordered = sorted(self.rows, key=lambda (r: dict[str, any]) { (r["due"], r["code"]); });
-        report [r["card"] + ":" + r["code"] for r in ordered];
+        report [f"{r['card']}:{r['code']}" for r in ordered];
     }
 }

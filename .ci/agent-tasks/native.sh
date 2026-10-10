@@ -3,7 +3,6 @@
 # (reference/alts/mutants/determinism/run/start gates) -> $OUT/native_results.jsonl
 set -uo pipefail
 export NATIVE_LOG_DIR="$GITHUB_WORKSPACE/$OUT/logs"
-export NATIVE_FORCE=1  # full re-validation run (jac 0.36.1 switch)
 cd "$GITHUB_WORKSPACE"
 .venv/bin/python scripts/agent_tasks/native_build.py validate \
   --shard "$SHARD/$NSHARDS" --out "$OUT" ${NATIVE_ONLY:+--only "$NATIVE_ONLY"} ${NATIVE_FORCE:+--force}

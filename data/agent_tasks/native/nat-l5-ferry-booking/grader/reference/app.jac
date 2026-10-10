@@ -39,6 +39,16 @@ def:pub add_sailing(code: str, day: int, car_slots: int, foot_slots: int) -> Sai
     return root ++> Sailing(code=code, day=day, car_slots=car_slots, foot_slots=foot_slots);
 }
 
+"""Look up a Vehicle member by its name (None if there is no such member)."""
+def vehicle_named(label: str) -> Vehicle | None {
+    for m in Vehicle {
+        if m.name == label {
+            return m;
+        }
+    }
+    return None;
+}
+
 def sailing_named(code: str) -> Sailing | None {
     for s in [root -->[?:Sailing]] {
         if s.code == code {
@@ -68,7 +78,8 @@ walker:pub book {
             report {"ok": False, "reason": "bad vehicle"};
             return;
         }
-        new = Booking(ref=self.ref, vehicle=Vehicle[self.vehicle], passengers=self.passengers);
+        kind = vehicle_named(self.vehicle) or Vehicle.FOOT;
+        new = Booking(ref=self.ref, vehicle=kind, passengers=self.passengers);
         held = [s ->:Holds:->];
         cars = sum([b.car_use() for b in held]) + new.car_use();
         foot = sum([b.foot_use() for b in held]) + new.foot_use();

@@ -1,1 +1,1 @@
-{"why": "bike stays docked while rented", "edits": [{"file": "app.jac", "old": "        del [edge st ->:Docked:-> bike];\n", "new": ""}]}
+{"why": "bike stays docked while rented", "edits": [{"file": "app.jac", "old": "        for doomed in [edge st ->:Docked:-> bike] {\n            del doomed;\n        }\n", "new": ""}]}

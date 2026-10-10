@@ -15,10 +15,13 @@ Subcommands
 Isolation (per session; no state can leak between sessions or into the box):
   <root>/<sid>/ws/<project>   fresh copy of starter/ (the agent's cwd)
   <root>/<sid>/home           HOME, XDG_* (pi + ast-edit caches)
-  <root>/<sid>/cache          JAC_CACHE_HOME: rt/ stage0/ toolchains/ symlinked to the
-                              shared read-only pre-warmed cache (the unpacked runtime
-                              is the slow part); jir/ copied; pg/ private (pg/dist
-                              symlinked) so every session gets a clean embedded postgres
+  <root>/<sid>/home/.cache/jac  the jac cache (XDG_CACHE_HOME/jac, which 0.36.1 uses for
+                              rt/jir; JAC_CACHE_HOME points at the same dir, which both
+                              versions use for the embedded postgres): rt/ stage0/
+                              toolchains/ symlinked to the shared pre-warmed cache (the
+                              unpacked runtime is the slow part); other entries copied;
+                              pg/ private (pg/dist symlinked) so every session gets a
+                              clean embedded postgres
   <root>/<sid>/tmp            TMPDIR (postgres socket dirs etc.)
   <root>/<sid>/agent          pi agent dir: settings.json only (retry policy and a
                               shell prefix that unsets the API key for the bash tool)
@@ -97,18 +100,27 @@ def which_bwrap() -> str | None:
     return b if p.returncode == 0 else None
 
 
-def make_cache(shared: Path, dst: Path) -> None:
-    """Private JAC_CACHE_HOME that shares the expensive read-only parts of `shared`."""
+def make_cache(shared_xdg: Path, dst_xdg: Path) -> None:
+    """Private XDG cache whose jac/ dir shares the expensive read-only parts of the shared one."""
+    shared, dst = shared_xdg / "jac", dst_xdg / "jac"
     dst.mkdir(parents=True, exist_ok=True)
-    for name in SHARED_LINKS:
-        if (shared / name).exists():
-            (dst / name).symlink_to(shared / name)
-    if (shared / "jir").is_dir():
-        shutil.copytree(shared / "jir", dst / "jir", symlinks=True)
+    for e in (shared.iterdir() if shared.is_dir() else []):
+        if e.name in SHARED_LINKS:
+            (dst / e.name).symlink_to(e)
+        elif e.name in ("pg", "tmp") or e.name.endswith(".lock"):
+            continue
+        elif e.is_dir():
+            shutil.copytree(e, dst / e.name, symlinks=True, ignore_dangling_symlinks=True)
+        elif e.is_file():
+            shutil.copy2(e, dst / e.name)
     (dst / "pg").mkdir()
     if (shared / "pg" / "dist").is_dir():
         (dst / "pg" / "dist").symlink_to(shared / "pg" / "dist")
     (dst / "tmp").mkdir()
+
+
+def jac_env(xdg: Path) -> dict:
+    return {"XDG_CACHE_HOME": str(xdg), "JAC_CACHE_HOME": str(xdg / "jac")}
 
 
 def session_env(sdir: Path, with_key: bool) -> dict:
@@ -116,9 +128,9 @@ def session_env(sdir: Path, with_key: bool) -> dict:
     home = sdir / "home"
     env.update({
         "HOME": str(home), "USER": os.environ.get("USER", "runner"), "SHELL": "/bin/bash", "TERM": "dumb",
-        "XDG_CACHE_HOME": str(home / ".cache"), "XDG_CONFIG_HOME": str(home / ".config"),
+        **jac_env(home / ".cache"), "XDG_CONFIG_HOME": str(home / ".config"),
         "XDG_DATA_HOME": str(home / ".local/share"), "XDG_STATE_HOME": str(home / ".local/state"),
-        "TMPDIR": str(sdir / "tmp"), "JAC_CACHE_HOME": str(sdir / "cache"),
+        "TMPDIR": str(sdir / "tmp"),
         "JACPI_AGENT_DIR": str(sdir / "agent"), "JACPI_SOURCE_AGENT_DIR": str(sdir / "no-source-agent"),
         "JAC_AST_EDIT_CACHE_DIR": str(home / ".cache" / "pi-jac-ast-edit"),
         "PI_OFFLINE": "1", "PI_SKIP_VERSION_CHECK": "1", "PI_TELEMETRY": "0", "NO_COLOR": "1",
@@ -133,7 +145,7 @@ def session_env(sdir: Path, with_key: bool) -> dict:
 def make_session_dirs(sdir: Path, shared: Path) -> None:
     for d in ("home/.cache", "home/.config", "tmp", "agent", "session"):
         (sdir / d).mkdir(parents=True, exist_ok=True)
-    make_cache(shared, sdir / "cache")
+    make_cache(shared, sdir / "home" / ".cache")
     (sdir / "agent" / "settings.json").write_text(json.dumps(PI_SETTINGS, indent=1))
 
 
@@ -167,7 +179,7 @@ def reap(sdir: Path) -> int:
             envb = (p / "environ").read_bytes()
         except OSError:
             continue
-        if tag in cmd or cwd.startswith(tag) or f"JAC_CACHE_HOME={tag}/".encode() in envb:
+        if tag in cmd or cwd.startswith(tag) or f"={tag}/".encode() in envb:
             try:
                 os.kill(int(p.name), signal.SIGKILL)
                 n += 1
@@ -269,6 +281,7 @@ class Runner:
         if a.sandbox == "bwrap" and not self.bwrap:
             raise SystemExit("--sandbox bwrap requested but bwrap is unusable")
         self.extra_ro = [HARNESS]
+        self.jac_version = subprocess.run(["jac", "--version"], capture_output=True, text=True).stdout.strip()
 
     def record(self, name: str, row: dict) -> None:
         with self.lock:
@@ -311,7 +324,7 @@ class Runner:
         sess = sorted((sdir / "session").glob("*.jsonl"))
         summ = session_summary(sess[-1] if sess else None)
         row = {"sid": sid, "task_id": meta["id"], "kind": meta["kind"], "level": meta["level"], "sample": sample,
-               "attempt": n, "model": self.a.model, "rc": rc, "timed_out": timed_out, "wall_s": round(wall, 1),
+               "attempt": n, "model": self.a.model, "jac": self.jac_version, "rc": rc, "timed_out": timed_out, "wall_s": round(wall, 1),
                "reaped": reaped, "sandbox": "bwrap" if self.bwrap else "none", "n_session_files": len(sess),
                **summ}
         return row, sdir, ws
@@ -359,8 +372,8 @@ class Runner:
         gdir = sdir / "grade"
         gdir.mkdir()
         (gdir / "tmp").mkdir()
-        make_cache(self.shared, gdir / "cache")
-        env = {**session_env(gdir, with_key=False), "HOME": str(gdir), "JAC_CACHE_HOME": str(gdir / "cache"),
+        make_cache(self.shared, gdir / "xdg")
+        env = {**session_env(gdir, with_key=False), "HOME": str(gdir), **jac_env(gdir / "xdg"),
                "TMPDIR": str(gdir / "tmp")}
         try:
             p = subprocess.run([sys.executable, str(HERE / "grade.py"), str(td), str(ws), "--json"], env=env,
@@ -422,7 +435,7 @@ def pick_persistence_task() -> Path | None:
 def cmd_prewarm(a) -> int:
     shared = Path(a.shared).resolve()
     shared.mkdir(parents=True, exist_ok=True)
-    env = {**os.environ, "JAC_CACHE_HOME": str(shared)}
+    env = {**os.environ, **jac_env(shared)}
     for k in KEY_ENVS:
         env.pop(k, None)
     t0 = time.time()
@@ -439,7 +452,11 @@ def cmd_prewarm(a) -> int:
             log(f"prewarm {td.name}: ref passed={g['passed']} {g.get('detail', '')[:300]}")
             rc |= not g["passed"]
     sizes = {d.name: subprocess.run(["du", "-sh", str(d)], capture_output=True, text=True).stdout.split()[0]
-             for d in shared.iterdir() if d.is_dir()}
+             for d in (shared / "jac").iterdir() if d.is_dir()}
+    # the shared cache must hold no postgres datadir (sessions get their own): stop + drop it
+    log(f"prewarm reaped {reap(shared)} leftover processes")
+    for d in (shared / "jac" / "pg").glob("main*"):
+        shutil.rmtree(d, ignore_errors=True) if d.is_dir() else d.unlink()
     log(f"prewarm done in {time.time() - t0:.0f}s; shared cache {sizes}")
     return rc
 
@@ -479,8 +496,8 @@ def cmd_probe(a) -> int:
         ok &= good
         log(f"PROBE {'ok ' if good else 'BAD'} {' '.join(cmd)[:80]} rc={rc} {wall:.1f}s" + ("" if good else f"\n{out[-1500:]}"))
     # the private cache really got its own postgres datadir, the shared one none
-    pg_private = any((sdir / "cache" / "pg").glob("main*"))
-    pg_shared = any((shared / "pg").glob("main*"))
+    pg_private = any((sdir / "home" / ".cache" / "jac" / "pg").glob("main*"))
+    pg_shared = any((shared / "jac" / "pg").glob("main*"))
     log(f"PROBE private pg datadir={pg_private} shared pg datadir={pg_shared} reaped={reap(sdir)}")
     shutil.rmtree(sdir, ignore_errors=True)
     log(f"PROBE {'PASS' if ok else 'FAIL'}")

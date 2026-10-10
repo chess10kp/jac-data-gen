@@ -1,1 +1,1 @@
-{"why": "prefers the largest run", "edits": [{"file": "app.jac", "old": "{ (r.size.value, r.code); }", "new": "{ (-r.size.value, r.code); }"}]}
+{"why": "prefers the largest run", "edits": [{"file": "app.jac", "old": "{ (RANK[r.size.name], r.code); }", "new": "{ (-RANK[r.size.name], r.code); }"}]}

@@ -13,7 +13,7 @@ node Plant {
 edge Grows: Bed --> Plant {}
 
 # Mutant: keeps the schedule in a module-level dict instead of the graph.
-glob BEDS: dict[str, list[list]] = {};
+glob BEDS: dict[str, list[list[any]]] = {};
 
 walker PlantIn {
     has bed: str;
@@ -47,8 +47,8 @@ walker DueOn {
         out: list[str] = [];
         for (code, rows) in BEDS.items() {
             for r in rows {
-                if self.day - r[2] >= r[1] {
-                    out.append(code + "/" + r[0]);
+                if self.day - int(r[2]) >= int(r[1]) {
+                    out.append(f"{code}/{r[0]}");
                 }
             }
         }
