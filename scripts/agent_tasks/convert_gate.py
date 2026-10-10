@@ -192,7 +192,10 @@ class Task:
         except ValueError:
             v = {}
         ok = rc == 0 and bool(v.get("start")) and bool(v.get("behavioral"))
-        return ok, (last if ok else out[-2000:])
+        if ok:
+            return ok, last
+        # stdout (verdict) first, server log tail after
+        return ok, (last + "\n" + out[-1500:]) if last.startswith("{") else out[-2000:]
 
     # ------------------------------------------------------------------ grade
     def grade(self, cand: Path, gates: list[str] | None = None) -> dict:
