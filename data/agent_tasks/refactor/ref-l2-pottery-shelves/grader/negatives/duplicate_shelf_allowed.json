@@ -1,0 +1,1 @@
+{"why": "duplicate shelf names accepted", "edits": [{"file": "shelves.jac", "old": "    if find_shelf(name) is not None {\n        return False;\n    }\n    root ++>", "new": "    root ++>"}]}

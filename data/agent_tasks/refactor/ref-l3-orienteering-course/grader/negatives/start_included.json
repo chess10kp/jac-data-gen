@@ -1,0 +1,1 @@
+{"why": "start control reported as reachable", "edits": [{"file": "course.jac", "old": "return sorted([x for x in w.seen if x != start]);", "new": "return sorted(w.seen);"}]}

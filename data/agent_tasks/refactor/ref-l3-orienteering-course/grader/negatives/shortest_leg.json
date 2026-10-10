@@ -1,0 +1,1 @@
+{"why": "min instead of max", "edits": [{"file": "course.jac", "old": "return max([0] + [leg.metres for leg in [edge c ->:Leg:->]]);", "new": "return min([leg.metres for leg in [edge c ->:Leg:->]] + [99999]) % 99999;"}]}

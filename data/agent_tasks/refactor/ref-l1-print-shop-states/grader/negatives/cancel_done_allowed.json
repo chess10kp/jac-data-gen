@@ -1,0 +1,1 @@
+{"why": "done jobs become cancellable", "edits": [{"file": "print_jobs.jac", "old": "return self.state in [JobState.QUEUED, JobState.PRINTING];", "new": "return self.state != JobState.CANCELLED;"}]}

@@ -1,0 +1,1 @@
+{"why": "allows one piece past capacity", "edits": [{"file": "shelves.jac", "old": "len([s -->[?:Piece]]) >= s.capacity", "new": "len([s -->[?:Piece]]) > s.capacity"}]}

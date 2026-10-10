@@ -1,0 +1,1 @@
+`print_jobs.jac` tracks jobs through the print shop as raw strings ("queued", "printing", ...) and it's already bitten us once with a typo. Can you switch the job state over to a proper enum? Keep the function names, their signatures and the status text exactly as they are now — other code calls these.

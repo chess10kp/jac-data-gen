@@ -1,0 +1,1 @@
+{"why": "legs created both ways", "edits": [{"file": "course.jac", "old": "src +>:Leg(metres=metres):+> dst;", "new": "src +>:Leg(metres=metres):+> dst;\n        dst +>:Leg(metres=metres):+> src;"}]}

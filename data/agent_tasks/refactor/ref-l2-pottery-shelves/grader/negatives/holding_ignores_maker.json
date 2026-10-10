@@ -1,0 +1,1 @@
+{"why": "any non-empty shelf counts as holding the maker's work", "edits": [{"file": "shelves.jac", "old": "if [s -->[?:Piece, maker == who]]]);", "new": "if [s -->[?:Piece]]]);"}]}

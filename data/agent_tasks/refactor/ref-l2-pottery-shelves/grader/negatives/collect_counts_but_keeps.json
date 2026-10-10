@@ -1,0 +1,1 @@
+{"why": "collect counts pieces but never removes them", "edits": [{"file": "shelves.jac", "old": "        for p in mine {\n            del p;\n        }\n", "new": ""}]}

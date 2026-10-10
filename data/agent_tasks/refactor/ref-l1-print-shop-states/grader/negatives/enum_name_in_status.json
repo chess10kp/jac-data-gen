@@ -1,0 +1,1 @@
+{"why": "status line prints the enum member name instead of its value", "edits": [{"file": "print_jobs.jac", "old": "[{job.state.value}]", "new": "[{job.state.name}]"}]}

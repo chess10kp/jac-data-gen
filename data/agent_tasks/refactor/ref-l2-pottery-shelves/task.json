@@ -1,0 +1,19 @@
+{
+  "id": "ref-l2-pottery-shelves",
+  "kind": "refactor",
+  "level": 2,
+  "source": "hand-authored (de-idiomized starter)",
+  "gates": ["check", "test"],
+  "target_paths": ["shelves.jac"],
+  "jac_version": "0.37.25",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "provenance": {"author": "claude (hand-authored pilot)", "created": "2026-10-10", "title": "Pottery drying shelves", "domain": "pottery studio shelving", "smell": ["dict-of-dicts state in one node", "isinstance scan"], "idioms": ["nodes", "edges", "edge filters", "node deletion"], "inspiration": "none (original)"},
+  "idiom_gate": "scripts/agent_tasks/refactor_gate.py",
+  "idiom_targets": [
+    {"metric": "arch.node", "op": ">=", "value": 2, "desc": ">=2 node types"},
+    {"metric": "dict_fields", "op": "==", "value": 0, "desc": "no dict-typed fields on nodes/objs"},
+    {"metric": "isinstance_calls", "op": "==", "value": 0, "desc": "no isinstance type scans"},
+    {"metric": "edge_filters", "op": ">=", "value": 3, "desc": ">=3 edge filters ([-->[?:X]] style)"},
+    {"metric": "connects", "op": ">=", "value": 2, "desc": ">=2 connect operations (++>)"}
+  ]
+}

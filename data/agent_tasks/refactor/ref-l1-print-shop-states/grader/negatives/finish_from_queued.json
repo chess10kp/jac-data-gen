@@ -1,0 +1,1 @@
+{"why": "finish skips the printing check", "edits": [{"file": "print_jobs.jac", "old": "    if job.state == JobState.PRINTING {\n        job.state = JobState.DONE;", "new": "    if job.state != JobState.DONE {\n        job.state = JobState.DONE;"}]}
