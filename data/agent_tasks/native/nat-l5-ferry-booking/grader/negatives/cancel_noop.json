@@ -1,0 +1,1 @@
+{"why": "cancel reports ok without deleting", "edits": [{"file": "app.jac", "old": "                del b;\n", "new": ""}]}

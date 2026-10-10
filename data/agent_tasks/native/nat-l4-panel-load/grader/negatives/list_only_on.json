@@ -1,1 +1,1 @@
-{"why": "inventory skips appliances that are off", "edits": [{"file": "reports.jac", "old": "        for a in [here <-:PluggedInto:<-] {", "new": "        for a in [x for x in [here <-:PluggedInto:<-] if x.on] {"}]}
+{"why": "inventory skips appliances that are off", "edits": [{"file": "reports.jac", "old": "            for a in [o <-:PluggedInto:<-] {", "new": "            for a in [x for x in [o <-:PluggedInto:<-] if x.on] {"}]}

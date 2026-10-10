@@ -1,0 +1,11 @@
+{
+  "id": "nat-l5-hackathon-judging",
+  "kind": "native",
+  "level": 5,
+  "source": "hand-authored",
+  "gates": ["check", "test", "start"],
+  "target_paths": ["app.jac"],
+  "jac_version": "0.37.25",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "provenance": {"author": "claude (hand-authored pilot)", "created": "2026-10-10", "title": "Hackathon judging service", "domain": "event judging", "constructs": ["walker:pub endpoints", "enum validation", "edge upsert", "incoming edge aggregation", "sorted leaderboard", "per-request persistence"], "inspiration": "none (original)"}
+}

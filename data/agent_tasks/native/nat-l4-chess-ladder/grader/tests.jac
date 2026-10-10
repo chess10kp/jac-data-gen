@@ -68,7 +68,7 @@ test "head to head counts both directions" {
     club(["A", "B", "C"]);
     play("B", "A", False, 1);
     play("B", "A", True, 2);
-    play("B", "A", True, 3);
+    play("A", "B", True, 3);
     play("C", "B", False, 4);
     h = (root spawn HeadToHead(a="A", b="B")).reports[0];
     assert h == {"A": 2, "B": 1};

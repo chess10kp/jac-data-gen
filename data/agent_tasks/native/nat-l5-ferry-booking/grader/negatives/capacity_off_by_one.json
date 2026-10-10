@@ -1,0 +1,1 @@
+{"why": "strict capacity", "edits": [{"file": "app.jac", "old": "if cars > s.car_slots or foot > s.foot_slots {", "new": "if cars >= s.car_slots or foot >= s.foot_slots {"}]}

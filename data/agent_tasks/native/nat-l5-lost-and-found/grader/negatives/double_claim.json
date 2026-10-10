@@ -1,0 +1,1 @@
+{"why": "allows claiming twice", "edits": [{"file": "app.jac", "old": "        if is_claimed(it) {\n            report {\"ok\": False, \"reason\": \"already claimed\"};\n            return;\n        }\n", "new": ""}]}

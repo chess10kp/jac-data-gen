@@ -1,0 +1,1 @@
+{"why": "allows 0 nights", "edits": [{"file": "app.jac", "old": "if self.nights < 1 {", "new": "if self.nights < 0 {"}]}

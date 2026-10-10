@@ -1,0 +1,1 @@
+{"why": "labels every line with the first breaker", "edits": [{"file": "reports.jac", "old": "self.lines.append(f\"{here.label}/{o.room}: {a.name}\");", "new": "self.lines.append(f\"{[root -->[?:Breaker]][0].label}/{o.room}: {a.name}\");"}]}

@@ -1,0 +1,1 @@
+{"why": "accepts lower-case vehicle names", "edits": [{"file": "app.jac", "old": "if self.vehicle not in [v.name for v in Vehicle] {", "new": "if self.vehicle.upper() not in [v.name for v in Vehicle] {"}, {"file": "app.jac", "old": "vehicle=Vehicle[self.vehicle]", "new": "vehicle=Vehicle[self.vehicle.upper()]"}]}

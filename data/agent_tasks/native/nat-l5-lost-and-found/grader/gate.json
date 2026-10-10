@@ -1,0 +1,12 @@
+{
+  "timeout_s": 300,
+  "start": {
+    "entry": "app.jac",
+    "requests": [
+      {"path": "/function/log_item", "json": {"category": "PHONE", "color": "Black", "found_day": 5, "location": "stop 3"}, "expect": ["LF-"]},
+      {"path": "/walker/search", "json": {"category": "PHONE", "color": "black", "since_day": 0}, "expect": ["LF-"]},
+      {"path": "/walker/stats", "json": {}, "expect": ["UMBRELLA", "\"open\": 1"]}
+    ]
+  },
+  "contracts": [{"name": "search", "kind": "walker"}, {"name": "claim", "kind": "walker"}, {"name": "expire", "kind": "walker"}, {"name": "stats", "kind": "walker"}]
+}

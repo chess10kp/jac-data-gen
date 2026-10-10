@@ -1,0 +1,1 @@
+{"why": "day filter ignored", "edits": [{"file": "app.jac", "old": "visit [-->[?:Sailing, day == self.day]];", "new": "visit [-->[?:Sailing]];"}]}

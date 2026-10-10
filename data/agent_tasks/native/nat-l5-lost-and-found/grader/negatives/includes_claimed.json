@@ -1,0 +1,1 @@
+{"why": "search lists claimed items", "edits": [{"file": "app.jac", "old": "        if is_claimed(here) {\n            return;\n        }\n        if here.category", "new": "        if here.category"}]}

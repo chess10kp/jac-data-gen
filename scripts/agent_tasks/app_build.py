@@ -66,11 +66,11 @@ def sh(cmd: list[str], cwd: Path, timeout: int, env: dict | None = None) -> dict
         p = subprocess.run(cmd, cwd=cwd, stdin=subprocess.DEVNULL, capture_output=True,
                            text=True, timeout=timeout, start_new_session=True,
                            env={**os.environ, **(env or {})})
-        rc, out = p.returncode, (p.stdout + p.stderr)
+        rc, out, so = p.returncode, (p.stdout + p.stderr), p.stdout
     except subprocess.TimeoutExpired as e:
-        rc, out = 124, f"TIMEOUT after {timeout}s\n{(e.stdout or '')}{(e.stderr or '')}"
+        rc, out, so = 124, f"TIMEOUT after {timeout}s\n{tail(e.stdout or '')}{tail(e.stderr or '')}", ""
     return {"cmd": " ".join(cmd), "rc": rc, "secs": round(time.time() - t, 1),
-            "tail": tail(out)}
+            "tail": tail(out), "stdout_tail": tail(so, 5)}
 
 
 def tail(s, n: int = 40) -> str:
@@ -204,6 +204,18 @@ def dedup(task_dir: Path) -> dict:
 # --------------------------------------------------------------------------- gates
 
 TEST_BLOCK = re.compile(r'^\s*test\s+"', re.M)
+SUMMARY = re.compile(r"(\d+) (passed|failed|skipped|errors?)")
+
+
+def test_ok(r: dict, expect: int | None = None) -> bool:
+    """`jac test` exits 0 when the module fails to import (tests become 'skipped'),
+    so require an all-passed summary (and the expected count when known)."""
+    counts: dict[str, int] = {}
+    for n, kind in SUMMARY.findall(r["tail"]):
+        counts[kind] = counts.get(kind, 0) + int(n)
+    passed = counts.get("passed", 0)
+    bad = sum(v for k, v in counts.items() if k != "passed")
+    return r["rc"] == 0 and passed >= max(1, expect or 0) and bad == 0
 
 
 def own_test_files(ws: Path) -> list[Path]:
@@ -237,15 +249,16 @@ def gate_test(ws: Path, task_dir: Path, meta: dict) -> dict:
             res["steps"].append({"why": "no own test blocks found"})
         for f in files:
             tgt = f.with_name(f.name[:-len(".test.jac")] + ".jac") if f.name.endswith(".test.jac") else f
-            r = sh(["jac", "test", str(tgt.relative_to(d))], d, 600)
+            r = sh(["jac", "test", str(tgt.relative_to(d))], d, 600, env={"JAC_TEST_JOBS": "0"})
             res["steps"].append(r)
-            ok &= r["rc"] == 0
+            ok &= test_ok(r)
     d = fresh_copy(ws)
     shutil.copy(task_dir / "grader" / "tests.jac", d / HIDDEN_NAME)
     # serial test workers: hidden tests share one persisted root per cwd
     r = sh(["jac", "test", HIDDEN_NAME], d, 600, env={"JAC_TEST_JOBS": "0"})
     res["steps"].append(r)
-    ok &= r["rc"] == 0
+    expect = len(TEST_BLOCK.findall((task_dir / "grader" / "tests.jac").read_text()))
+    ok &= test_ok(r, expect)
     res["ok"] = bool(ok)
     return res
 
@@ -255,7 +268,7 @@ def gate_script(ws: Path, task_dir: Path, name: str) -> dict:
     d = fresh_copy(ws)
     r = sh([sys.executable, str(script), str(d)], d, 900)
     verdict = {}
-    for line in reversed(r["tail"].splitlines()):
+    for line in reversed(r["stdout_tail"].splitlines()):
         if line.startswith("{") and line.endswith("}"):
             try:
                 verdict = json.loads(line)

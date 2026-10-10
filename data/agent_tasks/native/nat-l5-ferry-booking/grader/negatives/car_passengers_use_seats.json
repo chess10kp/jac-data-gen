@@ -1,0 +1,1 @@
+{"why": "vehicle passengers counted as foot", "edits": [{"file": "app.jac", "old": "return b.passengers if b.vehicle == Vehicle.FOOT else 0;", "new": "return b.passengers;"}]}

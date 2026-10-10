@@ -1,0 +1,1 @@
+{"why": "removes only first stay of the dog", "edits": [{"file": "app.jac", "old": "            if s.dog == self.dog {\n                del s;\n                self.removed += 1;\n            }", "new": "            if s.dog == self.dog and self.removed == 0 {\n                del s;\n                self.removed += 1;\n            }"}]}
