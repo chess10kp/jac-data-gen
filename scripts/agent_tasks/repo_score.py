@@ -592,6 +592,9 @@ def cmd_ci(a):
         rep_root = Path(tempfile.mkdtemp(prefix="repaired_"))
         with tarfile.open(REPAIRED_TGZ) as tf:
             tf.extractall(rep_root, filter="data")
+    import atexit
+    if rep_root:
+        atexit.register(shutil.rmtree, rep_root, True)
     resf = out / "results.jsonl"
     done = set()
     if resf.exists():
