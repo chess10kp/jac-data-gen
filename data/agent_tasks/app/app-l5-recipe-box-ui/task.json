@@ -15,13 +15,13 @@
     "frontend.jac",
     "frontend.impl.jac"
   ],
-  "jac_version": "0.37.25",
+  "jac_version": "0.36.1",
   "license": "MIT",
   "provenance": {
     "domain": "recipe collection full-stack web app",
     "author": "claude-opus (agent), hand-checked pilot",
     "created": "2026-10-10",
-    "starter": "jac create --kind web-app --skip",
+    "starter": "jac create --kind web-app --skip (0.36.1)",
     "taxonomy": "JacProjectFactory Factory4Eval levels 1-5",
     "dedup_checked_against": [
       "evals/frontend/v1/specs.json",

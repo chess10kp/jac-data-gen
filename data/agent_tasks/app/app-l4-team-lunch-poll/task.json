@@ -12,13 +12,13 @@
   "target_paths": [
     "main.jac"
   ],
-  "jac_version": "0.37.25",
+  "jac_version": "0.36.1",
   "license": "MIT",
   "provenance": {
     "domain": "team lunch voting poll API",
     "author": "claude-opus (agent), hand-checked pilot",
     "created": "2026-10-10",
-    "starter": "jac create --kind service",
+    "starter": "jac create --kind service (0.36.1)",
     "taxonomy": "JacProjectFactory Factory4Eval levels 1-5",
     "dedup_checked_against": [
       "evals/frontend/v1/specs.json",

@@ -6,7 +6,7 @@
   "check",
   "test"
  ],
- "hash": "bd0a72645f17d681",
+ "hash": "5e2dd30285221939",
  "jac": "jac 0.37.25  (Linux x86_64)",
  "dedup": {
   "pass": true,
@@ -23,21 +23,21 @@
    "ok": true,
    "cmd": "jac check tram.jac",
    "rc": 0,
-   "secs": 1.6,
-   "tail": "  Checking tram.jac...\ntram.jac ok [100%]\n============================== 1 passed in 1.03s ===============================",
-   "stdout_tail": "  Checking tram.jac...\ntram.jac ok [100%]\n============================== 1 passed in 1.03s ==============================="
+   "secs": 1.4,
+   "tail": "  Checking tram.jac...\ntram.jac ok [100%]\n============================== 1 passed in 0.92s ===============================",
+   "stdout_tail": "  Checking tram.jac...\ntram.jac ok [100%]\n============================== 1 passed in 0.92s ==============================="
   },
   "test": {
    "steps": [
     {
      "cmd": "jac test zz_hidden_acceptance.jac",
-     "rc": -6,
-     "secs": 12.8,
-     "tail": "",
-     "stdout_tail": ""
+     "rc": 0,
+     "secs": 1.8,
+     "tail": "....                                                                     [100%]\n\n4 passed in 1.26s",
+     "stdout_tail": "....                                                                     [100%]\n\n4 passed in 1.26s"
     }
    ],
-   "ok": false
+   "ok": true
   }
  },
  "negative": {
@@ -46,16 +46,16 @@
     {
      "cmd": "jac test zz_hidden_acceptance.jac",
      "rc": 0,
-     "secs": 2.0,
-     "tail": "s                                                                        [100%]\n\n1 skipped in 1.25s",
-     "stdout_tail": "s                                                                        [100%]\n\n1 skipped in 1.25s"
+     "secs": 1.6,
+     "tail": "s                                                                        [100%]\n\n1 skipped in 1.03s",
+     "stdout_tail": "s                                                                        [100%]\n\n1 skipped in 1.03s"
     }
    ],
    "ok": false
   }
  },
- "secs": 16.3,
- "validated": false,
- "reason": "reference fails ['test']",
- "ci_run": "38063985138"
+ "secs": 4.9,
+ "validated": true,
+ "reason": "reference passes ['check', 'test']; starter fails ['test']; dedup ok",
+ "ci_run": "38065050730"
 }

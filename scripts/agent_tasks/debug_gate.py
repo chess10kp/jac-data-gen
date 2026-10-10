@@ -12,6 +12,7 @@ workspace) passes only if ALL declared gates hold:
   run       grader/gate.json run_steps (sequential `jac run` processes in one
             cwd: cross-process persistence)                       [if declared]
   start     reference-style HTTP probes against `jac run --serve`  [if declared]
+  behavioral grader/behavioral.py drives the CLI across processes  [app sources]
   fidelity  the fix must not delete/stub the feature: compiler-backed symbol
             inventory (`jac code map` archetypes + abilities, top-level defs)
             and code mass of the target files vs grader/symbols.json. Debug
@@ -27,7 +28,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import shutil
 import sys
 import tempfile
 from pathlib import Path
@@ -35,6 +35,46 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import fix_gate  # noqa: E402  (compiler-backed inventory + code mass)
 import native_validate as nv  # noqa: E402  (check/test/run/start primitives)
+
+def _run_killpg(cmd: list[str], cwd: Path, timeout: float, stdout_only: bool = False) -> tuple[int, str]:
+    """subprocess.run(timeout=) kills only the direct child and then blocks forever
+    on the pipes if a grandchild (jac's embedded postgres / test workers) keeps them
+    open - seen as 20+ minute CI hangs. Run in a new session, log to a file, and
+    kill the whole process group on timeout."""
+    import os
+    import signal
+    import subprocess
+    with tempfile.TemporaryFile(mode="w+") as log:
+        p = subprocess.Popen(cmd, cwd=cwd, stdin=subprocess.DEVNULL, stdout=log,
+                             stderr=subprocess.DEVNULL if stdout_only else subprocess.STDOUT,
+                             text=True, start_new_session=True)
+        try:
+            rc = p.wait(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            rc = 124
+        finally:
+            try:
+                os.killpg(p.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+        log.seek(0)
+        out = log.read()
+    return rc, (out if rc != 124 else f"TIMEOUT after {timeout}s\n{out}")
+
+
+nv._run = _run_killpg  # native_validate.Task gates resolve _run at call time
+
+
+def _jac_json_killpg(ws: Path, *args: str, timeout: int = 180) -> dict:
+    rc, out = _run_killpg([fix_gate.JAC, "code", *args], ws, timeout, stdout_only=True)
+    i = out.find("{")
+    try:
+        return json.loads(out[i:]) if i >= 0 else {}
+    except Exception:
+        return {}
+
+
+fix_gate._jac_json = _jac_json_killpg
 
 T_SYM = 0.95        # every archetype/ability/def the reference has must survive (~)
 T_MASS = 0.85       # target files keep >=85% of the reference's code tokens
@@ -76,6 +116,16 @@ def fidelity(task_dir: Path, cand: Path, inv: dict | None = None) -> dict:
             "mass": round(mass, 3), "per_file": per_file, "reasons": reasons}
 
 
+def behavioral(task_dir: Path, wd: Path, timeout: float = 600) -> tuple[bool, str]:
+    """grader/behavioral.py <workspace> (from app-kind sources): drives the CLI in a
+    fresh cwd with separate `jac run` processes; exit 0 iff the verdict passes."""
+    script = task_dir / "grader" / "behavioral.py"
+    if not script.exists():
+        return False, "no grader/behavioral.py"
+    rc, out = nv._run([sys.executable, str(script.resolve()), str(wd)], wd, max(timeout, 600))
+    return rc == 0, out
+
+
 def grade(task_dir: Path, cand: Path, jac: str = "jac", inv: dict | None = None,
           gates: list[str] | None = None) -> dict:
     """Grade candidate workspace `cand` against task `task_dir` (copied to a fresh cwd)."""
@@ -98,6 +148,9 @@ def grade(task_dir: Path, cand: Path, jac: str = "jac", inv: dict | None = None,
         if "start" in gates and "start" in t.gate:
             ok, out = t.start(wd)
             res["gates"]["start"] = {"ok": ok, "detail": out[-400:]}
+        if "behavioral" in gates:
+            ok, out = behavioral(task_dir, wd, t.timeout)
+            res["gates"]["behavioral"] = {"ok": ok, "detail": out[-600:]}
     if "fidelity" in gates:
         res["gates"]["fidelity"] = fidelity(task_dir, cand, inv)
     res["pass"] = all(g["ok"] for g in res["gates"].values())

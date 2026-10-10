@@ -22,7 +22,7 @@ grader test module):
   connects           connect operators (++>, +>:E:+>)
   reports            report statements
   isinstance_calls   isinstance(...) calls (manual type dispatch)
-  dict_fields        `has` fields whose declared type mentions dict
+  dict_fields        `has` fields of node/edge/obj/class (not walker) whose type mentions dict
   glob_collections   module-level `glob` holding a dict/list
   impl_defs          impl blocks (inline + annex)
   annex_impls        impl blocks that live in a .impl.jac annex file
@@ -101,7 +101,7 @@ def module_files(wd: Path) -> list[Path]:
         rel = p.relative_to(wd)
         if any(part in ("__jac_gen__", ".jac", "node_modules") for part in rel.parts):
             continue
-        if p.name.endswith(".impl.jac") or ".impl" in rel.parts[:-1] or p.name.endswith(".test.jac"):
+        if p.name.endswith(".impl.jac") or any(x.endswith(".impl") for x in rel.parts[:-1]) or p.name.endswith(".test.jac"):
             continue
         if p.name == TEST_MODULE or p.name.startswith("grader_"):
             continue
@@ -131,11 +131,22 @@ def collect(wd: Path, jac: str = "jac") -> dict[str, Any]:
     m["modules"] = len(mods)
     for f in mods:
         rc, out = _run([jac, "tool", "ir", "ast", str(f.relative_to(wd))], wd)
-        roots = parse_ast(out)
+        roots = parse_ast(out)[:1]  # 0.36.1 prints the dump twice; one Module per file
         if rc != 0 or not roots:
             errors.append(f"ast {f.name}: rc={rc} {out[-300:]}")
             continue
         for root in roots:
+            # data-model dict fields: `has` of node/edge/obj/class (walker scratch state is fine)
+            for n in root.walk():
+                if n.kind == "Archetype":
+                    tok = next((c for c in n.children if c.kind == "Token"), None)
+                    if tok and tok.name == "walker":
+                        continue
+                    for hv in n.walk():
+                        if hv.kind == "HasVar":
+                            tag = next((c for c in hv.children if c.kind == "SubTag"), None)
+                            if tag and _subtree_has(tag, {"BuiltinType", "Name"}, {"dict"}):
+                                m["dict_fields"] += 1
             for n in root.walk():
                 k = n.kind
                 if k == "Archetype":
@@ -162,17 +173,13 @@ def collect(wd: Path, jac: str = "jac") -> dict[str, Any]:
                     callee = next((c for c in n.children if c.kind == "Name"), None)
                     if callee and callee.name == "isinstance":
                         m["isinstance_calls"] += 1
-                elif k == "HasVar":
-                    tag = next((c for c in n.children if c.kind == "SubTag"), None)
-                    if tag and _subtree_has(tag, {"BuiltinType", "Name"}, {"dict"}):
-                        m["dict_fields"] += 1
                 elif k == "GlobalVars":
                     if _subtree_has(n, {"DictVal", "ListVal", "ListCompr", "DictCompr"}) or \
                             _subtree_has(n, {"BuiltinType"}, {"dict", "list"}):
                         m["glob_collections"] += 1
     for f in annex_files(wd):
         rc, out = _run([jac, "tool", "ir", "ast", str(f.relative_to(wd))], wd)
-        roots = parse_ast(out)
+        roots = parse_ast(out)[:1]  # 0.36.1 prints the dump twice; one Module per file
         if rc != 0 or not roots:
             errors.append(f"ast {f.name}: rc={rc} {out[-300:]}")
             continue

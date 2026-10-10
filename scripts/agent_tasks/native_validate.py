@@ -44,6 +44,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import urllib.error
 import urllib.request
 from pathlib import Path
 from typing import Any, Callable
@@ -165,7 +166,12 @@ class Task:
     def test(self, wd: Path) -> tuple[bool, str]:
         rc, out = _run([self.jac, "test", TEST_MODULE], wd, self.timeout)
         import re
-        ok = rc == 0 and re.search(r"\b[1-9]\d* passed", out) is not None and re.search(r"\b[1-9]\d* (failed|errors?)\b", out) is None
+        # Never trust the exit code alone (an unimportable target reports "1 skipped", rc 0):
+        # require exactly as many passes as declared test blocks, and no fail/error/skip.
+        expected = len(re.findall(r'^test\s+"', (self.grader / "tests.jac").read_text(), re.M))
+        m = re.search(r"\b(\d+) passed", out)
+        ok = (rc == 0 and m is not None and int(m.group(1)) == expected
+              and re.search(r"\b[1-9]\d* (failed|errors?|skipped)\b", out) is None)
         self.last_test_out = out
         return ok, out[-1500:]
 
@@ -188,7 +194,13 @@ class Task:
             s.bind(("127.0.0.1", 0))
             port = s.getsockname()[1]
         log = open(wd / "serve.log", "w")
-        proc = subprocess.Popen([self.jac, "run", "--serve", "--no-client", "-p", str(port), spec["entry"]],
+        # 0.36.x serves with `jac start`; 0.37+ removed it in favour of `jac run --serve`.
+        rc_h, help_out = _run([self.jac, "start", "--help"], wd, 60)
+        if rc_h == 0 and "usage: jac start" in help_out:
+            cmd = [self.jac, "start", "-p", str(port), spec["entry"]]
+        else:
+            cmd = [self.jac, "run", "--serve", "--no-client", "-p", str(port), spec["entry"]]
+        proc = subprocess.Popen(cmd,
                                 cwd=wd, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
         base = f"http://127.0.0.1:{port}"
         try:
@@ -199,9 +211,11 @@ class Task:
                     break
                 try:
                     with urllib.request.urlopen(base + "/healthz", timeout=3) as r:
-                        up = r.status == 200
-                        if up:
-                            break
+                        up = True
+                        break
+                except urllib.error.HTTPError:
+                    up = True   # server answered (older versions may lack /healthz)
+                    break
                 except Exception:
                     time.sleep(1)
             if not up:
@@ -220,7 +234,7 @@ class Task:
                 for s in rq.get("expect", []):
                     if "".join(s.split()) not in flat:
                         return False, f"request {i} {rq['path']}: expected {s!r} in {body[:500]}"
-            return True, f"served on :{port}, {len(spec.get('requests', []))} probes ok"
+            return True, f"served via `{' '.join(cmd[1:3])}` on :{port}, {len(spec.get('requests', []))} probes ok"
         finally:
             try:
                 os.killpg(proc.pid, signal.SIGTERM)

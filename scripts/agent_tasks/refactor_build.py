@@ -93,8 +93,11 @@ class RTask:
     def test(self, wd: Path) -> tuple[bool, str]:
         import re
         rc, out = _run([self.jac, "test", TEST_MODULE], wd, self.timeout)
-        ok = rc == 0 and re.search(r"\b[1-9]\d* passed", out) is not None \
-            and re.search(r"\b[1-9]\d* (failed|errors?)\b", out) is None
+        # exit code alone is not trusted (an unimportable target = "1 skipped", rc 0):
+        # require exactly the expected number of passes and nothing failed/skipped.
+        n = len(re.findall(r'^\s*test\s+"', (wd / TEST_MODULE).read_text(), re.M))
+        ok = rc == 0 and re.search(rf"\b{n} passed", out) is not None \
+            and re.search(r"\b[1-9]\d* (failed|errors?|skipped)\b", out) is None
         return ok, out[-1500:]
 
 

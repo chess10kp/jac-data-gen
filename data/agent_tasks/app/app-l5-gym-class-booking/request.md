@@ -1,6 +1,6 @@
 # Gym class booking backend
 
-I run a small climbing gym and want a booking API for our classes (yoga, intro to bouldering, etc.). The repo is a fresh `jac create --kind service` project — please replace the sample note code.
+I run a small climbing gym and want a booking API for our classes (yoga, intro to bouldering, etc.). The repo is a fresh `jac create --kind service` project — please replace the sample guestbook code.
 
 ## Data
 
@@ -31,4 +31,4 @@ When something is wrong, return `{"error": "<message>"}` instead of a view:
 
 Member names are case-sensitive.
 
-Also add Jac tests covering the booking rules, and make sure the service starts with `jac run`.
+Also add Jac tests covering the booking rules, and make sure the service starts with `jac start`.

@@ -104,8 +104,8 @@ def build_task(spec: dict) -> Path:
     (t / "grader").mkdir(parents=True)
     tests = spec["tests"]
     code = spec.get("code") or sorted(
-        p.relative_to(ref).as_posix() for p in ref.rglob("*.jac")
-        if not _is_test_file(p.name) and "__jac_gen__" not in p.parts and ".jac" not in p.parts[:-1])
+        p.relative_to(ref).as_posix() for p in ref.rglob("*.jac") if p.is_file()
+        and not _is_test_file(p.name) and "__jac_gen__" not in p.parts and ".jac" not in p.relative_to(ref).parts[:-1])
     # starter = source starter extras (jac.toml, AGENTS.md ...) + reference code
     starter = t / "starter"
     starter.mkdir()
@@ -131,7 +131,7 @@ def build_task(spec: dict) -> Path:
     # trivial = import-only smoke suite
     (t / "grader" / "trivial").mkdir()
     (t / "grader" / "trivial" / tests).write_text(
-        f"import {spec['trivial_import']};\n\ntest \"module imports\" {{\n    assert True;\n}}\n")
+        f"import {spec['trivial_import']}\n\ntest \"module imports\" {{\n    assert True;\n}}\n")
     shutil.copyfile(auth / "request.md", t / "request.md")
     hand = json.loads((auth / "hand_mutants.json").read_text()) if (auth / "hand_mutants.json").exists() else []
     if (auth / "hand_mutants.json").exists():
@@ -192,7 +192,7 @@ def build_task(spec: dict) -> Path:
 
     meta = {
         "id": tid, "kind": "testgen", "level": spec["level"], "source": f"derived:{spec['src']}",
-        "gates": ["check", "mutation"], "target_paths": [tests], "jac_version": "0.37.25",
+        "gates": ["check", "mutation"], "target_paths": [tests], "jac_version": TARGET_JAC,
         "license": "original-authored (jac_llm_data agent-task pool)",
         "mutation": {"threshold": THRESHOLD, "code_files": code, "scope": spec.get("scope"),
                      "n_candidates": len(uniq), "n_mechanical_sites": len(mech),
@@ -265,6 +265,7 @@ def validate(t: Path, jac: str, jobs: int) -> dict:
     for name, d in suites.items():
         passes = [run_suite(spec, d, jac, None) for _ in range(2 if name == "ref" else 1)]
         r["original"][name] = all(p[0] for p in passes)
+        r.setdefault("sample_out", {})[name] = passes[0][1][-500:]
         if not r["original"][name]:
             r["fail"].append(f"{name} suite does not pass on original: {passes[0][1][-600:]}")
     if r["fail"]:
@@ -405,9 +406,13 @@ def confirm(t: Path, jac: str, jobs: int) -> dict:
         for x in spec.tests:
             (Path(e) / x).write_text("")
         out["empty_file"] = {k: v for k, v in grade(t, Path(e), jac, jobs).items() if k in ("passed", "reason")}
+        for x in spec.tests:   # suite whose import fails: 0.36/0.37 `jac test` may exit 0 ("skipped")
+            (Path(e) / x).write_text("import from no_such_module_xyz { Nope }\n\ntest \"probe\" {\n    assert Nope is not None;\n}\n")
+        bi_pass, bi_out = run_suite(spec, Path(e), jac, None)   # bypass the check gate on purpose
+        out["bad_import"] = {"passed": bi_pass, "out": bi_out[-300:]}
     triv = grade(t, t / "grader" / "trivial", jac, jobs)
     out["trivial"] = {k: triv.get(k) for k in ("passed", "kill_rate")}
-    out["confirmed"] = bool(ref["passed"]) and not out["empty"]["passed"] and not out["empty_file"]["passed"] and not triv["passed"]
+    out["confirmed"] = bool(ref["passed"]) and not out["empty"]["passed"] and not out["empty_file"]["passed"] and not out["bad_import"]["passed"] and not triv["passed"]
     return out
 
 
@@ -502,24 +507,24 @@ def cmd_manifest(a) -> int:
     return 0
 
 
+TARGET_JAC = "0.36.1"
+
+
 def source_status() -> dict[str, tuple[bool, str]]:
-    """Is each source task's reference still validated by its own builder?"""
+    """Is each source task's reference validated by its own builder AT TARGET_JAC?
+    native: manifest.jsonl (verdict) + build_results.jsonl ("jac" version string);
+    app: manifest.jsonl ("validated_with" / "jac_version")."""
     out: dict[str, tuple[bool, str]] = {}
-    nat = REPO / "data" / "agent_tasks" / "native"
-    for p in (nat / "build_results.jsonl", nat / "manifest.jsonl"):
-        for r in load_jsonl(p):
-            out[f"native/{r['id']}"] = (bool(r.get("validated")), str(r.get("reason") or ""))
-    app = REPO / "data" / "agent_tasks" / "app"
-    if (app / "manifest.jsonl").exists():
-        for r in load_jsonl(app / "manifest.jsonl"):
-            out[f"app/{r['id']}"] = (bool(r.get("validated")), str(r.get("reason") or ""))
-    else:  # app kind has no manifest yet: use its latest CI results
-        runs = sorted((REPO / "runs" / "ci" / "app").glob("*"), key=lambda p: p.name)
-        for run in runs:
-            for f in run.rglob("*.jsonl"):
-                for r in load_jsonl(f):
-                    if "id" in r:
-                        out[f"app/{r['id']}"] = (bool(r.get("validated")), str(r.get("reason") or ""))
+    for kind in ("native", "app"):
+        d = REPO / "data" / "agent_tasks" / kind
+        ver: dict[str, str] = {}
+        for r in load_jsonl(d / "build_results.jsonl"):
+            ver[r["id"]] = str(r.get("jac") or r.get("jac_version") or "")
+        for r in load_jsonl(d / "manifest.jsonl"):
+            v = str(r.get("jac_version") or r.get("validated_with") or r.get("jac") or ver.get(r["id"], ""))
+            ok = bool(r.get("validated")) and TARGET_JAC in v
+            why = str(r.get("reason") or "") if not r.get("validated") else (f"validated with {v!r}, need {TARGET_JAC}" if not ok else "")
+            out[f"{kind}/{r['id']}"] = (ok, why)
     return out
 
 

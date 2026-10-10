@@ -24,5 +24,5 @@ test "trimmed and case sensitive" {
 
 test "blank page reports an error" {
     r = (root spawn record_visit(page="  ")).reports[0];
-    assert "error" in r;
+    assert "error" in list(r);
 }

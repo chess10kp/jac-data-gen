@@ -18,5 +18,5 @@ test "park and leave" {
     park("unit-car", "08:00");
     r = leave("UNIT-CAR", "09:15");
     assert r["minutes"] == 75 and r["fee"] == 4.0;
-    assert "error" in leave("unit-car", "10:00");
+    assert "error" in list(leave("unit-car", "10:00"));
 }

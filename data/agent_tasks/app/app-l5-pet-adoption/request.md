@@ -6,4 +6,4 @@ What it needs to do:
 - **Adopt**: `POST /walker/adopt` with `pet_id` and `adopter` (a person's name). The pet becomes `"adopted"` and gets linked to an adopter node for that person (create the adopter the first time). Adopting a pet that's already adopted or doesn't exist should report `{"error": "..."}`.
 - **Adopter history**: `POST /walker/adopter_pets` with `adopter`. Report the list of pets that person has adopted, sorted by name (empty list for someone we don't know).
 
-Use the pet node's `jid` as its id. Everything should be stored in the graph under root. Please write tests too, and check that `jac run` starts the API.
+Use the pet node's `jid` as its id. Everything should be stored in the graph under root. Please write tests too, and check that `jac start` serves the API.

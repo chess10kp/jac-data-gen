@@ -1,30 +1,34 @@
-"""event_rsvp - a headless Jac API service.
+"""API service for event_rsvp.
 
-`Note` nodes persist on the graph. `add_note` is a `def:pub` function endpoint
-(POST /function/add_note) and `ListNotes` is a `walker:pub` endpoint
-(POST /walker/ListNotes) - a walker because it traverses. Both are `:pub`:
-no login, every caller shares the guest graph; switch to `:priv` to require a
-token and give each user an isolated root. In a workspace, other apps import
-these names and the compiler turns the import into a bridge to this service.
+A minimal guestbook: messages are `Message` nodes on the shared `root`
+graph. The `:pub` walkers are the HTTP API the service exposes.
 """
 
-node Note {
-    has text: str;
+node Message {
+    has author: str,
+        text: str;
 }
 
-def:pub add_note(text: str) -> Note {
-    return root ++> Note(text=text);
+walker:pub PostMessage {
+    """Append a message and report the created node."""
+    has author: str,
+        text: str,
+        reports: list[Message] = [];
+
+    can post with Root entry {
+        report here ++> Message(author=self.author, text=self.text);
+    }
 }
 
-walker:pub ListNotes {
-    """Report every note on the graph, one report per node."""
-    has reports: list[Note] = [];
+walker:pub ListMessages {
+    """Report every message in the guestbook."""
+    has reports: list[Message] = [];
 
     can collect with Root entry {
-        visit [-->[?:Note]];
+        visit [-->];
     }
 
-    can gather with Note entry {
+    can gather with Message entry {
         report here;
     }
 }

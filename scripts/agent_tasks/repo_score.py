@@ -53,7 +53,8 @@ DATASET = REPO / "data" / "jachacks_all_dataset_filtered.jsonl"
 REPAIRED_TGZ = REPO / "data" / "repo_scores" / "ci_input" / "repaired_jac.tgz"
 OUTDIR = REPO / "data" / "repo_scores"
 JAC = os.environ.get("JAC_BIN", "jac")
-JAC_VERSION = "0.37.25"
+JAC_VERSION = os.environ.get("JAC_TARGET_VERSION", "0.36.1")  # the training pipeline's pinned jac
+V37 = tuple(int(x) for x in JAC_VERSION.split(".")[:2]) >= (0, 37)  # 0.37 migrations only apply there
 
 SKIP_DIRS = {"node_modules", ".git", ".venv", "venv", "env", "__pycache__", "dist", "build",
              ".jac", ".next", ".cache", "site-packages", ".pytest_cache", ".mypy_cache",
@@ -90,7 +91,7 @@ SUMMARY_RE = re.compile(r"=+ (?:(\d+) passed)?(?:, )?(?:(\d+) failed)?.* in [\d.
 
 
 def jac_check(tree: Path, timeout=1200) -> dict:
-    rc, out, dt = sh([JAC, "check", "-n", "-j", "4", "."], cwd=tree, timeout=timeout)
+    rc, out, dt = sh([JAC, "check", "-n", *(["-j", "4"] if V37 else []), "."], cwd=tree, timeout=timeout)
     errors, cur = [], None
     status = {}
     for ln in out.splitlines():
@@ -322,11 +323,25 @@ def find_entry(tree: Path, jac_files: list[str]) -> str | None:
         except Exception:
             pass
     names = ["main.jac", "app.jac", "server.jac", "api.jac", "backend.jac", "index.jac"]
+    core = [f for f in jac_files if not re.search(r"(^|/)(tests?|docs?|examples?|spikes?)/|test", f)]
     for depth in (0, 1, 2):
-        for f in sorted(jac_files, key=lambda x: (x.count("/"), x)):
+        for f in sorted(core, key=lambda x: (x.count("/"), x)):
             if f.count("/") == depth and Path(f).name in names:
                 return f
-    return None
+    best, bw = None, 0
+    for f in sorted(core, key=lambda x: (x.count("/"), x)):
+        t = (tree / f).read_text(errors="replace")
+        w = len(re.findall(r"^\s*walker\b", t, re.M)) + len(re.findall(r"def:pub|walker:pub", t)) \
+            + (5 if re.search(r"^\s*with\s+entry\b", t, re.M) else 0)
+        if w > bw:
+            best, bw = f, w
+    return best
+
+
+def first_err(out: str) -> str:
+    m = re.findall(r"✖ Error: (.{0,200})", out) or \
+        re.findall(r"^\s*(?:E\s+)?(\w*(?:Error|Exception)\b:? .{0,200})$", out, re.M)
+    return m[0].strip() if m else ""
 
 
 def free_port() -> int:
@@ -340,7 +355,8 @@ def free_port() -> int:
 def serve_probe(tree: Path, entry: str, wait=120) -> dict:
     port = free_port()
     ed = Path(entry).parent
-    cmd = [JAC, "run", "--serve", "--no-client", "-p", str(port), Path(entry).name]
+    cmd = ([JAC, "run", "--serve", "--no-client", "-p", str(port), Path(entry).name] if V37
+           else [JAC, "start", Path(entry).name, "-p", str(port), "-n"])
     p = subprocess.Popen(cmd, cwd=tree / ed, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                          text=True, errors="replace", start_new_session=True)
     res = {"ok": False, "status": None, "path": None}
@@ -372,19 +388,21 @@ def serve_probe(tree: Path, entry: str, wait=120) -> dict:
     res["secs"] = round(time.time() - t0, 1)
     if not res["ok"]:
         res["tail"] = out[-500:]
+        res["err"] = first_err(out)
     return res
 
 
 def run_probe(tree: Path, entry: str, timeout=90) -> dict:
     ed = Path(entry).parent
     rc, out, dt = sh([JAC, "run", Path(entry).name], cwd=tree / ed, timeout=timeout)
-    return {"rc": rc, "secs": round(dt, 1), "tail": out[-500:],
+    return {"rc": rc, "secs": round(dt, 1), "tail": out[-500:], "err": first_err(out),
             "ok": rc == 0 and "Traceback" not in out and "Error" not in out[-300:]}
 
 
 def faux_probe(tree: Path, entry: str) -> dict:
     ed = Path(entry).parent
-    rc, out, dt = sh([JAC, "run", "--serve", "--faux", Path(entry).name], cwd=tree / ed, timeout=180)
+    rc, out, dt = sh([JAC, "run", "--serve", "--faux", Path(entry).name] if V37 else
+                     [JAC, "start", Path(entry).name, "--faux"], cwd=tree / ed, timeout=180)
     eps = len(re.findall(r"^\s*(?:GET|POST|PUT|DELETE|PATCH)\s+/", out, re.M))
     return {"rc": rc, "endpoints": eps, "secs": round(dt, 1), "head": out[:1500]}
 
@@ -436,7 +454,7 @@ def score_repo_ci(r: dict, repaired_root: Path | None, out: Path) -> dict:
         shutil.rmtree(clone, ignore_errors=True)
         res["asis_text"] = text_metrics({str(p.relative_to(asis)): p.read_text(errors="replace")
                                          for p in walk(asis) if p.suffix == ".jac"})
-        res["config_fix"] = config_fix(asis)
+        res["config_fix"] = config_fix(asis) if V37 else []
         trees = [("asis", asis)]
         rep_src = repaired_root / d if repaired_root else None
         if rep_src and rep_src.is_dir():
@@ -471,7 +489,7 @@ def score_repo_ci(r: dict, repaired_root: Path | None, out: Path) -> dict:
             if c["ok"]:
                 final = (name, t)
                 break
-        if final is None:
+        if final is None and V37:
             name, t = trees[-1]
             mech = work / "mech"
             shutil.copytree(t, mech)
@@ -502,6 +520,26 @@ def score_repo_ci(r: dict, repaired_root: Path | None, out: Path) -> dict:
             c["errors"] = c["errors"][:60]
         res["checks"] = checks
         fname, ftree = final or trees[-1]
+        # 0.37 runtime migration: the byllm package now ships as jaclang.byllm
+        nb, orig = 0, {}
+        for p in (walk(ftree) if V37 else []):
+            if p.suffix == ".jac":
+                t = p.read_text(errors="replace")
+                t2 = re.sub(r"\bimport\s+from\s+byllm(?:\.lib|\.llm)?\s*\{", "import from jaclang.byllm.lib {", t)
+                if t2 != t:
+                    orig[p] = t
+                    p.write_text(t2)
+                    nb += 1
+        if nb:
+            res["byllm_rewrite"] = nb
+            if final is not None:
+                c = jac_check(ftree)
+                c["errors"] = c["errors"][:30]
+                res["byllm_check"] = {k: c[k] for k in ("ok", "codes")}
+                if not c["ok"]:  # keep the green tree; record that the rewrite broke it
+                    for p, t in orig.items():
+                        p.write_text(t)
+                    res["byllm_rewrite"] = 0
         res["final_tree"] = fname
         res["green"] = final is not None
         res["code_map"] = code_map(ftree)
@@ -542,6 +580,10 @@ def cmd_ci(a):
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
     i, n = map(int, a.shard.split("/"))
+    have = sh([JAC, "--version"], timeout=120)[1]
+    print("jac:", have.strip()[-60:], "target:", JAC_VERSION, flush=True)
+    if JAC_VERSION not in have:
+        sys.exit(f"jac on PATH is not the target {JAC_VERSION}: {have!r}")
     repos = [r for k, r in enumerate(load_repos()) if k % n == i]
     if a.only:
         repos = [r for r in load_repos() if r["dirname"] in a.only.split(",")]
@@ -630,6 +672,9 @@ def text_metrics(files: dict[str, str]) -> dict:
     m["idioms"]["sv_files"] = sum(1 for f in files if f.endswith(".sv.jac"))
     m["idioms"]["impl_files"] = sum(1 for f in files if f.endswith(".impl.jac"))
     m["old"] = {k: len(re.findall(v, all_code, re.M)) for k, v in OLD_DIALECT.items()}
+    # archetype counts from source (fallback when `jac code map` returns nothing, e.g. 0.36.1)
+    m["decls"] = {k: len(re.findall(r"^\s*(?:async\s+)?" + k + r"\s*(?::\w+\s*)?\b[A-Za-z_]\w*", all_code, re.M))
+                  for k in ("node", "edge", "walker", "obj")}
     m["slop"] = {k: len(re.findall(v, all_raw, re.M)) for k, v in SLOP.items()}
     nf = len(FUNC_RE.findall(all_code))
     nh = len(HOLLOW_RE.findall(all_code))
@@ -697,6 +742,8 @@ def score(r: dict) -> tuple[float, dict]:
     tm = r["text"]
     kloc = max(tm["jac_loc"], 1) / 1000
     km = r.get("code_map", {}).get("kinds", {}) if r.get("code_map", {}).get("ok") else {}
+    if not km:
+        km = tm.get("decls", {})
     nodes, edges, walkers = km.get("node", 0), km.get("edge", 0), km.get("walker", 0)
     idi = dict(tm["idioms"])
     at = (r.get("asis_text") or {}).get("idioms", {})
@@ -864,8 +911,8 @@ def cmd_merge(a):
                              for k, v in (o.get("checks") or {}).items()}
             cm = o.get("code_map") or {}
             row["code_map"] = {k: cm.get(k) for k in ("ok", "kinds", "genai", "abilities")}
-            row["serve"] = {k: (o.get("serve") or {}).get(k) for k in ("ok", "status", "path", "secs")} if o.get("serve") else None
-            row["run"] = {k: (o.get("run") or {}).get(k) for k in ("ok", "rc", "secs")} if o.get("run") else None
+            row["serve"] = {k: (o.get("serve") or {}).get(k) for k in ("ok", "status", "path", "secs", "err")} if o.get("serve") else None
+            row["run"] = {k: (o.get("run") or {}).get(k) for k in ("ok", "rc", "secs", "err")} if o.get("run") else None
             row["faux"] = {k: (o.get("faux") or {}).get(k) for k in ("rc", "endpoints")} if o.get("faux") else None
             fh.write(json.dumps(row) + "\n")
     write_summary(rows, a)
@@ -873,7 +920,7 @@ def cmd_merge(a):
 
 
 def why(o) -> str:
-    t, cm = o["text"], (o.get("code_map") or {}).get("kinds", {})
+    t, cm = o["text"], (o.get("code_map") or {}).get("kinds", {}) or o["text"].get("decls", {})
     bits = [f"{t['n_jac']} files/{t['jac_loc']} LOC", f"jac share {o.get('jac_share')}",
             f"{cm.get('node', 0)}N/{cm.get('edge', 0)}E/{cm.get('walker', 0)}W",
             f"trav {t['idioms']['visit'] + t['idioms']['spawn'] + t['idioms']['connect']}"]

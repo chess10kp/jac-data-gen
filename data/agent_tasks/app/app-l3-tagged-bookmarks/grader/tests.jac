@@ -49,6 +49,6 @@ test "delete removes bookmark and orphaned tags" {
     assert len(one((root spawn FindByTag(tag=t + "solo")).reports)) == 0;
     assert list(one((root spawn FindByTag(tag=t + "shared")).reports)) == [keep];
     counts = one((root spawn TagCounts()).reports);
-    assert (t + "solo") not in counts;
+    assert (t + "solo") not in list(counts);
     assert counts[t + "shared"] == 1;
 }

@@ -55,6 +55,6 @@ test "negative score is an error and changes nothing" {
     sub(g, "kim", 5);
     r = (root spawn submit_score(game=g, player="lee", score=-5)).reports;
     assert len(r) >= 1;
-    assert isinstance(r[0], dict) and "error" in r[0];
+    assert isinstance(r[0], dict) and "error" in list(r[0]);
     assert list(rows(sub(g, "kim", 1))) == [("KIM", 5)];
 }

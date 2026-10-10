@@ -12,4 +12,4 @@ A recipe view is `{"id", "title", "minutes", "ingredients" (sorted list), "ratin
 
 **Client:** a single page served at `/` that lists the recipes, has a form to add one (title + comma-separated ingredients), and a search box that filters by ingredient using `recipes_with`. Nothing fancy.
 
-Add some Jac tests for the server side, and make sure `jac run` serves the app.
+Add some Jac tests for the server side, and make sure `jac start` serves the app.

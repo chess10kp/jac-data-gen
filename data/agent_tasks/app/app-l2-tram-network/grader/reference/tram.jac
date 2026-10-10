@@ -1,11 +1,5 @@
 """Tram network: shortest travel times by walker relaxation over Track edges."""
 
-# Anchor this module on the server (Python) backend with an import that has no
-# native-stdlib twin (`sys`/`math`/`uuid` do not anchor). Without it jac 0.37.25
-# places the module native, demotes the ability that reads edge objects (edge-object
-# references are not lowerable) and the mixed native/Python module aborts (SIGABRT).
-import heapq;
-
 node Stop {
     has name: str;
 }

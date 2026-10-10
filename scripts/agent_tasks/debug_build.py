@@ -57,7 +57,7 @@ ROOT = REPO / "data" / "agent_tasks"
 OUT = ROOT / "debug"
 VALID = OUT / ".validation"
 MANIFEST = OUT / "manifest.jsonl"
-JAC_VERSION = "0.37.25"
+JAC_VERSION = "0.36.1"
 IGNORE = shutil.ignore_patterns(".jac", "__jac_gen__", "__pycache__", "node_modules", "*.log")
 
 
@@ -72,6 +72,16 @@ def task_hash(d: Path) -> str:
     h = hashlib.sha256()
     for p in sorted(d.rglob("*")):
         if p.is_file() and ".jac" not in p.relative_to(d).parts[:-1] and p.name != "symbols.json":
+            h.update(str(p.relative_to(d)).encode())
+            h.update(p.read_bytes())
+    return h.hexdigest()[:16]
+
+
+def ref_hash(d: Path) -> str:
+    """Content hash of a source reference (ignoring caches) - detects source drift."""
+    h = hashlib.sha256()
+    for p in sorted(d.rglob("*")):
+        if p.is_file() and not ({".jac", "__jac_gen__", "__pycache__"} & set(p.relative_to(d).parts[:-1])):
             h.update(str(p.relative_to(d)).encode())
             h.update(p.read_bytes())
     return h.hexdigest()[:16]
@@ -126,6 +136,8 @@ def build_one(s: dict) -> Path:
     if repro:
         gate["repro"] = {k: v for k, v in repro.items() if k != "content"}
     (d / "grader" / "gate.json").write_text(json.dumps(gate, indent=1) + "\n")
+    if (src / "grader" / "behavioral.py").exists():
+        shutil.copy(src / "grader" / "behavioral.py", d / "grader" / "behavioral.py")
     if (src / "grader" / "probes").is_dir():
         shutil.copytree(src / "grader" / "probes", d / "grader" / "probes", ignore=IGNORE)
     gates = ["check", "test"]
@@ -133,6 +145,8 @@ def build_one(s: dict) -> Path:
         gates.append("run")
     if "start" in gate:
         gates.append("start")
+    if (d / "grader" / "behavioral.py").exists():
+        gates.append("behavioral")
     gates.append("fidelity")
     task = {
         "id": s["id"], "kind": "debug", "level": s["level"], "source": f"injected-bug:{s['src']}",
@@ -140,6 +154,7 @@ def build_one(s: dict) -> Path:
         "license": smeta.get("license", "original-authored (jac_llm_data agent-task pool)"),
         "provenance": {
             "source_task": s["src"], "source_level": smeta["level"],
+            "source_ref_hash": ref_hash(src / "grader" / "reference"),
             "title": s.get("title", smeta.get("provenance", {}).get("title", "")),
             "domain": smeta.get("provenance", {}).get("domain", ""),
             "n_bugs": len(s["bugs"]), "bug_classes": [b["cls"] for b in s["bugs"]],
@@ -194,6 +209,10 @@ def _fails(t: nv.Task, wd: Path) -> tuple[str, str]:
         r, rout = t.run_steps(wd)
         if not r:
             return "killed:run", rout
+    if "behavioral" in t.meta["gates"]:
+        r, rout = debug_gate.behavioral(t.dir, wd, t.timeout)
+        if not r:
+            return "killed:behavioral", rout
     return "survived", tout
 
 
@@ -295,6 +314,7 @@ def cmd_validate(a) -> None:
     out.mkdir(parents=True, exist_ok=True)
     with open(out / "debug_results.jsonl", "a") as f:
         for d in ds:
+            print(f"--- start {d.name} {time.strftime('%H:%M:%S')}", flush=True)
             try:
                 r = validate_one(d, a.jac)
             except Exception as e:
@@ -304,15 +324,31 @@ def cmd_validate(a) -> None:
 
 
 # --------------------------------------------------------------------------- merge/manifest
-def source_validated() -> dict[str, bool]:
-    st = {}
+def source_validated() -> dict[str, str]:
+    """source -> "" if usable, else why not. Usable = its kind's manifest says
+    validated:true, the source task targets jac 0.36.1, and the manifest row's
+    hash matches the source dir as it is NOW (validation is of current content)."""
+    import app_build
+    hashers = {"native": nv.task_hash, "app": app_build.task_hash}
+    st: dict[str, str] = {}
     for kind in ("native", "app"):
         m = ROOT / kind / "manifest.jsonl"
-        if m.exists():
-            for line in m.read_text().splitlines():
-                if line.strip():
-                    r = json.loads(line)
-                    st[f"{kind}/{r['id']}"] = bool(r.get("validated"))
+        if not m.exists():
+            continue
+        for line in m.read_text().splitlines():
+            if not line.strip():
+                continue
+            r = json.loads(line)
+            d = ROOT / kind / r["id"]
+            why = []
+            if not r.get("validated"):
+                why.append("not validated")
+            if d.exists():
+                if json.loads((d / "task.json").read_text()).get("jac_version") != JAC_VERSION:
+                    why.append(f"not on jac {JAC_VERSION}")
+                if r.get("hash") and r["hash"] != hashers[kind](d):
+                    why.append("changed since its validation")
+            st[f"{kind}/{r['id']}"] = ", ".join(why)
     return st
 
 
@@ -360,8 +396,11 @@ def cmd_manifest(a) -> None:
             reasons.append("task changed since validation")
         elif not r.get("validated"):
             reasons.append("; ".join(x.splitlines()[0][:200] for x in r.get("fail", [])))
-        if not srcv.get(src, False):
-            reasons.append(f"source {src} not validated in its manifest")
+        if meta["provenance"].get("source_ref_hash") != ref_hash(ROOT / src / "grader" / "reference"):
+            reasons.append("source reference changed since this task was built (rebuild)")
+        sv = srcv.get(src, "not in its manifest")
+        if sv:
+            reasons.append(f"source {src}: {sv}")
         if not dd[d.name]["clean"]:
             reasons.append("dedup: " + dd[d.name]["reason"])
         ok = not reasons

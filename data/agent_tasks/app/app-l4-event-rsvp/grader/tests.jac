@@ -37,12 +37,12 @@ test "plus ones validated" {
     ev = "cleanup-" + uuid.uuid4().hex[:8];
     say(ev, "Ann", True);
     bad = say(ev, "Bo", True, 4);
-    assert isinstance(bad, dict) and "error" in bad;
+    assert isinstance(bad, dict) and "error" in list(bad);
     bad2 = say(ev, "Bo", True, -1);
-    assert isinstance(bad2, dict) and "error" in bad2;
+    assert isinstance(bad2, dict) and "error" in list(bad2);
     s = say(ev, "Cy", False);
     assert get(s, "headcount") == 1;
-    assert "Bo" not in get(s, "attending") and "Bo" not in get(s, "declined");
+    assert "Bo" not in list(get(s, "attending")) and "Bo" not in list(get(s, "declined"));
 }
 
 test "events are separate" {

@@ -5,4 +5,4 @@ I need a tiny hit-counter API for my static blog. This folder is a `jac create -
 - a blank page name (empty or only spaces) shouldn't be counted — report `{"error": "page required"}` instead
 - page names are trimmed, otherwise case-sensitive (`/About` and `/about` are different pages)
 
-Please also add a couple of Jac tests for it and make sure `jac run` serves it.
+Please also add a couple of Jac tests for it and make sure `jac start` serves it.
