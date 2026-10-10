@@ -1,0 +1,1 @@
+{"why": "downward challenges allowed", "edits": [{"file": "challenge.jac", "old": "if gap <= 0 or gap > 3 {", "new": "if gap == 0 or gap > 3 {"}]}

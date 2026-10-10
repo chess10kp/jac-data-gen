@@ -13,6 +13,7 @@ walker PickRun {
     has outstanding: dict[str, int] = {};
     has lines: list[PickLine] = [];
     has short: dict[str, int] = {};
+    has aisles_visited: int = 0;
 
     can start with Root entry {
         self.outstanding = dict(self.order);
@@ -20,6 +21,7 @@ walker PickRun {
     }
 
     can pick with Aisle entry {
+        self.aisles_visited += 1;
         for b in [here ->:Holds:->] {
             want = self.outstanding.get(b.sku, 0);
             if want > 0 and b.qty > 0 {

@@ -54,6 +54,7 @@ test "stops once the order is filled" {
     w = root spawn PickRun(order={"nut": 5});
     assert lines_of(w) == ["1:a1:nut:5"];
     assert bin_qty("b1") == 5;
+    assert w.aisles_visited == 1;
 }
 
 test "shortages reported and empty bins skipped" {
@@ -61,6 +62,7 @@ test "shortages reported and empty bins skipped" {
     w = root spawn PickRun(order={"gear": 5, "cog": 1, "pin": 3});
     assert lines_of(w) == ["1:a2:gear:2", "2:b1:cog:1"];
     assert w.short == {"gear": 3, "pin": 3};
+    assert w.aisles_visited == 2;
 }
 
 test "order dict is not mutated" {

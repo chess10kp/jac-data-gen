@@ -60,11 +60,12 @@ JAC_VERSION = "0.37.25"
 # --------------------------------------------------------------------------- utils
 
 
-def sh(cmd: list[str], cwd: Path, timeout: int) -> dict:
+def sh(cmd: list[str], cwd: Path, timeout: int, env: dict | None = None) -> dict:
     t = time.time()
     try:
         p = subprocess.run(cmd, cwd=cwd, stdin=subprocess.DEVNULL, capture_output=True,
-                           text=True, timeout=timeout, start_new_session=True)
+                           text=True, timeout=timeout, start_new_session=True,
+                           env={**os.environ, **(env or {})})
         rc, out = p.returncode, (p.stdout + p.stderr)
     except subprocess.TimeoutExpired as e:
         rc, out = 124, f"TIMEOUT after {timeout}s\n{(e.stdout or '')}{(e.stderr or '')}"
@@ -241,7 +242,8 @@ def gate_test(ws: Path, task_dir: Path, meta: dict) -> dict:
             ok &= r["rc"] == 0
     d = fresh_copy(ws)
     shutil.copy(task_dir / "grader" / "tests.jac", d / HIDDEN_NAME)
-    r = sh(["jac", "test", HIDDEN_NAME], d, 600)
+    # serial test workers: hidden tests share one persisted root per cwd
+    r = sh(["jac", "test", HIDDEN_NAME], d, 600, env={"JAC_TEST_JOBS": "0"})
     res["steps"].append(r)
     ok &= r["rc"] == 0
     res["ok"] = bool(ok)

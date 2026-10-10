@@ -1,0 +1,1 @@
+{"why": "records the edge before range check", "edits": [{"file": "challenge.jac", "old": "        gap = c.rank - d.rank;\n", "new": "        c +>:Played(challenger_won=False, round=self.round):+> d;\n        gap = c.rank - d.rank;\n"}]}

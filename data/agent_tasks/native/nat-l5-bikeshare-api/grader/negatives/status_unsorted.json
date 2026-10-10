@@ -1,0 +1,1 @@
+{"why": "status in creation order", "edits": [{"file": "app.jac", "old": "report sorted(self.rows, key=lambda (r: dict[str, any]) { r[\"code\"]; });", "new": "report self.rows;"}]}

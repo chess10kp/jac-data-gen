@@ -1,0 +1,1 @@
+{"why": "head-to-head ignores matches the other player initiated", "edits": [{"file": "challenge.jac", "old": "            for m in [edge pb ->:Played:-> pa] {\n                wins[self.b if m.challenger_won else self.a] += 1;\n            }\n", "new": ""}]}

@@ -204,8 +204,9 @@ class Task:
                         body = r.read().decode()
                 except urllib.error.HTTPError as e:
                     body = e.read().decode()
+                flat = "".join(body.split())
                 for s in rq.get("expect", []):
-                    if s not in body:
+                    if "".join(s.split()) not in flat:
                         return False, f"request {i} {rq['path']}: expected {s!r} in {body[:500]}"
             return True, f"served on :{port}, {len(spec.get('requests', []))} probes ok"
         finally:

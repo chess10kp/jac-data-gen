@@ -1,0 +1,1 @@
+{"why": "hands out most-worn bike", "edits": [{"file": "app.jac", "old": "bike = sorted(docked, key=lambda (b: Bike) { (b.km, b.serial); })[0];", "new": "bike = sorted(docked, key=lambda (b: Bike) { (b.km, b.serial); })[-1];"}]}

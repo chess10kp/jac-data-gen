@@ -1,0 +1,1 @@
+{"why": "does not record lost challenges", "edits": [{"file": "challenge.jac", "old": "        c +>:Played(challenger_won=self.challenger_won, round=self.round):+> d;\n        if self.challenger_won {\n", "new": "        if self.challenger_won {\n            c +>:Played(challenger_won=self.challenger_won, round=self.round):+> d;\n"}]}

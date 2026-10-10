@@ -1,0 +1,11 @@
+{
+  "id": "nat-l4-panel-load",
+  "kind": "native",
+  "level": 4,
+  "source": "hand-authored",
+  "gates": ["check", "test"],
+  "target_paths": ["load.jac", "reports.jac"],
+  "jac_version": "0.37.25",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "provenance": {"author": "claude (hand-authored pilot)", "created": "2026-10-10", "title": "Household breaker panel load", "domain": "home electrical panel", "constructs": ["multi-module", "edit existing walker", "mixed edge directions", "walker accumulation", "float aggregation"], "inspiration": "none (original)"}
+}

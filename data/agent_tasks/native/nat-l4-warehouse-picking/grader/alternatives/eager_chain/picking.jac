@@ -20,6 +20,7 @@ def remaining(todo: dict[str, int]) -> int {
 walker PickRun {
     has order: dict[str, int];
     has short: dict[str, int] = {};
+    has aisles_visited: int = 0;
 
     can run with Root entry {
         todo: dict[str, int] = {};
@@ -30,6 +31,7 @@ walker PickRun {
         aisles = [here -->[?:Aisle]];
         cur: Aisle | None = aisles[0] if aisles else None;
         while cur is not None and remaining(todo) > 0 {
+            self.aisles_visited += 1;
             for b in [cur -->[?:Bin]] {
                 if b.sku in todo and todo[b.sku] > 0 and b.qty > 0 {
                     n = todo[b.sku] if todo[b.sku] < b.qty else b.qty;
