@@ -1,0 +1,11 @@
+{
+ "cls": "missing-condition",
+ "why": "conservation check applied to owned works only; borrowed works in conservation are still listed",
+ "edits": [
+  {
+   "file": "collection.jac",
+   "old": "            if not art.in_conservation {\n                titles.add(art.title);\n            }\n        }\n        self.shown",
+   "new": "            titles.add(art.title);\n        }\n        self.shown"
+  }
+ ]
+}

@@ -39,10 +39,8 @@ walker OnDisplay {
                 titles.add(art.title);
             }
         }
-        for art in [here ->:LoanedTo:start_year <= y, end_year >= y:->] {
-            if not art.in_conservation {
-                titles.add(art.title);
-            }
+        for art in [here <-:LoanedTo:start_year <= y, end_year >= y:<-] {
+            titles.add(art.title);
         }
         self.shown = len(titles);
         report sorted(titles);

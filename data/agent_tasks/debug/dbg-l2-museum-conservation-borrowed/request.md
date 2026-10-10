@@ -1,0 +1,1 @@
+Our visitor app lists "Torn Map" as on display in our galleries. It's on loan to us this year, but it went to the conservation studio last week and is flagged `in_conservation`. Our own works in conservation are hidden correctly. Nothing in conservation should be listed as on display, whether we own it or borrowed it, and `shown` should match the list.

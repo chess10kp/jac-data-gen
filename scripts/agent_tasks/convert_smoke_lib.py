@@ -71,9 +71,9 @@ class Server:
         except ValueError:
             return status, {"_raw": raw.decode(errors="replace")[:500]}
 
-    def walker(self, name, **body):
-        """POST /walker/<name>; returns (status, envelope, first report or {})."""
-        st, env = self.call(f"/walker/{name}", body)
+    def walker(self, _endpoint, /, **body):
+        """POST /walker/<endpoint>; returns (status, envelope, first report or None)."""
+        st, env = self.call(f"/walker/{_endpoint}", body)
         return st, env, one(env)
 
     def close(self):

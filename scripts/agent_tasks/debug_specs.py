@@ -242,12 +242,12 @@ test "borrower shows the work in the last loan year" {
 '''),
     ),
     dict(
-        id="dbg-l2-museum-borrowed-missing", src="native/nat-l2-museum-loans", level=2,
-        bugs=[B("edge-direction", "incoming loans traversed as outgoing edges from the museum, which never match",
-                E("collection.jac", "for art in [here <-:LoanedTo:start_year <= y, end_year >= y:<-] {",
-                  "for art in [here ->:LoanedTo:start_year <= y, end_year >= y:->] {"))],
+        id="dbg-l2-museum-conservation-borrowed", src="native/nat-l2-museum-loans", level=2,
+        bugs=[B("missing-condition", "conservation check applied to owned works only; borrowed works in conservation are still listed",
+                E("collection.jac", "            if not art.in_conservation {\n                titles.add(art.title);\n            }\n        }\n        self.shown",
+                  "            titles.add(art.title);\n        }\n        self.shown"))],
         request="""
-Borrowed works never show up on our display list. We currently have two pieces on loan to us from the Harbour Museum, both within their loan years and neither in conservation, and `OnDisplay` at our museum only lists our own collection. The lending museum correctly stops listing them. Please fix it so works on an active loan to a museum are shown there.
+Our visitor app lists "Torn Map" as on display in our galleries. It's on loan to us this year, but it went to the conservation studio last week and is flagged `in_conservation`. Our own works in conservation are hidden correctly. Nothing in conservation should be listed as on display, whether we own it or borrowed it, and `shown` should match the list.
 """,
     ),
     dict(

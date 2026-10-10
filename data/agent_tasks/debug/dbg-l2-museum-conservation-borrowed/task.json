@@ -1,5 +1,5 @@
 {
- "id": "dbg-l2-museum-borrowed-missing",
+ "id": "dbg-l2-museum-conservation-borrowed",
  "kind": "debug",
  "level": 2,
  "source": "injected-bug:native/nat-l2-museum-loans",
@@ -20,7 +20,7 @@
   "domain": "museum collections management",
   "n_bugs": 1,
   "bug_classes": [
-   "edge-direction"
+   "missing-condition"
   ],
   "visible_repro": false,
   "author": "claude (debug-kind builder)",
