@@ -1,0 +1,27 @@
+{"source": "mechanical", "op": "aug +=->-=", "edits": [{"file": "apiary.jac", "offset": 617, "old": "+", "new": "-"}], "id": "m00"}
+{"source": "mechanical", "op": "bool and->or", "edits": [{"file": "apiary.jac", "offset": 672, "old": "and", "new": "or"}], "id": "m01"}
+{"source": "mechanical", "op": "cmp <-><=", "edits": [{"file": "apiary.jac", "offset": 694, "old": "<", "new": "<="}], "id": "m02"}
+{"source": "mechanical", "op": "bool or->and", "edits": [{"file": "apiary.jac", "offset": 729, "old": "or", "new": "and"}], "id": "m03"}
+{"source": "mechanical", "op": "cmp >=->>", "edits": [{"file": "apiary.jac", "offset": 744, "old": ">=", "new": ">"}], "id": "m04"}
+{"source": "mechanical", "op": "int 0->1", "edits": [{"file": "apiary.jac", "offset": 457, "old": "0", "new": "1"}], "id": "m05"}
+{"source": "mechanical", "op": "int 1->2", "edits": [{"file": "apiary.jac", "offset": 620, "old": "1", "new": "2"}], "id": "m06"}
+{"source": "mechanical", "op": "int 1->0", "edits": [{"file": "apiary.jac", "offset": 620, "old": "1", "new": "0"}], "id": "m07"}
+{"source": "mechanical", "op": "int 3->4", "edits": [{"file": "apiary.jac", "offset": 696, "old": "3", "new": "4"}], "id": "m08"}
+{"source": "mechanical", "op": "int 3->2", "edits": [{"file": "apiary.jac", "offset": 696, "old": "3", "new": "2"}], "id": "m09"}
+{"source": "mechanical", "op": "int 4->5", "edits": [{"file": "apiary.jac", "offset": 747, "old": "4", "new": "5"}], "id": "m10"}
+{"source": "mechanical", "op": "int 4->3", "edits": [{"file": "apiary.jac", "offset": 747, "old": "4", "new": "3"}], "id": "m11"}
+{"source": "mechanical", "op": "negate if", "edits": [{"file": "apiary.jac", "offset": 710, "old": "queenless_and_weak or here.temper >= 4", "new": "not (queenless_and_weak or here.temper >= 4)"}], "id": "m12"}
+{"source": "mechanical", "op": "not-drop", "edits": [{"file": "apiary.jac", "offset": 652, "old": "not ", "new": ""}], "id": "m13"}
+{"source": "mechanical", "op": "edge -->-><--", "edits": [{"file": "apiary.jac", "offset": 541, "old": "-->", "new": "<--"}], "id": "m14"}
+{"source": "mechanical", "op": "connect ++>-><++", "edits": [{"file": "apiary.jac", "offset": 325, "old": "++>", "new": "<++"}], "id": "m15"}
+{"source": "mechanical", "op": "call sorted->list", "edits": [{"file": "apiary.jac", "offset": 858, "old": "sorted", "new": "list"}], "id": "m16"}
+{"source": "mechanical", "op": "stmt-del visit", "edits": [{"file": "apiary.jac", "offset": 534, "old": "visit [-->[?:Hive]];", "new": ""}], "id": "m17"}
+{"source": "mechanical", "op": "stmt-del self.checked", "edits": [{"file": "apiary.jac", "offset": 604, "old": "self.checked += 1;", "new": ""}], "id": "m18"}
+{"source": "mechanical", "op": "stmt-del self.flagged.append(here", "edits": [{"file": "apiary.jac", "offset": 763, "old": "self.flagged.append(here.tag);", "new": ""}], "id": "m19"}
+{"source": "mechanical", "op": "stmt-del report", "edits": [{"file": "apiary.jac", "offset": 851, "old": "report sorted(self.flagged);", "new": ""}], "id": "m20"}
+{"source": "source-negative", "op": "neg brood_boundary", "why": "uses <= 3 instead of < 3 brood frames", "edits": [{"file": "apiary.jac", "offset": 676, "old": "here.brood_frames < 3", "new": "here.brood_frames <= 3"}], "id": "m21"}
+{"source": "source-negative", "op": "neg deep_traversal", "why": "keeps walking into nucleus hives hung off other hives", "edits": [{"file": "apiary.jac", "offset": 596, "old": "        self.checked += 1;\n", "new": "        self.checked += 1;\n        visit [-->[?:Hive]];\n"}], "id": "m22"}
+{"source": "source-negative", "op": "neg report_per_hive", "why": "reports each flagged hive as it is found instead of one list", "edits": [{"file": "apiary.jac", "offset": 751, "old": "            self.flagged.append(here.tag);\n", "new": "            self.flagged.append(here.tag);\n            report here.tag;\n"}], "id": "m23"}
+{"source": "source-negative", "op": "neg temper_requires_queenless", "why": "aggressive colonies only flagged when also queenless (and instead of or)", "edits": [{"file": "apiary.jac", "offset": 710, "old": "queenless_and_weak or here.temper >= 4", "new": "(not here.queen_seen) and (here.brood_frames < 3 or here.temper >= 4)"}], "id": "m24"}
+{"source": "source-negative", "op": "neg temper_strict", "why": "temper > 4 instead of >= 4", "edits": [{"file": "apiary.jac", "offset": 732, "old": "here.temper >= 4", "new": "here.temper > 4"}], "id": "m25"}
+{"source": "source-negative", "op": "neg unsorted_report", "why": "reports in visit order instead of sorted", "edits": [{"file": "apiary.jac", "offset": 851, "old": "report sorted(self.flagged);", "new": "report self.flagged;"}], "id": "m26"}

@@ -46,7 +46,18 @@
     "n_candidates": 43,
     "n_mechanical_sites": 42,
     "n_source_negatives": 0,
-    "n_hand": 3
+    "n_hand": 3,
+    "stats": {
+      "n_candidates": 43,
+      "n_stillborn": 3,
+      "n_presumed_equivalent": 2,
+      "n_eligible": 38,
+      "ref_kill": 1.0,
+      "oracle_kill": 0.8421,
+      "trivial_kill": 0.0,
+      "starter_kill": 0.0526,
+      "ref_survivors": []
+    }
   },
   "provenance": {
     "source_task": "app/app-l3-tagged-bookmarks",

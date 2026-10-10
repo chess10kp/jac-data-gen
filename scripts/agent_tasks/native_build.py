@@ -58,12 +58,14 @@ def cmd_validate(a) -> int:
         tasks = [t for t in tasks if t.name in set(a.only.split(","))]
     shard, n = (int(x) for x in a.shard.split("/"))
     tasks = [t for i, t in enumerate(tasks) if i % n == shard]
+    import subprocess
+    jac_ver = subprocess.run([a.jac, "--version"], capture_output=True, text=True).stdout.strip()
     bad = 0
     with res_path.open("a") as fh:
         for t in tasks:
             h = task_hash(t)
             prev = cache.get(t.name)
-            if not a.force and prev and prev.get("hash") == h and prev.get("validated"):
+            if not a.force and prev and prev.get("hash") == h and prev.get("validated") and prev.get("jac") == jac_ver:
                 print(f"=== {t.name}: cached VALIDATED (hash {h}), skip")
                 continue
             try:

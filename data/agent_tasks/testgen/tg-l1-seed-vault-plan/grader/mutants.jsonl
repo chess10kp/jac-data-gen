@@ -1,0 +1,28 @@
+{"source": "mechanical", "op": "aug +=->-=", "edits": [{"file": "vault.jac", "offset": 844, "old": "+", "new": "-"}], "id": "m00"}
+{"source": "mechanical", "op": "arith -->+", "edits": [{"file": "vault.jac", "offset": 878, "old": "-", "new": "+"}], "id": "m01"}
+{"source": "mechanical", "op": "cmp >=->>", "edits": [{"file": "vault.jac", "offset": 897, "old": ">=", "new": ">"}], "id": "m02"}
+{"source": "mechanical", "op": "cmp <-><=", "edits": [{"file": "vault.jac", "offset": 936, "old": "<", "new": "<="}], "id": "m03"}
+{"source": "mechanical", "op": "cmp <-><=", "edits": [{"file": "vault.jac", "offset": 978, "old": "<", "new": "<="}], "id": "m04"}
+{"source": "mechanical", "op": "bool or->and", "edits": [{"file": "vault.jac", "offset": 1004, "old": "or", "new": "and"}], "id": "m05"}
+{"source": "mechanical", "op": "bool or->and", "edits": [{"file": "vault.jac", "offset": 1012, "old": "or", "new": "and"}], "id": "m06"}
+{"source": "mechanical", "op": "int 0->1", "edits": [{"file": "vault.jac", "offset": 614, "old": "0", "new": "1"}], "id": "m07"}
+{"source": "mechanical", "op": "int 1->2", "edits": [{"file": "vault.jac", "offset": 847, "old": "1", "new": "2"}], "id": "m08"}
+{"source": "mechanical", "op": "int 1->0", "edits": [{"file": "vault.jac", "offset": 847, "old": "1", "new": "0"}], "id": "m09"}
+{"source": "mechanical", "op": "int 10->11", "edits": [{"file": "vault.jac", "offset": 900, "old": "10", "new": "11"}], "id": "m10"}
+{"source": "mechanical", "op": "int 10->9", "edits": [{"file": "vault.jac", "offset": 900, "old": "10", "new": "9"}], "id": "m11"}
+{"source": "mechanical", "op": "int 75->76", "edits": [{"file": "vault.jac", "offset": 938, "old": "75", "new": "76"}], "id": "m12"}
+{"source": "mechanical", "op": "int 75->74", "edits": [{"file": "vault.jac", "offset": 938, "old": "75", "new": "74"}], "id": "m13"}
+{"source": "mechanical", "op": "int 200->201", "edits": [{"file": "vault.jac", "offset": 980, "old": "200", "new": "201"}], "id": "m14"}
+{"source": "mechanical", "op": "int 200->199", "edits": [{"file": "vault.jac", "offset": 980, "old": "200", "new": "199"}], "id": "m15"}
+{"source": "mechanical", "op": "negate if", "edits": [{"file": "vault.jac", "offset": 777, "old": "here.retired", "new": "not (here.retired)"}], "id": "m16"}
+{"source": "mechanical", "op": "negate if", "edits": [{"file": "vault.jac", "offset": 996, "old": "too_old or weak or low_stock", "new": "not (too_old or weak or low_stock)"}], "id": "m17"}
+{"source": "mechanical", "op": "edge -->-><--", "edits": [{"file": "vault.jac", "offset": 706, "old": "-->", "new": "<--"}], "id": "m18"}
+{"source": "mechanical", "op": "call sorted->list", "edits": [{"file": "vault.jac", "offset": 1171, "old": "sorted", "new": "list"}], "id": "m19"}
+{"source": "mechanical", "op": "stmt-del visit", "edits": [{"file": "vault.jac", "offset": 699, "old": "visit [-->[?:SeedLot]];", "new": ""}], "id": "m20"}
+{"source": "mechanical", "op": "stmt-del self.examined", "edits": [{"file": "vault.jac", "offset": 830, "old": "self.examined += 1;", "new": ""}], "id": "m21"}
+{"source": "source-negative", "op": "neg age_strict", "why": "age uses > 10 instead of >= 10", "edits": [{"file": "vault.jac", "offset": 868, "old": "self.year - here.banked_year >= 10", "new": "self.year - here.banked_year > 10"}], "id": "m22"}
+{"source": "source-negative", "op": "neg counts_retired", "why": "counts retired lots as examined", "edits": [{"file": "vault.jac", "offset": 766, "old": "        if here.retired {\n            return;\n        }\n        self.examined += 1;\n", "new": "        self.examined += 1;\n        if here.retired {\n            return;\n        }\n"}], "id": "m23"}
+{"source": "source-negative", "op": "neg germ_inclusive", "why": "germination <= 75", "edits": [{"file": "vault.jac", "offset": 919, "old": "here.germination < 75", "new": "here.germination <= 75"}], "id": "m24"}
+{"source": "source-negative", "op": "neg includes_retired", "why": "retired lots included", "edits": [{"file": "vault.jac", "offset": 766, "old": "        if here.retired {\n            return;\n        }\n", "new": ""}], "id": "m25"}
+{"source": "source-negative", "op": "neg no_stock_rule", "why": "ignores stock rule", "edits": [{"file": "vault.jac", "offset": 993, "old": "if too_old or weak or low_stock {", "new": "if too_old or weak {"}], "id": "m26"}
+{"source": "source-negative", "op": "neg unsorted_codes", "why": "accessions not sorted", "edits": [{"file": "vault.jac", "offset": 1166, "old": "{sp: sorted(codes) for (sp, codes) in self.plan.items()}", "new": "{sp: codes for (sp, codes) in self.plan.items()}"}], "id": "m27"}

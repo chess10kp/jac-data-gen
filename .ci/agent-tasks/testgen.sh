@@ -3,11 +3,16 @@
 #   validate (default): run every candidate mutant against the oracle / reference /
 #                       trivial / starter suites -> $OUT/testgen_results.jsonl
 #   confirm:            end-to-end through testgen_grade.py with the frozen
-#                       grader/mutants.jsonl (ref must pass, empty/trivial must fail)
+#                       grader/mutants.jsonl (ref must pass, empty/trivial/bad-import must fail)
+#   probe:              one-off codespace probe (shard 0 only)
 set -uo pipefail
 cd "$GITHUB_WORKSPACE"
 STAGE="$(cat .ci/agent-tasks/testgen.stage 2>/dev/null || echo validate)"
 mkdir -p "$OUT"
 jac --version | tee "$OUT/jac_version_$SHARD.txt"
+if [ "$STAGE" = probe ]; then
+  [ "$SHARD" = 0 ] && .venv/bin/python scripts/agent_tasks/testgen_probe.py "$OUT" 2>&1 | tee "$OUT/log_$SHARD.txt"
+  exit 0
+fi
 .venv/bin/python scripts/agent_tasks/testgen_build.py "$STAGE" \
   --shard "$SHARD/$NSHARDS" --out "$OUT" --jobs 4 ${TESTGEN_ONLY:+--only "$TESTGEN_ONLY"} 2>&1 | tee "$OUT/log_$SHARD.txt"

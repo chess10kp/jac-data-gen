@@ -51,6 +51,9 @@ HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
 DATASET = REPO / "data" / "jachacks_all_dataset_filtered.jsonl"
 REPAIRED_TGZ = REPO / "data" / "repo_scores" / "ci_input" / "repaired_jac.tgz"
+# light hand repair (a few type-annotation/cast edits per repo) that makes some 0.36.1-repaired
+# trees green on the official 0.36.1 release; applied on top of the best tree
+LIGHT_TGZ = REPO / "data" / "repo_scores" / "ci_input" / "repair036_jac.tgz"
 OUTDIR = REPO / "data" / "repo_scores"
 JAC = os.environ.get("JAC_BIN", "jac")
 JAC_VERSION = os.environ.get("JAC_TARGET_VERSION", "0.36.1")  # the training pipeline's pinned jac
@@ -427,7 +430,7 @@ def load_repos() -> list[dict]:
     return [json.loads(l) for l in DATASET.open()]
 
 
-def score_repo_ci(r: dict, repaired_root: Path | None, out: Path) -> dict:
+def score_repo_ci(r: dict, repaired_root: Path | None, out: Path, light_root: Path | None = None) -> dict:
     d = r["dirname"]
     res = {"dirname": d, "id": r["id"], "source": r["source"], "github_url": r.get("github_url"),
            "title": r.get("title"), "jac_version": JAC_VERSION}
@@ -489,6 +492,28 @@ def score_repo_ci(r: dict, repaired_root: Path | None, out: Path) -> dict:
             if c["ok"]:
                 final = (name, t)
                 break
+        light_src = light_root / d if light_root else None
+        if final is None and light_src and light_src.is_dir():
+            name, t = trees[-1]
+            lt = work / "light"
+            shutil.copytree(t, lt)
+            nf = nl = 0
+            for p in light_src.rglob("*.jac"):
+                if not p.is_file():
+                    continue
+                q = lt / p.relative_to(light_src)
+                if q.exists():
+                    old = q.read_text(errors="replace").splitlines()
+                    new = p.read_text(errors="replace").splitlines()
+                    nl += sum(1 for a, b in zip(old, new) if a != b) + abs(len(old) - len(new))
+                shutil.copy2(p, q)
+                nf += 1
+            res["light_repair"] = {"files": nf, "lines": nl, "on": name}
+            c = jac_check(lt)
+            checks["light"] = c
+            trees.append(("light", lt))
+            if c["ok"]:
+                final = ("light", lt)
         if final is None and V37:
             name, t = trees[-1]
             mech = work / "mech"
@@ -592,12 +617,22 @@ def cmd_ci(a):
         rep_root = Path(tempfile.mkdtemp(prefix="repaired_"))
         with tarfile.open(REPAIRED_TGZ) as tf:
             tf.extractall(rep_root, filter="data")
+    light_root = None
+    if LIGHT_TGZ.is_file():
+        light_root = Path(tempfile.mkdtemp(prefix="light_"))
+        with tarfile.open(LIGHT_TGZ) as tf:
+            tf.extractall(light_root, filter="data")
+    import atexit
+    if light_root:
+        atexit.register(shutil.rmtree, light_root, True)
+    if rep_root:
+        atexit.register(shutil.rmtree, rep_root, True)
     resf = out / "results.jsonl"
     done = set()
     if resf.exists():
         done = {json.loads(l)["dirname"] for l in resf.open()}
     with ThreadPoolExecutor(a.jobs) as ex:
-        futs = [ex.submit(score_repo_ci, r, rep_root, out) for r in repos if r["dirname"] not in done]
+        futs = [ex.submit(score_repo_ci, r, rep_root, out, light_root) for r in repos if r["dirname"] not in done]
         for f in futs:
             res = f.result()
             with resf.open("a") as fh:
@@ -672,6 +707,9 @@ def text_metrics(files: dict[str, str]) -> dict:
     m["idioms"]["sv_files"] = sum(1 for f in files if f.endswith(".sv.jac"))
     m["idioms"]["impl_files"] = sum(1 for f in files if f.endswith(".impl.jac"))
     m["old"] = {k: len(re.findall(v, all_code, re.M)) for k, v in OLD_DIALECT.items()}
+    # archetype counts from source (fallback when `jac code map` returns nothing, e.g. 0.36.1)
+    m["decls"] = {k: len(re.findall(r"^\s*(?:async\s+)?" + k + r"\s*(?::\w+\s*)?\b[A-Za-z_]\w*", all_code, re.M))
+                  for k in ("node", "edge", "walker", "obj")}
     m["slop"] = {k: len(re.findall(v, all_raw, re.M)) for k, v in SLOP.items()}
     nf = len(FUNC_RE.findall(all_code))
     nh = len(HOLLOW_RE.findall(all_code))
@@ -739,6 +777,8 @@ def score(r: dict) -> tuple[float, dict]:
     tm = r["text"]
     kloc = max(tm["jac_loc"], 1) / 1000
     km = r.get("code_map", {}).get("kinds", {}) if r.get("code_map", {}).get("ok") else {}
+    if not km:
+        km = tm.get("decls", {})
     nodes, edges, walkers = km.get("node", 0), km.get("edge", 0), km.get("walker", 0)
     idi = dict(tm["idioms"])
     at = (r.get("asis_text") or {}).get("idioms", {})
@@ -769,7 +809,7 @@ def score(r: dict) -> tuple[float, dict]:
     parts["shape"] = round(6 * min(1, tm["n_jac"] / 6) + 8 * sat(tm["jac_loc"], 800) * 2 * 0.5 + 6 * jac_share, 2)
     # recency (15): green as-is beats repaired beats mech
     ft = r.get("final_tree")
-    parts["recency"] = {"asis": 12, "repaired": 7, "mech": 9}.get(ft, 0)
+    parts["recency"] = {"asis": 12, "repaired": 7, "mech": 9, "light": 5}.get(ft, 0)
     if ft == "mech" and r.get("checks", {}).get("repaired"):
         parts["recency"] = 5
     rep = r.get("repair_frac", 0)
@@ -896,7 +936,7 @@ def cmd_merge(a):
             o["tier"] = "silver"
     OUTDIR.mkdir(parents=True, exist_ok=True)
     keep_keys = ["dirname", "id", "source", "title", "github_url", "sha", "tier", "score", "score_parts",
-                 "reject_reasons", "green", "final_tree", "repair_frac", "mech_edits", "repair_overlay", "config_fix", "jac_fix",
+                 "reject_reasons", "green", "final_tree", "repair_frac", "mech_edits", "repair_overlay", "light_repair", "config_fix", "jac_fix",
                  "jac_share", "unique_frac", "eval_overlap", "eval_line_overlap", "entry", "inventory",
                  "repo_markers", "text"]
     with (OUTDIR / "jachacks_scores.jsonl").open("w") as fh:
@@ -915,7 +955,7 @@ def cmd_merge(a):
 
 
 def why(o) -> str:
-    t, cm = o["text"], (o.get("code_map") or {}).get("kinds", {})
+    t, cm = o["text"], (o.get("code_map") or {}).get("kinds", {}) or o["text"].get("decls", {})
     bits = [f"{t['n_jac']} files/{t['jac_loc']} LOC", f"jac share {o.get('jac_share')}",
             f"{cm.get('node', 0)}N/{cm.get('edge', 0)}E/{cm.get('walker', 0)}W",
             f"trav {t['idioms']['visit'] + t['idioms']['spawn'] + t['idioms']['connect']}"]
@@ -944,8 +984,10 @@ def write_summary(rows, a):
          f"(GitHub Actions kind `repo_score`, run `{Path(a.run_dir).name}`). Scorer: `scripts/agent_tasks/repo_score.py`.", "",
          "## Tiers", "", "| tier | repos |", "|---|---|"]
     L += [f"| {k} | {tiers.get(k, 0)} |" for k in ("gold", "silver", "reject")]
-    L += ["", f"Green trees: as-is {fin.get('asis', 0)}, after 0.36.1 repair overlay {fin.get('repaired', 0)}, "
-          f"after mechanical 0.37 migration {fin.get('mech', 0)}.", "",
+    L += ["", f"Green trees at {JAC_VERSION}: as-is {fin.get('asis', 0)}, with our earlier repair overlay "
+          f"(data/jachacks_nonsf) {fin.get('repaired', 0)}, after an additional light hand repair "
+          f"(data/repo_scores/ci_input/repair036_jac.tgz, 1-9 changed lines/repo) {fin.get('light', 0)}"
+          + (f", after mechanical 0.37 migration {fin.get('mech', 0)}" if V37 else "") + ".", "",
           "Reject reasons (a repo can have several): " + ", ".join(f"{k} {v}" for k, v in rej.most_common()), "",
           f"Gold = no hard-gate failure, score >= {a.gold_cut}, >= 200 jac LOC, >= 2 files.", "",
           "## Score distribution (non-reject)", "", "| bucket | n |", "|---|---|"]
@@ -956,8 +998,7 @@ def write_summary(rows, a):
     for i, o in enumerate(top, 1):
         L.append(f"| {i} | {o['dirname']} | {o['tier']} | {o['score']} | {why(o)} |")
     L += ["", "## Method", "",
-          "- Hard gates: green on `jac check` at 0.37.25 (as-is, with our 0.36.1 repair overlay, or after a location-driven "
-          "mechanical E1036 migration); >=150 jac LOC and jac >=25% of code LOC; no MinHash near-duplicate (J>=0.5, keep larger); "
+          f"- Hard gates: green on `jac check` at {JAC_VERSION} (as-is, with our repair overlay, or after a light hand repair); >=150 jac LOC and jac >=25% of code LOC; no MinHash near-duplicate (J>=0.5, keep larger); "
           "unique (non-boilerplate) shingle fraction >=0.35; eval-set overlap <=5% (12-token shingles) / <=10% (lines); hollow bodies <=30%.",
           "- Score (max ~100): idiom density 40 (`jac code map` nodes/edges/walkers per KLOC, traversal/spawn/connect/filter per KLOC, "
           "by llm/sem, cl/sv split) + runs 15 (`jac run --serve` HTTP probe, `jac run`, `jac run --faux` endpoints) + shape 20 "

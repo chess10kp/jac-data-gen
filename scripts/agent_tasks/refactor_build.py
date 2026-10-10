@@ -279,6 +279,11 @@ def lint_task(t: Path) -> list[str]:
     for d in ["starter", "grader/reference"]:
         if not (t / d).is_dir() or not list((t / d).rglob("*.jac")):
             errs.append(f"missing/empty {d}/")
+    for d in ["starter", "grader/reference"]:  # 0.36.1: native test seam crashes without it
+        if "default_codespace" not in ((t / d / "jac.toml").read_text() if (t / d / "jac.toml").exists() else ""):
+            errs.append(f"{d}/jac.toml missing [build] default_codespace")
+    if meta.get("jac_version") != "0.36.1":
+        errs.append("jac_version != 0.36.1")
     ref = t / "grader" / "reference"
     for tp in meta.get("target_paths", []):
         if not (ref / tp).exists():

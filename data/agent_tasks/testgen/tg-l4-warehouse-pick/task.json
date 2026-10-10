@@ -33,7 +33,18 @@
     "n_candidates": 38,
     "n_mechanical_sites": 32,
     "n_source_negatives": 6,
-    "n_hand": 0
+    "n_hand": 0,
+    "stats": {
+      "n_candidates": 0,
+      "n_stillborn": 0,
+      "n_presumed_equivalent": 0,
+      "n_eligible": 0,
+      "ref_kill": null,
+      "oracle_kill": null,
+      "trivial_kill": null,
+      "starter_kill": null,
+      "ref_survivors": []
+    }
   },
   "provenance": {
     "source_task": "native/nat-l4-warehouse-picking",
