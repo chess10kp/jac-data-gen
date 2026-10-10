@@ -53,7 +53,7 @@ T_MASS_FILE = 0.50
 CHECK_TIMEOUT = int(os.environ.get("FIX_CHECK_TIMEOUT", "600"))
 SYM_JOBS = int(os.environ.get("FIX_SYM_JOBS", "6"))
 
-ERR_RE = re.compile(r"^\s*✖\s*Error:\s*error\[(E\d+)\]:\s*(.*)$")
+ERR_RE = re.compile(r"^\s*✖\s*Error:\s*(?:error\[(E\d+)\]:\s*)?(.*)$")
 LOC_RE = re.compile(r"^\s*-->\s*(\S+?\.jac):(\d+):(\d+)")
 FAILED_RE = re.compile(r"^(\S.*?\.jac) - (\d+) errors?,")
 SUMMARY_RE = re.compile(r"(\d+) passed(?:, (\d+) failed)?")
@@ -74,12 +74,17 @@ def run_check(ws: Path, paths: list[str] | None = None, timeout: int = CHECK_TIM
     for ln in txt.splitlines():
         m = ERR_RE.match(ln)
         if m:
-            cur = {"code": m.group(1), "msg": m.group(2).strip(), "file": None, "line": None}
+            cur = {"code": m.group(1) or "E-file", "msg": m.group(2).strip(), "file": None,
+                   "line": None, "col": None}
+            if cur["code"] == "E-file":  # file-level error: "Error checking 'X': ..."
+                mm = re.match(r"Error checking '([^']+)'", cur["msg"])
+                if mm:
+                    cur["file"] = mm.group(1)
             errors.append(cur)
             continue
         m = LOC_RE.match(ln)
         if m and cur is not None and cur["file"] is None:
-            cur["file"], cur["line"] = m.group(1), int(m.group(2))
+            cur["file"], cur["line"], cur["col"] = m.group(1), int(m.group(2)), int(m.group(3))
     failed = {}
     for ln in txt.splitlines():
         m = FAILED_RE.match(ln.strip())
@@ -87,7 +92,7 @@ def run_check(ws: Path, paths: list[str] | None = None, timeout: int = CHECK_TIM
             failed[m.group(1)] = int(m.group(2))
     summ = None
     for ln in txt.splitlines()[::-1]:
-        if "passed" in ln and "=====" in ln:
+        if ("passed" in ln or "failed" in ln) and "=====" in ln:
             summ = ln
             break
     crash = None
@@ -211,8 +216,8 @@ def toplevel_names(src: str, kinds: tuple = DEF_KINDS) -> list[tuple[str, str]]:
 
 
 def jac_files(ws: Path) -> list[Path]:
-    return sorted(p for p in ws.rglob("*.jac") if ".jac" not in p.relative_to(ws).parts[:-1]
-                  and "__jac_gen__" not in p.parts)
+    return sorted(p for p in ws.rglob("*.jac") if p.is_file()
+                  and ".jac" not in p.relative_to(ws).parts[:-1] and "__jac_gen__" not in p.parts)
 
 
 # --------------------------------------------------------------------------
@@ -292,7 +297,9 @@ def _multiset_cover(ref: list[str], cand: list[str]) -> tuple[float, list[str]]:
     rc, cc = Counter(ref), Counter(cand)
     kept = sum(min(n, cc[s]) for s, n in rc.items())
     missing = sorted(s for s, n in rc.items() if cc[s] < n)
-    return (kept / max(1, sum(rc.values()))), missing
+    if not rc:
+        return 1.0, []
+    return kept / sum(rc.values()), missing
 
 
 def grade(task_dir: Path, cand: Path, inv: dict | None = None, run_check_too: bool = True) -> dict:

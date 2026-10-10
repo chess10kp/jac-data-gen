@@ -61,7 +61,7 @@ MAX_BROKEN = 10
 MAX_ERRORS = 60
 UNITS_PER_REPO = 6      # evaluated in CI
 TASKS_PER_REPO = 2      # kept in the pool
-OSP_EVAL = 64           # osp candidates evaluated in CI
+OSP_EVAL = 120          # osp candidates evaluated in CI
 SECRET_RE = re.compile(r"(sk-(?:proj-|ant-)?[A-Za-z0-9]{20,}|AIza[0-9A-Za-z_-]{30,}|ghp_[A-Za-z0-9]{30,}|"
                        r"xox[bap]-[A-Za-z0-9-]{20,}|AKIA[0-9A-Z]{16}|sk-or-v1-[0-9a-f]{20,}|"
                        r"(?i:api[_-]?key|secret|token)\s*[:=]\s*[\"'][A-Za-z0-9_\-]{24,}[\"'])")
@@ -205,7 +205,8 @@ def jachacks_units(nonsf: Path) -> list[dict]:
         units += kept
     for u in units:
         u["cid"] = f"jh-{slug(u['repo'].split('__')[-1])}-{sid(u['repo'], u['seed'])}"
-    return units
+    drift = [dict(u, drift=True, cid=u["cid"].replace("jh-", "jhd-", 1)) for u in units]
+    return units + drift
 
 
 def materialize_jachacks(u: dict, nonsf: Path, dst: Path) -> tuple[Path, Path]:
@@ -300,6 +301,116 @@ def materialize_osp(u: dict, dst: Path) -> tuple[Path, Path]:
     return st, ref
 
 
+
+# --------------------------------------------------------------------------
+# 0.36 -> 0.37 mechanical migration of references
+# --------------------------------------------------------------------------
+GEN_ARGS = {"dict": "[str, any]", "Dict": "[str, any]", "Mapping": "[str, any]",
+            "defaultdict": "[str, any]", "OrderedDict": "[str, any]",
+            "list": "[any]", "List": "[any]", "set": "[any]", "Set": "[any]",
+            "frozenset": "[any]", "Sequence": "[any]", "Iterable": "[any]", "deque": "[any]",
+            "Iterator": "[any]", "tuple": "[any, ...]", "Tuple": "[any, ...]", "type": "[any]",
+            "Optional": "[any]"}
+KW_RE = re.compile(r"'(\w+)' is a keyword and cannot be used")
+GEN_RE = re.compile(r'Generic type "(\w+)" requires explicit type arguments')
+EDGE_RE = re.compile(r"Edge '(\w+)' declares no endpoints")
+MARK_RE = re.compile(r"the \.(\w+)\.jac marker was retired")
+
+
+def _abs(ws: Path, f: str) -> Path:
+    p = Path(f)
+    return p if p.is_absolute() else ws / f
+
+
+def migrate(ws: Path, rounds: int = 5) -> dict:
+    """Apply the mechanical jac 0.36.1 -> 0.37.25 migrations the new checker asks
+    for (bare generics, endpoint-less edges, new keywords, retired .cl/.sv
+    markers). Returns {ok, rounds, edits, renames, left:[codes]}."""
+    edits = renames = 0
+    chk = G.run_check(ws)
+    r = 0
+    while not chk["ok"] and r < rounds:
+        r += 1
+        changed = False
+        per_file: dict[Path, list] = defaultdict(list)
+        kw_files: dict[Path, set] = defaultdict(set)
+        for e in chk["errors"]:
+            if not e["file"]:
+                continue
+            fp = _abs(ws, e["file"])
+            m = MARK_RE.search(e["msg"])
+            if m and fp.exists():
+                new = fp.with_name(fp.name.replace(f".{m.group(1)}.jac", ".jac"))
+                if not new.exists():
+                    fp.rename(new)
+                    renames += 1
+                    changed = True
+                continue
+            if e["line"] is None:
+                continue
+            m = GEN_RE.search(e["msg"])
+            if m and m.group(1) in GEN_ARGS:
+                per_file[fp].append((e["line"], e["col"], "gen", m.group(1)))
+                continue
+            m = EDGE_RE.search(e["msg"])
+            if m:
+                per_file[fp].append((e["line"], e["col"], "edge", m.group(1)))
+                continue
+            m = KW_RE.search(e["msg"])
+            if m:
+                kw_files[fp].add(m.group(1))
+        for fp, items in per_file.items():
+            if not fp.exists():
+                continue
+            lines = fp.read_text().split("\n")
+            for line, col, kind, name in sorted(set(items), reverse=True):
+                L = lines[line - 1]
+                c = col - 1
+                if L[c:c + len(name)] != name:
+                    c = L.find(name)
+                    if c < 0:
+                        continue
+                end = c + len(name)
+                if kind == "gen":
+                    if L[end:end + 1] == "[":
+                        continue
+                    lines[line - 1] = L[:end] + GEN_ARGS[name] + L[end:]
+                else:
+                    rest = L[end:]
+                    if rest.lstrip().startswith("("):
+                        depth, k = 0, end
+                        while k < len(L):
+                            depth += (L[k] == "(") - (L[k] == ")")
+                            k += 1
+                            if depth == 0 and L[k - 1] == ")":
+                                break
+                        end = k
+                    lines[line - 1] = L[:end] + ": any --> any" + L[end:]
+                edits += 1
+                changed = True
+            fp.write_text("\n".join(lines))
+        for fp, words in kw_files.items():
+            if not fp.exists():
+                continue
+            src = fp.read_text()
+            out, i, prev = [], 0, None
+            for m in G._TOK.finditer(src):
+                v = m.group(0)
+                if m.lastgroup == "id" and v in words and prev != ".":
+                    out.append(src[i:m.start()] + "`" + v)
+                    i = m.end()
+                    edits += 1
+                    changed = True
+                if m.lastgroup not in ("bc", "lc"):
+                    prev = v
+            out.append(src[i:])
+            fp.write_text("".join(out))
+        if not changed:
+            break
+        chk = G.run_check(ws)
+    return {"ok": chk["ok"], "rounds": r, "edits": edits, "renames": renames,
+            "left": dict(Counter(e["code"] for e in chk["errors"])), "check": chk}
+
 # --------------------------------------------------------------------------
 # CI: candidates
 # --------------------------------------------------------------------------
@@ -320,22 +431,33 @@ def evaluate(u: dict, cdir: Path, nonsf: Path | None) -> dict:
         st, ref = materialize_osp(u, cdir)
     else:
         st, ref = materialize_jachacks(u, nonsf, cdir)
-    res = {"cid": u["cid"], "source": u["source"], "valid": False}
+    if u.get("drift"):  # toolchain drift: starter = the 0.36.1-green reference as-is
+        shutil.rmtree(st)
+        shutil.copytree(ref, st)
+    res = {"cid": u["cid"], "source": u["source"], "drift": bool(u.get("drift")), "valid": False}
+    clean = lambda d: [shutil.rmtree(x, ignore_errors=True) for x in d.rglob(".jac") if x.is_dir()]  # noqa: E731
+    mig = migrate(ref)
+    clean(ref)
+    res["migration"] = {k: v for k, v in mig.items() if k != "check"}
+    r_chk = mig["check"]
+    res["reference"] = summarize_errors(r_chk)
+    if not r_chk["ok"]:
+        res["reason"] = f"reference fails check after migration ({r_chk['n_errors']} errors: {mig['left']})"
+        return res
+    if u.get("drift") and not (mig["edits"] or mig["renames"]):
+        res["reason"] = "drift: nothing to migrate"
+        return res
     s_chk = G.run_check(st)
+    clean(st)
     res["starter"] = summarize_errors(s_chk)
     if s_chk["ok"]:
         res["reason"] = "starter already green"
-        return res
-    r_chk = G.run_check(ref)
-    res["reference"] = summarize_errors(r_chk)
-    if not r_chk["ok"]:
-        res["reason"] = f"reference fails check ({r_chk['n_errors']} errors)"
         return res
     if res["starter"]["n_errors"] > MAX_ERRORS or len(res["starter"]["broken_files"]) > MAX_BROKEN:
         res["reason"] = "too large"
         return res
     if s_chk["crash"]:
-        res["reason"] = "starter check crashed"
+        res["reason"] = "starter check crashed: " + s_chk["crash"][-200:]
         return res
     if u["source"] == "osp":
         with tempfile.TemporaryDirectory() as td:
@@ -351,8 +473,13 @@ def evaluate(u: dict, cdir: Path, nonsf: Path | None) -> dict:
     broken_starter = sorted({_rel(f, st) for f in res["starter"]["broken_files"]})
     if u["source"] == "osp":
         targets = ["main.jac"]
+    elif u.get("drift"):
+        targets = sorted({_rel(f, ref) for f in r_chk_files(res)} | set(broken_starter))
     else:
         targets = sorted({u["starter_map"].get(o, o) for o in u["reverted"]})
+    have = {str(p.relative_to(ref)) for p in G.jac_files(ref)}
+    norm = {G._norm(h): h for h in have}
+    targets = sorted({t if t in have else norm.get(G._norm(t), t) for t in targets} & have)
     inv = G.inventory(ref, targets)
     (cdir / "symbols.json").write_text(json.dumps(inv, indent=1))
     res.update({"broken_paths": broken_starter, "target_paths": targets})
@@ -389,6 +516,10 @@ def evaluate(u: dict, cdir: Path, nonsf: Path | None) -> dict:
         return res
     res["valid"] = True
     return res
+
+
+def r_chk_files(res: dict) -> list[str]:
+    return res["starter"]["broken_files"]
 
 
 def _rel(f: str, ws: Path) -> str:
@@ -522,7 +653,7 @@ def eval_lines() -> set[str]:
 
 def overlap(ref: Path, ev: set[str]) -> float:
     tot = hit = 0
-    for p in ref.rglob("*.jac"):
+    for p in G.jac_files(ref):
         for ln in p.read_text(errors="replace").splitlines():
             ln = re.sub(r"\s+", " ", ln).strip()
             if len(ln) > 30:
@@ -593,15 +724,16 @@ def cmd_select(a) -> None:
         if ov > 0.2:
             rows[tid] = {"id": tid, "validated": False, "reason": f"eval overlap {ov:.2f}"}
             continue
-        blob = "".join(p.read_text(errors="replace") for p in src.rglob("*.jac"))
+        blob = "".join(p.read_text(errors="replace") for p in G.jac_files(src))
         if SECRET_RE.search(blob):
             rows[tid] = {"id": tid, "validated": False, "reason": "secret-like string; skipped"}
             continue
         if tdir.exists():
             shutil.rmtree(tdir)
         (tdir / "grader").mkdir(parents=True)
-        shutil.copytree(src / "starter", tdir / "starter")
-        shutil.copytree(src / "reference", tdir / "grader" / "reference")
+        ign = shutil.ignore_patterns(".jac", "__pycache__", "__jac_gen__", "jac.toml")
+        shutil.copytree(src / "starter", tdir / "starter", ignore=ign)
+        shutil.copytree(src / "reference", tdir / "grader" / "reference", ignore=ign)
         shutil.copy(src / "symbols.json", tdir / "grader" / "symbols.json")
         u = c["unit"]
         st = c["starter"]
