@@ -24,7 +24,21 @@ if [ ! -d "$WT" ]; then
   fi
 fi
 
+exec 8>"$WT.lock"
+flock 8
+
 paths=(.github/workflows/agent-tasks.yml scripts/agent_tasks scripts/lib "data/agent_tasks/$KIND" "$@")
+# Sparse worktree: only the synced paths are materialized (a full checkout is
+# ~800 MB per kind). Commits still carry the whole tree, so CI sees everything.
+if [ "$(git -C "$WT" config --get core.sparseCheckout)" != "true" ]; then
+  git -C "$WT" sparse-checkout set --no-cone /.github/ /.ci/
+fi
+for p in "${paths[@]}"; do
+  [ -e "$p" ] || continue
+  if [ -d "$p" ]; then pat="/${p%/}/"; else pat="/$p"; fi
+  grep -qxF "$pat" "$(git -C "$WT" rev-parse --git-path info/sparse-checkout)" 2>/dev/null \
+    || git -C "$WT" sparse-checkout add "$pat"
+done
 for p in "${paths[@]}"; do
   [ -e "$p" ] || continue
   mkdir -p "$WT/$(dirname "$p")"
