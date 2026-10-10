@@ -1,0 +1,5 @@
+[project]
+name = "student_records"
+version = "0.1.0"
+description = "Headless Jac API service (server walkers, no client)"
+entry-point = "main"

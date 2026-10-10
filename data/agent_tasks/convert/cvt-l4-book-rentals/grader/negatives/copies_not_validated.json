@@ -1,0 +1,1 @@
+{"edits": [{"file": "rentals.jac", "old": "        if self.available_copies > self.total_copies {", "new": "        if False {"}]}

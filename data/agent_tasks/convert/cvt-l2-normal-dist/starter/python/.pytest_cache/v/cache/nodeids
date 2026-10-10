@@ -1,0 +1,17 @@
+[
+  "test_normal_dist.py::TestNormalDist::test_alternative_constructor",
+  "test_normal_dist.py::TestNormalDist::test_cdf",
+  "test_normal_dist.py::TestNormalDist::test_equality",
+  "test_normal_dist.py::TestNormalDist::test_hashability",
+  "test_normal_dist.py::TestNormalDist::test_instantiation_and_attributes",
+  "test_normal_dist.py::TestNormalDist::test_inv_cdf",
+  "test_normal_dist.py::TestNormalDist::test_overlap",
+  "test_normal_dist.py::TestNormalDist::test_pdf",
+  "test_normal_dist.py::TestNormalDist::test_properties",
+  "test_normal_dist.py::TestNormalDist::test_quantiles",
+  "test_normal_dist.py::TestNormalDist::test_repr",
+  "test_normal_dist.py::TestNormalDist::test_same_type_addition_and_subtraction",
+  "test_normal_dist.py::TestNormalDist::test_translation_and_scaling",
+  "test_normal_dist.py::TestNormalDist::test_unary_operations",
+  "test_normal_dist.py::TestNormalDist::test_zscore"
+]

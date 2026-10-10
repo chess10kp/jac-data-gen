@@ -1,0 +1,27 @@
+{
+  "id": "cvt-l1-heapq",
+  "kind": "convert",
+  "level": 1,
+  "source": "cpython:Lib/heapq.py@v3.12.7",
+  "gates": [
+    "check",
+    "fidelity",
+    "test"
+  ],
+  "target_paths": [
+    "heap_queue.jac"
+  ],
+  "jac_version": "0.36.1",
+  "license": "PSF-2.0",
+  "provenance": {
+    "title": "Binary min-heap priority queue functions",
+    "domain": "priority queue / heap algorithms",
+    "upstream": "https://github.com/python/cpython/blob/v3.12.7/Lib/heapq.py",
+    "upstream_tests": "https://github.com/python/cpython/blob/v3.12.7/Lib/test/test_heapq.py",
+    "hidden_tests": "derived from upstream TestHeap: push/pop invariant, heapify, naive nbest, nbest via heapreplace and heappushpop, heappushpop edge cases, heapsort, nsmallest/nlargest with and without key (seeded RNG); plus tie-stability and heapreplace cases.",
+    "trimmed": true,
+    "trimmed_detail": "heapq.py: removed merge() and the `from _heapq import *` C-accelerator blocks / __main__ doctest; test_heapq.py kept verbatim (its merge/C tests are out of scope).",
+    "reference": "hand-written idiomatic Jac port (claude), validated by convert_build",
+    "created": "2026-10-10"
+  }
+}

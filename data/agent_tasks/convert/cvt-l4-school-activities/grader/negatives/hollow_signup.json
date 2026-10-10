@@ -1,0 +1,1 @@
+{"edits": [{"file": "activities.jac", "old": "        e +>:HasRegistration:+> Registration(student_id=self.email, registered_at=utcnow());", "new": "        Registration(student_id=self.email, registered_at=utcnow());"}]}

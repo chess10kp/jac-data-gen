@@ -1,0 +1,1 @@
+{"edits": [{"file": "finance.jac", "old": "report not_found(\"Conta não encontrada\");\n            return;\n        }\n        del hits[0];", "new": "report not_found(\"Conta não encontrada\");\n            return;\n        }"}]}

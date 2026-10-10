@@ -1,0 +1,65 @@
+{
+ "api": [
+  {
+   "name": "JsonPointer",
+   "kind": "obj"
+  },
+  {
+   "name": "EndOfList",
+   "kind": "obj"
+  },
+  {
+   "name": "JsonPointer.resolve",
+   "kind": "ability"
+  },
+  {
+   "name": "JsonPointer.set",
+   "kind": "ability"
+  },
+  {
+   "name": "JsonPointer.to_last",
+   "kind": "ability"
+  },
+  {
+   "name": "JsonPointer.walk",
+   "kind": "ability"
+  },
+  {
+   "name": "JsonPointer.contains",
+   "kind": "ability"
+  },
+  {
+   "name": "JsonPointer.join",
+   "kind": "ability"
+  },
+  {
+   "name": "JsonPointer.from_parts",
+   "kind": "ability"
+  },
+  {
+   "name": "resolve_pointer",
+   "kind": "def"
+  },
+  {
+   "name": "set_pointer",
+   "kind": "def"
+  },
+  {
+   "name": "escape",
+   "kind": "def"
+  },
+  {
+   "name": "unescape",
+   "kind": "def"
+  }
+ ],
+ "forbid_imports": [
+  "jsonpointer",
+  "jsonpatch"
+ ],
+ "strip": [
+  "python"
+ ],
+ "timeout_s": 240,
+ "ref_mass": 1209
+}

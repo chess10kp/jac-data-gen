@@ -1,0 +1,27 @@
+{
+  "id": "cvt-l1-posixpath",
+  "kind": "convert",
+  "level": 1,
+  "source": "cpython:Lib/posixpath.py+Lib/genericpath.py@v3.12.7 (lexical subset)",
+  "gates": [
+    "check",
+    "fidelity",
+    "test"
+  ],
+  "target_paths": [
+    "pure_paths.jac"
+  ],
+  "jac_version": "0.36.1",
+  "license": "PSF-2.0",
+  "provenance": {
+    "title": "Lexical POSIX path string operations",
+    "domain": "file path string manipulation",
+    "upstream": "https://github.com/python/cpython/blob/v3.12.7/Lib/posixpath.py",
+    "upstream_tests": "https://github.com/python/cpython/blob/v3.12.7/Lib/test/test_posixpath.py (+ test_genericpath.py commonprefix)",
+    "hidden_tests": "str cases of upstream test_join/split/splitext/splitroot/isabs/basename/dirname/normpath(NORMPATH_CASES)/commonpath + genericpath test_commonprefix; bytes/PathLike/filesystem tests dropped.",
+    "trimmed": true,
+    "trimmed_detail": "posixpath_subset.py keeps only the lexical str functions isabs/join/split/splitext/splitroot/basename/dirname/normpath/commonprefix/commonpath (bytes + os.fspath handling, filesystem queries, expanduser/expandvars, abspath/realpath/relpath removed; genericpath helpers inlined). Upstream test files kept verbatim for reference.",
+    "reference": "hand-written idiomatic Jac port (claude), validated by convert_build",
+    "created": "2026-10-10"
+  }
+}

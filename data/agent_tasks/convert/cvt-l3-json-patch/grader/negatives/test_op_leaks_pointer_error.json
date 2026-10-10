@@ -1,0 +1,1 @@
+{"edits": [{"file": "patch.jac", "old": "        } except JsonPointerException as ex {\n            raise JsonPatchTestFailed(str(ex));\n        }\n        expected", "new": "        } except KeyError as ex {\n            raise JsonPatchTestFailed(str(ex));\n        }\n        expected"}]}

@@ -1,0 +1,1 @@
+{"edits": [{"file": "main.jac", "old": "here ++> BingoBoard(user_id=self.user_id, gave_ids=[], board=self.board);", "new": "BingoBoard(user_id=self.user_id, gave_ids=[], board=self.board);"}]}

@@ -1,0 +1,1 @@
+{"edits": [{"file": "patch.jac", "old": "return self.add(doc, copy.deepcopy(self.value()));", "new": "return self.add(doc, self.value());"}]}

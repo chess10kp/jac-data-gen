@@ -1,0 +1,1 @@
+{"edits": [{"file": "main.jac", "old": "companySize=c.get(\"companySize\"), name=org.companyName);", "new": "companySize=c.get(\"companySize\"), name=c.get(\"name\"));"}]}

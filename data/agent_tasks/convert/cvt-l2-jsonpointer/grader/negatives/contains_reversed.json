@@ -1,0 +1,1 @@
+{"edits": [{"file": "json_pointer.jac", "old": "return self.parts[:len(ptr.parts)] == ptr.parts;", "new": "return ptr.parts[:len(self.parts)] == self.parts;"}]}

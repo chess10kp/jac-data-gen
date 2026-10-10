@@ -1,0 +1,1 @@
+{"edits": [{"file": "normal_dist.jac", "old": "has variance: float { getter -> float { return self.sigma * self.sigma; } }", "new": "has variance: float { getter -> float { return self.sigma; } }"}]}

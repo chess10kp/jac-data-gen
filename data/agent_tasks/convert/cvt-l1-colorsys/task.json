@@ -5,7 +5,7 @@
   "source": "cpython:Lib/colorsys.py@v3.12.7",
   "gates": ["check", "fidelity", "test"],
   "target_paths": ["color_spaces.jac"],
-  "jac_version": "0.37.25",
+  "jac_version": "0.36.1",
   "license": "PSF-2.0",
   "provenance": {
     "title": "RGB to YIQ/HLS/HSV color conversions",

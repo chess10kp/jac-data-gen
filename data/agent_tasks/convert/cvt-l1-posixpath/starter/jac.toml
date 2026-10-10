@@ -1,0 +1,6 @@
+[project]
+name = "pure_paths"
+version = "0.1.0"
+
+[placement]
+default = "server"

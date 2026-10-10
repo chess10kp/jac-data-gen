@@ -1,0 +1,3 @@
+Porting job: `python/heapq.py` is the pure-Python half of the stdlib heap queue (I already cut out `merge` and the C-extension import). Upstream tests are in `python/test_heapq.py` for reference.
+
+Please write `heap_queue.jac` with `heappush`, `heappop`, `heapreplace`, `heappushpop`, `heapify`, `nsmallest(n, iterable, key=None)` and `nlargest(n, iterable, key=None)` behaving exactly like the Python versions (in-place list heaps, IndexError on popping an empty heap, stable results on ties for nsmallest/nlargest). The private sift helpers can be whatever you like. No importing heapq — the whole point is having it in Jac. `jac check` should come back clean.

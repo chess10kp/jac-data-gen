@@ -1,0 +1,1 @@
+{"edits": [{"file": "normal_dist.jac", "old": "    if q < 0.0 {\n        x = -x;\n    }", "new": "    if q < -0.5 {\n        x = -x;\n    }"}]}

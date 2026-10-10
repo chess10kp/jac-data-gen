@@ -1,0 +1,1 @@
+{"edits": [{"file": "catalog.jac", "old": "        author = find_author(self.author_name);\n", "new": "        author: Author | None = None;\n"}]}

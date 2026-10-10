@@ -1,0 +1,29 @@
+{
+ "api": [
+  {
+   "name": "fnmatch",
+   "kind": "def"
+  },
+  {
+   "name": "fnmatchcase",
+   "kind": "def"
+  },
+  {
+   "name": "filter",
+   "kind": "def"
+  },
+  {
+   "name": "translate",
+   "kind": "def"
+  }
+ ],
+ "forbid_imports": [
+  "fnmatch",
+  "glob",
+  "pathlib"
+ ],
+ "strip": [
+  "python"
+ ],
+ "timeout_s": 240
+}

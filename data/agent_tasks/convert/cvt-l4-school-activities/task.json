@@ -1,0 +1,32 @@
+{
+  "id": "cvt-l4-school-activities",
+  "kind": "convert",
+  "level": 4,
+  "source": "github:granny-dev/skills-integrate-mcp-with-copilot@48f3ad3dc93b5837cd5ec0d6d3853360252b8ea2",
+  "gates": [
+    "check",
+    "fidelity",
+    "test"
+  ],
+  "target_paths": [
+    "activities.jac"
+  ],
+  "jac_version": "0.36.1",
+  "license": "MIT",
+  "provenance": {
+    "title": "School extracurricular activity signups",
+    "domain": "high-school club activities and signups (FARM: FastAPI + Beanie)",
+    "upstream": "https://github.com/granny-dev/skills-integrate-mcp-with-copilot",
+    "commit": "48f3ad3dc93b5837cd5ec0d6d3853360252b8ea2",
+    "starter_files": [
+      "src/models.py",
+      "src/database.py",
+      "src/app.py"
+    ],
+    "trimmed": "kept models, database init and the activity routes; dropped the seed script and static frontend; User model is context only",
+    "mapping": "Club/Event/Registration Documents -> nodes; club_id/event_id string FKs -> edges Club -[Hosts]-> Event -[HasRegistration]-> Registration; routes get_activities/signup/unregister -> walkers; capacity + duplicate checks kept; cancel = status flip with cancelled_at",
+    "hidden_tests": "no upstream tests; hidden tests cover approved-only listing, participant counts, capacity, duplicate signup, unregister/re-signup and 404s, uuid-tagged names",
+    "reference": "hand-written idiomatic Jac port (claude), validated by convert_build",
+    "created": "2026-10-10"
+  }
+}

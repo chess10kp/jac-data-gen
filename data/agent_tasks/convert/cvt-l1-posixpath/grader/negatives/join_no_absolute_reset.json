@@ -1,0 +1,1 @@
+{"edits": [{"file": "pure_paths.jac", "old": "        if b.startswith(SEP) {\n            path = b;", "new": "        if b.startswith(SEP) {\n            path += b;"}]}

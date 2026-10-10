@@ -1,0 +1,24 @@
+{
+  "id": "cvt-l5-networking-bingo",
+  "kind": "convert",
+  "level": 5,
+  "source": "github:Pseudo-Lab/PseudoTown@fc784d53aa27cc543f3a7f9bb8d998a9dce29cc9:api",
+  "gates": ["check", "fidelity", "test", "start"],
+  "target_paths": ["main.jac"],
+  "jac_version": "0.36.1",
+  "license": "MIT",
+  "provenance": {
+    "title": "Networking bingo API",
+    "domain": "meetup networking bingo game (FARM: FastAPI + ODMantic)",
+    "upstream": "https://github.com/Pseudo-Lab/PseudoTown/tree/main/api",
+    "commit": "fc784d53aa27cc543f3a7f9bb8d998a9dce29cc9",
+    "upstream_tests": "none; tests.jac + smoke.py written from the model/route semantics",
+    "trimmed": true,
+    "trim_note": "kept api/ (auth, bingo, utils, main.py, requirements.txt) + LICENSE; frontend/, images/, docker files dropped",
+    "deviations": "user lookup spelled as name+discord (upstream's `cls.name == name and cls.discord == discord` reduces to the discord clause; tests only use distinct discord handles); path/body params flattened into walker fields (add_bingo body user_id -> gave_id)",
+    "quirks_kept": "repeat bingo subtracts MAGIC_NUM again from already-marked cells; gave_ids appends the giver whenever user_id (not gave_id) is absent",
+    "mapping": "ODMantic UserId/UserModel/Attribute/BingoBoard -> nodes on root; 7 handlers -> walker:pub of the same name; result dicts reported verbatim",
+    "reference": "hand-written idiomatic Jac port (claude), validated by convert_build",
+    "created": "2026-10-10"
+  }
+}

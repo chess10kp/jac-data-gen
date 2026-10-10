@@ -1,0 +1,1 @@
+{"edits": [{"file": "main.jac", "old": "            if board[y][x] < MAGIC_NUM {\n                board[y][x] -= MAGIC_NUM;", "new": "            if board[x][y] < MAGIC_NUM {\n                board[x][y] -= MAGIC_NUM;"}]}

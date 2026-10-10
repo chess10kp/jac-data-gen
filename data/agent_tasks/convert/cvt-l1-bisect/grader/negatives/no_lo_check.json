@@ -1,0 +1,1 @@
+{"edits": [{"file": "sorted_insert.jac", "old": "def bisect_right(\n    a: list[any], x: any, lo: int = 0, hi: int | None = None, key: any = None\n) -> int {\n    if lo < 0 {\n        raise ValueError(\"lo must be non-negative\");\n    }", "new": "def bisect_right(\n    a: list[any], x: any, lo: int = 0, hi: int | None = None, key: any = None\n) -> int {"}]}

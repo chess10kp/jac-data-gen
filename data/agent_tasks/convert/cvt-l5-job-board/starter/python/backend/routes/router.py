@@ -1,0 +1,33 @@
+from fastapi import FastAPI, Depends
+from routes.organisation.route import job_router
+from routes.organisation.org_routes import org_router
+from starlette.middleware.cors import CORSMiddleware
+
+router = FastAPI()
+
+origins = [
+    "*",
+    "http://localhost:3000",
+    "https://localhost:3000",
+    "https://web-dev-youngestdev.cloud.okteto.net/",
+    "http://web-dev-youngestdev.cloud.okteto.net/"
+]
+
+router.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
+
+
+@router.get("/")
+async def welcome_page():
+    return {
+        "message": "Welcome to the BGN task everyone."
+    }
+
+
+router.include_router(job_router, prefix="/job", tags=["Job"])
+router.include_router(org_router, prefix="/org", tags=["Org"])

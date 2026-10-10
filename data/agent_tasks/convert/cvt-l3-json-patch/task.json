@@ -1,0 +1,21 @@
+{
+  "id": "cvt-l3-json-patch",
+  "kind": "convert",
+  "level": 3,
+  "source": "pypi:jsonpointer==3.2.0 + pypi:jsonpatch==1.34",
+  "gates": ["check", "fidelity", "test"],
+  "target_paths": ["pointer.jac", "patch.jac"],
+  "jac_version": "0.36.1",
+  "license": "BSD-3-Clause (jsonpointer: Modified BSD; jsonpatch: Modified BSD)",
+  "provenance": {
+    "title": "JSON Pointer + JSON Patch (RFC 6901/6902)",
+    "domain": "JSON document addressing and patching",
+    "upstream": ["https://github.com/stefankoegl/python-json-pointer (v3.2.0)", "https://github.com/stefankoegl/python-json-patch (v1.34)"],
+    "upstream_tests": "tests.py of both packages",
+    "hidden_tests": "derived from upstream SpecificationTests/ComparisonTests/SetTests (pointer) and ApplyPatchTestCase/InvalidInputTests/ConflictTests/StringIndexingTests (patch)",
+    "trimmed": true,
+    "trimmed_detail": "jsonpatch: removed make_patch / JsonPatch.from_diff / DiffBuilder and its path helpers (diff generation); pointer_cls plumbing not required. jsonpointer kept whole (CLI-ish tests, repr, `/` operator, subclassing tests dropped from the starter test copy). Upstream tests.js data-driven test removed.",
+    "reference": "hand-written idiomatic Jac port (claude): classes -> obj, operation subclasses -> obj inheritance, exception hierarchy -> obj(Exception)",
+    "created": "2026-10-10"
+  }
+}

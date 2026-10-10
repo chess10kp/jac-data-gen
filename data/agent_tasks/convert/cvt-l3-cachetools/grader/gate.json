@@ -1,0 +1,72 @@
+{
+ "api": [
+  {
+   "name": "Cache",
+   "kind": "obj"
+  },
+  {
+   "name": "FIFOCache",
+   "kind": "obj"
+  },
+  {
+   "name": "LRUCache",
+   "kind": "obj"
+  },
+  {
+   "name": "LFUCache",
+   "kind": "obj"
+  },
+  {
+   "name": "TTLCache",
+   "kind": "obj"
+  },
+  {
+   "name": "Cache.get",
+   "kind": "ability"
+  },
+  {
+   "name": "Cache.pop",
+   "kind": "ability"
+  },
+  {
+   "name": "Cache.setdefault",
+   "kind": "ability"
+  },
+  {
+   "name": "LRUCache.popitem",
+   "kind": "ability"
+  },
+  {
+   "name": "FIFOCache.popitem",
+   "kind": "ability"
+  },
+  {
+   "name": "LFUCache.popitem",
+   "kind": "ability"
+  },
+  {
+   "name": "TTLCache.expire",
+   "kind": "ability"
+  },
+  {
+   "name": "hashkey",
+   "kind": "def"
+  },
+  {
+   "name": "typedkey",
+   "kind": "def"
+  },
+  {
+   "name": "methodkey",
+   "kind": "def"
+  }
+ ],
+ "forbid_imports": [
+  "cachetools"
+ ],
+ "strip": [
+  "python"
+ ],
+ "timeout_s": 300,
+ "ref_mass": 2074
+}

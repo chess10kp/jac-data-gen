@@ -5,7 +5,7 @@
   "source": "github:okteto/guestbook-api@46e2dc70e8fed55bfa4f764b307361f2873afed1",
   "gates": ["check", "fidelity", "test", "start"],
   "target_paths": ["main.jac"],
-  "jac_version": "0.37.25",
+  "jac_version": "0.36.1",
   "license": "MIT",
   "provenance": {
     "title": "Guestbook entries API",

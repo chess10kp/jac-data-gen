@@ -1,0 +1,1 @@
+{"edits": [{"file": "rentals.jac", "old": "            if r.status == \"active\" and r.due_date < self.now {", "new": "            if r.due_date < self.now {"}]}

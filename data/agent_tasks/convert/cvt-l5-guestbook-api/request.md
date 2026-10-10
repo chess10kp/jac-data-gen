@@ -6,4 +6,4 @@ Can you rewrite it as `main.jac` (the project's entry point, already set up in `
 - Each route becomes a public walker with the same name as the Python handler: `welcome`, `retrieve_entries`, `add_entry` (takes `name` and `entry`), and `delete_entry` (takes `id`).
 - Keep the response bodies the same as the Python app: the welcome message, `{"entries": [...]}` where each entry has `id`, `name`, `entry`, `date`, `{"message": "New entry added with ID: <id>"}` and `{"message": "Entry deleted successfully"}` (deleting an unknown id still returns that). Use the node's Jac id as the entry id.
 
-It should start with `jac run --serve main.jac` and `jac check` should be clean.
+It should start with `jac start main.jac` and `jac check` should be clean.

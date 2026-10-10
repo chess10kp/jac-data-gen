@@ -1,0 +1,23 @@
+{
+  "id": "cvt-l5-book-catalog",
+  "kind": "convert",
+  "level": 5,
+  "source": "github:documentdb/documentdb-playground@1a36d28aea9f78a7ca833903e400a7cc4e842e55:playgrounds/beanie/app",
+  "gates": ["check", "fidelity", "test", "start"],
+  "target_paths": ["main.jac"],
+  "jac_version": "0.36.1",
+  "license": "MIT",
+  "provenance": {
+    "title": "Book catalog REST API",
+    "domain": "library book catalog with genre statistics (FARM: FastAPI + Beanie)",
+    "upstream": "https://github.com/documentdb/documentdb-playground/tree/main/playgrounds/beanie/app",
+    "commit": "1a36d28aea9f78a7ca833903e400a7cc4e842e55",
+    "upstream_tests": "none for the Book API (beanie_crud_test.py is a driver-compatibility script on an unrelated Widget model, removed); tests written from the route semantics",
+    "trimmed": true,
+    "trim_note": "kept app/main.py, app/db.py, app/models/book.py and LICENSE; dropped beanie_crud_test.py, scripts/, the pymongo + benchmark playgrounds",
+    "deviations": "PATCH exclude_unset -> 'non-null fields change'; DELETE 204 empty body -> {\"deleted\": id}; genre ties ordered by name; datetimes as ISO strings",
+    "mapping": "Beanie Book -> node Book on root; 7 handlers -> walker:pub of the same name; aggregate($unwind/$group/$sort) -> graph fold; 404 -> {\"error\": \"not found\"}",
+    "reference": "hand-written idiomatic Jac port (claude), validated by convert_build",
+    "created": "2026-10-10"
+  }
+}

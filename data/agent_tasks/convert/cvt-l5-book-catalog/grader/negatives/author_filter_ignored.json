@@ -1,0 +1,1 @@
+{"edits": [{"file": "main.jac", "old": "if not self.author or b.author == self.author]", "new": "if not self.author or b.author != \"\"]"}]}

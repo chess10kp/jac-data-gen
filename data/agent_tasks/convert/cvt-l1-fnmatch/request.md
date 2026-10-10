@@ -1,0 +1,3 @@
+We use `fnmatch` all over a build script that's being rewritten in Jac. I copied the CPython implementation to `python/fnmatch.py` (tests: `python/test_fnmatch.py`).
+
+Please port it to `glob_match.jac` exposing `fnmatch(name, pat)`, `fnmatchcase(name, pat)`, `filter(names, pat)` and `translate(pat)`. We only run on Linux, so assume POSIX: no case folding and no slash normalization (only str, no bytes support needed). `translate` must produce exactly the same regex strings as Python's (including the `(?s:...)\Z` wrapper, star squashing and the `(?>.*?...)` atomic groups), and bracket expressions/ranges must behave identically. Using `re` is fine, but don't import `fnmatch` or `glob` — I want the translation logic in Jac. Keep it `jac check` clean.

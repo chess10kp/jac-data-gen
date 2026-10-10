@@ -1,0 +1,33 @@
+{
+  "id": "cvt-l4-student-records",
+  "kind": "convert",
+  "level": 4,
+  "source": "github:Dream0916/fastapi_mongo@e6038f119f64ecb1c5585f088795e4bef6ba58e8",
+  "gates": [
+    "check",
+    "fidelity",
+    "test"
+  ],
+  "target_paths": [
+    "students.jac"
+  ],
+  "jac_version": "0.36.1",
+  "license": "MIT",
+  "provenance": {
+    "title": "Student records CRUD",
+    "domain": "school student records (FARM: FastAPI + Beanie)",
+    "upstream": "https://github.com/Dream0916/fastapi_mongo",
+    "commit": "e6038f119f64ecb1c5585f088795e4bef6ba58e8",
+    "starter_files": [
+      "models/student.py",
+      "database/database.py",
+      "routes/student.py",
+      "tests/test_mock_database.py"
+    ],
+    "trimmed": "kept only the Student model, the database CRUD helpers and the student router; dropped admin/JWT auth, app wiring, config",
+    "mapping": "Beanie Document Student -> node Student on root; database.py helpers add_student/retrieve_students/retrieve_student/update_student_data/delete_student -> walkers; PydanticObjectId -> jid(); partial $set update -> mutate only supplied fields; EmailStr -> email validity check",
+    "hidden_tests": "tests/test_mock_database.py only smoke-tests listing; hidden tests are written to the CRUD contract with uuid-tagged deltas (create/list/get/partial update/delete + not-found paths)",
+    "reference": "hand-written idiomatic Jac port (claude), validated by convert_build",
+    "created": "2026-10-10"
+  }
+}

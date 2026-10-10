@@ -1,0 +1,26 @@
+{
+  "id": "cvt-l1-bisect",
+  "kind": "convert",
+  "level": 1,
+  "source": "cpython:Lib/bisect.py@v3.12.7",
+  "gates": [
+    "check",
+    "fidelity",
+    "test"
+  ],
+  "target_paths": [
+    "sorted_insert.jac"
+  ],
+  "jac_version": "0.36.1",
+  "license": "PSF-2.0",
+  "provenance": {
+    "title": "Binary search insertion points for sorted lists",
+    "domain": "sorted sequence search",
+    "upstream": "https://github.com/python/cpython/blob/v3.12.7/Lib/bisect.py",
+    "upstream_tests": "https://github.com/python/cpython/blob/v3.12.7/Lib/test/test_bisect.py",
+    "hidden_tests": "derived from upstream tests: precomputed table, optional slicing, negative lo, random invariants (seeded), keyword args, key functions, insort with key, insort vs builtin sort, doc examples. Dropped: C-module variants, sys.maxsize Range/UserList sequence types, non-bool __lt__ classes, error-handling of non-sequences.",
+    "trimmed": false,
+    "reference": "hand-written idiomatic Jac port (claude), validated by convert_build",
+    "created": "2026-10-10"
+  }
+}

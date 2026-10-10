@@ -1,0 +1,65 @@
+{
+ "api": [
+  {
+   "name": "UserId",
+   "kind": "node"
+  },
+  {
+   "name": "UserModel",
+   "kind": "node"
+  },
+  {
+   "name": "Attribute",
+   "kind": "node"
+  },
+  {
+   "name": "BingoBoard",
+   "kind": "node"
+  },
+  {
+   "name": "hc",
+   "kind": "walker"
+  },
+  {
+   "name": "add_or_get_user",
+   "kind": "walker"
+  },
+  {
+   "name": "get_attr",
+   "kind": "walker"
+  },
+  {
+   "name": "set_attr",
+   "kind": "walker"
+  },
+  {
+   "name": "get_bingo_board",
+   "kind": "walker"
+  },
+  {
+   "name": "new_bingo_board",
+   "kind": "walker"
+  },
+  {
+   "name": "add_bingo",
+   "kind": "walker"
+  }
+ ],
+ "forbid_imports": [
+  "fastapi",
+  "beanie",
+  "motor",
+  "pymongo",
+  "odmantic",
+  "api",
+  "auth",
+  "bingo",
+  "utils"
+ ],
+ "strip": [
+  "python"
+ ],
+ "timeout_s": 300,
+ "smoke_timeout_s": 600,
+ "ref_mass": 872
+}

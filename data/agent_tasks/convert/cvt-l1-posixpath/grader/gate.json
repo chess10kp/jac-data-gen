@@ -1,0 +1,56 @@
+{
+ "api": [
+  {
+   "name": "isabs",
+   "kind": "def"
+  },
+  {
+   "name": "join",
+   "kind": "def"
+  },
+  {
+   "name": "split",
+   "kind": "def"
+  },
+  {
+   "name": "splitext",
+   "kind": "def"
+  },
+  {
+   "name": "splitroot",
+   "kind": "def"
+  },
+  {
+   "name": "basename",
+   "kind": "def"
+  },
+  {
+   "name": "dirname",
+   "kind": "def"
+  },
+  {
+   "name": "normpath",
+   "kind": "def"
+  },
+  {
+   "name": "commonprefix",
+   "kind": "def"
+  },
+  {
+   "name": "commonpath",
+   "kind": "def"
+  }
+ ],
+ "forbid_imports": [
+  "posixpath",
+  "genericpath",
+  "os",
+  "pathlib",
+  "ntpath",
+  "posixpath_subset"
+ ],
+ "strip": [
+  "python"
+ ],
+ "timeout_s": 240
+}

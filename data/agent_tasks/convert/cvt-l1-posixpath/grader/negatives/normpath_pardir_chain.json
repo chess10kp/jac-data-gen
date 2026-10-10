@@ -1,0 +1,1 @@
+{"edits": [{"file": "pure_paths.jac", "old": "            or (not initial_slashes and not comps)\n            or (comps and comps[-1] == PARDIR) {", "new": "            or (not initial_slashes and not comps) {"}]}

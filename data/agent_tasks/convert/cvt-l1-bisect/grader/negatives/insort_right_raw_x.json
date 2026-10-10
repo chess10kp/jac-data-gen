@@ -1,0 +1,1 @@
+{"edits": [{"file": "sorted_insert.jac", "old": "        a.insert(bisect_right(a, key(x), lo, hi, key=key), x);", "new": "        a.insert(bisect_right(a, x, lo, hi, key=key), x);"}]}

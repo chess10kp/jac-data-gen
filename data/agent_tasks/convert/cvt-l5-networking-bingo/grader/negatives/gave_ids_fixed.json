@@ -1,0 +1,1 @@
+{"edits": [{"file": "main.jac", "old": "if self.user_id not in b.gave_ids {", "new": "if self.gave_id not in b.gave_ids {"}]}

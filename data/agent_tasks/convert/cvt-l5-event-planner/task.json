@@ -1,0 +1,22 @@
+{
+  "id": "cvt-l5-event-planner",
+  "kind": "convert",
+  "level": 5,
+  "source": "github:AlanValdevenito/Planner-Web-Application@279a651cc758de8d8b7bd8c4cc7720f5e17960d3",
+  "gates": ["check", "fidelity", "test", "start"],
+  "target_paths": ["main.jac"],
+  "jac_version": "0.36.1",
+  "license": "MIT",
+  "provenance": {
+    "title": "Event planner API",
+    "domain": "community event planning (FARM: FastAPI + Beanie)",
+    "upstream": "https://github.com/AlanValdevenito/Planner-Web-Application",
+    "commit": "279a651cc758de8d8b7bd8c4cc7720f5e17960d3",
+    "upstream_tests": "tests/test_events.py, tests/test_users.py (pytest+httpx) -> grader/tests.jac + grader/smoke.py",
+    "trimmed": false,
+    "deviations": "JWT/OAuth2 auth dropped (sign_in_user not ported); acting user passed as `user` arg; bcrypt -> any one-way hash",
+    "mapping": "Beanie User/Event -> nodes on root; 7 route handlers -> walker:pub of the same name; HTTPException -> reported {\"error\": detail}; PydanticObjectId -> jid()",
+    "reference": "hand-written idiomatic Jac port (claude), validated by convert_build",
+    "created": "2026-10-10"
+  }
+}

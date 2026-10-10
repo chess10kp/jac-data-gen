@@ -1,0 +1,1 @@
+{"edits": [{"file": "rentals.jac", "old": "        update_available_copies(rental_book(r), 1);", "new": "        update_available_copies(rental_book(r), 0);"}]}

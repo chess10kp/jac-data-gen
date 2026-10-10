@@ -1,0 +1,3 @@
+I've got a copy of the stdlib `bisect` module in `python/bisect.py` (tests are in `python/test_bisect.py`) and I want the same thing natively in Jac for a project that's going Jac-only.
+
+Could you port it to `sorted_insert.jac` at the project root? I need the four public functions with the same names and parameters: `bisect_left(a, x, lo=0, hi=None, key=None)`, `bisect_right(...)`, `insort_left(...)` and `insort_right(...)` (the insort ones mutate the list in place). Keep the exact semantics, including the `key` function support and the `ValueError` when `lo` is negative. Skip the `bisect`/`insort` aliases and the C-accelerator import. Please write the logic in Jac itself rather than importing Python's bisect, and make sure `jac check` passes.

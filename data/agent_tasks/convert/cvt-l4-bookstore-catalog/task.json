@@ -1,0 +1,35 @@
+{
+  "id": "cvt-l4-bookstore-catalog",
+  "kind": "convert",
+  "level": 4,
+  "source": "github:danylevych/ksd-bookstore-parser@86e3f7d140e56a4ef8cac76b38eac1f8cae13ec1",
+  "gates": [
+    "check",
+    "fidelity",
+    "test"
+  ],
+  "target_paths": [
+    "catalog.jac"
+  ],
+  "jac_version": "0.36.1",
+  "license": "MIT",
+  "provenance": {
+    "title": "Bookstore catalog upsert store",
+    "domain": "scraped bookstore catalog (FARM: Beanie)",
+    "upstream": "https://github.com/danylevych/ksd-bookstore-parser",
+    "commit": "86e3f7d140e56a4ef8cac76b38eac1f8cae13ec1",
+    "starter_files": [
+      "db/mongodb/models/__init__.py",
+      "db/mongodb/models/author.py",
+      "db/mongodb/models/book.py",
+      "connectors/base_connector.py",
+      "connectors/mongodb_connector.py",
+      "parsers/schemas/book.py"
+    ],
+    "trimmed": "kept the Beanie models, the Mongo connector (upsert logic) and the BookSchema; dropped the scraper, scheduler, logger, configs. Port drops OpenAI embeddings and keeps a subset of book fields",
+    "mapping": "Author/Book Documents -> nodes; Book.author_id ObjectId -> edge Author -[Wrote]-> Book; MongoDBConnector.on_parse (_save_author find-or-create by name, _save_book upsert by url) -> walker save_book; read helpers -> walkers",
+    "hidden_tests": "no upstream tests; hidden tests exercise on_parse semantics (author reuse, url upsert/refresh, author change re-link, complect/no-author skip) with uuid tags",
+    "reference": "hand-written idiomatic Jac port (claude), validated by convert_build",
+    "created": "2026-10-10"
+  }
+}

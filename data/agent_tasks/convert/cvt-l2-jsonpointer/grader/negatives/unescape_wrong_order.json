@@ -1,0 +1,1 @@
+{"edits": [{"file": "json_pointer.jac", "old": "return s.replace(\"~1\", \"/\").replace(\"~0\", \"~\");", "new": "return s.replace(\"~0\", \"~\").replace(\"~1\", \"/\");"}]}

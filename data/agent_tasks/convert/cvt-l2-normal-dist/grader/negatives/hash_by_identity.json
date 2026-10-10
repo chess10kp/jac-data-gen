@@ -1,0 +1,1 @@
+{"edits": [{"file": "normal_dist.jac", "old": "        return hash((self.mu, self.sigma));", "new": "        return hash((self.mu, self.sigma, id(self)));"}]}

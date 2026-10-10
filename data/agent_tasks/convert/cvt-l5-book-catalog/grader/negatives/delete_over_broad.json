@@ -1,0 +1,1 @@
+{"edits": [{"file": "main.jac", "old": "        del b;\n        report {\"deleted\": self.book_id};", "new": "        for x in [here -->[?:Book]] {\n            if x.author == b.author {\n                del x;\n            }\n        }\n        report {\"deleted\": self.book_id};"}]}

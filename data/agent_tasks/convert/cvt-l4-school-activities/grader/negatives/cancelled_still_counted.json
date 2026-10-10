@@ -1,0 +1,1 @@
+{"edits": [{"file": "activities.jac", "old": "    return [r for r in [e ->:HasRegistration:->] if r.status == \"active\"];", "new": "    return [r for r in [e ->:HasRegistration:->]];"}]}

@@ -1,0 +1,23 @@
+{
+  "id": "cvt-l5-job-board",
+  "kind": "convert",
+  "level": 5,
+  "source": "github:roshan-rm01/Google-BGN@ba223da8f6ffe8814e64c68f9ba83a359b3e91b8:backend",
+  "gates": ["check", "fidelity", "test", "start"],
+  "target_paths": ["main.jac"],
+  "jac_version": "0.36.1",
+  "license": "MIT",
+  "provenance": {
+    "title": "Job board API (organisations + job posts)",
+    "domain": "recruiting job board (FARM: FastAPI + ODMantic)",
+    "upstream": "https://github.com/roshan-rm01/Google-BGN/tree/main/backend",
+    "commit": "ba223da8f6ffe8814e64c68f9ba83a359b3e91b8",
+    "upstream_tests": "none; tests.jac + smoke.py written from route semantics",
+    "trimmed": true,
+    "trim_note": "applicant model/routes removed (and their lines in routes/router.py and utilities/validate_session.py); frontend/ and deploy files dropped",
+    "deviations": "JWT cookie sessions dropped (org identified by email arg, tokens not returned); salary filter dropped (str vs float never matched upstream); update_job replaces fields in place (upstream re-saved the body as a new document); listed jobs carry an id",
+    "mapping": "ODMantic Organisation -> node; embedded OrganisationData -> obj; Job -> node linked by typed edge Posted (Organisation --> Job); 11 handlers -> walker:pub of the same name; HTTPException -> {\"error\": detail}",
+    "reference": "hand-written idiomatic Jac port (claude), validated by convert_build",
+    "created": "2026-10-10"
+  }
+}

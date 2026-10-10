@@ -1,0 +1,1 @@
+{"edits": [{"file": "finance.jac", "old": "cats = [c for c in [u ->:HasCategory:->]] if u else [];", "new": "cats = all_categories();"}]}

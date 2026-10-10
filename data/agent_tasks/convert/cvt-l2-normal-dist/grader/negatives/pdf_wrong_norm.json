@@ -1,0 +1,1 @@
+{"edits": [{"file": "normal_dist.jac", "old": "/ sqrt(tau * variance);", "new": "/ sqrt(tau * variance * 2.0);"}]}

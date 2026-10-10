@@ -1,0 +1,1 @@
+{"edits": [{"file": "glob_match.jac", "old": "            out.append(f\"(?>.*?{piece})\");", "new": "            out.append(f\"(.*?{piece})\");"}]}

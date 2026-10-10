@@ -1,0 +1,1 @@
+{"edits": [{"file": "pure_paths.jac", "old": "    if p[1:2] != SEP or p[2:3] == SEP {", "new": "    if p[1:2] != SEP {"}]}

@@ -3,11 +3,3 @@ name = "guestbook"
 version = "0.1.0"
 description = "Headless Jac API service (server walkers, no client)"
 entry-point = "main"
-kind = "service"
-jac-version = "==0.37.25"
-
-[dependencies]
-
-[dev-dependencies]
-[dev-dependencies.pypi]
-watchdog = ">=3.0.0"

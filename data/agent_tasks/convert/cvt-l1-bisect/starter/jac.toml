@@ -1,0 +1,6 @@
+[project]
+name = "sorted_insert"
+version = "0.1.0"
+
+[placement]
+default = "server"

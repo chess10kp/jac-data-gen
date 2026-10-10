@@ -1,0 +1,33 @@
+{
+  "id": "cvt-l4-finance-accounts",
+  "kind": "convert",
+  "level": 4,
+  "source": "github:Vitoria-Rabelo/fastapi-beanie-finance@28ef2f1b6b17d34d479d7bf50f42d7ccdeb23908",
+  "gates": [
+    "check",
+    "fidelity",
+    "test"
+  ],
+  "target_paths": [
+    "finance.jac"
+  ],
+  "jac_version": "0.36.1",
+  "license": "MIT",
+  "provenance": {
+    "title": "Personal finance users, categories and accounts",
+    "domain": "personal finance bookkeeping (FARM: FastAPI + Beanie, Portuguese field names)",
+    "upstream": "https://github.com/Vitoria-Rabelo/fastapi-beanie-finance",
+    "commit": "28ef2f1b6b17d34d479d7bf50f42d7ccdeb23908",
+    "starter_files": [
+      "models.py",
+      "endpoints/user.py",
+      "endpoints/category.py",
+      "endpoints/account.py"
+    ],
+    "trimmed": "dropped transactions (endpoints/transaction.py), seed/populate scripts, main/database wiring; user update/list/get routes are context only",
+    "mapping": "User/Category/Account Documents -> nodes; Link[User] references -> typed edges User -[HasCategory]-> Category, User -[Owns]-> Account; routes -> walkers; HTTPException -> reported {status, detail}; skip/limit paging -> list slicing",
+    "hidden_tests": "no upstream tests; hidden tests written to the route contract (duplicate email 400, 404s, user filter, skip/limit window, partial PATCH, delete) with uuid tags",
+    "reference": "hand-written idiomatic Jac port (claude), validated by convert_build",
+    "created": "2026-10-10"
+  }
+}

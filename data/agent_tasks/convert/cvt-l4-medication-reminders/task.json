@@ -1,0 +1,35 @@
+{
+  "id": "cvt-l4-medication-reminders",
+  "kind": "convert",
+  "level": 4,
+  "source": "github:Zirochkaa/medication-notification@0b9815494327c98bae75b992dede8596105ac1da",
+  "gates": [
+    "check",
+    "fidelity",
+    "test"
+  ],
+  "target_paths": [
+    "reminders.jac"
+  ],
+  "jac_version": "0.36.1",
+  "license": "MIT",
+  "provenance": {
+    "title": "Medication reminder store",
+    "domain": "medication reminders for a Telegram bot (FARM-style: Beanie)",
+    "upstream": "https://github.com/Zirochkaa/medication-notification",
+    "commit": "0b9815494327c98bae75b992dede8596105ac1da",
+    "starter_files": [
+      "app/models.py",
+      "app/helpers.py",
+      "tests/conftest.py",
+      "tests/models/test_medication.py",
+      "tests/models/test_notification.py",
+      "tests/models/test_user.py"
+    ],
+    "trimmed": "kept the Beanie models, helpers and model tests; dropped the Telegram bot handlers, scheduler, keyboards, texts; Telegram message-id fields of Notification dropped",
+    "mapping": "User/Medication/Notification Documents -> nodes; Link[User], Link[Medication] -> edges User -[Takes]-> Medication -[Notified]-> Notification; classmethod queries (In/GTE/LTE filters, sort) -> walkers with comprehension filters + sorted; soft delete flag kept; datetimes -> ISO strings",
+    "hidden_tests": "ported from upstream tests/models/test_medication.py + test_notification.py (soft-delete filtering, ready-for-notification time cut, taken-in-period window, current-day lookups) + helpers time-format rules, uuid-tagged users",
+    "reference": "hand-written idiomatic Jac port (claude), validated by convert_build",
+    "created": "2026-10-10"
+  }
+}

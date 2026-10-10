@@ -1,0 +1,587 @@
+# -*- coding: utf-8 -*-
+#
+# python-json-patch - An implementation of the JSON Patch format
+# https://github.com/stefankoegl/python-json-patch
+#
+# Copyright (c) 2011 Stefan Kögl <stefan@skoegl.net>
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+# 3. The name of the author may not be used to endorse or promote products
+#    derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+# IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+# NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+# THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+
+""" Apply JSON-Patches (RFC 6902) """
+
+import collections
+import copy
+import functools
+import json
+from collections.abc import MutableMapping, MutableSequence, Sequence
+from types import MappingProxyType
+
+from jsonpointer import JsonPointer, JsonPointerException
+
+
+
+
+# Will be parsed by setup.py to determine package metadata
+__author__ = 'Stefan Kögl <stefan@skoegl.net>'
+__version__ = '1.34'
+__website__ = 'https://github.com/stefankoegl/python-json-patch'
+__license__ = 'Modified BSD License'
+
+
+class JsonPatchException(Exception):
+    """Base Json Patch exception"""
+
+
+class InvalidJsonPatch(JsonPatchException):
+    """ Raised if an invalid JSON Patch is created """
+
+
+class JsonPatchConflict(JsonPatchException):
+    """Raised if patch could not be applied due to conflict situation such as:
+    - attempt to add object key when it already exists;
+    - attempt to operate with nonexistence object key;
+    - attempt to insert value to array at position beyond its size;
+    - etc.
+    """
+
+
+class JsonPatchTestFailed(JsonPatchException, AssertionError):
+    """ A Test operation failed """
+
+
+def multidict(ordered_pairs):
+    """Convert duplicate keys values to lists."""
+    # read all values into lists
+    mdict = collections.defaultdict(list)
+    for key, value in ordered_pairs:
+        mdict[key].append(value)
+
+    return dict(
+        # unpack lists that have only 1 item
+        (key, values[0] if len(values) == 1 else values)
+        for key, values in mdict.items()
+    )
+
+
+# The "object_pairs_hook" parameter is used to handle duplicate keys when
+# loading a JSON object.
+_jsonloads = functools.partial(json.loads, object_pairs_hook=multidict)
+
+
+def apply_patch(doc, patch, in_place=False, pointer_cls=JsonPointer):
+    """Apply list of patches to specified json document.
+
+    :param doc: Document object.
+    :type doc: dict
+
+    :param patch: JSON patch as list of dicts or raw JSON-encoded string.
+    :type patch: list or str
+
+    :param in_place: While :const:`True` patch will modify target document.
+                     By default patch will be applied to document copy.
+    :type in_place: bool
+
+    :param pointer_cls: JSON pointer class to use.
+    :type pointer_cls: Type[JsonPointer]
+
+    :return: Patched document object.
+    :rtype: dict
+
+    >>> doc = {'foo': 'bar'}
+    >>> patch = [{'op': 'add', 'path': '/baz', 'value': 'qux'}]
+    >>> other = apply_patch(doc, patch)
+    >>> doc is not other
+    True
+    >>> other == {'foo': 'bar', 'baz': 'qux'}
+    True
+    >>> patch = [{'op': 'add', 'path': '/baz', 'value': 'qux'}]
+    >>> apply_patch(doc, patch, in_place=True) == {'foo': 'bar', 'baz': 'qux'}
+    True
+    >>> doc == other
+    True
+    """
+
+    if isinstance(patch, (str, bytes)):
+        patch = JsonPatch.from_string(patch, pointer_cls=pointer_cls)
+    else:
+        patch = JsonPatch(patch, pointer_cls=pointer_cls)
+    return patch.apply(doc, in_place)
+
+
+class PatchOperation(object):
+    """A single operation inside a JSON Patch."""
+
+    def __init__(self, operation, pointer_cls=JsonPointer):
+        self.pointer_cls = pointer_cls
+
+        if not operation.__contains__('path'):
+            raise InvalidJsonPatch("Operation must have a 'path' member")
+
+        if isinstance(operation['path'], self.pointer_cls):
+            self.location = operation['path'].path
+            self.pointer = operation['path']
+        else:
+            self.location = operation['path']
+            try:
+                self.pointer = self.pointer_cls(self.location)
+            except TypeError:
+                raise InvalidJsonPatch("Invalid 'path'")
+
+        self.operation = operation
+
+    def apply(self, obj):
+        """Abstract method that applies a patch operation to the specified object."""
+        raise NotImplementedError('should implement the patch operation.')
+
+    def __hash__(self):
+        return hash(frozenset(self.operation.items()))
+
+    def __eq__(self, other):
+        if not isinstance(other, PatchOperation):
+            return False
+        return self.operation == other.operation
+
+    def __ne__(self, other):
+        return not(self == other)
+
+    @property
+    def path(self):
+        return '/'.join(self.pointer.parts[:-1])
+
+    @property
+    def key(self):
+        return self.get_part(-1)
+
+    @key.setter
+    def key(self, value):
+        self.set_part(-1, value)
+
+    def get_part(self, index):
+        try:
+            return int(self.pointer.parts[index])
+        except ValueError:
+            return self.pointer.parts[index]
+
+    def set_part(self, index, value):
+        self.pointer.parts[index] = str(value)
+        self.location = self.pointer.path
+        self.operation['path'] = self.location
+
+
+class RemoveOperation(PatchOperation):
+    """Removes an object property or an array element."""
+
+    def apply(self, obj):
+        subobj, part = _to_last(self.pointer, obj)
+
+        if isinstance(subobj, Sequence) and not isinstance(part, int):
+            raise JsonPointerException("invalid array index '{0}'".format(part))
+
+        try:
+            del subobj[part]
+        except (KeyError, IndexError):
+            msg = "can't remove a non-existent object '{0}'".format(part)
+            raise JsonPatchConflict(msg)
+
+        return obj
+
+
+class AddOperation(PatchOperation):
+    """Adds an object property or an array element."""
+
+    def apply(self, obj):
+        try:
+            value = self.operation["value"]
+        except KeyError:
+            raise InvalidJsonPatch(
+                "The operation does not contain a 'value' member")
+
+        # Insert a copy so the document does not share mutable values with
+        # the patch; otherwise later operations would modify the patch itself.
+        return self._add(obj, copy.deepcopy(value))
+
+    def _add(self, obj, value):
+        subobj, part = _to_last(self.pointer, obj)
+
+        if isinstance(subobj, MutableSequence):
+            if part is None:
+                return value  # we're replacing the root
+
+            elif part == '-':
+                subobj.append(value)  # pylint: disable=E1103
+
+            elif part > len(subobj) or part < 0:
+                raise JsonPatchConflict("can't insert outside of list")
+
+            else:
+                subobj.insert(part, value)  # pylint: disable=E1103
+
+        elif isinstance(subobj, MutableMapping):
+            if part is None:
+                obj = value  # we're replacing the root
+            else:
+                subobj[part] = value
+
+        else:
+            if part is None:
+                raise TypeError("invalid document type {0}".format(type(subobj)))
+            else:
+                raise JsonPatchConflict("unable to fully resolve json pointer {0}, part {1}".format(self.location, part))
+        return obj
+
+
+class ReplaceOperation(PatchOperation):
+    """Replaces an object property or an array element by a new value."""
+
+    def apply(self, obj):
+        try:
+            value = self.operation["value"]
+        except KeyError:
+            raise InvalidJsonPatch(
+                "The operation does not contain a 'value' member")
+
+        # copied for the same reason as in AddOperation.apply
+        value = copy.deepcopy(value)
+
+        subobj, part = _to_last(self.pointer, obj)
+
+        if part is None:
+            return value
+
+        if part == "-":
+            raise InvalidJsonPatch("'path' with '-' can't be applied to 'replace' operation")
+
+        if isinstance(subobj, MutableSequence):
+            if part >= len(subobj) or part < 0:
+                raise JsonPatchConflict("can't replace outside of list")
+
+        elif isinstance(subobj, MutableMapping):
+            if part not in subobj:
+                msg = "can't replace a non-existent object '{0}'".format(part)
+                raise JsonPatchConflict(msg)
+        else:
+            if part is None:
+                raise TypeError("invalid document type {0}".format(type(subobj)))
+            else:
+                raise JsonPatchConflict("unable to fully resolve json pointer {0}, part {1}".format(self.location, part))
+
+        subobj[part] = value
+        return obj
+
+
+class MoveOperation(PatchOperation):
+    """Moves an object property or an array element to a new location."""
+
+    def apply(self, obj):
+        try:
+            if isinstance(self.operation['from'], self.pointer_cls):
+                from_ptr = self.operation['from']
+            else:
+                from_ptr = self.pointer_cls(self.operation['from'])
+        except KeyError:
+            raise InvalidJsonPatch(
+                "The operation does not contain a 'from' member")
+
+        subobj, part = _to_last(from_ptr, obj)
+        try:
+            value = subobj[part]
+        except (KeyError, IndexError) as ex:
+            raise JsonPatchConflict(str(ex))
+
+        # If source and target are equal, this is a no-op
+        if self.pointer == from_ptr:
+            return obj
+
+        if isinstance(subobj, MutableMapping) and \
+                self.pointer.contains(from_ptr):
+            raise JsonPatchConflict('Cannot move values into their own children')
+
+        obj = RemoveOperation({
+            'op': 'remove',
+            'path': self.operation['from']
+        }, pointer_cls=self.pointer_cls).apply(obj)
+
+        # the value has been detached from its old location, so no copy needed
+        obj = AddOperation({
+            'op': 'add',
+            'path': self.location,
+        }, pointer_cls=self.pointer_cls)._add(obj, value)
+
+        return obj
+
+    @property
+    def from_path(self):
+        from_ptr = self.pointer_cls(self.operation['from'])
+        return '/'.join(from_ptr.parts[:-1])
+
+    @property
+    def from_key(self):
+        return self.get_from_part(-1)
+
+    @from_key.setter
+    def from_key(self, value):
+        self.set_from_part(-1, value)
+
+    def get_from_part(self, index):
+        from_ptr = self.pointer_cls(self.operation['from'])
+        try:
+            return int(from_ptr.parts[index])
+        except ValueError:
+            return from_ptr.parts[index]
+
+    def set_from_part(self, index, value):
+        from_ptr = self.pointer_cls(self.operation['from'])
+        from_ptr.parts[index] = str(value)
+        self.operation['from'] = from_ptr.path
+
+
+class TestOperation(PatchOperation):
+    """Test value by specified location."""
+
+    def apply(self, obj):
+        try:
+            subobj, part = _to_last(self.pointer, obj)
+            if part is None:
+                val = subobj
+            else:
+                val = self.pointer.walk(subobj, part)
+        except JsonPointerException as ex:
+            raise JsonPatchTestFailed(str(ex))
+
+        try:
+            value = self.operation['value']
+        except KeyError:
+            raise InvalidJsonPatch(
+                "The operation does not contain a 'value' member")
+
+        if val != value:
+            msg = '{0} ({1}) is not equal to tested value {2} ({3})'
+            raise JsonPatchTestFailed(msg.format(val, type(val),
+                                                 value, type(value)))
+
+        return obj
+
+
+class CopyOperation(PatchOperation):
+    """ Copies an object property or an array element to a new location """
+
+    def apply(self, obj):
+        try:
+            from_ptr = self.pointer_cls(self.operation['from'])
+        except KeyError:
+            raise InvalidJsonPatch(
+                "The operation does not contain a 'from' member")
+
+        subobj, part = _to_last(from_ptr, obj)
+        try:
+            value = copy.deepcopy(subobj if part is None else subobj[part])
+        except (KeyError, IndexError) as ex:
+            raise JsonPatchConflict(str(ex))
+
+        # value is already a deep copy, no need to copy it again
+        obj = AddOperation({
+            'op': 'add',
+            'path': self.location,
+        }, pointer_cls=self.pointer_cls)._add(obj, value)
+
+        return obj
+
+
+class JsonPatch(object):
+    json_dumper = staticmethod(json.dumps)
+    json_loader = staticmethod(_jsonloads)
+
+    operations = MappingProxyType({
+        'remove': RemoveOperation,
+        'add': AddOperation,
+        'replace': ReplaceOperation,
+        'move': MoveOperation,
+        'test': TestOperation,
+        'copy': CopyOperation,
+    })
+
+    """A JSON Patch is a list of Patch Operations.
+
+    >>> patch = JsonPatch([
+    ...     {'op': 'add', 'path': '/foo', 'value': 'bar'},
+    ...     {'op': 'add', 'path': '/baz', 'value': [1, 2, 3]},
+    ...     {'op': 'remove', 'path': '/baz/1'},
+    ...     {'op': 'test', 'path': '/baz', 'value': [1, 3]},
+    ...     {'op': 'replace', 'path': '/baz/0', 'value': 42},
+    ...     {'op': 'remove', 'path': '/baz/1'},
+    ... ])
+    >>> doc = {}
+    >>> result = patch.apply(doc)
+    >>> expected = {'foo': 'bar', 'baz': [42]}
+    >>> result == expected
+    True
+
+    JsonPatch object is iterable, so you can easily access each patch
+    statement in a loop:
+
+    >>> lpatch = list(patch)
+    >>> expected = {'op': 'add', 'path': '/foo', 'value': 'bar'}
+    >>> lpatch[0] == expected
+    True
+    >>> lpatch == patch.patch
+    True
+
+    Also JsonPatch could be converted directly to :class:`bool` if it contains
+    any operation statements:
+
+    >>> bool(patch)
+    True
+    >>> bool(JsonPatch([]))
+    False
+
+    """
+    def __init__(self, patch, pointer_cls=JsonPointer):
+        self.patch = patch
+        self.pointer_cls = pointer_cls
+
+        # Verify that the structure of the patch document
+        # is correct by retrieving each patch element.
+        # Much of the validation is done in the initializer
+        # though some is delayed until the patch is applied.
+        for op in self.patch:
+            # We're only checking for strings in the following check
+            # for two reasons:
+            #
+            # - It should come from JSON, which only allows strings as
+            #   dictionary keys, so having a string here unambiguously means
+            #   someone used: {"op": ..., ...} instead of [{"op": ..., ...}].
+            #
+            # - There's no possible false positive: if someone give a sequence
+            #   of mappings, this won't raise.
+            if isinstance(op, (str, bytes)):
+                raise InvalidJsonPatch("Document is expected to be sequence of "
+                                       "operations, got a sequence of strings.")
+
+            self._get_operation(op)
+
+    def __str__(self):
+        """str(self) -> self.to_string()"""
+        return self.to_string()
+
+    def __bool__(self):
+        return bool(self.patch)
+
+    __nonzero__ = __bool__
+
+    def __iter__(self):
+        return iter(self.patch)
+
+    def __hash__(self):
+        return hash(tuple(self._ops))
+
+    def __eq__(self, other):
+        if not isinstance(other, JsonPatch):
+            return False
+        return self._ops == other._ops
+
+    def __ne__(self, other):
+        return not(self == other)
+
+    @classmethod
+    def from_string(cls, patch_str, loads=None, pointer_cls=JsonPointer):
+        """Creates JsonPatch instance from string source.
+
+        :param patch_str: JSON patch as raw string.
+        :type patch_str: str
+
+        :param loads: A function of one argument that loads a serialized
+                      JSON string.
+        :type loads: function
+
+        :param pointer_cls: JSON pointer class to use.
+        :type pointer_cls: Type[JsonPointer]
+
+        :return: :class:`JsonPatch` instance.
+        """
+        json_loader = loads or cls.json_loader
+        patch = json_loader(patch_str)
+        return cls(patch, pointer_cls=pointer_cls)
+
+    def to_string(self, dumps=None):
+        """Returns patch set as JSON string."""
+        json_dumper = dumps or self.json_dumper
+        return json_dumper(self.patch)
+
+    @property
+    def _ops(self):
+        return tuple(map(self._get_operation, self.patch))
+
+    def apply(self, obj, in_place=False):
+        """Applies the patch to a given object.
+
+        :param obj: Document object.
+        :type obj: dict
+
+        :param in_place: Tweaks the way how patch would be applied - directly to
+                         specified `obj` or to its copy.
+        :type in_place: bool
+
+        :return: Modified `obj`.
+        """
+
+        if not in_place:
+            obj = copy.deepcopy(obj)
+
+        for operation in self._ops:
+            obj = operation.apply(obj)
+
+        return obj
+
+    def _get_operation(self, operation):
+        if 'op' not in operation:
+            raise InvalidJsonPatch("Operation does not contain 'op' member")
+
+        op = operation['op']
+
+        if not isinstance(op, (str, bytes)):
+            raise InvalidJsonPatch("Operation's op must be a string")
+
+        if op not in self.operations:
+            raise InvalidJsonPatch("Unknown operation {0!r}".format(op))
+
+        cls = self.operations[op]
+        return cls(operation, pointer_cls=self.pointer_cls)
+
+
+def _to_last(pointer, doc):
+    """Resolve pointer like JsonPointer.to_last, without indexing into strings.
+
+    RFC 6901 only allows reference tokens to be applied to objects and arrays,
+    but older versions of jsonpointer treat strings as sequences.
+    """
+    subobj, part = pointer.to_last(doc)
+
+    if part is not None and isinstance(subobj, str):
+        raise JsonPointerException(
+            "Cannot apply token '{0}' to non-container type {1}".format(
+                part, type(subobj)))
+
+    return subobj, part

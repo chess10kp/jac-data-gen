@@ -1,0 +1,26 @@
+{
+  "id": "cvt-l1-fnmatch",
+  "kind": "convert",
+  "level": 1,
+  "source": "cpython:Lib/fnmatch.py@v3.12.7",
+  "gates": [
+    "check",
+    "fidelity",
+    "test"
+  ],
+  "target_paths": [
+    "glob_match.jac"
+  ],
+  "jac_version": "0.36.1",
+  "license": "PSF-2.0",
+  "provenance": {
+    "title": "Shell-style wildcard filename matching",
+    "domain": "glob pattern matching / regex translation",
+    "upstream": "https://github.com/python/cpython/blob/v3.12.7/Lib/fnmatch.py",
+    "upstream_tests": "https://github.com/python/cpython/blob/v3.12.7/Lib/test/test_fnmatch.py",
+    "hidden_tests": "str cases of upstream FnmatchTestCase/TranslateTestCase/FilterTestCase evaluated with POSIX normcase (case-sensitive, '\\\\' != '/'); bytes and mixed-type cases dropped.",
+    "trimmed": false,
+    "reference": "hand-written idiomatic Jac port (claude), validated by convert_build",
+    "created": "2026-10-10"
+  }
+}

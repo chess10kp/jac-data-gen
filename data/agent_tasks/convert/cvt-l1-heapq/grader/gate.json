@@ -1,0 +1,40 @@
+{
+ "api": [
+  {
+   "name": "heappush",
+   "kind": "def"
+  },
+  {
+   "name": "heappop",
+   "kind": "def"
+  },
+  {
+   "name": "heapreplace",
+   "kind": "def"
+  },
+  {
+   "name": "heappushpop",
+   "kind": "def"
+  },
+  {
+   "name": "heapify",
+   "kind": "def"
+  },
+  {
+   "name": "nsmallest",
+   "kind": "def"
+  },
+  {
+   "name": "nlargest",
+   "kind": "def"
+  }
+ ],
+ "forbid_imports": [
+  "heapq",
+  "_heapq"
+ ],
+ "strip": [
+  "python"
+ ],
+ "timeout_s": 240
+}

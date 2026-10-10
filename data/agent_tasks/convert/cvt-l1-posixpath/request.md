@@ -1,0 +1,3 @@
+Hey — I need the path-string helpers from `python/posixpath_subset.py` available as a Jac module. It's a trimmed copy of CPython's posixpath (only the purely lexical, str-only functions; no filesystem calls). The original CPython tests are in `python/` if you want to see the edge cases.
+
+Please create `pure_paths.jac` with `isabs`, `join` (variadic: `join(a, *p)`), `split`, `splitext`, `splitroot`, `basename`, `dirname`, `normpath`, `commonprefix` and `commonpath`, matching the Python behavior on every edge case (double leading slashes, dotfiles in splitext, `..` handling in normpath, the ValueError cases in commonpath). Implement it in Jac — don't lean on `os.path`/`posixpath`/`pathlib`. It should pass `jac check`.

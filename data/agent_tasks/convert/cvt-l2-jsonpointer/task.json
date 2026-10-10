@@ -1,0 +1,21 @@
+{
+  "id": "cvt-l2-jsonpointer",
+  "kind": "convert",
+  "level": 2,
+  "source": "pypi:jsonpointer==3.2.0",
+  "gates": ["check", "fidelity", "test"],
+  "target_paths": ["json_pointer.jac"],
+  "jac_version": "0.36.1",
+  "license": "BSD-3-Clause (\"Modified BSD License\", see starter/python/LICENSE.txt)",
+  "provenance": {
+    "title": "RFC 6901 JSON Pointer",
+    "domain": "JSON document addressing",
+    "upstream": "https://github.com/stefankoegl/python-json-pointer (sdist jsonpointer-3.2.0)",
+    "upstream_tests": "tests.py in the sdist (copied to starter/python/test_jsonpointer.py)",
+    "hidden_tests": "derived from upstream tests.py + module doctests; dropped: CLI tests, VERBOSE_EXCEPTIONS toggle, subclass-type preservation in join, int-max-str-digits large index cases",
+    "trimmed": false,
+    "api_changes": "VERBOSE_EXCEPTIONS switch and bin/ CLI out of scope (always verbose); `default` parameter is a Jac keyword -> backtick-escaped",
+    "reference": "hand-written idiomatic Jac port (claude), validated by convert_build",
+    "created": "2026-10-10"
+  }
+}

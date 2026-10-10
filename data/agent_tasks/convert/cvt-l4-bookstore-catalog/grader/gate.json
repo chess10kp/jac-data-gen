@@ -1,0 +1,51 @@
+{
+ "api": [
+  {
+   "name": "Author",
+   "kind": "node"
+  },
+  {
+   "name": "Book",
+   "kind": "node"
+  },
+  {
+   "name": "Wrote",
+   "kind": "edge"
+  },
+  {
+   "name": "save_book",
+   "kind": "walker"
+  },
+  {
+   "name": "get_book",
+   "kind": "walker"
+  },
+  {
+   "name": "books_by_author",
+   "kind": "walker"
+  },
+  {
+   "name": "list_authors",
+   "kind": "walker"
+  }
+ ],
+ "forbid_imports": [
+  "beanie",
+  "motor",
+  "pymongo",
+  "odmantic",
+  "mongoengine",
+  "fastapi",
+  "pydantic",
+  "bson",
+  "db",
+  "connectors",
+  "parsers",
+  "langchain_openai"
+ ],
+ "strip": [
+  "python"
+ ],
+ "timeout_s": 300,
+ "ref_mass": 882
+}

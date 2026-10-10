@@ -1,0 +1,1 @@
+{"edits": [{"file": "patch.jac", "old": "        if isinstance(subobj, MutableMapping) and self.ptr.contains(src) {\n            raise JsonPatchConflict(\"Cannot move values into their own children\");\n        }\n", "new": ""}]}

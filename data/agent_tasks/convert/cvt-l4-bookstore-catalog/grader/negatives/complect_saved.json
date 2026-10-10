@@ -1,0 +1,1 @@
+{"edits": [{"file": "catalog.jac", "old": "        if (self.count_in_complect or 1) > 1 {", "new": "        if False {"}]}

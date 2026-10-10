@@ -1,0 +1,1 @@
+{"edits": [{"file": "finance.jac", "old": "return items[offset:offset + limit];", "new": "return items[:limit];"}]}

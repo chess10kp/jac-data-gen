@@ -1,0 +1,1 @@
+{"edits": [{"file": "main.jac", "old": "        del e;\n        report {\"message\": \"Event deleted successfully\"};", "new": "        for x in [here -->[?:Event]] {\n            del x;\n        }\n        report {\"message\": \"Event deleted successfully\"};"}]}

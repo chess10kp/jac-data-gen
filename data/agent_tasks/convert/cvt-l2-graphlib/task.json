@@ -1,0 +1,21 @@
+{
+  "id": "cvt-l2-graphlib",
+  "kind": "convert",
+  "level": 2,
+  "source": "cpython:Lib/graphlib.py@v3.12.7",
+  "gates": ["check", "fidelity", "test"],
+  "target_paths": ["topo_sort.jac"],
+  "jac_version": "0.36.1",
+  "license": "PSF-2.0",
+  "provenance": {
+    "title": "Topological sorter with cycle detection",
+    "domain": "dependency ordering / topological sort",
+    "upstream": "https://github.com/python/cpython/blob/v3.12.7/Lib/graphlib.py",
+    "upstream_tests": "https://github.com/python/cpython/blob/v3.12.7/Lib/test/test_graphlib.py",
+    "hidden_tests": "derived from upstream tests (all cases except hashability TypeError and hash-seed subprocess; seed test replaced by fixed expected order) + partial-progress-after-cycle + already-done error",
+    "trimmed": false,
+    "api_changes": "constructor graph argument becomes the keyword field `deps` (`graph` and `node` are Jac keywords); static_order may return a list",
+    "reference": "hand-written idiomatic Jac port (claude), validated by convert_build",
+    "created": "2026-10-10"
+  }
+}

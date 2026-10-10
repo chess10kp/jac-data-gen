@@ -1,0 +1,86 @@
+{
+ "api": [
+  {
+   "name": "User",
+   "kind": "node"
+  },
+  {
+   "name": "Category",
+   "kind": "node"
+  },
+  {
+   "name": "Account",
+   "kind": "node"
+  },
+  {
+   "name": "HasCategory",
+   "kind": "edge"
+  },
+  {
+   "name": "Owns",
+   "kind": "edge"
+  },
+  {
+   "name": "create_user",
+   "kind": "walker"
+  },
+  {
+   "name": "create_category",
+   "kind": "walker"
+  },
+  {
+   "name": "get_categories",
+   "kind": "walker"
+  },
+  {
+   "name": "get_category",
+   "kind": "walker"
+  },
+  {
+   "name": "update_category",
+   "kind": "walker"
+  },
+  {
+   "name": "delete_category",
+   "kind": "walker"
+  },
+  {
+   "name": "create_account",
+   "kind": "walker"
+  },
+  {
+   "name": "get_accounts",
+   "kind": "walker"
+  },
+  {
+   "name": "get_account",
+   "kind": "walker"
+  },
+  {
+   "name": "update_account",
+   "kind": "walker"
+  },
+  {
+   "name": "delete_account",
+   "kind": "walker"
+  }
+ ],
+ "forbid_imports": [
+  "beanie",
+  "motor",
+  "pymongo",
+  "odmantic",
+  "mongoengine",
+  "fastapi",
+  "pydantic",
+  "bson",
+  "models",
+  "endpoints",
+  "database"
+ ],
+ "strip": [
+  "python"
+ ],
+ "timeout_s": 300,
+ "ref_mass": 1341
+}

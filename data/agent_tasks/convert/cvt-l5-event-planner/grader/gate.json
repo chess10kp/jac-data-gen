@@ -1,0 +1,57 @@
+{
+ "api": [
+  {
+   "name": "User",
+   "kind": "node"
+  },
+  {
+   "name": "Event",
+   "kind": "node"
+  },
+  {
+   "name": "sign_new_user",
+   "kind": "walker"
+  },
+  {
+   "name": "get_all_events",
+   "kind": "walker"
+  },
+  {
+   "name": "get_event_by_id",
+   "kind": "walker"
+  },
+  {
+   "name": "create_event",
+   "kind": "walker"
+  },
+  {
+   "name": "update_event",
+   "kind": "walker"
+  },
+  {
+   "name": "delete_event",
+   "kind": "walker"
+  },
+  {
+   "name": "delete_all_events",
+   "kind": "walker"
+  }
+ ],
+ "forbid_imports": [
+  "fastapi",
+  "beanie",
+  "motor",
+  "pymongo",
+  "odmantic",
+  "models",
+  "routes",
+  "database",
+  "auth"
+ ],
+ "strip": [
+  "python"
+ ],
+ "timeout_s": 300,
+ "smoke_timeout_s": 600,
+ "ref_mass": 798
+}

@@ -1,0 +1,1 @@
+{"edits": [{"file": "main.jac", "old": "        a = find_attr(self.gave_id);", "new": "        a = find_attr(self.user_id);"}]}

@@ -1,0 +1,1 @@
+{"edits": [{"file": "json_pointer.jac", "old": "            doc = copy.deepcopy(doc);", "new": "            doc = doc;"}]}

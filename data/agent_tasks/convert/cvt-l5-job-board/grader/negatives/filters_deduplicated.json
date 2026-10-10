@@ -1,0 +1,1 @@
+{"edits": [{"file": "main.jac", "old": "        report [j.view() for j in found];", "new": "        report [j.view() for j in jobs if j in found];"}]}

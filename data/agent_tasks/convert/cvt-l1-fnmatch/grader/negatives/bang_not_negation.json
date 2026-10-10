@@ -1,0 +1,1 @@
+{"edits": [{"file": "glob_match.jac", "old": "    if stuff[0] == \"!\" {\n        stuff = \"^\" + stuff[1:];\n    } elif", "new": "    if False {\n        stuff = \"^\" + stuff[1:];\n    } elif"}]}

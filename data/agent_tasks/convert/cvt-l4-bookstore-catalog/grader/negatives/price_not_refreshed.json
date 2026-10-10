@@ -1,0 +1,1 @@
+{"edits": [{"file": "catalog.jac", "old": "        book.price = self.price;", "new": "        book.price = book.price if book.price is not None else self.price;"}]}

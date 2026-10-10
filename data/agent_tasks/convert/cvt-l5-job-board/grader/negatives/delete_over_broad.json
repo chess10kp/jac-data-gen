@@ -1,0 +1,1 @@
+{"edits": [{"file": "main.jac", "old": "        del j;\n", "new": "        for x in all_jobs() {\n            if x.location == j.location {\n                del x;\n            }\n        }\n"}]}

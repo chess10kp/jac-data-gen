@@ -1,0 +1,44 @@
+{
+  "id": "cvt-l4-book-rentals",
+  "kind": "convert",
+  "level": 4,
+  "source": "github:FelipeFlamarini/DdAD-books@a45daabb7cb8ba3d8c7d34f28f1c144a96f0d1d7",
+  "gates": [
+    "check",
+    "fidelity",
+    "test"
+  ],
+  "target_paths": [
+    "rentals.jac"
+  ],
+  "jac_version": "0.36.1",
+  "license": "MIT",
+  "provenance": {
+    "title": "Library book rentals",
+    "domain": "book rental service (FARM: FastAPI + Beanie, repository/service layers)",
+    "upstream": "https://github.com/FelipeFlamarini/DdAD-books",
+    "commit": "a45daabb7cb8ba3d8c7d34f28f1c144a96f0d1d7",
+    "starter_files": [
+      "src/api/models/__init__.py",
+      "src/api/models/Book.py",
+      "src/api/models/Person.py",
+      "src/api/models/BookRental.py",
+      "src/api/modules/Book/BookDtos.py",
+      "src/api/modules/Book/BookRepository.py",
+      "src/api/modules/Book/BookService.py",
+      "src/api/modules/Person/PersonDtos.py",
+      "src/api/modules/Person/PersonRepository.py",
+      "src/api/modules/Person/PersonService.py",
+      "src/api/modules/BookRental/BookRentalDtos.py",
+      "src/api/modules/BookRental/BookRentalRepository.py",
+      "src/api/modules/BookRental/BookRentalService.py",
+      "src/api/modules/BookRental/BookRentalRouter.py",
+      "src/core/exceptions.py"
+    ],
+    "trimmed": "kept models, DTOs, repositories, services, rental router and exceptions; dropped auth/security, email + RabbitMQ workers, app wiring (the notification queue becomes reported messages)",
+    "mapping": "BookModel/PersonModel/BookRentalModel -> Book/Person/Rental nodes; book_id/person_id string FKs -> edges Person -[Rents]-> Rental -[RentalOf]-> Book; repository+service methods -> walkers; NotFound/Conflict exceptions -> reported {status, detail}; RabbitMQ overdue messages -> reported list",
+    "hidden_tests": "no upstream tests; hidden tests cover copy accounting (create/return), 404/409 paths, detail join, and the overdue sweep, uuid-tagged",
+    "reference": "hand-written idiomatic Jac port (claude), validated by convert_build",
+    "created": "2026-10-10"
+  }
+}

@@ -1,0 +1,1 @@
+{"edits": [{"file": "pure_paths.jac", "old": "    if head and head != SEP * len(head) {", "new": "    if head {"}]}

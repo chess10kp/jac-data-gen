@@ -1,0 +1,1 @@
+{"edits": [{"file": "catalog.jac", "old": "            if old != author {", "new": "            if False {"}]}

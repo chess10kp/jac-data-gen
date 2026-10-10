@@ -1,0 +1,1 @@
+{"edits": [{"file": "heap_queue.jac", "old": "        return [min(iterable, key=key)];", "new": "        return [max(iterable, key=key)];"}]}

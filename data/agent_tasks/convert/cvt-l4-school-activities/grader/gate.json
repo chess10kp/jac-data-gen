@@ -1,0 +1,64 @@
+{
+ "api": [
+  {
+   "name": "Club",
+   "kind": "node"
+  },
+  {
+   "name": "Event",
+   "kind": "node"
+  },
+  {
+   "name": "Registration",
+   "kind": "node"
+  },
+  {
+   "name": "Hosts",
+   "kind": "edge"
+  },
+  {
+   "name": "HasRegistration",
+   "kind": "edge"
+  },
+  {
+   "name": "create_club",
+   "kind": "walker"
+  },
+  {
+   "name": "create_event",
+   "kind": "walker"
+  },
+  {
+   "name": "approve_event",
+   "kind": "walker"
+  },
+  {
+   "name": "get_activities",
+   "kind": "walker"
+  },
+  {
+   "name": "signup_for_activity",
+   "kind": "walker"
+  },
+  {
+   "name": "unregister_from_activity",
+   "kind": "walker"
+  }
+ ],
+ "forbid_imports": [
+  "beanie",
+  "motor",
+  "pymongo",
+  "odmantic",
+  "mongoengine",
+  "fastapi",
+  "pydantic",
+  "bson",
+  "src"
+ ],
+ "strip": [
+  "python"
+ ],
+ "timeout_s": 300,
+ "ref_mass": 966
+}

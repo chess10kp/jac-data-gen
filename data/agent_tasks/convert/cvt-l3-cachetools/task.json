@@ -1,0 +1,21 @@
+{
+  "id": "cvt-l3-cachetools",
+  "kind": "convert",
+  "level": 3,
+  "source": "pypi:cachetools==7.2.1",
+  "gates": ["check", "fidelity", "test"],
+  "target_paths": ["basecache.jac", "policies.jac", "ttl.jac", "cachekeys.jac"],
+  "jac_version": "0.36.1",
+  "license": "MIT",
+  "provenance": {
+    "title": "Memoizing cache collections (FIFO/LRU/LFU/TTL)",
+    "domain": "in-memory caching data structures",
+    "upstream": "https://github.com/tkem/cachetools (v7.2.1, PyPI sdist)",
+    "upstream_tests": "not shipped in the sdist (tests/ only has __init__.py)",
+    "hidden_tests": "written against upstream semantics (mapping protocol, getsizeof, eviction order per policy, TTL expiry with injected timer, key functions); every expected value cross-checked by running upstream cachetools 7.2.1",
+    "trimmed": true,
+    "trimmed_detail": "removed RRCache, TLRUCache, cached/cachedmethod decorators (_cached.py, _cachedmethod.py, func.py); kept Cache, FIFOCache, LFUCache, LRUCache, TTLCache and keys.py. LFU tie-breaking (arbitrary upstream) is not tested.",
+    "reference": "hand-written idiomatic Jac port (claude): Cache as obj(MutableMapping), policies as obj subclasses with super calls, read-only currsize property",
+    "created": "2026-10-10"
+  }
+}

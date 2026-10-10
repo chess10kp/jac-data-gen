@@ -1,0 +1,21 @@
+{
+  "id": "cvt-l2-normal-dist",
+  "kind": "convert",
+  "level": 2,
+  "source": "cpython:Lib/statistics.py@v3.12.7 (NormalDist)",
+  "gates": ["check", "fidelity", "test"],
+  "target_paths": ["normal_dist.jac"],
+  "jac_version": "0.36.1",
+  "license": "PSF-2.0",
+  "provenance": {
+    "title": "Normal distribution object",
+    "domain": "probability distributions (pdf/cdf/inverse cdf/overlap)",
+    "upstream": "https://github.com/python/cpython/blob/v3.12.7/Lib/statistics.py",
+    "upstream_tests": "https://github.com/python/cpython/blob/v3.12.7/Lib/test/test_statistics.py (TestNormalDist)",
+    "hidden_tests": "derived from upstream TestNormalDist (inv_cdf grid reduced 2**20 -> 2**12; subclass/slots/samples/copy/pickle cases dropped)",
+    "trimmed": true,
+    "trimmed_detail": "starter keeps only NormalDist + _normal_dist_inv_cdf + StatisticsError from statistics.py; samples(), pickling hooks and the C accelerator import removed; _mean_stdev replaced by a simplified float-only helper; starter test file adapted accordingly",
+    "reference": "hand-written idiomatic Jac port (claude), validated by convert_build",
+    "created": "2026-10-10"
+  }
+}

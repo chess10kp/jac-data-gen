@@ -1,0 +1,1 @@
+{"edits": [{"file": "main.jac", "old": "        if e.creator != self.user {\n            report {\"error\": \"Operation not allowed\"};\n            return;\n        }\n        del e;", "new": "        del e;"}]}

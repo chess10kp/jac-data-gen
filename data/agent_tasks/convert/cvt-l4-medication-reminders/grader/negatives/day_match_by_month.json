@@ -1,0 +1,1 @@
+{"edits": [{"file": "reminders.jac", "old": "                    if n.sent_at[:10] == self.day {", "new": "                    if n.sent_at[:7] == self.day[:7] {"}]}

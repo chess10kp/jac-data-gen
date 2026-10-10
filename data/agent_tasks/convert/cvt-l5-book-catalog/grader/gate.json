@@ -1,0 +1,52 @@
+{
+ "api": [
+  {
+   "name": "Book",
+   "kind": "node"
+  },
+  {
+   "name": "health",
+   "kind": "walker"
+  },
+  {
+   "name": "create_book",
+   "kind": "walker"
+  },
+  {
+   "name": "list_books",
+   "kind": "walker"
+  },
+  {
+   "name": "get_book",
+   "kind": "walker"
+  },
+  {
+   "name": "update_book",
+   "kind": "walker"
+  },
+  {
+   "name": "delete_book",
+   "kind": "walker"
+  },
+  {
+   "name": "genre_stats",
+   "kind": "walker"
+  }
+ ],
+ "forbid_imports": [
+  "fastapi",
+  "beanie",
+  "motor",
+  "pymongo",
+  "odmantic",
+  "app",
+  "db",
+  "models"
+ ],
+ "strip": [
+  "python"
+ ],
+ "timeout_s": 300,
+ "smoke_timeout_s": 600,
+ "ref_mass": 1028
+}

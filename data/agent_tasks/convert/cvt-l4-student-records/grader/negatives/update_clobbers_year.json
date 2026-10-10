@@ -1,0 +1,1 @@
+{"edits": [{"file": "students.jac", "old": "        if self.year is not None {\n            s.year = self.year;\n        }", "new": "        s.year = self.year or 0;"}]}

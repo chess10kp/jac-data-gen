@@ -1,0 +1,1 @@
+{"edits": [{"file": "main.jac", "old": "if self.rating is not None { b.rating = self.rating; changed = True; }", "new": "if self.rating is not None { changed = True; }"}]}

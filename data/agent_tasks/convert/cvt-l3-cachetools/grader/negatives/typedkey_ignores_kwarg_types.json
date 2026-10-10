@@ -1,0 +1,1 @@
+{"edits": [{"file": "cachekeys.jac", "old": "        key = key + tuple([type(v) for (_, v) in sorted(kwargs.items(), key=operator.itemgetter(0))]);", "new": "        key = key + ();"}]}

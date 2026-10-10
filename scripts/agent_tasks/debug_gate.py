@@ -36,6 +36,46 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import fix_gate  # noqa: E402  (compiler-backed inventory + code mass)
 import native_validate as nv  # noqa: E402  (check/test/run/start primitives)
 
+def _run_killpg(cmd: list[str], cwd: Path, timeout: float, stdout_only: bool = False) -> tuple[int, str]:
+    """subprocess.run(timeout=) kills only the direct child and then blocks forever
+    on the pipes if a grandchild (jac's embedded postgres / test workers) keeps them
+    open - seen as 20+ minute CI hangs. Run in a new session, log to a file, and
+    kill the whole process group on timeout."""
+    import os
+    import signal
+    import subprocess
+    with tempfile.TemporaryFile(mode="w+") as log:
+        p = subprocess.Popen(cmd, cwd=cwd, stdin=subprocess.DEVNULL, stdout=log,
+                             stderr=subprocess.DEVNULL if stdout_only else subprocess.STDOUT,
+                             text=True, start_new_session=True)
+        try:
+            rc = p.wait(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            rc = 124
+        finally:
+            try:
+                os.killpg(p.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+        log.seek(0)
+        out = log.read()
+    return rc, (out if rc != 124 else f"TIMEOUT after {timeout}s\n{out}")
+
+
+nv._run = _run_killpg  # native_validate.Task gates resolve _run at call time
+
+
+def _jac_json_killpg(ws: Path, *args: str, timeout: int = 180) -> dict:
+    rc, out = _run_killpg([fix_gate.JAC, "code", *args], ws, timeout, stdout_only=True)
+    i = out.find("{")
+    try:
+        return json.loads(out[i:]) if i >= 0 else {}
+    except Exception:
+        return {}
+
+
+fix_gate._jac_json = _jac_json_killpg
+
 T_SYM = 0.95        # every archetype/ability/def the reference has must survive (~)
 T_MASS = 0.85       # target files keep >=85% of the reference's code tokens
 T_MASS_FILE = 0.75  # and no single target file drops below 75%

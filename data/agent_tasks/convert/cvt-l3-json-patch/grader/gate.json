@@ -1,0 +1,93 @@
+{
+ "api": [
+  {
+   "name": "JsonPointer",
+   "kind": "obj"
+  },
+  {
+   "name": "JsonPointerException",
+   "kind": "obj"
+  },
+  {
+   "name": "EndOfList",
+   "kind": "obj"
+  },
+  {
+   "name": "JsonPointer.resolve",
+   "kind": "ability"
+  },
+  {
+   "name": "JsonPointer.set",
+   "kind": "ability"
+  },
+  {
+   "name": "JsonPointer.contains",
+   "kind": "ability"
+  },
+  {
+   "name": "JsonPointer.join",
+   "kind": "ability"
+  },
+  {
+   "name": "JsonPointer.from_parts",
+   "kind": "ability"
+  },
+  {
+   "name": "JsonPointer.get_parts",
+   "kind": "ability"
+  },
+  {
+   "name": "resolve_pointer",
+   "kind": "def"
+  },
+  {
+   "name": "set_pointer",
+   "kind": "def"
+  },
+  {
+   "name": "escape",
+   "kind": "def"
+  },
+  {
+   "name": "unescape",
+   "kind": "def"
+  },
+  {
+   "name": "JsonPatch",
+   "kind": "obj"
+  },
+  {
+   "name": "JsonPatch.apply",
+   "kind": "ability"
+  },
+  {
+   "name": "JsonPatchException",
+   "kind": "obj"
+  },
+  {
+   "name": "InvalidJsonPatch",
+   "kind": "obj"
+  },
+  {
+   "name": "JsonPatchConflict",
+   "kind": "obj"
+  },
+  {
+   "name": "JsonPatchTestFailed",
+   "kind": "obj"
+  },
+  {
+   "name": "apply_patch",
+   "kind": "def"
+  }
+ ],
+ "forbid_imports": [
+  "jsonpatch",
+  "jsonpointer"
+ ],
+ "strip": [
+  "python"
+ ],
+ "timeout_s": 300,
+ "ref_mass": 2750
+}
