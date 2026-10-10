@@ -1,0 +1,1 @@
+{"why": "older sighting overwrites the latest day", "edits": [{"file": "tally.jac", "old": "links[0].last_day = max(links[0].last_day, day);", "new": "links[0].last_day = day;"}]}

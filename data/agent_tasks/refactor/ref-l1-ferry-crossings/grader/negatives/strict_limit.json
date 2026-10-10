@@ -1,0 +1,1 @@
+{"why": "hop limit treated as exclusive", "edits": [{"file": "ferries.jac", "old": "[a ->:Crossing:minutes <= limit:->]", "new": "[a ->:Crossing:minutes < limit:->]"}]}

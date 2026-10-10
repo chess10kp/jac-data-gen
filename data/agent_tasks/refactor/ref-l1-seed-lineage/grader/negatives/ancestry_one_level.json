@@ -1,0 +1,1 @@
+{"why": "ancestry stops after the first parent", "edits": [{"file": "lineage.jac", "old": "            chain.append(lot.accession);\n", "new": "            chain.append(lot.accession);\n            lot = None;\n"}]}

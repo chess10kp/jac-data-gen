@@ -1,0 +1,1 @@
+{"why": "a stay ending the night before counts as overlapping", "edits": [{"file": "models.impl.jac", "old": "return self.start < start + nights and start < self.start + self.nights;", "new": "return self.start <= start + nights and start <= self.start + self.nights;"}]}

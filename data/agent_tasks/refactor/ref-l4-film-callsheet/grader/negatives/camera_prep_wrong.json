@@ -1,0 +1,1 @@
+{"why": "camera prep shortened", "edits": [{"file": "callsheet.impl.jac", "old": "            return 60;", "new": "            return 45;"}]}

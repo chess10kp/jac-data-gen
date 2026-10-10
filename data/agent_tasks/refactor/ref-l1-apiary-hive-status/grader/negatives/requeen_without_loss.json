@@ -1,0 +1,1 @@
+{"why": "requeened hives can no longer be marked queenless", "edits": [{"file": "hives.jac", "old": "return self.status in [HiveStatus.ACTIVE, HiveStatus.REQUEENED];", "new": "return self.status == HiveStatus.ACTIVE;"}]}

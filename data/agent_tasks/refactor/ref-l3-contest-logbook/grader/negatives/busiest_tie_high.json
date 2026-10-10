@@ -1,0 +1,1 @@
+{"why": "zone ties go to the higher zone", "edits": [{"file": "logbook.jac", "old": "zones.count(z) > zones.count(best)", "new": "zones.count(z) >= zones.count(best)"}]}

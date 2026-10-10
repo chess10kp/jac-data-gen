@@ -1,0 +1,1 @@
+{"why": "keeps the latest call instead of the earliest", "edits": [{"file": "callsheet.impl.jac", "old": "t < self.best[c.name]", "new": "t > self.best[c.name]"}]}

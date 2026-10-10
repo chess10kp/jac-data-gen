@@ -1,0 +1,1 @@
+{"why": "average divides by number of scores, not judges", "edits": [{"file": "models.impl.jac", "old": "    return round(total / len(judges), 2);", "new": "    return round(total / len([edge self <-:Scored:<-]), 2);"}]}

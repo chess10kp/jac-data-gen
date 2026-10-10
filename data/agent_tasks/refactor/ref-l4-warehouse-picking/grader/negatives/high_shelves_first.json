@@ -1,0 +1,1 @@
+{"why": "shelf levels walked top-down", "edits": [{"file": "warehouse.impl.jac", "old": "sorted(set([h.level for h in [edge a ->:Holds:->]]))", "new": "sorted(set([h.level for h in [edge a ->:Holds:->]]), reverse=True)"}]}

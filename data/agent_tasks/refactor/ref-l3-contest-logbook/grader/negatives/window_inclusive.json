@@ -1,0 +1,1 @@
+{"why": "time window includes its end minute", "edits": [{"file": "logbook.jac", "old": "if start <= m and m < end]", "new": "if start <= m and m <= end]"}]}

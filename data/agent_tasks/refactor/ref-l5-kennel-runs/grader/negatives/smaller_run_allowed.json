@@ -1,0 +1,1 @@
+{"why": "free_runs counts runs smaller than requested", "edits": [{"file": "desk.impl.jac", "old": "if r.rank() >= need and r.free_for(start, nights)]", "new": "if r.free_for(start, nights)]"}]}

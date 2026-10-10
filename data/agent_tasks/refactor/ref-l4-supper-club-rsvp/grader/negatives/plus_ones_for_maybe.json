@@ -1,0 +1,1 @@
+{"why": "maybe answers are treated as yes", "edits": [{"file": "rsvp.impl.jac", "old": "            if r.answer == Answer.YES {", "new": "            if r.answer != Answer.NO {"}]}

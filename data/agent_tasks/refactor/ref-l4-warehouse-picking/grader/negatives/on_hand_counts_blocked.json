@@ -1,0 +1,1 @@
+{"why": "blocked stock counted as on hand", "edits": [{"file": "warehouse.impl.jac", "old": "        if b.state == BinState.OPEN {\n            self.total += b.qty;", "new": "        if b.qty > 0 {\n            self.total += b.qty;"}]}

@@ -1,0 +1,1 @@
+{"why": "EV drivers do not fall back to standard spots", "edits": [{"file": "garage.impl.jac", "old": "    if spot is None {\n        spot = (root spawn SpotFinder(kind=SpotKind.STANDARD)).best;\n    }", "new": "    if spot is None and not wants_ev {\n        spot = (root spawn SpotFinder(kind=SpotKind.STANDARD)).best;\n    }"}]}

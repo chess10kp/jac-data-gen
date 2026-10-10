@@ -1,0 +1,3 @@
+`loans.jac` keeps the whole loan register as nested dicts inside one `Register` node (found with an `isinstance` scan), and `on_display` / `lenders_to` crawl every museum's dicts to find incoming loans. Please model it as a graph: museums and artworks as nodes, ownership as an edge from museum to artwork, and each loan as a typed edge from the artwork to the borrowing museum that carries the start and end year. The year checks (overlapping loans, what is on the wall in a given year) should become edge filters rather than loops over loan dicts.
+
+`add_museum`, `acquire`, `lend`, `on_display` and `lenders_to` keep their names, arguments and results exactly — the collections team scripts against them.

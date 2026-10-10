@@ -1,0 +1,1 @@
+{"why": "fee rounds down to whole hours", "edits": [{"file": "models.impl.jac", "old": "return 200 * ((minutes + 59) // 60);", "new": "return 200 * (minutes // 60);"}]}

@@ -1,0 +1,1 @@
+{"why": "round filter excludes the boundary round", "edits": [{"file": "ladder.impl.jac", "old": "if [here ->:Played:round >= since:->] or [here <-:Played:round >= since:<-] {", "new": "if [here ->:Played:round > since:->] or [here <-:Played:round > since:<-] {"}]}

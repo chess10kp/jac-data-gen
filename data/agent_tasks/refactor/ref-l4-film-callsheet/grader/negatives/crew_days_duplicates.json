@@ -1,0 +1,1 @@
+{"why": "a day with two scenes is listed twice", "edits": [{"file": "callsheet.impl.jac", "old": "        if d.day not in self.days {\n            self.days.append(d.day);\n        }", "new": "        self.days.append(d.day);"}]}

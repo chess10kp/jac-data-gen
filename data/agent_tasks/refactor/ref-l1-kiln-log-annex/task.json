@@ -1,0 +1,16 @@
+{
+  "id": "ref-l1-kiln-log-annex",
+  "kind": "refactor",
+  "level": 1,
+  "source": "hand-authored (de-idiomized starter)",
+  "gates": ["check", "test"],
+  "target_paths": ["kiln_log.jac", "kiln_log.impl.jac"],
+  "jac_version": "0.36.1",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "provenance": {"author": "claude (refactor author, l1 batch)", "created": "2026-10-10", "title": "Kiln log annex split", "domain": "ceramics kiln log", "smell": ["monolithic module mixing interface and implementation"], "idioms": ["declaration/implementation split", ".impl.jac annex"], "inspiration": "data/agent_tasks/native/nat-l1-kiln-cone-yield"},
+  "idiom_gate": "scripts/agent_tasks/refactor_gate.py",
+  "idiom_targets": [
+    {"metric": "annex_impls", "op": ">=", "value": 5, "desc": ">=5 impl blocks living in a .impl.jac annex"},
+    {"metric": "modules", "op": "==", "value": 1, "desc": "still a single module (kiln_log) plus its annex"}
+  ]
+}

@@ -1,0 +1,1 @@
+{"why": "weak queenright hives are no longer flagged", "edits": [{"file": "hives.jac", "old": "(h.has_queen() and h.brood_frames < 3)", "new": "(h.has_queen() and h.brood_frames < 0)"}]}

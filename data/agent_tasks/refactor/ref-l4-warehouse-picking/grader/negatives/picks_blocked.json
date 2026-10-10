@@ -1,0 +1,1 @@
+{"why": "blocked bins are still picked from", "edits": [{"file": "warehouse.impl.jac", "old": "if need > 0 and b.qty > 0 and b.state == BinState.OPEN {", "new": "if need > 0 and b.qty > 0 {"}]}

@@ -1,0 +1,1 @@
+{"why": "members may borrow one tool over the limit", "edits": [{"file": "shed.jac", "old": "if len([m ->:Lent:->]) >= self.limit {", "new": "if len([m ->:Lent:->]) > self.limit {"}]}

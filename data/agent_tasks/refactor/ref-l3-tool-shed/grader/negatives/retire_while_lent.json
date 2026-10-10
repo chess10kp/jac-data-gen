@@ -1,0 +1,1 @@
+{"why": "tools out on loan can be retired", "edits": [{"file": "shed.jac", "old": "if t is None or self.holder(t) is not None or t.condition == Condition.RETIRED {", "new": "if t is None or t.condition == Condition.RETIRED {"}]}

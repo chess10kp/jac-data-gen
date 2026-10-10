@@ -50,8 +50,25 @@ _PASSED = re.compile(r"\b([1-9]\d*) passed")
 _FAILED = re.compile(r"\b[1-9]\d* (failed|errors?)\b")
 
 
-def suite_passes(rc: int, out: str) -> bool:
-    return rc == 0 and _PASSED.search(out) is not None and _FAILED.search(out) is None
+_SKIPPED = re.compile(r"\b[1-9]\d* skipped\b")
+_TEST_DECL = re.compile(r'(?m)^\s*test\s+"')
+
+
+def expected_tests(path: Path) -> int:
+    from testgen_mutants import mask
+    src = path.read_text()
+    # count `test "..."` blocks outside comments (strings are masked, so match on raw at same offsets)
+    m = mask(src)
+    return sum(1 for x in _TEST_DECL.finditer(src) if m[x.start():x.end()].strip().startswith("test"))
+
+
+def suite_passes(rc: int, out: str, expected: int | None = None) -> bool:
+    """jac 0.37.25 `jac test` exits 0 with "1 skipped" when the target import
+    fails, so demand an all-passed summary with the expected test count."""
+    m = _PASSED.search(out)
+    if rc != 0 or m is None or _FAILED.search(out) or _SKIPPED.search(out):
+        return False
+    return expected is None or int(m.group(1)) == expected
 
 
 class TaskSpec:
@@ -105,7 +122,7 @@ def run_suite(spec: TaskSpec, suite_dir: Path, jac: str, mutant: dict | None) ->
                 return False, f"missing test file {t}"
             rc, out = _run([jac, "test", t], wd)
             outs.append(out[-1200:])
-            if not suite_passes(rc, out):
+            if not suite_passes(rc, out, expected_tests(wd / t)):
                 return False, "\n".join(outs)
         return True, "\n".join(outs)
 

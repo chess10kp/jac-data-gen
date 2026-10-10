@@ -1,0 +1,1 @@
+{"why": "label prints the enum member name instead of its value", "edits": [{"file": "hives.jac", "old": "{hive.status.value}", "new": "{hive.status.name}"}]}

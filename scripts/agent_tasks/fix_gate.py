@@ -162,7 +162,11 @@ def run_tests(ws: Path, test_file: str = "tests.jac", timeout: int = 300) -> dic
         txt = p.stdout + p.stderr
         m = re.findall(r"(\d+) passed", txt)
         f = re.findall(r"(\d+) failed", txt)
-        ok = p.returncode == 0 and bool(m) and not any(int(x) for x in f)
+        want = len(re.findall(r'^\s*test\s+"', (ws / test_file).read_text(errors="replace"), re.M))
+        # an unimportable target can report "1 skipped" and exit 0 (seen on 0.37.25) --
+        # require every declared test to have passed.
+        ok = (p.returncode == 0 and bool(m) and not any(int(x) for x in f)
+              and sum(int(x) for x in m) >= max(1, want))
         tail = [l for l in txt.strip().splitlines() if "passed" in l or "failed" in l or "Error" in l]
         res = {"ok": ok, "detail": (tail[-1] if tail else txt[-200:])[:200]}
         if ok:

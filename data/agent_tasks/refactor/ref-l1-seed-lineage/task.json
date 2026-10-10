@@ -1,0 +1,17 @@
+{
+  "id": "ref-l1-seed-lineage",
+  "kind": "refactor",
+  "level": 1,
+  "source": "hand-authored (de-idiomized starter)",
+  "gates": ["check", "test"],
+  "target_paths": ["lineage.jac"],
+  "jac_version": "0.36.1",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "provenance": {"author": "claude (refactor author, l1 batch)", "created": "2026-10-10", "title": "Seed lot lineage", "domain": "seed bank lineage", "smell": ["node field holding list of other nodes' names"], "idioms": ["edges between nodes", "typed edge", "incoming edge refs"], "inspiration": "data/agent_tasks/native/nat-l1-seed-vault-regrow"},
+  "idiom_gate": "scripts/agent_tasks/refactor_gate.py",
+  "idiom_targets": [
+    {"metric": "field:SeedLot.regrown_into", "op": "==", "value": "", "desc": "SeedLot no longer stores a list of child names"},
+    {"metric": "connects", "op": ">=", "value": 2, "desc": ">=2 connect operations (root link + parent->child link)"},
+    {"metric": "edge_filters", "op": ">=", "value": 3, "desc": ">=3 typed edge refs/filters (lookup + lineage hops)"}
+  ]
+}

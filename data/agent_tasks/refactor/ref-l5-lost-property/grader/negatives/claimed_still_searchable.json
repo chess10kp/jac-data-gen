@@ -1,0 +1,1 @@
+{"why": "claimed items still show up in search", "edits": [{"file": "sweeps.impl.jac", "old": "    if not here.is_claimed() and here.matches(self.category, self.color, self.since_day) {", "new": "    if here.matches(self.category, self.color, self.since_day) {"}]}

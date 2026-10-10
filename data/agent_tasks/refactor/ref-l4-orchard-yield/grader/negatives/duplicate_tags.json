@@ -1,0 +1,1 @@
+{"why": "tags not checked for uniqueness", "edits": [{"file": "orchard.impl.jac", "old": "    if (self spawn Locate(tag=tag)).found is not None or self.tree_at(block, row, slot) != \"\" {", "new": "    if self.tree_at(block, row, slot) != \"\" {"}]}

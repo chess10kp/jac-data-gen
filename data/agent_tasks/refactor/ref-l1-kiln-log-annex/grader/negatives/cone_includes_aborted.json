@@ -1,0 +1,1 @@
+{"why": "aborted firings are pooled into the cone yield", "edits": [{"file": "kiln_log.impl.jac", "old": "if f.cone == cone and not f.aborted]", "new": "if f.cone == cone]"}]}

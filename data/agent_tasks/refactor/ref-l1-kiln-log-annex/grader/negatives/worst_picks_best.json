@@ -1,0 +1,1 @@
+{"why": "worst batch picks the best yield instead", "edits": [{"file": "kiln_log.impl.jac", "old": "worst_pct = 101;\n    for f in firings {\n        if not f.aborted and f.pieces > 0 and f.yield_pct() < worst_pct {", "new": "worst_pct = -1;\n    for f in firings {\n        if not f.aborted and f.pieces > 0 and f.yield_pct() > worst_pct {"}]}

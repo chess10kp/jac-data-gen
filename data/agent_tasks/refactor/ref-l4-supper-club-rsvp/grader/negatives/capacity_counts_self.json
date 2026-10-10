@@ -1,0 +1,1 @@
+{"why": "a guest's own previous yes counts against the cap when they change it", "edits": [{"file": "rsvp.impl.jac", "old": "        taken = (ev spawn Roster(ignore=key)).seats;", "new": "        taken = (ev spawn Roster()).seats;"}]}

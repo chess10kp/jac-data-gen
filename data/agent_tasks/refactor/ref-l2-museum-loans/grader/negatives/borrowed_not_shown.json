@@ -1,0 +1,1 @@
+{"why": "borrowed works never appear in the borrower's display", "edits": [{"file": "loans.jac", "old": "    for art in [m <-:LoanedTo:start_year <= y, end_year >= y:<-] {\n        shown.add(art.title);\n    }\n", "new": ""}]}

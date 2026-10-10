@@ -1,0 +1,1 @@
+{"why": "move adds the new sailing but leaves the booking on the old one", "edits": [{"file": "bookings.impl.jac", "old": "    del [edge b <-:Holds:<-];\n", "new": ""}]}

@@ -1,0 +1,20 @@
+{
+  "id": "ref-l2-museum-loans",
+  "kind": "refactor",
+  "level": 2,
+  "source": "hand-authored (de-idiomized starter)",
+  "gates": ["check", "test"],
+  "target_paths": ["loans.jac"],
+  "jac_version": "0.36.1",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "provenance": {"author": "claude (hand-authored)", "created": "2026-10-10", "title": "Museum loan register", "domain": "museum collection loans", "smell": ["nested dict state in one bucket node", "isinstance scan", "loops over loan dicts"], "idioms": ["nodes", "typed edge with fields", "edge predicate filters", "incoming edge traversal"], "inspiration": "data/agent_tasks/native/nat-l2-museum-loans"},
+  "idiom_gate": "scripts/agent_tasks/refactor_gate.py",
+  "idiom_targets": [
+    {"metric": "arch.node", "op": ">=", "value": 2, "desc": ">=2 node types (museum, artwork)"},
+    {"metric": "arch.edge", "op": ">=", "value": 1, "desc": ">=1 typed edge (the loan)"},
+    {"metric": "dict_fields", "op": "==", "value": 0, "desc": "no dict-typed fields on nodes/objs"},
+    {"metric": "isinstance_calls", "op": "==", "value": 0, "desc": "no isinstance type scans"},
+    {"metric": "edge_filters", "op": ">=", "value": 3, "desc": ">=3 edge filters / predicates"},
+    {"metric": "connects", "op": ">=", "value": 2, "desc": ">=2 connect operations"}
+  ]
+}

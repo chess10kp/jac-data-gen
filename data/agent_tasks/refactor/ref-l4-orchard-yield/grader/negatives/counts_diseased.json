@@ -1,0 +1,1 @@
+{"why": "diseased trees still harvested", "edits": [{"file": "orchard.impl.jac", "old": "    if here.sick {\n        return;\n    }", "new": "    if here.sick and here.age < 0 {\n        return;\n    }"}]}

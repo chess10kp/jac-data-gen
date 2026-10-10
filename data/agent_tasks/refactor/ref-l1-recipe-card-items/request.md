@@ -1,0 +1,1 @@
+`recipe_card.jac`: ingredient lines are `dict[str, any]` blobs (`it["qty"]`, `it["unit"]`...). No type checking, and a misspelt key just blows up at runtime. Give the ingredient line its own `obj` type with typed fields and use it everywhere instead of the dicts. `RecipeCard(title=..., servings=...)` and the five functions keep their names, signatures and results.

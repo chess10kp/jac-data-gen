@@ -1,0 +1,3 @@
+The lineage module (`lineage.jac`) tracks which seed lots were regrown from which, but it does it with `SeedLot.regrown_into: list[str]` — a list of accession strings pointing at other nodes. Finding a lot's parent means scanning every lot's list, and nothing stops the names drifting from the real nodes.
+
+We're in a graph language, so let's use the graph: replace the name list with real parent → child edges between the lots (a dedicated edge type is nice so it doesn't get confused with the root connections), and walk those edges for offspring / ancestry / family size. Lots still hang off root as now. Public functions `bank_lot`, `regrow`, `offspring`, `ancestry`, `family_size` keep their names, signatures and outputs.

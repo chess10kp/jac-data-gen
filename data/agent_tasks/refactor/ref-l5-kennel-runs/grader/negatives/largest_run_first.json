@@ -1,0 +1,1 @@
+{"why": "booking prefers the largest fitting run", "edits": [{"file": "rounds.impl.jac", "old": "here.rank() < b.rank() or", "new": "here.rank() > b.rank() or"}]}

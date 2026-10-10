@@ -1,0 +1,1 @@
+{"why": "zones added instead of multiplied", "edits": [{"file": "logbook.jac", "old": "return len(t.zones) * len(distinct);", "new": "return len(t.zones) + len(distinct);"}]}

@@ -1,0 +1,1 @@
+{"why": "judges may score teams outside their tracks", "edits": [{"file": "models.impl.jac", "old": "    return any([tr in mine for tr in [t <-:Entered:<-]]);", "new": "    return len(mine) > 0;"}]}

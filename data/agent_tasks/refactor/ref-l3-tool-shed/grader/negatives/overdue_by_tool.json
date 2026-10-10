@@ -1,0 +1,1 @@
+{"why": "overdue list ordered by tool code instead of due day", "edits": [{"file": "shed.jac", "old": "for (due, code, card) in sorted(w.late)]", "new": "for (due, code, card) in sorted(w.late, key=lambda (r: tuple[int, str, str]) -> str { return r[1]; })]"}]}

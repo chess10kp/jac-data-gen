@@ -1,0 +1,1 @@
+{"why": "lenders_to reports museums the given museum lent to instead", "edits": [{"file": "loans.jac", "old": "    for art in [m <-:LoanedTo:<-] {\n        for owner in [art <-:Owns:<-] {\n            names.add(owner.name);\n        }\n    }", "new": "    for art in [m ->:Owns:->] {\n        for b in [art ->:LoanedTo:->] {\n            names.add(b.name);\n        }\n    }"}]}

@@ -1,0 +1,1 @@
+{"why": "bulb alert needs strictly more than ninety percent", "edits": [{"file": "lighthouses.jac", "old": "l.burn_hours >= 0.9 * l.rated_hours", "new": "l.burn_hours > 0.9 * l.rated_hours"}]}

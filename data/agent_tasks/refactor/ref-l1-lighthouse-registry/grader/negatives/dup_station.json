@@ -1,0 +1,1 @@
+{"why": "duplicate stations accepted", "edits": [{"file": "lighthouses.jac", "old": "    if _lamp(station) is not None {\n        return False;\n    }\n    root ++>", "new": "    root ++>"}]}

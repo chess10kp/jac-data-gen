@@ -1,0 +1,1 @@
+{"why": "repeat sighting replaces the running total", "edits": [{"file": "tally.jac", "old": "links[0].total += count;", "new": "links[0].total = count;"}]}

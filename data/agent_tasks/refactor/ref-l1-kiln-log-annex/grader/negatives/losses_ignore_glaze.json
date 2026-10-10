@@ -1,0 +1,1 @@
+{"why": "glaze faults no longer count as losses", "edits": [{"file": "kiln_log.impl.jac", "old": "return self.cracked + self.glaze_faults;", "new": "return self.cracked;"}]}

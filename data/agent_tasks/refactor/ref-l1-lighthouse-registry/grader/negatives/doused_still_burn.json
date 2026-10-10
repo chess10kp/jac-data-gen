@@ -1,0 +1,1 @@
+{"why": "doused lamps keep accumulating burn time", "edits": [{"file": "lighthouses.jac", "old": "lamps = [root -->[?:Lamp, lit == True]];", "new": "lamps = [root -->[?:Lamp]];"}]}

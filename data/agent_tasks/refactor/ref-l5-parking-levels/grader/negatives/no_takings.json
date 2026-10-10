@@ -1,0 +1,1 @@
+{"why": "fees are not added to the level takings", "edits": [{"file": "garage.impl.jac", "old": "    lv.takings += fee;\n", "new": ""}]}

@@ -1,0 +1,16 @@
+{
+  "id": "ref-l1-recipe-card-items",
+  "kind": "refactor",
+  "level": 1,
+  "source": "hand-authored (de-idiomized starter)",
+  "gates": ["check", "test"],
+  "target_paths": ["recipe_card.jac"],
+  "jac_version": "0.36.1",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "provenance": {"author": "claude (refactor author, l1 batch)", "created": "2026-10-10", "title": "Recipe card ingredient records", "domain": "recipe cards", "smell": ["list of dict records with string keys"], "idioms": ["obj record type", "typed has fields"], "inspiration": "data/agent_tasks/app/app-l1-recipe-scaler"},
+  "idiom_gate": "scripts/agent_tasks/refactor_gate.py",
+  "idiom_targets": [
+    {"metric": "dict_fields", "op": "==", "value": 0, "desc": "no dict-typed fields on objs"},
+    {"metric": "arch.obj", "op": ">=", "value": 2, "desc": ">=2 obj types (card + ingredient record)"}
+  ]
+}

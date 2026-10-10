@@ -1,0 +1,1 @@
+{"why": "players below a withdrawn player keep their rank", "edits": [{"file": "ladder.impl.jac", "old": "        if q.rank > gone {\n            q.rank -= 1;", "new": "        if q.rank > gone and q.rank < 0 {\n            q.rank -= 1;"}]}

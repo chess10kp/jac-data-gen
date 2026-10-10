@@ -1,0 +1,1 @@
+{"why": "duplicate crossings accepted", "edits": [{"file": "ferries.jac", "old": "if a is None or b is None or _crossing(src, dst) is not None {", "new": "if a is None or b is None {"}]}

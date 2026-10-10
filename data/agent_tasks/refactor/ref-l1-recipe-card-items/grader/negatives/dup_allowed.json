@@ -1,0 +1,1 @@
+{"why": "duplicate ingredient names accepted", "edits": [{"file": "recipe_card.jac", "old": "    if card.find(name) is not None {\n        return False;\n    }\n    card.items.append", "new": "    card.items.append"}]}

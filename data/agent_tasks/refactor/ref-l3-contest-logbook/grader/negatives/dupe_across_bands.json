@@ -1,0 +1,1 @@
+{"why": "a station worked on any band counts as a dupe everywhere", "edits": [{"file": "logbook.jac", "old": "if [bl ->:Worked:->[?:Station, call == sign]] {", "new": "if self.station(sign) is not None {"}]}

@@ -1,0 +1,1 @@
+{"why": "walk continues after the order is filled", "edits": [{"file": "warehouse.impl.jac", "old": "    if any([n > 0 for n in self.want.values()]) {", "new": "    if here.number > 0 {"}]}

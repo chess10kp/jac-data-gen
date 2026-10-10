@@ -1,0 +1,1 @@
+{"why": "unknown crossing reports 0 instead of -1", "edits": [{"file": "ferries.jac", "old": "return c.minutes if c is not None else -1;", "new": "return c.minutes if c is not None else 0;"}]}

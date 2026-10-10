@@ -1,0 +1,22 @@
+{
+  "id": "ref-l5-ferry-deck",
+  "kind": "refactor",
+  "level": 5,
+  "source": "hand-authored (de-idiomized starter)",
+  "gates": ["check", "test"],
+  "target_paths": ["main.jac", "models.jac", "models.impl.jac", "sweeps.jac", "sweeps.impl.jac", "bookings.jac", "bookings.impl.jac"],
+  "jac_version": "0.36.1",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "provenance": {"author": "claude (hand-authored)", "created": "2026-10-10", "title": "Ferry deck reservations", "domain": "island ferry booking", "smell": ["Python-style modules", "bucket node with dict state", "isinstance scan", "string vehicle types", "manual loops"], "idioms": ["multi-module project", "facade re-export", "enum", "typed edge with fields", "walkers", "impl annexes"], "inspiration": "data/agent_tasks/native/nat-l5-ferry-booking"},
+  "idiom_gate": "scripts/agent_tasks/refactor_gate.py",
+  "idiom_targets": [
+    {"metric": "modules", "op": ">=", "value": 3, "desc": ">=3 modules (models / walkers or services / facade)"},
+    {"metric": "annex_impls", "op": ">=", "value": 8, "desc": ">=8 impl blocks in .impl.jac annexes"},
+    {"metric": "arch.walker", "op": ">=", "value": 1, "desc": ">=1 walker for the cross-sailing sweeps"},
+    {"metric": "arch.edge", "op": ">=", "value": 1, "desc": ">=1 typed edge"},
+    {"metric": "enums", "op": ">=", "value": 1, "desc": "vehicle type is an enum"},
+    {"metric": "dict_fields", "op": "==", "value": 0, "desc": "no dict-typed fields on nodes/edges/objs"},
+    {"metric": "isinstance_calls", "op": "==", "value": 0, "desc": "no isinstance type scans"},
+    {"metric": "edge_filters", "op": ">=", "value": 2, "desc": ">=2 typed/filtered edge refs"}
+  ]
+}

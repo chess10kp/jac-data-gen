@@ -1,0 +1,1 @@
+{"why": "challenge range widened to four rungs", "edits": [{"file": "ladder.impl.jac", "old": "if gap <= 0 or gap > 3 {", "new": "if gap <= 0 or gap > 4 {"}]}

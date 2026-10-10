@@ -1,0 +1,1 @@
+{"why": "a loan is overdue on its due day", "edits": [{"file": "shed.jac", "old": "loans[0].due_day < self.today", "new": "loans[0].due_day <= self.today"}]}

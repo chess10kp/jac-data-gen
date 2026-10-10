@@ -1,0 +1,1 @@
+{"why": "a team counts as done after two criteria", "edits": [{"file": "rounds.impl.jac", "old": "len(j.sheet_for(here)) < 3", "new": "len(j.sheet_for(here)) < 2"}]}

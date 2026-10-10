@@ -1,0 +1,1 @@
+{"why": "offspring returned in insertion order", "edits": [{"file": "lineage.jac", "old": "return sorted([c.accession for c in [lot ->:RegrownAs:->]]);", "new": "return [c.accession for c in [lot ->:RegrownAs:->]];"}]}

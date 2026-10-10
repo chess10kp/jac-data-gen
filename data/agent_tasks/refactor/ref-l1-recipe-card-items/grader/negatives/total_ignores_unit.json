@@ -1,0 +1,1 @@
+{"why": "totals sum every unit", "edits": [{"file": "recipe_card.jac", "old": "for it in card.items if it.unit == unit], 0.0);", "new": "for it in card.items], 0.0);"}]}

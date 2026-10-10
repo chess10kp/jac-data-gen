@@ -101,7 +101,7 @@ def module_files(wd: Path) -> list[Path]:
         rel = p.relative_to(wd)
         if any(part in ("__jac_gen__", ".jac", "node_modules") for part in rel.parts):
             continue
-        if p.name.endswith(".impl.jac") or ".impl" in rel.parts[:-1] or p.name.endswith(".test.jac"):
+        if p.name.endswith(".impl.jac") or any(x.endswith(".impl") for x in rel.parts[:-1]) or p.name.endswith(".test.jac"):
             continue
         if p.name == TEST_MODULE or p.name.startswith("grader_"):
             continue
@@ -131,7 +131,7 @@ def collect(wd: Path, jac: str = "jac") -> dict[str, Any]:
     m["modules"] = len(mods)
     for f in mods:
         rc, out = _run([jac, "tool", "ir", "ast", str(f.relative_to(wd))], wd)
-        roots = parse_ast(out)
+        roots = parse_ast(out)[:1]  # 0.36.1 prints the dump twice; one Module per file
         if rc != 0 or not roots:
             errors.append(f"ast {f.name}: rc={rc} {out[-300:]}")
             continue
@@ -179,7 +179,7 @@ def collect(wd: Path, jac: str = "jac") -> dict[str, Any]:
                         m["glob_collections"] += 1
     for f in annex_files(wd):
         rc, out = _run([jac, "tool", "ir", "ast", str(f.relative_to(wd))], wd)
-        roots = parse_ast(out)
+        roots = parse_ast(out)[:1]  # 0.36.1 prints the dump twice; one Module per file
         if rc != 0 or not roots:
             errors.append(f"ast {f.name}: rc={rc} {out[-300:]}")
             continue

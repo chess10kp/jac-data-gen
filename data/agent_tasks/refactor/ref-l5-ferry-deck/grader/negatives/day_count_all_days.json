@@ -1,0 +1,1 @@
+{"why": "per-day passenger count ignores the day", "edits": [{"file": "sweeps.impl.jac", "old": "visit [-->[?:Sailing, day == self.day]];", "new": "visit [-->[?:Sailing]];"}]}

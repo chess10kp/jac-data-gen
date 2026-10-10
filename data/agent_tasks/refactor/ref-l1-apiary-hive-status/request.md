@@ -1,0 +1,1 @@
+hey — `hives.jac` keeps colony status as bare strings ("active", "queenless", ...) and I keep seeing `"queenles"` style typos in review. Please turn the status into an enum. Function names/signatures stay put, and `hive_label` must keep printing exactly the same text it does today (the inspection sheets parse it).

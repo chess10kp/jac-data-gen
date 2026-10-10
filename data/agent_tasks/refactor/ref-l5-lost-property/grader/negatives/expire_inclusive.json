@@ -1,0 +1,1 @@
+{"why": "items exactly at the keep window are disposed", "edits": [{"file": "sweeps.impl.jac", "old": "self.today - here.day > self.keep_days", "new": "self.today - here.day >= self.keep_days"}]}

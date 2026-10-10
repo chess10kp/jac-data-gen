@@ -1,0 +1,1 @@
+{"why": "loans that share a boundary year are not treated as overlapping", "edits": [{"file": "loans.jac", "old": "[art ->:LoanedTo:start_year <= e, end_year >= s:->]", "new": "[art ->:LoanedTo:start_year < e, end_year > s:->]"}]}

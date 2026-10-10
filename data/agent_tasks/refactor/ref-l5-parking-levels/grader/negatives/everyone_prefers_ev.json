@@ -1,0 +1,1 @@
+{"why": "non-EV cars are put in EV spots first", "edits": [{"file": "garage.impl.jac", "old": "    if wants_ev {\n        spot =", "new": "    if wants_ev or True {\n        spot ="}]}

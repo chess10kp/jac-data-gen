@@ -1,0 +1,1 @@
+{"why": "maybe answers missing from the agenda", "edits": [{"file": "rsvp.impl.jac", "old": "            if r.answer != Answer.NO {\n                self.lines.append", "new": "            if r.answer == Answer.YES {\n                self.lines.append"}]}

@@ -1,0 +1,1 @@
+{"why": "scale factor inverted", "edits": [{"file": "recipe_card.jac", "old": "factor = servings / card.servings;", "new": "factor = card.servings / servings;"}]}

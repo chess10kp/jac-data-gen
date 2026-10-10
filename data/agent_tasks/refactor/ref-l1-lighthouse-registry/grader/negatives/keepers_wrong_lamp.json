@@ -1,0 +1,1 @@
+{"why": "keepers attached to root instead of their lamp", "edits": [{"file": "lighthouses.jac", "old": "    lamp ++> Keeper(name=name);", "new": "    root ++> Keeper(name=name);"}]}

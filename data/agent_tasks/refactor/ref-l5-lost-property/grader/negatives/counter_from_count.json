@@ -1,0 +1,1 @@
+{"why": "tag number derived from items currently held, so numbers repeat after disposal", "edits": [{"file": "models.impl.jac", "old": "    self.issued += 1;\n    return f\"{self.name}-{self.issued}\";", "new": "    return f\"{self.name}-{len([self ->:Holds:->]) + 1}\";"}]}

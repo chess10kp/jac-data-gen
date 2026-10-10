@@ -1,0 +1,1 @@
+{"why": "check-out clears every stay in runs the dog used", "edits": [{"file": "rounds.impl.jac", "old": "    for s in [here ->:Hosts:->[?:Stay, dog == self.dog]] {\n        del s;", "new": "    if not [here ->:Hosts:->[?:Stay, dog == self.dog]] {\n        return;\n    }\n    for s in [here ->:Hosts:->] {\n        del s;"}]}

@@ -1,0 +1,1 @@
+{"why": "cancel reports success but keeps the booking", "edits": [{"file": "bookings.impl.jac", "old": "    del b;\n", "new": ""}]}

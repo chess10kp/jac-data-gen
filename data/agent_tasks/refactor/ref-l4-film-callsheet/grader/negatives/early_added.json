@@ -1,0 +1,1 @@
+{"why": "extra minutes push the call later instead of earlier", "edits": [{"file": "callsheet.impl.jac", "old": "- prep_minutes(c.dept) - a.early;", "new": "- prep_minutes(c.dept) + a.early;"}]}

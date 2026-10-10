@@ -1,0 +1,1 @@
+{"why": "re-answering adds a second rsvp instead of replacing", "edits": [{"file": "rsvp.impl.jac", "old": "    del [edge g ->:Rsvp:-> ev];\n    g +>:Rsvp(", "new": "    g +>:Rsvp("}]}

@@ -1,0 +1,1 @@
+{"why": "draws also move the challenger up", "edits": [{"file": "ladder.impl.jac", "old": "    if self.outcome == Outcome.WIN {", "new": "    if self.outcome != Outcome.LOSS {"}]}

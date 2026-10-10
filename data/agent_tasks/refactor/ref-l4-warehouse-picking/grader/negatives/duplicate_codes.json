@@ -1,0 +1,1 @@
+{"why": "bin codes not checked for uniqueness", "edits": [{"file": "warehouse.impl.jac", "old": "    if a is None or (self spawn FindBin(code=code)).found is not None {", "new": "    if a is None {"}]}

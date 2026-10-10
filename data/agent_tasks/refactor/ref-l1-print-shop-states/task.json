@@ -5,7 +5,7 @@
   "source": "hand-authored (de-idiomized starter)",
   "gates": ["check", "test"],
   "target_paths": ["print_jobs.jac"],
-  "jac_version": "0.37.25",
+  "jac_version": "0.36.1",
   "license": "original-authored (jac_llm_data agent-task pool)",
   "provenance": {"author": "claude (hand-authored pilot)", "created": "2026-10-10", "title": "Print shop job states", "domain": "print shop job tracking", "smell": ["string-typed state"], "idioms": ["enum"], "inspiration": "none (original)"},
   "idiom_gate": "scripts/agent_tasks/refactor_gate.py",

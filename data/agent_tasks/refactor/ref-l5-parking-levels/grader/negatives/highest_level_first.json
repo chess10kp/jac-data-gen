@@ -1,0 +1,1 @@
+{"why": "fills the highest level first", "edits": [{"file": "patrol.impl.jac", "old": "here.number < self.best_level", "new": "here.number > self.best_level"}]}

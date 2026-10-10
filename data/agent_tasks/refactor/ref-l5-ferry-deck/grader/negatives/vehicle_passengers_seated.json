@@ -1,0 +1,1 @@
+{"why": "vehicle passengers also take seats", "edits": [{"file": "models.impl.jac", "old": "return self.passengers if self.vehicle == Vehicle.FOOT else 0;", "new": "return self.passengers;"}]}

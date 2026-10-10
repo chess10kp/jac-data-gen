@@ -1,0 +1,1 @@
+{"why": "callsigns are not normalised to upper case", "edits": [{"file": "logbook.jac", "old": "        sign = call.upper();\n        bl = self.book(b);", "new": "        sign = call;\n        bl = self.book(b);"}]}

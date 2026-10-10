@@ -1,0 +1,1 @@
+{"why": "transfer also moves claimed items", "edits": [{"file": "office.impl.jac", "old": "    moving = [it for it in [a ->:Holds:->] if not it.is_claimed()];", "new": "    moving = [a ->:Holds:->];"}]}

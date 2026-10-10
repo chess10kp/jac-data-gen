@@ -1,0 +1,1 @@
+{"why": "rescale shares Item objects with the original card", "edits": [{"file": "recipe_card.jac", "old": "items=[Item(name=it.name, qty=it.qty * factor, unit=it.unit) for it in card.items]", "new": "items=[it for it in card.items]"}]}

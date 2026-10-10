@@ -1,0 +1,1 @@
+{"why": "bill reads the run's current price instead of the price locked at booking", "edits": [{"file": "rounds.impl.jac", "old": "        self.total += e.nightly * here.nights;", "new": "        self.total += [here <-:Hosts:<-][0].nightly * here.nights;"}]}

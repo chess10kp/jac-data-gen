@@ -1,4 +1,4 @@
-Could you rework `course.jac` into proper Jac? Right now `Course` is a Python-style class carrying a dict of points and a dict of adjacency lists, and `reachable` is a hand-rolled BFS queue.
+Could you rework `course.jac` into proper Jac? Right now `Course` is a plain obj carrying a dict of points and a dict-of-dicts adjacency table, and `reachable` is a hand-rolled BFS queue.
 
 What I have in mind: `Course` becomes a node that owns its controls, each control is its own node, legs are a typed edge carrying the distance, and the reachability / points sweep is done by a walker instead of the while-loop. Legs are one-way, and keep every course's controls separate from any other course.
 

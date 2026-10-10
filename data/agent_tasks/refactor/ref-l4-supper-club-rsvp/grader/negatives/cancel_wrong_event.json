@@ -1,0 +1,1 @@
+{"why": "cancel drops the guest from every event", "edits": [{"file": "rsvp.impl.jac", "old": "    del [edge g ->:Rsvp:-> ev];\n    return True;", "new": "    del [edge g ->:Rsvp:->];\n    return True;"}]}

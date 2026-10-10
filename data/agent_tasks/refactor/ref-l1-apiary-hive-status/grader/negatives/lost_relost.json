@@ -1,0 +1,1 @@
+{"why": "recording a loss twice reports success", "edits": [{"file": "hives.jac", "old": "    if hive.status != HiveStatus.LOST {\n        hive.status = HiveStatus.LOST;\n        return True;\n    }\n    return False;", "new": "    hive.status = HiveStatus.LOST;\n    return True;"}]}

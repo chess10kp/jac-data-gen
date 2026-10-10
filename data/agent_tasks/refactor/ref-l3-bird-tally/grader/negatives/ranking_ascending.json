@@ -1,0 +1,1 @@
+{"why": "ranking sorts smallest totals first", "edits": [{"file": "tally.jac", "old": "sorted([(-t, n) for (t, n) in _rows(s)])", "new": "sorted([(t, n) for (t, n) in _rows(s)])"}]}

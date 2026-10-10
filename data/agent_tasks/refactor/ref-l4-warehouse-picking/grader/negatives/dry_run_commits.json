@@ -1,0 +1,1 @@
+{"why": "aisles_needed takes stock out", "edits": [{"file": "warehouse.impl.jac", "old": "            if self.commit {", "new": "            if self.commit or need > 0 {"}]}

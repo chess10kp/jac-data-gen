@@ -1,0 +1,1 @@
+{"why": "rescoring a criterion adds a second score instead of replacing", "edits": [{"file": "panel.impl.jac", "old": "    if existing {\n        existing[0].points = points;\n    } else {\n        j +>:Scored(criterion=c, points=points):+> t;\n    }", "new": "    j +>:Scored(criterion=c, points=points):+> t;"}]}

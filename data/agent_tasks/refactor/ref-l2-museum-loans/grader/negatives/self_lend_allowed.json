@@ -1,0 +1,1 @@
+{"why": "a museum may lend a work to itself", "edits": [{"file": "loans.jac", "old": "if o is None or b is None or owner == borrower or end_year < start_year {", "new": "if o is None or b is None or end_year < start_year {"}]}

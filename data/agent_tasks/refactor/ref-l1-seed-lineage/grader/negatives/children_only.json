@@ -1,0 +1,1 @@
+{"why": "family size counts only direct offspring", "edits": [{"file": "lineage.jac", "old": "sum([1 + family_size(c.accession) for c", "new": "sum([1 for c"}]}

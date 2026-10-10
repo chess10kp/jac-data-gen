@@ -1,0 +1,1 @@
+{"why": "slot lookup ignores the slot number", "edits": [{"file": "orchard.impl.jac", "old": "hits = [r ->:Planted:slot == wanted:->];", "new": "hits = [r ->:Planted:->];"}]}

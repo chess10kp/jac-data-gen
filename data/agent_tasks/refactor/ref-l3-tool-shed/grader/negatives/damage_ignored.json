@@ -1,0 +1,1 @@
+{"why": "damaged returns are not sent to repair", "edits": [{"file": "shed.jac", "old": "        if damaged {\n            t.condition = Condition.REPAIR;\n        }\n", "new": ""}]}

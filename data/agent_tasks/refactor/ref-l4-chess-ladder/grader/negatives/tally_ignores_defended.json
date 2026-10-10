@@ -1,0 +1,1 @@
+{"why": "matches played as defender are not counted", "edits": [{"file": "ladder.impl.jac", "old": "                self.add(m.outcome, False);", "new": "                self.draws += 0;"}]}

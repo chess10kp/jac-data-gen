@@ -1,0 +1,1 @@
+{"why": "aborting twice reports success", "edits": [{"file": "kiln_log.impl.jac", "old": "    if self.aborted {\n        return False;\n    }\n    self.aborted = True;", "new": "    self.aborted = True;"}]}

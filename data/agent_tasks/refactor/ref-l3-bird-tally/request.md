@@ -1,0 +1,3 @@
+tally.jac is one `SurveyBook` node holding site -> species -> {total, last_day} dicts, found by an isinstance loop over root. Please turn it into a real graph: sites and species as nodes on root, and the per-site tally (running total + latest day) living on a typed edge from site to species. The species-wide questions (which sites, when last seen) should be answered by a walker sweeping the sites rather than nested loops. Use edge filters for lookups.
+
+Keep all six functions (`log_sighting`, `site_total`, `site_ranking`, `sites_for`, `last_seen`, `scarce`) with the same signatures and results.

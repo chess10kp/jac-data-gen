@@ -5,7 +5,7 @@
   "source": "hand-authored (de-idiomized starter)",
   "gates": ["check", "test"],
   "target_paths": ["shelves.jac"],
-  "jac_version": "0.37.25",
+  "jac_version": "0.36.1",
   "license": "original-authored (jac_llm_data agent-task pool)",
   "provenance": {"author": "claude (hand-authored pilot)", "created": "2026-10-10", "title": "Pottery drying shelves", "domain": "pottery studio shelving", "smell": ["dict-of-dicts state in one node", "isinstance scan"], "idioms": ["nodes", "edges", "edge filters", "node deletion"], "inspiration": "none (original)"},
   "idiom_gate": "scripts/agent_tasks/refactor_gate.py",

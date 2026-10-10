@@ -1,0 +1,1 @@
+{"why": "call sheet walks every shooting day", "edits": [{"file": "callsheet.impl.jac", "old": "    visit [-->[?:ShootDay, day == wanted]];", "new": "    visit [-->[?:ShootDay]];"}]}

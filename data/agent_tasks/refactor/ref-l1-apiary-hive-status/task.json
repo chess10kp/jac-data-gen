@@ -1,0 +1,16 @@
+{
+  "id": "ref-l1-apiary-hive-status",
+  "kind": "refactor",
+  "level": 1,
+  "source": "hand-authored (de-idiomized starter)",
+  "gates": ["check", "test"],
+  "target_paths": ["hives.jac"],
+  "jac_version": "0.36.1",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "provenance": {"author": "claude (refactor author, l1 batch)", "created": "2026-10-10", "title": "Apiary hive status", "domain": "beekeeping colony status", "smell": ["string-typed status"], "idioms": ["enum"], "inspiration": "data/agent_tasks/native/nat-l1-apiary-requeen"},
+  "idiom_gate": "scripts/agent_tasks/refactor_gate.py",
+  "idiom_targets": [
+    {"metric": "enums", "op": ">=", "value": 1, "desc": ">=1 enum declared"},
+    {"metric": "field:Hive.status", "op": "!=", "value": "str", "desc": "Hive.status is not a raw str"}
+  ]
+}

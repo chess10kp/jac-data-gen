@@ -1,0 +1,16 @@
+{
+  "id": "ref-l1-ferry-crossings",
+  "kind": "refactor",
+  "level": 1,
+  "source": "hand-authored (de-idiomized starter)",
+  "gates": ["check", "test"],
+  "target_paths": ["ferries.jac"],
+  "jac_version": "0.36.1",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "provenance": {"author": "claude (refactor author, l1 batch)", "created": "2026-10-10", "title": "Island ferry crossings", "domain": "island ferry timetable", "smell": ["parallel dict of per-connection data keyed by 'a->b'"], "idioms": ["typed edge with has fields", "typed connect", "edge predicate filter"], "inspiration": "none (original)"},
+  "idiom_gate": "scripts/agent_tasks/refactor_gate.py",
+  "idiom_targets": [
+    {"metric": "arch.edge", "op": ">=", "value": 1, "desc": ">=1 typed edge archetype"},
+    {"metric": "dict_fields", "op": "==", "value": 0, "desc": "no dict-typed fields on nodes/edges/objs"}
+  ]
+}
