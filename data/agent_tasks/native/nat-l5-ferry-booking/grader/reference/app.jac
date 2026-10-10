@@ -20,23 +20,23 @@ node Booking {
     has ref: str;
     has vehicle: Vehicle;
     has passengers: int;
+
+    def car_use -> int {
+        if self.vehicle == Vehicle.VAN {
+            return 2;
+        }
+        return 1 if self.vehicle == Vehicle.CAR else 0;
+    }
+
+    def foot_use -> int {
+        return self.passengers if self.vehicle == Vehicle.FOOT else 0;
+    }
 }
 
 edge Holds: Sailing --> Booking {}
 
 def:pub add_sailing(code: str, day: int, car_slots: int, foot_slots: int) -> Sailing {
     return root ++> Sailing(code=code, day=day, car_slots=car_slots, foot_slots=foot_slots);
-}
-
-def car_use(b: Booking) -> int {
-    if b.vehicle == Vehicle.VAN {
-        return 2;
-    }
-    return 1 if b.vehicle == Vehicle.CAR else 0;
-}
-
-def foot_use(b: Booking) -> int {
-    return b.passengers if b.vehicle == Vehicle.FOOT else 0;
 }
 
 def sailing_named(code: str) -> Sailing | None {
@@ -70,8 +70,8 @@ walker:pub book {
         }
         new = Booking(ref=self.ref, vehicle=Vehicle[self.vehicle], passengers=self.passengers);
         held = [s ->:Holds:->];
-        cars = sum([car_use(b) for b in held]) + car_use(new);
-        foot = sum([foot_use(b) for b in held]) + foot_use(new);
+        cars = sum([b.car_use() for b in held]) + new.car_use();
+        foot = sum([b.foot_use() for b in held]) + new.foot_use();
         if cars > s.car_slots or foot > s.foot_slots {
             report {"ok": False, "reason": "sold out"};
             return;
@@ -110,8 +110,8 @@ walker:pub manifest {
         s = sailing_named(self.sailing);
         held = [s ->:Holds:->] if s is not None else [];
         report {
-            "cars": sum([car_use(b) for b in held]),
-            "foot": sum([foot_use(b) for b in held]),
+            "cars": sum([b.car_use() for b in held]),
+            "foot": sum([b.foot_use() for b in held]),
             "refs": sorted([b.ref for b in held])
         };
     }
@@ -129,8 +129,8 @@ walker:pub day_summary {
         held = [here ->:Holds:->];
         self.rows.append({
             "code": here.code,
-            "free_car": here.car_slots - sum([car_use(b) for b in held]),
-            "free_foot": here.foot_slots - sum([foot_use(b) for b in held])
+            "free_car": here.car_slots - sum([b.car_use() for b in held]),
+            "free_foot": here.foot_slots - sum([b.foot_use() for b in held])
         });
     }
 

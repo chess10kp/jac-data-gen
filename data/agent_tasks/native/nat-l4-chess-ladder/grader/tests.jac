@@ -8,6 +8,10 @@ def club(names: list[str]) {
     }
 }
 
+def must(name: str) -> Player {
+    return [p for p in [root -->[?:Player]] if p.name == name][0];
+}
+
 def ladder_now -> list[str] {
     return (root spawn Standings()).reports[0];
 }
@@ -36,7 +40,7 @@ test "losing challenge records but changes nothing" {
     assert r.ok == True;
     assert r.new_rank == 3;
     assert ladder_now() == ["A", "B", "C"];
-    c = player("C");
+    c = must("C");
     assert len([c ->:Played:->]) == 1;
 }
 
@@ -51,7 +55,7 @@ test "range rules" {
     assert same.reason == "out of range";
     assert ladder_now() == ["A", "B", "C", "D", "E"];
     for n in ["A", "C", "E"] {
-        assert len([player(n) ->:Played:->]) == 0;
+        assert len([must(n) ->:Played:->]) == 0;
     }
     edge_ok = play("D", "A", True, 2);
     assert edge_ok.ok == True;
