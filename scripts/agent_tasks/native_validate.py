@@ -165,7 +165,12 @@ class Task:
     def test(self, wd: Path) -> tuple[bool, str]:
         rc, out = _run([self.jac, "test", TEST_MODULE], wd, self.timeout)
         import re
-        ok = rc == 0 and re.search(r"\b[1-9]\d* passed", out) is not None and re.search(r"\b[1-9]\d* (failed|errors?)\b", out) is None
+        # Never trust the exit code alone (an unimportable target reports "1 skipped", rc 0):
+        # require exactly as many passes as declared test blocks, and no fail/error/skip.
+        expected = len(re.findall(r'^test\s+"', (self.grader / "tests.jac").read_text(), re.M))
+        m = re.search(r"\b(\d+) passed", out)
+        ok = (rc == 0 and m is not None and int(m.group(1)) == expected
+              and re.search(r"\b[1-9]\d* (failed|errors?|skipped)\b", out) is None)
         self.last_test_out = out
         return ok, out[-1500:]
 

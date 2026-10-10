@@ -338,8 +338,9 @@ def find_entry(tree: Path, jac_files: list[str]) -> str | None:
 
 
 def first_err(out: str) -> str:
-    m = re.findall(r"^\s*(?:E\s+)?(\w*(?:Error|Exception)\b:? .{0,200})$", out, re.M)
-    return m[-1] if m else ""
+    m = re.findall(r"✖ Error: (.{0,200})", out) or \
+        re.findall(r"^\s*(?:E\s+)?(\w*(?:Error|Exception)\b:? .{0,200})$", out, re.M)
+    return m[0].strip() if m else ""
 
 
 def free_port() -> int:

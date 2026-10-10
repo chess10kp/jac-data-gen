@@ -104,8 +104,8 @@ def build_task(spec: dict) -> Path:
     (t / "grader").mkdir(parents=True)
     tests = spec["tests"]
     code = spec.get("code") or sorted(
-        p.relative_to(ref).as_posix() for p in ref.rglob("*.jac")
-        if not _is_test_file(p.name) and "__jac_gen__" not in p.parts and ".jac" not in p.parts[:-1])
+        p.relative_to(ref).as_posix() for p in ref.rglob("*.jac") if p.is_file()
+        and not _is_test_file(p.name) and "__jac_gen__" not in p.parts and ".jac" not in p.relative_to(ref).parts[:-1])
     # starter = source starter extras (jac.toml, AGENTS.md ...) + reference code
     starter = t / "starter"
     starter.mkdir()
@@ -265,6 +265,7 @@ def validate(t: Path, jac: str, jobs: int) -> dict:
     for name, d in suites.items():
         passes = [run_suite(spec, d, jac, None) for _ in range(2 if name == "ref" else 1)]
         r["original"][name] = all(p[0] for p in passes)
+        r.setdefault("sample_out", {})[name] = passes[0][1][-500:]
         if not r["original"][name]:
             r["fail"].append(f"{name} suite does not pass on original: {passes[0][1][-600:]}")
     if r["fail"]:

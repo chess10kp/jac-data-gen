@@ -12,6 +12,7 @@ workspace) passes only if ALL declared gates hold:
   run       grader/gate.json run_steps (sequential `jac run` processes in one
             cwd: cross-process persistence)                       [if declared]
   start     reference-style HTTP probes against `jac run --serve`  [if declared]
+  behavioral grader/behavioral.py drives the CLI across processes  [app sources]
   fidelity  the fix must not delete/stub the feature: compiler-backed symbol
             inventory (`jac code map` archetypes + abilities, top-level defs)
             and code mass of the target files vs grader/symbols.json. Debug
@@ -27,7 +28,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import shutil
 import sys
 import tempfile
 from pathlib import Path
@@ -76,6 +76,16 @@ def fidelity(task_dir: Path, cand: Path, inv: dict | None = None) -> dict:
             "mass": round(mass, 3), "per_file": per_file, "reasons": reasons}
 
 
+def behavioral(task_dir: Path, wd: Path, timeout: float = 600) -> tuple[bool, str]:
+    """grader/behavioral.py <workspace> (from app-kind sources): drives the CLI in a
+    fresh cwd with separate `jac run` processes; exit 0 iff the verdict passes."""
+    script = task_dir / "grader" / "behavioral.py"
+    if not script.exists():
+        return False, "no grader/behavioral.py"
+    rc, out = nv._run([sys.executable, str(script.resolve()), str(wd)], wd, max(timeout, 600))
+    return rc == 0, out
+
+
 def grade(task_dir: Path, cand: Path, jac: str = "jac", inv: dict | None = None,
           gates: list[str] | None = None) -> dict:
     """Grade candidate workspace `cand` against task `task_dir` (copied to a fresh cwd)."""
@@ -98,6 +108,9 @@ def grade(task_dir: Path, cand: Path, jac: str = "jac", inv: dict | None = None,
         if "start" in gates and "start" in t.gate:
             ok, out = t.start(wd)
             res["gates"]["start"] = {"ok": ok, "detail": out[-400:]}
+        if "behavioral" in gates:
+            ok, out = behavioral(task_dir, wd, t.timeout)
+            res["gates"]["behavioral"] = {"ok": ok, "detail": out[-600:]}
     if "fidelity" in gates:
         res["gates"]["fidelity"] = fidelity(task_dir, cand, inv)
     res["pass"] = all(g["ok"] for g in res["gates"].values())
