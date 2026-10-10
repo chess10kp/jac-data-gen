@@ -78,6 +78,13 @@ IDIOMS = """Verified jac 0.37.25 facts (use them, do not contradict them):
 - `jac start` is gone: serve with `jac run --serve --port N main.jac`; envelopes are
   {"ok", "data": {"result", "reports"}, "error"}; walker reports are in data.reports, function returns in data.result.
 - Persisted graph is keyed by cwd; hidden tests on root must use uuid-unique names and assert deltas only.
+- Anchor-free modules (no Python import / root / pub) are compiled NATIVE. Under native-placed test modules an
+  `any`-typed value compared to a list/dict literal is False (`r.reports[0] == ["a"]`): always compare
+  `list(x) == [...]` / `dict(x) == {...}`.
+- A native module with one un-lowerable ability (e.g. `[edge a ->:E:-> b]`) is demoted piecemeal and the mixed
+  module SIGABRTs with no output; anchor such a module server with an import that has no native twin
+  (`import heapq;` works; `sys`/`math`/`uuid` do not).
+- `jac test` exits 0 with "N skipped" when the test module's import fails: never treat rc==0 as a pass.
 """
 
 CHECK_RULES = """Rules for hidden checks (they will run against OTHER people's solutions):

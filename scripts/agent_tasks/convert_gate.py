@@ -175,8 +175,12 @@ class Task:
         shutil.copyfile(self.grader / "tests.jac", ws / TEST_MODULE)
         rc, out = _run([JAC, "test", TEST_MODULE], ws, self.timeout)
         tail = out.strip().splitlines()[-1:] if out.strip() else [""]
-        ok = (rc == 0 and re.search(r"\b[1-9]\d* passed", out) is not None
-              and re.search(r"\b[1-9]\d* (failed|errors?)\b", out) is None)
+        # `jac test` exits 0 with "N skipped" when the target fails to import, so
+        # require exactly as many passes as the hidden module declares tests.
+        want = len(re.findall(r'^\s*test\s+"', (self.grader / "tests.jac").read_text(), re.M))
+        m = re.findall(r"\b(\d+) passed", out)
+        ok = (rc == 0 and bool(m) and int(m[-1]) == want
+              and re.search(r"\b[1-9]\d* (failed|errors?|skipped)\b", out) is None)
         return ok, out[-2500:] if not ok else tail[0]
 
     def start(self, ws: Path) -> tuple[bool, str]:

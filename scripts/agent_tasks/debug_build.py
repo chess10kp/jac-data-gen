@@ -126,6 +126,8 @@ def build_one(s: dict) -> Path:
     if repro:
         gate["repro"] = {k: v for k, v in repro.items() if k != "content"}
     (d / "grader" / "gate.json").write_text(json.dumps(gate, indent=1) + "\n")
+    if (src / "grader" / "behavioral.py").exists():
+        shutil.copy(src / "grader" / "behavioral.py", d / "grader" / "behavioral.py")
     if (src / "grader" / "probes").is_dir():
         shutil.copytree(src / "grader" / "probes", d / "grader" / "probes", ignore=IGNORE)
     gates = ["check", "test"]
@@ -133,6 +135,8 @@ def build_one(s: dict) -> Path:
         gates.append("run")
     if "start" in gate:
         gates.append("start")
+    if (d / "grader" / "behavioral.py").exists():
+        gates.append("behavioral")
     gates.append("fidelity")
     task = {
         "id": s["id"], "kind": "debug", "level": s["level"], "source": f"injected-bug:{s['src']}",
@@ -194,6 +198,10 @@ def _fails(t: nv.Task, wd: Path) -> tuple[str, str]:
         r, rout = t.run_steps(wd)
         if not r:
             return "killed:run", rout
+    if "behavioral" in t.meta["gates"]:
+        r, rout = debug_gate.behavioral(t.dir, wd, t.timeout)
+        if not r:
+            return "killed:behavioral", rout
     return "survived", tout
 
 

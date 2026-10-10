@@ -265,6 +265,7 @@ def validate(t: Path, jac: str, jobs: int) -> dict:
     for name, d in suites.items():
         passes = [run_suite(spec, d, jac, None) for _ in range(2 if name == "ref" else 1)]
         r["original"][name] = all(p[0] for p in passes)
+        r.setdefault("sample_out", {})[name] = passes[0][1][-500:]
         if not r["original"][name]:
             r["fail"].append(f"{name} suite does not pass on original: {passes[0][1][-600:]}")
     if r["fail"]:
@@ -506,7 +507,7 @@ def source_status() -> dict[str, tuple[bool, str]]:
     """Is each source task's reference still validated by its own builder?"""
     out: dict[str, tuple[bool, str]] = {}
     nat = REPO / "data" / "agent_tasks" / "native"
-    for p in (nat / "build_results.jsonl", nat / "manifest.jsonl"):
+    for p in (nat / "manifest.jsonl", nat / "build_results.jsonl"):  # build_results is newer
         for r in load_jsonl(p):
             out[f"native/{r['id']}"] = (bool(r.get("validated")), str(r.get("reason") or ""))
     app = REPO / "data" / "agent_tasks" / "app"
