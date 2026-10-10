@@ -2,42 +2,42 @@
 {"source": "mechanical", "op": "cmp <-><=", "line": 37, "edits": [{"file": "semver.jac", "offset": 904, "old": "<", "new": "<="}], "id": "c01"}
 {"source": "mechanical", "op": "negate if", "line": 41, "edits": [{"file": "semver.jac", "offset": 957, "old": "a == b", "new": "not (a == b)"}], "id": "c02"}
 {"source": "mechanical", "op": "cmp ==->!=", "line": 41, "edits": [{"file": "semver.jac", "offset": 959, "old": "==", "new": "!="}], "id": "c03"}
-{"source": "mechanical", "op": "int 0->1", "line": 42, "edits": [{"file": "semver.jac", "offset": 981, "old": "0", "new": "1"}], "id": "c04"}
-{"source": "mechanical", "op": "negate if", "line": 44, "edits": [{"file": "semver.jac", "offset": 997, "old": "a == \"\"", "new": "not (a == \"\")"}], "id": "c05"}
-{"source": "mechanical", "op": "cmp ==->!=", "line": 44, "edits": [{"file": "semver.jac", "offset": 999, "old": "==", "new": "!="}], "id": "c06"}
-{"source": "mechanical", "op": "int 1->2", "line": 45, "edits": [{"file": "semver.jac", "offset": 1022, "old": "1", "new": "2"}], "id": "c07"}
-{"source": "mechanical", "op": "negate if", "line": 47, "edits": [{"file": "semver.jac", "offset": 1038, "old": "b == \"\"", "new": "not (b == \"\")"}], "id": "c08"}
-{"source": "mechanical", "op": "arith -->+", "line": 48, "edits": [{"file": "semver.jac", "offset": 1063, "old": "-", "new": "+"}], "id": "c09"}
-{"source": "mechanical", "op": "int 1->0", "line": 48, "edits": [{"file": "semver.jac", "offset": 1064, "old": "1", "new": "0"}], "id": "c10"}
-{"source": "mechanical", "op": "int 1->2", "line": 48, "edits": [{"file": "semver.jac", "offset": 1064, "old": "1", "new": "2"}], "id": "c11"}
-{"source": "mechanical", "op": "call min->max", "line": 52, "edits": [{"file": "semver.jac", "offset": 1138, "old": "min", "new": "max"}], "id": "c12"}
-{"source": "mechanical", "op": "negate if", "line": 55, "edits": [{"file": "semver.jac", "offset": 1212, "old": "x == y", "new": "not (x == y)"}], "id": "c13"}
-{"source": "mechanical", "op": "cmp ==->!=", "line": 55, "edits": [{"file": "semver.jac", "offset": 1214, "old": "==", "new": "!="}], "id": "c14"}
-{"source": "mechanical", "op": "stmt-del continue", "line": 56, "edits": [{"file": "semver.jac", "offset": 1233, "old": "continue;", "new": ""}], "id": "c15"}
-{"source": "mechanical", "op": "negate if", "line": 58, "edits": [{"file": "semver.jac", "offset": 1264, "old": "x.isdigit() and y.isdigit()", "new": "not (x.isdigit() and y.isdigit())"}], "id": "c16"}
-{"source": "mechanical", "op": "bool and->or", "line": 58, "edits": [{"file": "semver.jac", "offset": 1276, "old": "and", "new": "or"}], "id": "c17"}
-{"source": "mechanical", "op": "arith -->+", "line": 62, "edits": [{"file": "semver.jac", "offset": 1392, "old": "-", "new": "+"}], "id": "c18"}
-{"source": "mechanical", "op": "int 1->2", "line": 62, "edits": [{"file": "semver.jac", "offset": 1393, "old": "1", "new": "2"}], "id": "c19"}
-{"source": "mechanical", "op": "int 1->0", "line": 62, "edits": [{"file": "semver.jac", "offset": 1393, "old": "1", "new": "0"}], "id": "c20"}
-{"source": "mechanical", "op": "negate if", "line": 64, "edits": [{"file": "semver.jac", "offset": 1417, "old": "y.isdigit()", "new": "not (y.isdigit())"}], "id": "c21"}
-{"source": "mechanical", "op": "int 1->0", "line": 65, "edits": [{"file": "semver.jac", "offset": 1450, "old": "1", "new": "0"}], "id": "c22"}
-{"source": "mechanical", "op": "arith -->+", "line": 67, "edits": [{"file": "semver.jac", "offset": 1478, "old": "-", "new": "+"}], "id": "c23"}
-{"source": "mechanical", "op": "int 1->2", "line": 67, "edits": [{"file": "semver.jac", "offset": 1479, "old": "1", "new": "2"}], "id": "c24"}
-{"source": "mechanical", "op": "negate if", "line": 67, "edits": [{"file": "semver.jac", "offset": 1484, "old": "x < y else 1;\n    }\n    return cmp_int(len(xs), len(ys));\n}\n\ndef compare(a: str, b: str) -> int", "new": "not (x < y else 1;\n    }\n    return cmp_int(len(xs), len(ys));\n}\n\ndef compare(a: str, b: str) -> int)"}], "id": "c25"}
-{"source": "mechanical", "op": "int 1->0", "line": 67, "edits": [{"file": "semver.jac", "offset": 1495, "old": "1", "new": "0"}], "id": "c26"}
-{"source": "mechanical", "op": "cmp !=->==", "line": 77, "edits": [{"file": "semver.jac", "offset": 1763, "old": "!=", "new": "=="}], "id": "c27"}
-{"source": "mechanical", "op": "meth strip->lstrip", "line": 102, "edits": [{"file": "semver.jac", "offset": 2373, "old": "strip", "new": "lstrip"}], "id": "c28"}
-{"source": "mechanical", "op": "meth lstrip->rstrip", "line": 102, "edits": [{"file": "semver.jac", "offset": 2381, "old": "lstrip", "new": "rstrip"}], "id": "c29"}
-{"source": "mechanical", "op": "negate if", "line": 107, "edits": [{"file": "semver.jac", "offset": 2522, "old": "pv.pre != \"\" or pv.major != base.major or compare(v, floor) < 0", "new": "not (pv.pre != \"\" or pv.major != base.major or compare(v, floor) < 0)"}], "id": "c30"}
-{"source": "mechanical", "op": "cmp !=->==", "line": 107, "edits": [{"file": "semver.jac", "offset": 2529, "old": "!=", "new": "=="}], "id": "c31"}
-{"source": "mechanical", "op": "bool or->and", "line": 107, "edits": [{"file": "semver.jac", "offset": 2535, "old": "or", "new": "and"}], "id": "c32"}
-{"source": "mechanical", "op": "cmp !=->==", "line": 107, "edits": [{"file": "semver.jac", "offset": 2547, "old": "!=", "new": "=="}], "id": "c33"}
-{"source": "mechanical", "op": "bool or->and", "line": 107, "edits": [{"file": "semver.jac", "offset": 2561, "old": "or", "new": "and"}], "id": "c34"}
-{"source": "mechanical", "op": "cmp <-><=", "line": 107, "edits": [{"file": "semver.jac", "offset": 2582, "old": "<", "new": "<="}], "id": "c35"}
+{"source": "mechanical", "op": "cmp ==->!=", "line": 44, "edits": [{"file": "semver.jac", "offset": 999, "old": "==", "new": "!="}], "id": "c04"}
+{"source": "mechanical", "op": "int 1->0", "line": 45, "edits": [{"file": "semver.jac", "offset": 1022, "old": "1", "new": "0"}], "id": "c05"}
+{"source": "mechanical", "op": "cmp ==->!=", "line": 47, "edits": [{"file": "semver.jac", "offset": 1040, "old": "==", "new": "!="}], "id": "c06"}
+{"source": "mechanical", "op": "arith -->+", "line": 48, "edits": [{"file": "semver.jac", "offset": 1063, "old": "-", "new": "+"}], "id": "c07"}
+{"source": "mechanical", "op": "int 1->2", "line": 48, "edits": [{"file": "semver.jac", "offset": 1064, "old": "1", "new": "2"}], "id": "c08"}
+{"source": "mechanical", "op": "call min->max", "line": 52, "edits": [{"file": "semver.jac", "offset": 1138, "old": "min", "new": "max"}], "id": "c09"}
+{"source": "mechanical", "op": "negate if", "line": 55, "edits": [{"file": "semver.jac", "offset": 1212, "old": "x == y", "new": "not (x == y)"}], "id": "c10"}
+{"source": "mechanical", "op": "cmp ==->!=", "line": 55, "edits": [{"file": "semver.jac", "offset": 1214, "old": "==", "new": "!="}], "id": "c11"}
+{"source": "mechanical", "op": "stmt-del continue", "line": 56, "edits": [{"file": "semver.jac", "offset": 1233, "old": "continue;", "new": ""}], "id": "c12"}
+{"source": "mechanical", "op": "negate if", "line": 58, "edits": [{"file": "semver.jac", "offset": 1264, "old": "x.isdigit() and y.isdigit()", "new": "not (x.isdigit() and y.isdigit())"}], "id": "c13"}
+{"source": "mechanical", "op": "bool and->or", "line": 58, "edits": [{"file": "semver.jac", "offset": 1276, "old": "and", "new": "or"}], "id": "c14"}
+{"source": "mechanical", "op": "negate if", "line": 61, "edits": [{"file": "semver.jac", "offset": 1359, "old": "x.isdigit()", "new": "not (x.isdigit())"}], "id": "c15"}
+{"source": "mechanical", "op": "arith -->+", "line": 62, "edits": [{"file": "semver.jac", "offset": 1392, "old": "-", "new": "+"}], "id": "c16"}
+{"source": "mechanical", "op": "int 1->0", "line": 62, "edits": [{"file": "semver.jac", "offset": 1393, "old": "1", "new": "0"}], "id": "c17"}
+{"source": "mechanical", "op": "int 1->2", "line": 62, "edits": [{"file": "semver.jac", "offset": 1393, "old": "1", "new": "2"}], "id": "c18"}
+{"source": "mechanical", "op": "negate if", "line": 64, "edits": [{"file": "semver.jac", "offset": 1417, "old": "y.isdigit()", "new": "not (y.isdigit())"}], "id": "c19"}
+{"source": "mechanical", "op": "int 1->0", "line": 65, "edits": [{"file": "semver.jac", "offset": 1450, "old": "1", "new": "0"}], "id": "c20"}
+{"source": "mechanical", "op": "arith -->+", "line": 67, "edits": [{"file": "semver.jac", "offset": 1478, "old": "-", "new": "+"}], "id": "c21"}
+{"source": "mechanical", "op": "int 1->2", "line": 67, "edits": [{"file": "semver.jac", "offset": 1479, "old": "1", "new": "2"}], "id": "c22"}
+{"source": "mechanical", "op": "int 1->0", "line": 67, "edits": [{"file": "semver.jac", "offset": 1495, "old": "1", "new": "0"}], "id": "c23"}
+{"source": "mechanical", "op": "negate if", "line": 77, "edits": [{"file": "semver.jac", "offset": 1761, "old": "c != 0", "new": "not (c != 0)"}], "id": "c24"}
+{"source": "mechanical", "op": "cmp !=->==", "line": 77, "edits": [{"file": "semver.jac", "offset": 1763, "old": "!=", "new": "=="}], "id": "c25"}
+{"source": "mechanical", "op": "int 0->1", "line": 77, "edits": [{"file": "semver.jac", "offset": 1766, "old": "0", "new": "1"}], "id": "c26"}
+{"source": "mechanical", "op": "meth strip->lstrip", "line": 102, "edits": [{"file": "semver.jac", "offset": 2373, "old": "strip", "new": "lstrip"}], "id": "c27"}
+{"source": "mechanical", "op": "meth lstrip->rstrip", "line": 102, "edits": [{"file": "semver.jac", "offset": 2381, "old": "lstrip", "new": "rstrip"}], "id": "c28"}
+{"source": "mechanical", "op": "negate if", "line": 107, "edits": [{"file": "semver.jac", "offset": 2522, "old": "pv.pre != \"\" or pv.major != base.major or compare(v, floor) < 0", "new": "not (pv.pre != \"\" or pv.major != base.major or compare(v, floor) < 0)"}], "id": "c29"}
+{"source": "mechanical", "op": "cmp !=->==", "line": 107, "edits": [{"file": "semver.jac", "offset": 2529, "old": "!=", "new": "=="}], "id": "c30"}
+{"source": "mechanical", "op": "bool or->and", "line": 107, "edits": [{"file": "semver.jac", "offset": 2535, "old": "or", "new": "and"}], "id": "c31"}
+{"source": "mechanical", "op": "cmp !=->==", "line": 107, "edits": [{"file": "semver.jac", "offset": 2547, "old": "!=", "new": "=="}], "id": "c32"}
+{"source": "mechanical", "op": "bool or->and", "line": 107, "edits": [{"file": "semver.jac", "offset": 2561, "old": "or", "new": "and"}], "id": "c33"}
+{"source": "mechanical", "op": "cmp <-><=", "line": 107, "edits": [{"file": "semver.jac", "offset": 2582, "old": "<", "new": "<="}], "id": "c34"}
+{"source": "mechanical", "op": "int 0->1", "line": 107, "edits": [{"file": "semver.jac", "offset": 2584, "old": "0", "new": "1"}], "id": "c35"}
 {"source": "mechanical", "op": "stmt-del continue", "line": 108, "edits": [{"file": "semver.jac", "offset": 2600, "old": "continue;", "new": ""}], "id": "c36"}
-{"source": "mechanical", "op": "negate if", "line": 110, "edits": [{"file": "semver.jac", "offset": 2631, "old": "best is None or compare(v, best) > 0", "new": "not (best is None or compare(v, best) > 0)"}], "id": "c37"}
-{"source": "mechanical", "op": "bool or->and", "line": 110, "edits": [{"file": "semver.jac", "offset": 2644, "old": "or", "new": "and"}], "id": "c38"}
-{"source": "mechanical", "op": "cmp >->>=", "line": 110, "edits": [{"file": "semver.jac", "offset": 2664, "old": ">", "new": ">="}], "id": "c39"}
+{"source": "mechanical", "op": "negate if", "line": 110, "edits": [{"file": "semver.jac", "offset": 2631, "old": "best is None", "new": "not (best is None)"}], "id": "c37"}
+{"source": "mechanical", "op": "negate elif", "line": 112, "edits": [{"file": "semver.jac", "offset": 2683, "old": "compare(v, str(best)) > 0", "new": "not (compare(v, str(best)) > 0)"}], "id": "c38"}
+{"source": "mechanical", "op": "cmp >->>=", "line": 112, "edits": [{"file": "semver.jac", "offset": 2705, "old": ">", "new": ">="}], "id": "c39"}
 {"source": "hand", "op": "hand h0", "why": "numeric identifiers ranked above alphanumeric", "edits": [{"file": "semver.jac", "offset": 1348, "old": "        if x.isdigit() {\n            return -1;", "new": "        if x.isdigit() {\n            return 1;"}], "id": "c40"}
 {"source": "hand", "op": "hand h1", "why": "longer pre-release not ranked higher", "edits": [{"file": "semver.jac", "offset": 1508, "old": "return cmp_int(len(xs), len(ys));", "new": "return 0;"}], "id": "c41"}
 {"source": "hand", "op": "hand h2", "why": "max_satisfying accepts pre-releases", "edits": [{"file": "semver.jac", "offset": 2522, "old": "pv.pre != \"\" or ", "new": ""}], "id": "c42"}

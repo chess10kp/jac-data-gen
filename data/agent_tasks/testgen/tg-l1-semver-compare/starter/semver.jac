@@ -107,7 +107,9 @@ def max_satisfying(versions: list[str], caret_range: str) -> str | None {
         if pv.pre != "" or pv.major != base.major or compare(v, floor) < 0 {
             continue;
         }
-        if best is None or compare(v, best) > 0 {
+        if best is None {
+            best = v;
+        } elif compare(v, str(best)) > 0 {
             best = v;
         }
     }

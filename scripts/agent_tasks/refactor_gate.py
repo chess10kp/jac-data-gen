@@ -131,7 +131,7 @@ def collect(wd: Path, jac: str = "jac") -> dict[str, Any]:
     m["modules"] = len(mods)
     for f in mods:
         rc, out = _run([jac, "tool", "ir", "ast", str(f.relative_to(wd))], wd)
-        roots = parse_ast(out)
+        roots = parse_ast(out)[:1]  # 0.36.1 prints the dump twice; one Module per file
         if rc != 0 or not roots:
             errors.append(f"ast {f.name}: rc={rc} {out[-300:]}")
             continue
@@ -179,7 +179,7 @@ def collect(wd: Path, jac: str = "jac") -> dict[str, Any]:
                         m["glob_collections"] += 1
     for f in annex_files(wd):
         rc, out = _run([jac, "tool", "ir", "ast", str(f.relative_to(wd))], wd)
-        roots = parse_ast(out)
+        roots = parse_ast(out)[:1]  # 0.36.1 prints the dump twice; one Module per file
         if rc != 0 or not roots:
             errors.append(f"ast {f.name}: rc={rc} {out[-300:]}")
             continue

@@ -6,13 +6,13 @@ test "good password has no violations" {
 }
 
 test "each rule fires" {
-    assert "too_short" in check_password("Ab1!");
-    assert "no_upper" in check_password("lowercase-only-123");
-    assert "no_lower" in check_password("UPPERCASE-ONLY-123");
-    assert "no_digit" in check_password("No-Digits-Here-At-All");
-    assert "no_symbol" in check_password("NoSymbolsHere123");
-    assert "repeated_chars" in check_password("Paaassword-1234");
-    assert "repeated_chars" not in check_password("Paassword-12345");
+    assert "too_short" in list(check_password("Ab1!"));
+    assert "no_upper" in list(check_password("lowercase-only-123"));
+    assert "no_lower" in list(check_password("UPPERCASE-ONLY-123"));
+    assert "no_digit" in list(check_password("No-Digits-Here-At-All"));
+    assert "no_symbol" in list(check_password("NoSymbolsHere123"));
+    assert "repeated_chars" in list(check_password("Paaassword-1234"));
+    assert "repeated_chars" not in list(check_password("Paassword-12345"));
 }
 
 test "violations come back in rule order" {
@@ -21,10 +21,10 @@ test "violations come back in rule order" {
 }
 
 test "username rule is case insensitive and length gated" {
-    assert "contains_username" in check_password("My-ALICE-pass-99", "alice");
-    assert "contains_username" not in check_password("My-ALICE-pass-99", "bob");
-    assert "contains_username" not in check_password("Xy-pass-word-99", "xy");
-    assert "contains_username" not in check_password("My-ALICE-pass-99");
+    assert "contains_username" in list(check_password("My-ALICE-pass-99", "alice"));
+    assert "contains_username" not in list(check_password("My-ALICE-pass-99", "bob"));
+    assert "contains_username" not in list(check_password("Xy-pass-word-99", "xy"));
+    assert "contains_username" not in list(check_password("My-ALICE-pass-99"));
 }
 
 test "strength buckets" {

@@ -10,7 +10,7 @@
   "target_paths": [
     "lifting_tests.jac"
   ],
-  "jac_version": "0.37.25",
+  "jac_version": "0.36.1",
   "license": "original-authored (jac_llm_data agent-task pool)",
   "mutation": {
     "threshold": 0.8,
@@ -42,18 +42,7 @@
     "n_candidates": 43,
     "n_mechanical_sites": 40,
     "n_source_negatives": 0,
-    "n_hand": 3,
-    "stats": {
-      "n_candidates": 43,
-      "n_stillborn": 2,
-      "n_presumed_equivalent": 1,
-      "n_eligible": 40,
-      "ref_kill": 1.0,
-      "oracle_kill": 0.925,
-      "trivial_kill": 0.0,
-      "starter_kill": null,
-      "ref_survivors": []
-    }
+    "n_hand": 3
   },
   "provenance": {
     "source_task": "app/app-l3-lifting-log",

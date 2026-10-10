@@ -10,7 +10,7 @@
   "target_paths": [
     "semver_compare_tests.jac"
   ],
-  "jac_version": "0.37.25",
+  "jac_version": "0.36.1",
   "license": "original-authored (jac_llm_data agent-task pool)",
   "mutation": {
     "threshold": 0.8,
@@ -38,22 +38,11 @@
     "n_candidates": 43,
     "n_mechanical_sites": 52,
     "n_source_negatives": 0,
-    "n_hand": 3,
-    "stats": {
-      "n_candidates": 43,
-      "n_stillborn": 2,
-      "n_presumed_equivalent": 1,
-      "n_eligible": 40,
-      "ref_kill": 1.0,
-      "oracle_kill": 0.975,
-      "trivial_kill": 0.0,
-      "starter_kill": null,
-      "ref_survivors": []
-    }
+    "n_hand": 3
   },
   "provenance": {
     "source_task": "app/app-l1-semver-tools",
-    "source_hash": "33686ab2b549ad43",
+    "source_hash": "f645a0b945d6f67b",
     "variant": "fresh",
     "title": "Tests for semantic versions",
     "domain": "semantic versions",

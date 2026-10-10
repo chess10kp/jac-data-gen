@@ -35,7 +35,9 @@ from dataset.trajectory.common import to_template_input, write_trajectories  # n
 CHECK_ERR = re.compile(r"error\[E\d{4}\]|jac check: \d+ new errors?|\bE\d{4}\b.*(error|Error)|^Error", re.M)
 ENV_DEBUG = re.compile(r"~/\.cache|\$HOME/\.cache|/\.cache/|(^|[\s;&|(])ps(\s|$)|pgrep|pkill|postgres|pg_\w+|"
                        r"/proc/|JAC_CACHE_HOME|\bss -|netstat|lsof")
-ESCAPE = re.compile(r"(^|[\s'\"=])\.\./|agent_tasks|grader|/home/runner/work|\bsudo\b|\bcd\s+(/|~)(?!\S*/ws/)")
+ESCAPE = re.compile(r"(^|[\s'\"=/])\.\./|agent_tasks|grader|\bsudo\b|\bchmod\b|\bchown\b")
+ABS_PATH = re.compile(r"(?<![\w.~/-])(~[\w./-]*|/[\w.-][\w./-]*)")
+ABS_OK = ("/dev/", "/tmp", "/usr/", "/bin/", "/proc/self")
 TOKEN_MODEL = "ornith-ai/Ornith-1.5-9B"
 
 
@@ -78,6 +80,12 @@ def behavior(traj: dict) -> dict:
     pairs = calls_with_results(traj["rows"])
     guide, guide_after_err, env_dbg, escape, blocked = 0, 0, 0, 0, 0
     env_cmds, esc_cmds = [], []
+    sysrow = next((r["content"] for r in traj["rows"] if r["mode"] == "system"), "")
+    m = re.search(r"Current working directory: (\S+)", sysrow)
+    cwd = m.group(1) if m else "\0"
+
+    def outside(text: str) -> bool:
+        return any(not (p.startswith(cwd) or p.startswith(ABS_OK) or p == "/") for p in ABS_PATH.findall(text))
     prev_res = None
     for call, res in pairs:
         cmd = str(call["args"].get("command", "")) if call["name"] == "bash" else ""
@@ -89,7 +97,7 @@ def behavior(traj: dict) -> dict:
         if cmd and ENV_DEBUG.search(cmd):
             env_dbg += 1
             env_cmds.append(cmd[:160])
-        if ESCAPE.search(cmd) or ESCAPE.search(paths) or re.search(r"(^|\s)/(?!tmp)", paths):
+        if ESCAPE.search(cmd) or ESCAPE.search(paths) or outside(cmd) or outside(paths):
             escape += 1
             esc_cmds.append((cmd or paths)[:160])
         if res is not None and "is disabled. Use jac_ast_search" in res.get("content", ""):
@@ -116,8 +124,8 @@ def token_lengths(trajs: list[dict]) -> list[int | None]:
         for m in msgs:
             m.pop("weight", None)
         try:
-            ids = tok.apply_chat_template(msgs, tools=t.get("tools"), tokenize=True)
-            out.append(len(ids["input_ids"] if isinstance(ids, dict) else ids))
+            text = tok.apply_chat_template(msgs, tools=t.get("tools"), tokenize=False)
+            out.append(len(tok(text, add_special_tokens=False)["input_ids"]))
         except Exception as e:
             print(f"template failed for {t['meta'].get('task', {}).get('sid')}: {e}", file=sys.stderr)
             out.append(None)

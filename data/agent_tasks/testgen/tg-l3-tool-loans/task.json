@@ -10,7 +10,7 @@
   "target_paths": [
     "toollib_tests.jac"
   ],
-  "jac_version": "0.37.25",
+  "jac_version": "0.36.1",
   "license": "original-authored (jac_llm_data agent-task pool)",
   "mutation": {
     "threshold": 0.8,
@@ -21,20 +21,7 @@
     "n_candidates": 47,
     "n_mechanical_sites": 48,
     "n_source_negatives": 7,
-    "n_hand": 0,
-    "stats": {
-      "n_candidates": 47,
-      "n_stillborn": 2,
-      "n_presumed_equivalent": 0,
-      "n_eligible": 45,
-      "ref_kill": 0.9778,
-      "oracle_kill": 0.9111,
-      "trivial_kill": 0.0,
-      "starter_kill": null,
-      "ref_survivors": [
-        "neg overdue_by_card"
-      ]
-    }
+    "n_hand": 0
   },
   "provenance": {
     "source_task": "native/nat-l3-tool-library",
