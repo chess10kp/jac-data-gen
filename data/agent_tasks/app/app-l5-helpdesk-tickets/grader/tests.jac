@@ -41,7 +41,7 @@ test "assign comment close" {
     root spawn add_comment(number=n, author="kim", body="looking");
     c = first((root spawn add_comment(number=n, author="lee", body="fixed")).reports);
     cs = get(c, "comments");
-    assert [get(x, "body") for x in cs] == ["looking", "fixed"];
+    assert list([get(x, "body") for x in cs]) == ["looking", "fixed"];
     assert get(cs[1], "author") == "lee";
     d = first((root spawn close_ticket(number=n)).reports);
     assert get(d, "status") == "closed";
@@ -64,7 +64,7 @@ test "list ordering and status filter" {
     hi2 = get(first((root spawn open_ticket(subject="hi2 " + tag, priority="high")).reports), "number");
     all_t = flat((root spawn list_tickets()).reports);
     mine = [get(t, "number") for t in all_t if get(t, "subject").endswith(tag)];
-    assert mine == [hi, hi2, no, lo];
+    assert list(mine) == [hi, hi2, no, lo];
     root spawn assign_ticket(number=no, agent="kim");
     root spawn close_ticket(number=no);
     closed = [get(t, "number") for t in flat((root spawn list_tickets(status="closed")).reports)];

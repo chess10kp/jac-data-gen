@@ -38,25 +38,25 @@ test "descendants sorted by birth then name" {
     g = build();
     r = g["bill"] spawn Descendants();
     assert len(r.reports) == 1;
-    assert r.reports[0] == ["Victoire", "Dominique", "Louis", "Remus"];
+    assert list(r.reports[0]) == ["Victoire", "Dominique", "Louis", "Remus"];
     all_d = (g["gpa"] spawn Descendants()).reports[0];
     assert len(all_d) == 11;
-    assert all_d[:3] == ["Bill", "Percy", "Ginny"];
+    assert list(all_d[:3]) == ["Bill", "Percy", "Ginny"];
     assert all_d[-1] == "Remus";
     assert len((g["lily"] spawn Descendants()).reports[0]) == 0;
 }
 
 test "ancestors through both parents" {
     g = build();
-    assert (g["james"] spawn Ancestors()).reports[0] == ["Arthur", "Ginny", "Harry", "Molly"];
-    assert (g["great"] spawn Ancestors()).reports[0] == ["Arthur", "Bill", "Fleur", "Molly", "Victoire"];
+    assert list((g["james"] spawn Ancestors()).reports[0]) == ["Arthur", "Ginny", "Harry", "Molly"];
+    assert list((g["great"] spawn Ancestors()).reports[0]) == ["Arthur", "Bill", "Fleur", "Molly", "Victoire"];
     assert len((g["gpa"] spawn Ancestors()).reports[0]) == 0;
 }
 
 test "first cousins exclude siblings and half siblings" {
     g = build();
-    assert (g["james"] spawn FirstCousins()).reports[0] == ["Dominique", "Louis", "Molly2", "Victoire"];
-    assert (g["vic"] spawn FirstCousins()).reports[0] == ["Albus", "James", "Lily", "Molly2"];
+    assert list((g["james"] spawn FirstCousins()).reports[0]) == ["Dominique", "Louis", "Molly2", "Victoire"];
+    assert list((g["vic"] spawn FirstCousins()).reports[0]) == ["Albus", "James", "Lily", "Molly2"];
     assert len((g["teddy"] spawn FirstCousins()).reports[0]) == 0;
     assert len((g["bill"] spawn FirstCousins()).reports[0]) == 0;
 }

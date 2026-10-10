@@ -34,8 +34,8 @@ test "payroll includes self and subtree" {
 
 test "chain of command nearest first" {
     g = build();
-    assert (g["e3"] spawn ChainOfCommand()).reports[0] == ["Margaret", "Barbara", "Ada"];
-    assert (g["e1"] spawn ChainOfCommand()).reports[0] == ["Grace", "Ada"];
+    assert list((g["e3"] spawn ChainOfCommand()).reports[0]) == ["Margaret", "Barbara", "Ada"];
+    assert list((g["e1"] spawn ChainOfCommand()).reports[0]) == ["Grace", "Ada"];
     assert len((g["ceo"] spawn ChainOfCommand()).reports[0]) == 0;
 }
 

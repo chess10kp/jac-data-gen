@@ -155,8 +155,8 @@ def main():
     sys.exit(0 if verdict["start"] and verdict["behavioral"] else 1)
 
 
-def w(srv, name, **body):
-    st, env = srv.call(f"/walker/{name}", body)
+def w(srv, ep, /, **body):
+    st, env = srv.call(f"/walker/{ep}", body)
     x = one(env)
     return st, env, (x if isinstance(x, dict) else {})
 

@@ -57,9 +57,9 @@ test "overdue lists only late loans in order" {
     r = root spawn Overdue(date="2025-01-20");
     assert len(r.reports) == 1;
     mine = [x for x in r.reports[0] if get(x, "isbn") == isbn];
-    assert [get(x, "member") for x in mine] == [a, b];
+    assert list([get(x, "member") for x in mine]) == [a, b];
     assert get(mine[0], "due") == "2025-01-15";
     r2 = root spawn Overdue(date="2025-02-01");
     mine2 = [get(x, "member") for x in r2.reports[0] if get(x, "isbn") == isbn];
-    assert mine2 == [a, b, c];
+    assert list(mine2) == [a, b, c];
 }

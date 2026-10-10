@@ -36,10 +36,10 @@ test "fastest time edge cases" {
 
 test "reachable within budget" {
     s = build();
-    assert (s["Harbor"] spawn ReachableWithin(budget=9)).reports[0] == ["Market", "Museum", "Park"];
-    assert (s["Harbor"] spawn ReachableWithin(budget=11)).reports[0] == ["Market", "Museum", "Park", "Station"];
+    assert list((s["Harbor"] spawn ReachableWithin(budget=9)).reports[0]) == ["Market", "Museum", "Park"];
+    assert list((s["Harbor"] spawn ReachableWithin(budget=11)).reports[0]) == ["Market", "Museum", "Park", "Station"];
     assert len((s["Harbor"] spawn ReachableWithin(budget=3)).reports[0]) == 0;
-    assert (s["Station"] spawn ReachableWithin(budget=100)).reports[0] == ["Harbor", "Market", "Museum", "Park", "Zoo"];
+    assert list((s["Station"] spawn ReachableWithin(budget=100)).reports[0]) == ["Harbor", "Market", "Museum", "Park", "Zoo"];
 }
 
 test "walkers report once" {

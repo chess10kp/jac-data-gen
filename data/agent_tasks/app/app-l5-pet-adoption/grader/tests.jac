@@ -38,9 +38,9 @@ test "list available filters and orders" {
     add("Bo" + tag, "dog", 1);
     add("Tom" + tag, "cat", 0);
     dogs = [get(p, "name") for p in flat((root spawn list_available(species="DOG")).reports) if get(p, "name").endswith(tag)];
-    assert dogs == ["Ace" + tag, "Bo" + tag, "Rex" + tag];
+    assert list(dogs) == ["Ace" + tag, "Bo" + tag, "Rex" + tag];
     everyone = [get(p, "name") for p in flat((root spawn list_available()).reports) if get(p, "name").endswith(tag)];
-    assert everyone == ["Tom" + tag, "Ace" + tag, "Bo" + tag, "Rex" + tag];
+    assert list(everyone) == ["Tom" + tag, "Ace" + tag, "Bo" + tag, "Rex" + tag];
 }
 
 test "adopt and history" {
@@ -54,7 +54,7 @@ test "adopt and history" {
     left = [get(p, "name") for p in flat((root spawn list_available(species="rabbit")).reports) if get(p, "name").endswith(tag)];
     assert len(left) == 0;
     hist = [get(p, "name") for p in flat((root spawn adopter_pets(adopter=who)).reports)];
-    assert hist == ["Amy" + tag, "Zed" + tag];
+    assert list(hist) == ["Amy" + tag, "Zed" + tag];
     assert len(flat((root spawn adopter_pets(adopter="nobody-" + tag)).reports)) == 0;
 }
 

@@ -38,14 +38,14 @@ test "large files with paths and ordering" {
     home = build();
     r = home spawn LargeFiles(min_size=5000);
     assert len(r.reports) == 1;
-    assert r.reports[0] == ["home/pics/trip/map.tar.gz", "home/pics/cat.jpg", "home/pics/trip/beach.JPG", "home/docs/cv.pdf"];
+    assert list(r.reports[0]) == ["home/pics/trip/map.tar.gz", "home/pics/cat.jpg", "home/pics/trip/beach.JPG", "home/docs/cv.pdf"];
     assert len((home spawn LargeFiles(min_size=10 ** 9)).reports[0]) == 0;
 }
 
 test "large files paths start at the spawn folder" {
     home = build();
     pics = [f for f in [home -->[?:Folder]] if f.name == "pics"][0];
-    assert (pics spawn LargeFiles(min_size=1)).reports[0] == ["pics/trip/map.tar.gz", "pics/cat.jpg", "pics/trip/beach.JPG"];
+    assert list((pics spawn LargeFiles(min_size=1)).reports[0]) == ["pics/trip/map.tar.gz", "pics/cat.jpg", "pics/trip/beach.JPG"];
 }
 
 test "extension counts" {

@@ -28,16 +28,16 @@ test "top five best first with initials" {
     sub(g, "dan", 400);
     sub(g, "eve", 200);
     b = sub(g, "fay", 250);
-    assert rows(b) == [("BOB", 500), ("DAN", 400), ("ALI", 300), ("FAY", 250), ("EVE", 200)];
+    assert list(rows(b)) == [("BOB", 500), ("DAN", 400), ("ALI", 300), ("FAY", 250), ("EVE", 200)];
 }
 
 test "best per player only" {
     g = "pac-" + uuid.uuid4().hex[:8];
     sub(g, "amy", 100);
     b = sub(g, "AMY", 50);
-    assert rows(b) == [("AMY", 100)];
+    assert list(rows(b)) == [("AMY", 100)];
     b2 = sub(g, "amy", 150);
-    assert rows(b2) == [("AMY", 150)];
+    assert list(rows(b2)) == [("AMY", 150)];
 }
 
 test "ties by first achieved and games separate" {
@@ -46,8 +46,8 @@ test "ties by first achieved and games separate" {
     sub(g, "xxx", 70);
     sub(g, "yyy", 70);
     b = sub(g, "zzz", 70);
-    assert rows(b) == [("XXX", 70), ("YYY", 70), ("ZZZ", 70)];
-    assert rows(sub(h, "qqq", 1)) == [("QQQ", 1)];
+    assert list(rows(b)) == [("XXX", 70), ("YYY", 70), ("ZZZ", 70)];
+    assert list(rows(sub(h, "qqq", 1))) == [("QQQ", 1)];
 }
 
 test "negative score is an error and changes nothing" {
@@ -56,5 +56,5 @@ test "negative score is an error and changes nothing" {
     r = (root spawn submit_score(game=g, player="lee", score=-5)).reports;
     assert len(r) >= 1;
     assert isinstance(r[0], dict) and "error" in r[0];
-    assert rows(sub(g, "kim", 1)) == [("KIM", 5)];
+    assert list(rows(sub(g, "kim", 1))) == [("KIM", 5)];
 }

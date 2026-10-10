@@ -17,7 +17,7 @@ test "tallies and leader" {
     vote(p, "bob", "pho");
     s = vote(p, "cy", "tacos");
     assert get(s, "poll") == p;
-    assert get(s, "tallies") == {"tacos": 2, "pho": 1};
+    assert dict(get(s, "tallies")) == {"tacos": 2, "pho": 1};
     assert get(s, "leader") == "tacos";
 }
 
@@ -26,7 +26,7 @@ test "revote moves vote and empty choices vanish" {
     vote(p, "ann", "curry");
     vote(p, "bob", "salad");
     s = vote(p, "ann", "SALAD");
-    assert get(s, "tallies") == {"salad": 2};
+    assert dict(get(s, "tallies")) == {"salad": 2};
     assert get(s, "leader") == "salad";
 }
 
@@ -37,5 +37,5 @@ test "tie goes alphabetical and polls are independent" {
     s = vote(p, "bob", "burgers");
     assert get(s, "leader") == "burgers";
     t = vote(q, "ann", "ramen");
-    assert get(t, "tallies") == {"ramen": 1};
+    assert dict(get(t, "tallies")) == {"ramen": 1};
 }

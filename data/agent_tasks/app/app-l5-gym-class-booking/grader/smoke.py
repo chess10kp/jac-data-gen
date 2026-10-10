@@ -155,8 +155,8 @@ def main():
     sys.exit(0 if verdict["start"] and verdict["behavioral"] else 1)
 
 
-def fn(srv, name, **body):
-    st, env = srv.call(f"/function/{name}", body)
+def fn(srv, ep, /, **body):
+    st, env = srv.call(f"/function/{ep}", body)
     return st, env, one(env)
 
 

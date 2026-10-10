@@ -31,8 +31,8 @@ test "transitive deps with a diamond" {
     log +>:DependsOn:+> fmt;
     r = app spawn TransitiveDeps();
     assert len(r.reports) == 1;
-    assert r.reports[0] == ["db", "fmt", "log", "web"];
-    assert (log spawn TransitiveDeps()).reports[0] == ["fmt"];
+    assert list(r.reports[0]) == ["db", "fmt", "log", "web"];
+    assert list((log spawn TransitiveDeps()).reports[0]) == ["fmt"];
     assert len((fmt spawn TransitiveDeps()).reports[0]) == 0;
 }
 
@@ -49,12 +49,12 @@ test "install order respects dependencies" {
     assert len(r.reports) == 1;
     assert valid_order(r.reports[0], app, [app, web, db, log, fmt, cli]), f"bad order {r.reports[0]}";
     r2 = web spawn InstallOrder();
-    assert r2.reports[0] == ["fmt", "log", "web"];
+    assert list(r2.reports[0]) == ["fmt", "log", "web"];
 }
 
 test "single package installs alone" {
     solo = pk("solo");
-    assert (solo spawn InstallOrder()).reports[0] == ["solo"];
+    assert list((solo spawn InstallOrder()).reports[0]) == ["solo"];
 }
 
 test "cycle detected" {
@@ -73,5 +73,5 @@ test "cycle elsewhere in graph does not matter" {
     x +>:DependsOn:+> y;
     y +>:DependsOn:+> x;
     x +>:DependsOn:+> a;
-    assert (a spawn InstallOrder()).reports[0] == ["b", "a"];
+    assert list((a spawn InstallOrder()).reports[0]) == ["b", "a"];
 }

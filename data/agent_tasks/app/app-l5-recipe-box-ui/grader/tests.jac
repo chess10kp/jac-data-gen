@@ -34,11 +34,11 @@ test "search by shared ingredient" {
     add("A " + tag, [ing.upper()]);
     add("C " + tag, ["rice"]);
     hits = [get(v, "title") for v in flat((root spawn recipes_with(ingredient=" " + ing + " ")).reports)];
-    assert hits == ["A " + tag, "B " + tag];
+    assert list(hits) == ["A " + tag, "B " + tag];
     assert len(flat((root spawn recipes_with(ingredient="unobtainium" + tag)).reports)) == 0;
     everything = [get(v, "title") for v in flat((root spawn list_recipes()).reports)];
     mine = [t for t in everything if t.endswith(tag)];
-    assert mine == ["A " + tag, "B " + tag, "C " + tag];
+    assert list(mine) == ["A " + tag, "B " + tag, "C " + tag];
 }
 
 test "ratings and top rated" {
@@ -57,5 +57,5 @@ test "ratings and top rated" {
     ghost = (root spawn rate_recipe(recipe_id="nope" + tag, stars=3)).reports[0];
     assert isinstance(ghost, dict) and "error" in ghost;
     top = [get(x, "title") for x in flat((root spawn top_rated(limit=1000)).reports) if get(x, "title").endswith(tag)];
-    assert top == ["Gamma " + tag, "Alpha " + tag, "Beta " + tag];
+    assert list(top) == ["Gamma " + tag, "Alpha " + tag, "Beta " + tag];
 }

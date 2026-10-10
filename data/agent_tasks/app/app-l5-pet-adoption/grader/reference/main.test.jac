@@ -6,5 +6,5 @@ test "adoption flow" {
     again = (root spawn adopt(pet_id=p["id"], adopter="unit-bob")).reports[0];
     assert "error" in again;
     mine = (root spawn adopter_pets(adopter="unit-ann")).reports[0];
-    assert [x["name"] for x in mine] == ["Unit Biscuit"];
+    assert list([x["name"] for x in mine]) == ["Unit Biscuit"];
 }

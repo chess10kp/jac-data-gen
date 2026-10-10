@@ -13,8 +13,8 @@ test "save and find by tag" {
     root spawn SaveBookmark(url=u1, title="A", tags=[" " + t.upper() + " ", ""]);
     r = root spawn FindByTag(tag=t);
     assert len(r.reports) == 1;
-    assert one(r.reports) == [u1, u2];
-    assert one((root spawn FindByTag(tag=("misc " + t).upper())).reports) == [u2];
+    assert list(one(r.reports)) == [u1, u2];
+    assert list(one((root spawn FindByTag(tag=("misc " + t).upper())).reports)) == [u2];
     assert len(one((root spawn FindByTag(tag="none" + t)).reports)) == 0;
 }
 
@@ -23,8 +23,8 @@ test "resave merges tags without duplicating bookmark" {
     u = f"https://c.example/{t}";
     root spawn SaveBookmark(url=u, title="old", tags=[t + "x"]);
     root spawn SaveBookmark(url=u, title="new", tags=[t + "y", t + "x"]);
-    assert one((root spawn FindByTag(tag=t + "x")).reports) == [u];
-    assert one((root spawn FindByTag(tag=t + "y")).reports) == [u];
+    assert list(one((root spawn FindByTag(tag=t + "x")).reports)) == [u];
+    assert list(one((root spawn FindByTag(tag=t + "y")).reports)) == [u];
     counts = one((root spawn TagCounts()).reports);
     assert counts[t + "x"] == 1 and counts[t + "y"] == 1;
 }
@@ -47,7 +47,7 @@ test "delete removes bookmark and orphaned tags" {
     assert one((root spawn DeleteBookmark(url=u)).reports) == True;
     assert one((root spawn DeleteBookmark(url=u)).reports) == False;
     assert len(one((root spawn FindByTag(tag=t + "solo")).reports)) == 0;
-    assert one((root spawn FindByTag(tag=t + "shared")).reports) == [keep];
+    assert list(one((root spawn FindByTag(tag=t + "shared")).reports)) == [keep];
     counts = one((root spawn TagCounts()).reports);
     assert (t + "solo") not in counts;
     assert counts[t + "shared"] == 1;

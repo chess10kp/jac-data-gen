@@ -49,6 +49,6 @@ test "list classes sorted by name" {
     create_class(name="aa-" + tag, capacity=1);
     names = [get(v, "name") for v in list_classes()];
     mine = [n for n in names if n.endswith(tag)];
-    assert mine == ["aa-" + tag, "zz-" + tag];
+    assert list(mine) == ["aa-" + tag, "zz-" + tag];
     assert names == sorted(names);
 }

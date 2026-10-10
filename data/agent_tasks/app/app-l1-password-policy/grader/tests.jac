@@ -16,8 +16,8 @@ test "each rule fires" {
 }
 
 test "violations come back in rule order" {
-    assert check_password("aaa") == ["too_short", "no_upper", "no_digit", "no_symbol", "repeated_chars"];
-    assert check_password("abc") == ["too_short", "no_upper", "no_digit", "no_symbol"];
+    assert list(check_password("aaa")) == ["too_short", "no_upper", "no_digit", "no_symbol", "repeated_chars"];
+    assert list(check_password("abc")) == ["too_short", "no_upper", "no_digit", "no_symbol"];
 }
 
 test "username rule is case insensitive and length gated" {
