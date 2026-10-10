@@ -169,6 +169,8 @@ def cmd_manifest(a) -> int:
             validated, reason = False, f"stale result (task changed since hash {r['hash']})"
         elif not r["validated"]:
             validated, reason = False, "; ".join(x.splitlines()[0] for x in r["fail"])[:400]
+        elif meta.get("jac_version") and meta["jac_version"] not in (r.get("jac") or ""):
+            validated, reason = False, f"validated with {r.get('jac')!r}, task pins {meta['jac_version']}"
         elif not d["clean"]:
             validated, reason = False, f"dedup: {d['reason']}"
         else:
@@ -179,6 +181,7 @@ def cmd_manifest(a) -> int:
         lines.append({
             "id": meta["id"], "level": meta["level"], "source": meta["source"], "gates": meta["gates"],
             "validated": validated, "reason": reason, "hash": h, "ci_run": (r or {}).get("ci_run"),
+            "validated_with": (r or {}).get("jac"), "jac_version": meta.get("jac_version"),
             "dedup": d,
         })
     (ROOT / "manifest.jsonl").write_text("".join(json.dumps(x) + "\n" for x in lines))
