@@ -5,3 +5,4 @@ so a module-global/dict implementation that passes in-process tests is still rej
 Requirements: check order (unknown/already lent/limit), get-or-create member, due = day+loan_days,
 Return deletes only the edge, overdue strict + ordered (due, code).
 Alternative: get-or-create via `visit ... else`, Return as a traversal over members, dict rows.
+- jac 0.36.1 port: `del [edge a ->:Lent:-> b]` fails at 0.36.1 runtime (E5043) -> `for doomed in [edge ...] { del doomed; }`; alt f-string instead of + on dict[str, any] values.

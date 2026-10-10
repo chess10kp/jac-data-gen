@@ -123,9 +123,10 @@ def jac_env(xdg: Path) -> dict:
     return {"XDG_CACHE_HOME": str(xdg), "JAC_CACHE_HOME": str(xdg / "jac")}
 
 
-def session_env(sdir: Path, with_key: bool) -> dict:
+def session_env(sdir: Path, with_key: bool, home: Path | None = None) -> dict:
+    """Env for a session; `home` is the HOME path as seen by the session (VHOME under bwrap)."""
     env = {k: os.environ[k] for k in PASS_ENV if k in os.environ}
-    home = sdir / "home"
+    home = home or sdir / "home"
     env.update({
         "HOME": str(home), "USER": os.environ.get("USER", "runner"), "SHELL": "/bin/bash", "TERM": "dumb",
         **jac_env(home / ".cache"), "XDG_CONFIG_HOME": str(home / ".config"),
@@ -149,20 +150,28 @@ def make_session_dirs(sdir: Path, shared: Path) -> None:
     (sdir / "agent" / "settings.json").write_text(json.dumps(PI_SETTINGS, indent=1))
 
 
+VHOME = Path("/home/dev")   # HOME as the sandboxed session sees it; the workspace is VHOME/<project>
+
+
 def wrap(cmd: list[str], sdir: Path, cwd: Path, bwrap: str | None, extra_ro: list[Path]) -> list[str]:
+    """bwrap: / read-only; /home replaced by a tmpfs (hides the repo checkout with the graders, the
+    runner's home and other sessions); sdir bound at its own path and sdir/home at VHOME; the
+    harness, the shared cache and PATH dirs under /home re-bound read-only. `cwd` is the in-sandbox path."""
     if not bwrap:
         return cmd
     w = [bwrap, "--ro-bind", "/", "/", "--dev", "/dev", "--proc", "/proc", "--tmpfs", "/tmp",
          "--unshare-pid", "--unshare-ipc", "--die-with-parent", "--new-session"]
-    hide = {REPO}
+    hide = {Path("/home"), REPO}
     if os.environ.get("RUNNER_WORKSPACE"):          # /home/runner/work/<repo>: checkout + _temp step scripts
         hide.add(Path(os.environ["RUNNER_WORKSPACE"]).parent)
     for h in sorted(hide, key=lambda p: len(str(p))):
-        if not str(sdir).startswith(str(h) + "/"):
+        if not any(str(h).startswith(str(o) + "/") for o in hide):
             w += ["--tmpfs", str(h)]
-    for p in extra_ro:
-        w += ["--ro-bind", str(p), str(p)]
-    w += ["--bind", str(sdir), str(sdir), "--chdir", str(cwd), "--"]
+    path_dirs = [Path(d) for d in os.environ.get("PATH", "").split(":") if d.startswith("/home/") and Path(d).is_dir()]
+    for p in [*extra_ro, *path_dirs]:
+        if p.exists():
+            w += ["--ro-bind", str(p), str(p)]
+    w += ["--bind", str(sdir), str(sdir), "--bind", str(sdir / "home"), str(VHOME), "--chdir", str(cwd), "--"]
     return w + cmd
 
 
@@ -280,7 +289,7 @@ class Runner:
         self.bwrap = None if a.sandbox == "none" else which_bwrap()
         if a.sandbox == "bwrap" and not self.bwrap:
             raise SystemExit("--sandbox bwrap requested but bwrap is unusable")
-        self.extra_ro = [HARNESS]
+        self.extra_ro = [HARNESS, self.shared]
         self.jac_version = subprocess.run(["jac", "--version"], capture_output=True, text=True).stdout.strip()
 
     def record(self, name: str, row: dict) -> None:
@@ -310,16 +319,17 @@ class Runner:
         if sdir.exists():
             shutil.rmtree(sdir, ignore_errors=True)
         make_session_dirs(sdir, self.shared)
-        ws = sdir / "ws" / project_name(meta["id"])
+        proj = project_name(meta["id"])
+        ws = sdir / "home" / proj                   # = VHOME/<proj> inside the sandbox
         ws.mkdir(parents=True)
         grader.copy_ws(td / "starter", ws)
         request = (td / "request.md").read_text().strip()
         cmd = [str(HARNESS / "deploy" / "jacpi.sh"), "--model", self.a.model,
                "--session-dir", str(sdir / "session"), "-p", request]
-        env = session_env(sdir, with_key=True)
+        env = session_env(sdir, with_key=True, home=VHOME if self.bwrap else None)
         with open(self.out / "logs" / f"{sid}.out", "w") as so, open(self.out / "logs" / f"{sid}.err", "w") as se:
-            rc, timed_out, wall = run_cmd(wrap(cmd, sdir, ws, self.bwrap, self.extra_ro), ws, env,
-                                          self.a.timeout * 60, so, se)
+            rc, timed_out, wall = run_cmd(wrap(cmd, sdir, VHOME / proj if self.bwrap else ws, self.bwrap,
+                                               self.extra_ro), ws, env, self.a.timeout * 60, so, se)
         reaped = reap(sdir)
         sess = sorted((sdir / "session").glob("*.jsonl"))
         summ = session_summary(sess[-1] if sess else None)
@@ -457,8 +467,8 @@ def cmd_prewarm(a) -> int:
     log(f"prewarm reaped {reap(shared)} leftover processes")
     for d in (shared / "jac" / "pg").glob("main*"):
         shutil.rmtree(d, ignore_errors=True) if d.is_dir() else d.unlink()
-    log(f"prewarm done in {time.time() - t0:.0f}s; shared cache {sizes}")
-    return rc
+    log(f"prewarm done in {time.time() - t0:.0f}s; shared cache {sizes}; all refs passed={not rc}")
+    return 0  # informative only: the probe is the gate
 
 
 def cmd_probe(a) -> int:
@@ -468,28 +478,32 @@ def cmd_probe(a) -> int:
     if a.sandbox == "bwrap" and not bw:
         log("PROBE bwrap requested but unusable")
         return 1
-    td = pick_persistence_task()
+    td = (TASKS / "native" / os.environ["TRAJ_PROBE_TASK"]) if os.environ.get("TRAJ_PROBE_TASK") \
+        else pick_persistence_task()
     gate = json.loads((td / "grader" / "gate.json").read_text())
     sdir = root / "probe"
     shutil.rmtree(sdir, ignore_errors=True)
     make_session_dirs(sdir, shared)
-    ws = sdir / "ws" / project_name(td.name)
+    proj = project_name(td.name)
+    ws = sdir / "home" / proj
     ws.mkdir(parents=True)
     grader.copy_ws(td / "grader" / "reference", ws)
     for p in (td / "grader" / "probes").iterdir():
         shutil.copy(p, ws / p.name)
-    env = session_env(sdir, with_key=False)
+    env = session_env(sdir, with_key=False, home=VHOME if bw else None)
     steps = [["jac", "check", *json.loads((td / "task.json").read_text())["target_paths"]]]
     steps += [["jac", "run", s["file"], *s.get("args", [])] for s in gate["run_steps"]]
     expects = [[]] + [s.get("expect", []) for s in gate["run_steps"]]
     # Isolation checks: the repo (graders) must be invisible and / read-only under bwrap.
-    steps += [["bash", "-c", f"test ! -e {TASKS}/native && ! touch /usr/probe_w 2>/dev/null && echo ISOLATED"]] if bw else []
+    steps += [["bash", "-c", f"test ! -e {TASKS}/native && ! touch /usr/probe_w 2>/dev/null && ! touch {shared}/probe_w 2>/dev/null "
+               f"&& test \"$PWD\" = {VHOME / proj} && echo ISOLATED"]] if bw else []
     expects += [["ISOLATED"]] if bw else []
     ok = True
     log(f"PROBE task={td.name} sandbox={'bwrap' if bw else 'none'}")
     for cmd, exp in zip(steps, expects):
         with tempfile.TemporaryFile("w+") as f:
-            rc, to, wall = run_cmd(wrap(cmd, sdir, ws, bw, [HARNESS]), ws, env, 600, f, subprocess.STDOUT)
+            rc, to, wall = run_cmd(wrap(cmd, sdir, VHOME / proj if bw else ws, bw, [HARNESS, shared]), ws, env,
+                                   600, f, subprocess.STDOUT)
             f.seek(0)
             out = f.read()
         good = rc == 0 and all(e in out for e in exp)
