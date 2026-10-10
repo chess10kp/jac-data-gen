@@ -1,0 +1,52 @@
+{
+  "id": "tg-l1-semver-compare",
+  "kind": "testgen",
+  "level": 1,
+  "source": "derived:app/app-l1-semver-tools",
+  "gates": [
+    "check",
+    "mutation"
+  ],
+  "target_paths": [
+    "semver_compare_tests.jac"
+  ],
+  "jac_version": "0.37.25",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "mutation": {
+    "threshold": 0.8,
+    "code_files": [
+      "semver.jac"
+    ],
+    "scope": [
+      {
+        "file": "semver.jac",
+        "header": "def cmp_int"
+      },
+      {
+        "file": "semver.jac",
+        "header": "def cmp_pre"
+      },
+      {
+        "file": "semver.jac",
+        "header": "def compare"
+      },
+      {
+        "file": "semver.jac",
+        "header": "def max_satisfying"
+      }
+    ],
+    "n_candidates": 43,
+    "n_mechanical_sites": 52,
+    "n_source_negatives": 0,
+    "n_hand": 3
+  },
+  "provenance": {
+    "source_task": "app/app-l1-semver-tools",
+    "source_hash": "33686ab2b549ad43",
+    "variant": "fresh",
+    "title": "Tests for semantic versions",
+    "domain": "semantic versions",
+    "author": "claude (testgen builder)",
+    "created": "2026-10-10"
+  }
+}

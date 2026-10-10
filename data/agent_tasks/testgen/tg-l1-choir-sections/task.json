@@ -1,0 +1,40 @@
+{
+  "id": "tg-l1-choir-sections",
+  "kind": "testgen",
+  "level": 1,
+  "source": "derived:native/nat-l1-choir-sections",
+  "gates": [
+    "check",
+    "mutation"
+  ],
+  "target_paths": [
+    "choir_tests.jac"
+  ],
+  "jac_version": "0.37.25",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "mutation": {
+    "threshold": 0.8,
+    "code_files": [
+      "choir.jac"
+    ],
+    "scope": [
+      {
+        "file": "choir.jac",
+        "header": "walker SectionCheck"
+      }
+    ],
+    "n_candidates": 21,
+    "n_mechanical_sites": 16,
+    "n_source_negatives": 5,
+    "n_hand": 0
+  },
+  "provenance": {
+    "source_task": "native/nat-l1-choir-sections",
+    "source_hash": "dd8e316dd634a7e1",
+    "variant": "extend",
+    "title": "Tests for choir roster",
+    "domain": "choir roster",
+    "author": "claude (testgen builder)",
+    "created": "2026-10-10"
+  }
+}

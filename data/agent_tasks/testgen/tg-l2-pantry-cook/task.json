@@ -1,0 +1,40 @@
+{
+  "id": "tg-l2-pantry-cook",
+  "kind": "testgen",
+  "level": 2,
+  "source": "derived:native/nat-l2-pantry-substitutes",
+  "gates": [
+    "check",
+    "mutation"
+  ],
+  "target_paths": [
+    "cookbook_tests.jac"
+  ],
+  "jac_version": "0.37.25",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "mutation": {
+    "threshold": 0.8,
+    "code_files": [
+      "cookbook.jac"
+    ],
+    "scope": [
+      {
+        "file": "cookbook.jac",
+        "header": "walker WhatCanICook"
+      }
+    ],
+    "n_candidates": 18,
+    "n_mechanical_sites": 12,
+    "n_source_negatives": 6,
+    "n_hand": 0
+  },
+  "provenance": {
+    "source_task": "native/nat-l2-pantry-substitutes",
+    "source_hash": "03abba54d4453ba6",
+    "variant": "fresh",
+    "title": "Tests for recipes and substitutes",
+    "domain": "recipes and substitutes",
+    "author": "claude (testgen builder)",
+    "created": "2026-10-10"
+  }
+}

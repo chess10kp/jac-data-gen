@@ -1,0 +1,35 @@
+[
+ {
+  "name": "h0",
+  "why": "tidy rejects exactly-one quantities",
+  "edits": [
+   {
+    "file": "recipe_scale.jac",
+    "old": "if q >= 1 - 1e-9 {",
+    "new": "if q > 1 {"
+   }
+  ]
+ },
+ {
+  "name": "h1",
+  "why": "tidy order wrong",
+  "edits": [
+   {
+    "file": "recipe_scale.jac",
+    "old": "glob VOLUME_TIDY: list[str] = [\"l\", \"cup\", \"tbsp\", \"tsp\", \"ml\"];",
+    "new": "glob VOLUME_TIDY: list[str] = [\"l\", \"tbsp\", \"cup\", \"tsp\", \"ml\"];"
+   }
+  ]
+ },
+ {
+  "name": "h2",
+  "why": "scale mutates input",
+  "edits": [
+   {
+    "file": "recipe_scale.jac",
+    "old": "return [Ingredient(name=i.name, qty=i.qty * factor, unit=i.unit) for i in items];",
+    "new": "for i in items { i.qty = i.qty * factor; }\n    return items;"
+   }
+  ]
+ }
+]

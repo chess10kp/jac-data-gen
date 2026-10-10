@@ -1,0 +1,35 @@
+{
+  "id": "tg-l1-shipping-quote",
+  "kind": "testgen",
+  "level": 1,
+  "source": "derived:app/app-l1-shipping-quote",
+  "gates": [
+    "check",
+    "mutation"
+  ],
+  "target_paths": [
+    "shipping_tests.jac"
+  ],
+  "jac_version": "0.37.25",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "mutation": {
+    "threshold": 0.8,
+    "code_files": [
+      "shipping.jac"
+    ],
+    "scope": null,
+    "n_candidates": 43,
+    "n_mechanical_sites": 44,
+    "n_source_negatives": 0,
+    "n_hand": 3
+  },
+  "provenance": {
+    "source_task": "app/app-l1-shipping-quote",
+    "source_hash": "0ed2f861a5297c6e",
+    "variant": "fresh",
+    "title": "Tests for parcel shipping",
+    "domain": "parcel shipping",
+    "author": "claude (testgen builder)",
+    "created": "2026-10-10"
+  }
+}

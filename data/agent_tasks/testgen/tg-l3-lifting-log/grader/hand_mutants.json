@@ -1,0 +1,35 @@
+[
+ {
+  "name": "h0",
+  "why": "e1rm rounded to integer",
+  "edits": [
+   {
+    "file": "main.jac",
+    "old": "return round(self.weight * (1 + self.reps / 30), 1);",
+    "new": "return round(self.weight * (1 + self.reps / 30), 0);"
+   }
+  ]
+ },
+ {
+  "name": "h1",
+  "why": "tie goes to latest date",
+  "edits": [
+   {
+    "file": "main.jac",
+    "old": "(self.best_date == \"\" or here.date < self.best_date)",
+    "new": "(self.best_date == \"\" or here.date > self.best_date)"
+   }
+  ]
+ },
+ {
+  "name": "h2",
+  "why": "lookup case-sensitive",
+  "edits": [
+   {
+    "file": "main.jac",
+    "old": "if e.name == name.lower() {",
+    "new": "if e.name == name {"
+   }
+  ]
+ }
+]

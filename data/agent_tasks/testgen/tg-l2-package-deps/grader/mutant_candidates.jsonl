@@ -1,0 +1,32 @@
+{"source": "mechanical", "op": "cmp ==->!=", "line": 44, "edits": [{"file": "deps.jac", "offset": 1245, "old": "==", "new": "!="}], "id": "c00"}
+{"source": "mechanical", "op": "aug -=->+=", "line": 50, "edits": [{"file": "deps.jac", "offset": 1431, "old": "-", "new": "+"}], "id": "c01"}
+{"source": "mechanical", "op": "cmp ==->!=", "line": 51, "edits": [{"file": "deps.jac", "offset": 1469, "old": "==", "new": "!="}], "id": "c02"}
+{"source": "mechanical", "op": "cmp !=->==", "line": 56, "edits": [{"file": "deps.jac", "offset": 1577, "old": "!=", "new": "=="}], "id": "c03"}
+{"source": "mechanical", "op": "int 1->2", "line": 27, "edits": [{"file": "deps.jac", "offset": 659, "old": "1", "new": "2"}], "id": "c04"}
+{"source": "mechanical", "op": "int 1->0", "line": 27, "edits": [{"file": "deps.jac", "offset": 659, "old": "1", "new": "0"}], "id": "c05"}
+{"source": "mechanical", "op": "int 0->1", "line": 44, "edits": [{"file": "deps.jac", "offset": 1248, "old": "0", "new": "1"}], "id": "c06"}
+{"source": "mechanical", "op": "int 0->1", "line": 47, "edits": [{"file": "deps.jac", "offset": 1332, "old": "0", "new": "1"}], "id": "c07"}
+{"source": "mechanical", "op": "int 1->2", "line": 50, "edits": [{"file": "deps.jac", "offset": 1434, "old": "1", "new": "2"}], "id": "c08"}
+{"source": "mechanical", "op": "int 1->0", "line": 50, "edits": [{"file": "deps.jac", "offset": 1434, "old": "1", "new": "0"}], "id": "c09"}
+{"source": "mechanical", "op": "int 0->1", "line": 51, "edits": [{"file": "deps.jac", "offset": 1472, "old": "0", "new": "1"}], "id": "c10"}
+{"source": "mechanical", "op": "negate if", "line": 16, "edits": [{"file": "deps.jac", "offset": 381, "old": "here.name in self.seen", "new": "not (here.name in self.seen)"}], "id": "c11"}
+{"source": "mechanical", "op": "negate if", "line": 44, "edits": [{"file": "deps.jac", "offset": 1243, "old": "k == 0]);\n        order: list[str] = [];\n        while ready", "new": "not (k == 0]);\n        order: list[str] = [];\n        while ready)"}], "id": "c12"}
+{"source": "mechanical", "op": "negate while", "line": 46, "edits": [{"file": "deps.jac", "offset": 1298, "old": "ready", "new": "not (ready)"}], "id": "c13"}
+{"source": "mechanical", "op": "negate if", "line": 51, "edits": [{"file": "deps.jac", "offset": 1456, "old": "remaining[m] == 0", "new": "not (remaining[m] == 0)"}], "id": "c14"}
+{"source": "mechanical", "op": "negate if", "line": 56, "edits": [{"file": "deps.jac", "offset": 1566, "old": "len(order) != len(self.pkgs)", "new": "not (len(order) != len(self.pkgs))"}], "id": "c15"}
+{"source": "mechanical", "op": "edge -->-><--", "line": 8, "edits": [{"file": "deps.jac", "offset": 167, "old": "-->", "new": "<--"}], "id": "c16"}
+{"source": "mechanical", "op": "call sorted->list", "line": 27, "edits": [{"file": "deps.jac", "offset": 625, "old": "sorted", "new": "list"}], "id": "c17"}
+{"source": "mechanical", "op": "call sorted->list", "line": 44, "edits": [{"file": "deps.jac", "offset": 1198, "old": "sorted", "new": "list"}], "id": "c18"}
+{"source": "mechanical", "op": "stmt-del skip", "line": 17, "edits": [{"file": "deps.jac", "offset": 418, "old": "skip;", "new": ""}], "id": "c19"}
+{"source": "mechanical", "op": "stmt-del self.seen.append(here.na", "line": 19, "edits": [{"file": "deps.jac", "offset": 442, "old": "self.seen.append(here.name);", "new": ""}], "id": "c20"}
+{"source": "mechanical", "op": "stmt-del self.pkgs.append(here)", "line": 20, "edits": [{"file": "deps.jac", "offset": 479, "old": "self.pkgs.append(here);", "new": ""}], "id": "c21"}
+{"source": "mechanical", "op": "stmt-del visit", "line": 21, "edits": [{"file": "deps.jac", "offset": 511, "old": "visit [here ->:DependsOn:->];", "new": ""}], "id": "c22"}
+{"source": "mechanical", "op": "stmt-del report", "line": 27, "edits": [{"file": "deps.jac", "offset": 618, "old": "report sorted([p.name for p in self.pkgs[1:]]);", "new": ""}], "id": "c23"}
+{"source": "mechanical", "op": "stmt-del order.append(n)", "line": 48, "edits": [{"file": "deps.jac", "offset": 1348, "old": "order.append(n);", "new": ""}], "id": "c24"}
+{"source": "mechanical", "op": "stmt-del remaining[m]", "line": 50, "edits": [{"file": "deps.jac", "offset": 1418, "old": "remaining[m] -= 1;", "new": ""}], "id": "c25"}
+{"source": "mechanical", "op": "stmt-del ready.append(m)", "line": 52, "edits": [{"file": "deps.jac", "offset": 1496, "old": "ready.append(m);", "new": ""}], "id": "c26"}
+{"source": "mechanical", "op": "stmt-del report", "line": 57, "edits": [{"file": "deps.jac", "offset": 1609, "old": "report \"CYCLE\";", "new": ""}], "id": "c27"}
+{"source": "mechanical", "op": "stmt-del report", "line": 59, "edits": [{"file": "deps.jac", "offset": 1654, "old": "report order;", "new": ""}], "id": "c28"}
+{"source": "hand", "op": "hand h0", "why": "initial ready set unsorted", "edits": [{"file": "deps.jac", "offset": 1190, "old": "ready = sorted([n for (n, k) in remaining.items() if k == 0]);", "new": "ready = [n for (n, k) in remaining.items() if k == 0];"}], "id": "c29"}
+{"source": "hand", "op": "hand h1", "why": "transitive deps include self", "edits": [{"file": "deps.jac", "offset": 618, "old": "report sorted([p.name for p in self.pkgs[1:]]);", "new": "report sorted([p.name for p in self.pkgs]);"}], "id": "c30"}
+{"source": "hand", "op": "hand h2", "why": "LIFO instead of FIFO", "edits": [{"file": "deps.jac", "offset": 1306, "old": "            n = ready.pop(0);", "new": "            n = ready.pop();"}], "id": "c31"}

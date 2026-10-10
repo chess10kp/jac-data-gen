@@ -1,0 +1,464 @@
+[
+ {
+  "id": "tg-l1-apiary-audit",
+  "src": "native/nat-l1-apiary-requeen",
+  "level": 1,
+  "tests": "test_apiary.jac",
+  "trivial_import": "from apiary { RequeenAudit }",
+  "domain": "beekeeping records",
+  "title": "Tests for beekeeping records"
+ },
+ {
+  "id": "tg-l1-choir-sections",
+  "src": "native/nat-l1-choir-sections",
+  "level": 1,
+  "tests": "choir_tests.jac",
+  "trivial_import": "from choir { SectionCheck }",
+  "scope": [
+   {
+    "file": "choir.jac",
+    "header": "walker SectionCheck"
+   }
+  ],
+  "variant": "extend",
+  "domain": "choir roster",
+  "title": "Tests for choir roster"
+ },
+ {
+  "id": "tg-l1-kiln-yield",
+  "src": "native/nat-l1-kiln-cone-yield",
+  "level": 1,
+  "tests": "kiln_tests.jac",
+  "trivial_import": "from kiln { ConeYield }",
+  "domain": "ceramics kiln log",
+  "title": "Tests for ceramics kiln log"
+ },
+ {
+  "id": "tg-l1-lighthouse-shift",
+  "src": "native/nat-l1-lighthouse-lamps",
+  "level": 1,
+  "tests": "keepers_tests.jac",
+  "trivial_import": "from keepers { NightShift }",
+  "domain": "lighthouse lamps",
+  "title": "Tests for lighthouse lamps"
+ },
+ {
+  "id": "tg-l1-seed-vault-plan",
+  "src": "native/nat-l1-seed-vault-regrow",
+  "level": 1,
+  "tests": "vault_tests.jac",
+  "trivial_import": "from vault { RegrowPlan }",
+  "scope": [
+   {
+    "file": "vault.jac",
+    "header": "walker RegrowPlan"
+   }
+  ],
+  "domain": "seed bank",
+  "title": "Tests for seed bank"
+ },
+ {
+  "id": "tg-l1-password-rules",
+  "src": "app/app-l1-password-policy",
+  "level": 1,
+  "tests": "passcheck_tests.jac",
+  "trivial_import": "from passcheck { check_password }",
+  "domain": "password policy",
+  "title": "Tests for password policy"
+ },
+ {
+  "id": "tg-l1-recipe-units",
+  "src": "app/app-l1-recipe-scaler",
+  "level": 1,
+  "tests": "recipe_scale_tests.jac",
+  "trivial_import": "from recipe_scale { convert }",
+  "domain": "recipe unit conversion",
+  "title": "Tests for recipe unit conversion"
+ },
+ {
+  "id": "tg-l1-semver-compare",
+  "src": "app/app-l1-semver-tools",
+  "level": 1,
+  "tests": "semver_compare_tests.jac",
+  "trivial_import": "from semver { compare }",
+  "scope": [
+   {
+    "file": "semver.jac",
+    "header": "def cmp_int"
+   },
+   {
+    "file": "semver.jac",
+    "header": "def cmp_pre"
+   },
+   {
+    "file": "semver.jac",
+    "header": "def compare"
+   },
+   {
+    "file": "semver.jac",
+    "header": "def max_satisfying"
+   }
+  ],
+  "domain": "semantic versions",
+  "title": "Tests for semantic versions"
+ },
+ {
+  "id": "tg-l1-shipping-quote",
+  "src": "app/app-l1-shipping-quote",
+  "level": 1,
+  "tests": "shipping_tests.jac",
+  "trivial_import": "from shipping { quote }",
+  "domain": "parcel shipping",
+  "title": "Tests for parcel shipping"
+ },
+ {
+  "id": "tg-l1-timesheet-pay",
+  "src": "app/app-l1-timesheet-hours",
+  "level": 1,
+  "tests": "timesheet_tests.jac",
+  "trivial_import": "from timesheet { weekly_pay }",
+  "variant": "extend",
+  "domain": "timesheets",
+  "title": "Tests for timesheets"
+ },
+ {
+  "id": "tg-l2-museum-display",
+  "src": "native/nat-l2-museum-loans",
+  "level": 2,
+  "tests": "collection_tests.jac",
+  "trivial_import": "from collection { OnDisplay }",
+  "domain": "museum loans",
+  "title": "Tests for museum loans"
+ },
+ {
+  "id": "tg-l2-pantry-cook",
+  "src": "native/nat-l2-pantry-substitutes",
+  "level": 2,
+  "tests": "cookbook_tests.jac",
+  "trivial_import": "from cookbook { WhatCanICook }",
+  "scope": [
+   {
+    "file": "cookbook.jac",
+    "header": "walker WhatCanICook"
+   }
+  ],
+  "domain": "recipes and substitutes",
+  "title": "Tests for recipes and substitutes"
+ },
+ {
+  "id": "tg-l2-tram-runs",
+  "src": "native/nat-l2-tram-lines",
+  "level": 2,
+  "tests": "tramway_tests.jac",
+  "trivial_import": "from tramway { RunLine }",
+  "domain": "tram lines",
+  "title": "Tests for tram lines"
+ },
+ {
+  "id": "tg-l2-watershed-load",
+  "src": "native/nat-l2-watershed-upstream",
+  "level": 2,
+  "tests": "watershed_tests.jac",
+  "trivial_import": "from watershed { UpstreamLoad }",
+  "variant": "extend",
+  "domain": "river catchment",
+  "title": "Tests for river catchment"
+ },
+ {
+  "id": "tg-l2-disk-usage",
+  "src": "app/app-l2-disk-usage",
+  "level": 2,
+  "tests": "diskmap_tests.jac",
+  "trivial_import": "from diskmap { DiskUsage }",
+  "domain": "folder sizes",
+  "title": "Tests for folder sizes"
+ },
+ {
+  "id": "tg-l2-family-lines",
+  "src": "app/app-l2-family-tree",
+  "level": 2,
+  "tests": "family_tests.jac",
+  "trivial_import": "from family { Descendants }",
+  "domain": "family tree",
+  "title": "Tests for family tree"
+ },
+ {
+  "id": "tg-l2-org-chart",
+  "src": "app/app-l2-org-chart",
+  "level": 2,
+  "tests": "orgchart_tests.jac",
+  "trivial_import": "from orgchart { Headcount }",
+  "scope": [
+   {
+    "file": "orgchart.jac",
+    "header": "walker Headcount"
+   },
+   {
+    "file": "orgchart.jac",
+    "header": "walker PayrollTotal"
+   },
+   {
+    "file": "orgchart.jac",
+    "header": "walker ChainOfCommand"
+   }
+  ],
+  "domain": "org chart",
+  "title": "Tests for org chart"
+ },
+ {
+  "id": "tg-l2-package-deps",
+  "src": "app/app-l2-package-deps",
+  "level": 2,
+  "tests": "deps_tests.jac",
+  "trivial_import": "from deps { InstallOrder }",
+  "domain": "package dependencies",
+  "title": "Tests for package dependencies"
+ },
+ {
+  "id": "tg-l3-bird-survey",
+  "src": "native/nat-l3-bird-survey",
+  "level": 3,
+  "tests": "survey_tests.jac",
+  "trivial_import": "from survey { LogSighting }",
+  "domain": "bird survey",
+  "title": "Tests for bird survey"
+ },
+ {
+  "id": "tg-l3-greenhouse-due",
+  "src": "native/nat-l3-greenhouse-watering",
+  "level": 3,
+  "tests": "greenhouse_tests.jac",
+  "trivial_import": "from greenhouse { DueOn }",
+  "scope": [
+   {
+    "file": "greenhouse.jac",
+    "header": "walker WaterBed"
+   },
+   {
+    "file": "greenhouse.jac",
+    "header": "walker DueOn"
+   }
+  ],
+  "domain": "greenhouse watering",
+  "title": "Tests for greenhouse watering"
+ },
+ {
+  "id": "tg-l3-garage-fees",
+  "src": "native/nat-l3-parking-garage",
+  "level": 3,
+  "tests": "garage_tests.jac",
+  "trivial_import": "from garage { Enter }",
+  "domain": "car park fees",
+  "title": "Tests for car park fees"
+ },
+ {
+  "id": "tg-l3-radio-contest",
+  "src": "native/nat-l3-radio-contest-log",
+  "level": 3,
+  "tests": "contest_tests.jac",
+  "trivial_import": "from contest { Score }",
+  "domain": "radio contest log",
+  "title": "Tests for radio contest log"
+ },
+ {
+  "id": "tg-l3-tool-loans",
+  "src": "native/nat-l3-tool-library",
+  "level": 3,
+  "tests": "toollib_tests.jac",
+  "trivial_import": "from toollib { Checkout }",
+  "domain": "tool library",
+  "title": "Tests for tool library"
+ },
+ {
+  "id": "tg-l3-fuel-economy",
+  "src": "app/app-l3-fuel-economy",
+  "level": 3,
+  "tests": "fuel_tests.jac",
+  "trivial_import": "from main { Economy }",
+  "scope": [
+   {
+    "file": "main.jac",
+    "header": "def find_vehicle"
+   },
+   {
+    "file": "main.jac",
+    "header": "def fills_of"
+   },
+   {
+    "file": "main.jac",
+    "header": "walker AddVehicle"
+   },
+   {
+    "file": "main.jac",
+    "header": "walker RecordFill"
+   },
+   {
+    "file": "main.jac",
+    "header": "walker Economy"
+   }
+  ],
+  "domain": "fleet fuel log",
+  "title": "Tests for fleet fuel log"
+ },
+ {
+  "id": "tg-l3-library-loans",
+  "src": "app/app-l3-library-loans",
+  "level": 3,
+  "tests": "library_tests.jac",
+  "trivial_import": "from main { Checkout }",
+  "scope": [
+   {
+    "file": "main.jac",
+    "header": "def find_book"
+   },
+   {
+    "file": "main.jac",
+    "header": "def available_copies"
+   },
+   {
+    "file": "main.jac",
+    "header": "walker AddBook"
+   },
+   {
+    "file": "main.jac",
+    "header": "walker Checkout"
+   },
+   {
+    "file": "main.jac",
+    "header": "walker ReturnBook"
+   },
+   {
+    "file": "main.jac",
+    "header": "walker Available"
+   },
+   {
+    "file": "main.jac",
+    "header": "walker Overdue"
+   }
+  ],
+  "domain": "lending library",
+  "title": "Tests for lending library"
+ },
+ {
+  "id": "tg-l3-lifting-log",
+  "src": "app/app-l3-lifting-log",
+  "level": 3,
+  "tests": "lifting_tests.jac",
+  "trivial_import": "from main { LogSet }",
+  "scope": [
+   {
+    "file": "main.jac",
+    "header": "node SetEntry"
+   },
+   {
+    "file": "main.jac",
+    "header": "def find_exercise"
+   },
+   {
+    "file": "main.jac",
+    "header": "walker LogSet"
+   },
+   {
+    "file": "main.jac",
+    "header": "walker PersonalBest"
+   },
+   {
+    "file": "main.jac",
+    "header": "walker Volume"
+   }
+  ],
+  "domain": "gym lifting log",
+  "title": "Tests for gym lifting log"
+ },
+ {
+  "id": "tg-l3-bookmarks",
+  "src": "app/app-l3-tagged-bookmarks",
+  "level": 3,
+  "tests": "bookmarks_tests.jac",
+  "trivial_import": "from main { SaveBookmark }",
+  "scope": [
+   {
+    "file": "main.jac",
+    "header": "def clean_tags"
+   },
+   {
+    "file": "main.jac",
+    "header": "def find_bookmark"
+   },
+   {
+    "file": "main.jac",
+    "header": "walker SaveBookmark"
+   },
+   {
+    "file": "main.jac",
+    "header": "walker FindByTag"
+   },
+   {
+    "file": "main.jac",
+    "header": "walker TagCounts"
+   },
+   {
+    "file": "main.jac",
+    "header": "walker DeleteBookmark"
+   }
+  ],
+  "variant": "extend",
+  "domain": "bookmarks",
+  "title": "Tests for bookmarks"
+ },
+ {
+  "id": "tg-l4-film-callsheet",
+  "src": "native/nat-l4-film-callsheet",
+  "level": 4,
+  "tests": "callsheet_tests.jac",
+  "trivial_import": "from callsheet { CallSheet }",
+  "domain": "film call sheet",
+  "title": "Tests for film call sheet"
+ },
+ {
+  "id": "tg-l4-orchard-forecast",
+  "src": "native/nat-l4-orchard-forecast",
+  "level": 4,
+  "tests": "harvest_tests.jac",
+  "trivial_import": "from harvest { ForecastBlock }",
+  "domain": "orchard harvest",
+  "title": "Tests for orchard harvest"
+ },
+ {
+  "id": "tg-l4-warehouse-pick",
+  "src": "native/nat-l4-warehouse-picking",
+  "level": 4,
+  "tests": "picking_tests.jac",
+  "trivial_import": "from picking { PickRun }",
+  "scope": [
+   {
+    "file": "picking.jac",
+    "header": null
+   },
+   {
+    "file": "seed.jac",
+    "header": null
+   }
+  ],
+  "domain": "warehouse picking",
+  "title": "Tests for warehouse picking"
+ },
+ {
+  "id": "tg-l5-bikeshare-api",
+  "src": "native/nat-l5-bikeshare-api",
+  "level": 5,
+  "tests": "app_tests.jac",
+  "trivial_import": "from app { rent_bike }",
+  "domain": "bike share docks",
+  "title": "Tests for bike share docks"
+ },
+ {
+  "id": "tg-l5-ferry-booking",
+  "src": "native/nat-l5-ferry-booking",
+  "level": 5,
+  "tests": "ferry_tests.jac",
+  "trivial_import": "from app { book }",
+  "domain": "ferry reservations",
+  "title": "Tests for ferry reservations"
+ }
+]

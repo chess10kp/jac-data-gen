@@ -1,0 +1,4 @@
+[project]
+name = "bikeshare"
+version = "0.1.0"
+entry-point = "app"

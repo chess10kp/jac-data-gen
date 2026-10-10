@@ -1,0 +1,38 @@
+{"source": "mechanical", "op": "aug +=->-=", "line": 24, "edits": [{"file": "picking.jac", "offset": 582, "old": "+", "new": "-"}], "id": "c00"}
+{"source": "mechanical", "op": "cmp >->>=", "line": 27, "edits": [{"file": "picking.jac", "offset": 697, "old": ">", "new": ">="}], "id": "c01"}
+{"source": "mechanical", "op": "bool and->or", "line": 27, "edits": [{"file": "picking.jac", "offset": 701, "old": "and", "new": "or"}], "id": "c02"}
+{"source": "mechanical", "op": "cmp >->>=", "line": 27, "edits": [{"file": "picking.jac", "offset": 711, "old": ">", "new": ">="}], "id": "c03"}
+{"source": "mechanical", "op": "aug -=->+=", "line": 29, "edits": [{"file": "picking.jac", "offset": 780, "old": "-", "new": "+"}], "id": "c04"}
+{"source": "mechanical", "op": "arith -->+", "line": 30, "edits": [{"file": "picking.jac", "offset": 836, "old": "-", "new": "+"}], "id": "c05"}
+{"source": "mechanical", "op": "cmp >->>=", "line": 34, "edits": [{"file": "picking.jac", "offset": 983, "old": ">", "new": ">="}], "id": "c06"}
+{"source": "mechanical", "op": "cmp >->>=", "line": 40, "edits": [{"file": "picking.jac", "offset": 1192, "old": ">", "new": ">="}], "id": "c07"}
+{"source": "mechanical", "op": "int 0->1", "line": 16, "edits": [{"file": "picking.jac", "offset": 404, "old": "0", "new": "1"}], "id": "c08"}
+{"source": "mechanical", "op": "int 1->2", "line": 24, "edits": [{"file": "picking.jac", "offset": 585, "old": "1", "new": "2"}], "id": "c09"}
+{"source": "mechanical", "op": "int 1->0", "line": 24, "edits": [{"file": "picking.jac", "offset": 585, "old": "1", "new": "0"}], "id": "c10"}
+{"source": "mechanical", "op": "int 0->1", "line": 26, "edits": [{"file": "picking.jac", "offset": 673, "old": "0", "new": "1"}], "id": "c11"}
+{"source": "mechanical", "op": "int 0->1", "line": 27, "edits": [{"file": "picking.jac", "offset": 699, "old": "0", "new": "1"}], "id": "c12"}
+{"source": "mechanical", "op": "int 0->1", "line": 27, "edits": [{"file": "picking.jac", "offset": 713, "old": "0", "new": "1"}], "id": "c13"}
+{"source": "mechanical", "op": "int 0->1", "line": 34, "edits": [{"file": "picking.jac", "offset": 985, "old": "0", "new": "1"}], "id": "c14"}
+{"source": "mechanical", "op": "int 0->1", "line": 40, "edits": [{"file": "picking.jac", "offset": 1194, "old": "0", "new": "1"}], "id": "c15"}
+{"source": "mechanical", "op": "negate if", "line": 27, "edits": [{"file": "picking.jac", "offset": 692, "old": "want > 0 and b.qty > 0", "new": "not (want > 0 and b.qty > 0)"}], "id": "c16"}
+{"source": "mechanical", "op": "negate if", "line": 34, "edits": [{"file": "picking.jac", "offset": 976, "old": "any([n > 0 for n in self.outstanding.values()])", "new": "not (any([n > 0 for n in self.outstanding.values()]))"}], "id": "c17"}
+{"source": "mechanical", "op": "edge -->-><--", "line": 20, "edits": [{"file": "picking.jac", "offset": 500, "old": "-->", "new": "<--"}], "id": "c18"}
+{"source": "mechanical", "op": "call min->max", "line": 28, "edits": [{"file": "picking.jac", "offset": 740, "old": "min", "new": "max"}], "id": "c19"}
+{"source": "mechanical", "op": "call any->all", "line": 34, "edits": [{"file": "picking.jac", "offset": 976, "old": "any", "new": "all"}], "id": "c20"}
+{"source": "mechanical", "op": "stmt-del visit", "line": 20, "edits": [{"file": "picking.jac", "offset": 493, "old": "visit [-->[?:Aisle]];", "new": ""}], "id": "c21"}
+{"source": "mechanical", "op": "stmt-del self.aisles_visited", "line": 24, "edits": [{"file": "picking.jac", "offset": 562, "old": "self.aisles_visited += 1;", "new": ""}], "id": "c22"}
+{"source": "mechanical", "op": "stmt-del b.qty", "line": 29, "edits": [{"file": "picking.jac", "offset": 774, "old": "b.qty -= take;", "new": ""}], "id": "c23"}
+{"source": "mechanical", "op": "stmt-del self.lines.append(PickLi", "line": 31, "edits": [{"file": "picking.jac", "offset": 860, "old": "self.lines.append(PickLine(aisle=here.number, bin=b.code, sku=b.sku, qty=take));", "new": ""}], "id": "c24"}
+{"source": "mechanical", "op": "stmt-del visit", "line": 35, "edits": [{"file": "picking.jac", "offset": 1038, "old": "visit [here ->:NextAisle:->];", "new": ""}], "id": "c25"}
+{"source": "mechanical", "op": "stmt-del report", "line": 41, "edits": [{"file": "picking.jac", "offset": 1206, "old": "report self.lines;", "new": ""}], "id": "c26"}
+{"source": "mechanical", "op": "arith +->-", "line": 9, "edits": [{"file": "seed.jac", "offset": 432, "old": "+", "new": "-"}], "id": "c27"}
+{"source": "mechanical", "op": "int 1->2", "line": 9, "edits": [{"file": "seed.jac", "offset": 434, "old": "1", "new": "2"}], "id": "c28"}
+{"source": "mechanical", "op": "int 1->0", "line": 9, "edits": [{"file": "seed.jac", "offset": 434, "old": "1", "new": "0"}], "id": "c29"}
+{"source": "mechanical", "op": "negate if", "line": 10, "edits": [{"file": "seed.jac", "offset": 449, "old": "prev is None", "new": "not (prev is None)"}], "id": "c30"}
+{"source": "mechanical", "op": "connect ++>-><++", "line": 11, "edits": [{"file": "seed.jac", "offset": 481, "old": "++>", "new": "<++"}], "id": "c31"}
+{"source": "source-negative", "op": "neg mutates_order", "why": "works directly on the caller's order", "edits": [{"file": "picking.jac", "offset": 448, "old": "self.outstanding = dict(self.order);", "new": "self.outstanding = self.order;"}], "id": "c32"}
+{"source": "source-negative", "op": "neg never_stops", "why": "walks every aisle even when satisfied", "edits": [{"file": "picking.jac", "offset": 965, "old": "        if any([n > 0 for n in self.outstanding.values()]) {\n            visit [here ->:NextAisle:->];\n        }", "new": "        visit [here ->:NextAisle:->];"}], "id": "c33"}
+{"source": "source-negative", "op": "neg no_stock_decrement", "why": "does not decrement bin qty", "edits": [{"file": "picking.jac", "offset": 758, "old": "                b.qty -= take;\n", "new": ""}], "id": "c34"}
+{"source": "source-negative", "op": "neg short_includes_zero", "why": "short lists filled skus with 0", "edits": [{"file": "picking.jac", "offset": 1125, "old": "self.short = {sku: n for (sku, n) in self.outstanding.items() if n > 0};", "new": "self.short = dict(self.outstanding);"}], "id": "c35"}
+{"source": "source-negative", "op": "neg takes_whole_bin", "why": "takes the whole bin", "edits": [{"file": "picking.jac", "offset": 733, "old": "take = min(want, b.qty);", "new": "take = b.qty;"}], "id": "c36"}
+{"source": "source-negative", "op": "neg zero_lines", "why": "records zero-qty lines", "edits": [{"file": "picking.jac", "offset": 689, "old": "if want > 0 and b.qty > 0 {", "new": "if want > 0 {"}], "id": "c37"}

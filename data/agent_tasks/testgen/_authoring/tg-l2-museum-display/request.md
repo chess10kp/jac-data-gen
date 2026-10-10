@@ -1,0 +1,3 @@
+Our collection model lives in `collection.jac` (museums own artworks via `Owns` edges, loans are `LoanedTo` edges carrying start/end years). The `OnDisplay` walker answers "what can visitors see at this museum in year Y?".
+
+We've never had tests for this and we keep getting loan-date bugs reported in other systems, so I want a thorough suite here. Please write `collection_tests.jac` that exercises owned works, works out on loan, borrowed works, loan-year boundaries, works in conservation, and the reported list + `shown` count. It must pass against the current `collection.jac`, which you shouldn't modify.

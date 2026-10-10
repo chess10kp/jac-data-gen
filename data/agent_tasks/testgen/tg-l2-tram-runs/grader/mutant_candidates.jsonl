@@ -1,0 +1,39 @@
+{"source": "mechanical", "op": "bool and->or", "line": 36, "edits": [{"file": "tramway.jac", "offset": 924, "old": "and", "new": "or"}], "id": "c00"}
+{"source": "mechanical", "op": "aug +=->-=", "line": 37, "edits": [{"file": "tramway.jac", "offset": 986, "old": "+", "new": "-"}], "id": "c01"}
+{"source": "mechanical", "op": "cmp ==->!=", "line": 44, "edits": [{"file": "tramway.jac", "offset": 1109, "old": "==", "new": "!="}], "id": "c02"}
+{"source": "mechanical", "op": "cmp >=->>", "line": 65, "edits": [{"file": "tramway.jac", "offset": 1556, "old": ">=", "new": ">"}], "id": "c03"}
+{"source": "mechanical", "op": "int 2->3", "line": 9, "edits": [{"file": "tramway.jac", "offset": 186, "old": "2", "new": "3"}], "id": "c04"}
+{"source": "mechanical", "op": "int 2->1", "line": 9, "edits": [{"file": "tramway.jac", "offset": 186, "old": "2", "new": "1"}], "id": "c05"}
+{"source": "mechanical", "op": "int 0->1", "line": 15, "edits": [{"file": "tramway.jac", "offset": 306, "old": "0", "new": "1"}], "id": "c06"}
+{"source": "mechanical", "op": "int 0->1", "line": 27, "edits": [{"file": "tramway.jac", "offset": 613, "old": "0", "new": "1"}], "id": "c07"}
+{"source": "mechanical", "op": "int 0->1", "line": 36, "edits": [{"file": "tramway.jac", "offset": 932, "old": "0", "new": "1"}], "id": "c08"}
+{"source": "mechanical", "op": "int 0->1", "line": 38, "edits": [{"file": "tramway.jac", "offset": 1028, "old": "0", "new": "1"}], "id": "c09"}
+{"source": "mechanical", "op": "int 0->1", "line": 44, "edits": [{"file": "tramway.jac", "offset": 1125, "old": "0", "new": "1"}], "id": "c10"}
+{"source": "mechanical", "op": "int 2->3", "line": 65, "edits": [{"file": "tramway.jac", "offset": 1559, "old": "2", "new": "3"}], "id": "c11"}
+{"source": "mechanical", "op": "int 2->1", "line": 65, "edits": [{"file": "tramway.jac", "offset": 1559, "old": "2", "new": "1"}], "id": "c12"}
+{"source": "mechanical", "op": "negate if", "line": 14, "edits": [{"file": "tramway.jac", "offset": 277, "old": "found", "new": "not (found)"}], "id": "c13"}
+{"source": "mechanical", "op": "negate if", "line": 36, "edits": [{"file": "tramway.jac", "offset": 920, "old": "nxt and nxt[0] not in self.visited", "new": "not (nxt and nxt[0] not in self.visited)"}], "id": "c14"}
+{"source": "mechanical", "op": "negate if", "line": 44, "edits": [{"file": "tramway.jac", "offset": 1104, "old": "here == self.visited[0]", "new": "not (here == self.visited[0])"}], "id": "c15"}
+{"source": "mechanical", "op": "negate if", "line": 65, "edits": [{"file": "tramway.jac", "offset": 1545, "old": "len(lines) >= 2", "new": "not (len(lines) >= 2)"}], "id": "c16"}
+{"source": "mechanical", "op": "not-in->in", "line": 36, "edits": [{"file": "tramway.jac", "offset": 935, "old": "not in", "new": "in"}], "id": "c17"}
+{"source": "mechanical", "op": "edge -->-><--", "line": 7, "edits": [{"file": "tramway.jac", "offset": 133, "old": "-->", "new": "<--"}], "id": "c18"}
+{"source": "mechanical", "op": "edge -->-><--", "line": 13, "edits": [{"file": "tramway.jac", "offset": 241, "old": "-->", "new": "<--"}], "id": "c19"}
+{"source": "mechanical", "op": "edge -->-><--", "line": 54, "edits": [{"file": "tramway.jac", "offset": 1280, "old": "-->", "new": "<--"}], "id": "c20"}
+{"source": "mechanical", "op": "connect ++>-><++", "line": 17, "edits": [{"file": "tramway.jac", "offset": 332, "old": "++>", "new": "<++"}], "id": "c21"}
+{"source": "mechanical", "op": "call sorted->list", "line": 71, "edits": [{"file": "tramway.jac", "offset": 1668, "old": "sorted", "new": "list"}], "id": "c22"}
+{"source": "mechanical", "op": "stmt-del self.visited.append(here", "line": 32, "edits": [{"file": "tramway.jac", "offset": 721, "old": "self.visited.append(here);", "new": ""}], "id": "c23"}
+{"source": "mechanical", "op": "stmt-del self.route.append(here.n", "line": 33, "edits": [{"file": "tramway.jac", "offset": 756, "old": "self.route.append(here.name);", "new": ""}], "id": "c24"}
+{"source": "mechanical", "op": "stmt-del self.minutes", "line": 37, "edits": [{"file": "tramway.jac", "offset": 973, "old": "self.minutes += hop.minutes;", "new": ""}], "id": "c25"}
+{"source": "mechanical", "op": "stmt-del visit", "line": 38, "edits": [{"file": "tramway.jac", "offset": 1018, "old": "visit nxt[0];", "new": ""}], "id": "c26"}
+{"source": "mechanical", "op": "stmt-del report", "line": 45, "edits": [{"file": "tramway.jac", "offset": 1142, "old": "report self.route;", "new": ""}], "id": "c27"}
+{"source": "mechanical", "op": "stmt-del visit", "line": 54, "edits": [{"file": "tramway.jac", "offset": 1273, "old": "visit [-->[?:Stop]];", "new": ""}], "id": "c28"}
+{"source": "mechanical", "op": "stmt-del lines.add(e.line)", "line": 60, "edits": [{"file": "tramway.jac", "offset": 1421, "old": "lines.add(e.line);", "new": ""}], "id": "c29"}
+{"source": "mechanical", "op": "stmt-del lines.add(e.line)", "line": 63, "edits": [{"file": "tramway.jac", "offset": 1505, "old": "lines.add(e.line);", "new": ""}], "id": "c30"}
+{"source": "mechanical", "op": "stmt-del self.hubs.append(here.na", "line": 66, "edits": [{"file": "tramway.jac", "offset": 1575, "old": "self.hubs.append(here.name);", "new": ""}], "id": "c31"}
+{"source": "mechanical", "op": "stmt-del report", "line": 71, "edits": [{"file": "tramway.jac", "offset": 1661, "old": "report sorted(self.hubs);", "new": ""}], "id": "c32"}
+{"source": "source-negative", "op": "neg counts_closing_hop", "why": "adds minutes of the loop-closing hop", "edits": [{"file": "tramway.jac", "offset": 905, "old": "            if nxt and nxt[0] not in self.visited {\n                self.minutes += hop.minutes;", "new": "            self.minutes += hop.minutes;\n            if nxt and nxt[0] not in self.visited {"}], "id": "c33"}
+{"source": "source-negative", "op": "neg hub_threshold", "why": "needs 3 lines", "edits": [{"file": "tramway.jac", "offset": 1542, "old": "if len(lines) >= 2 {", "new": "if len(lines) >= 3 {"}], "id": "c34"}
+{"source": "source-negative", "op": "neg ignores_line", "why": "follows any line's hop", "edits": [{"file": "tramway.jac", "offset": 786, "old": "        for hop in [edge here ->:Track:line == self.line:->] {\n            nxt = [here ->:Track:line == self.line:->];", "new": "        for hop in [edge here ->:Track:->][:1] {\n            nxt = [here ->:Track:->];"}], "id": "c35"}
+{"source": "source-negative", "op": "neg outgoing_only_hubs", "why": "interchange considers departing edges only", "edits": [{"file": "tramway.jac", "offset": 1450, "old": "        for e in [edge here <-:Track:<-] {\n            lines.add(e.line);\n        }\n", "new": ""}], "id": "c36"}
+{"source": "source-negative", "op": "neg route_without_start", "why": "route omits the starting stop", "edits": [{"file": "tramway.jac", "offset": 748, "old": "        self.route.append(here.name);\n", "new": "        if self.visited[0] != here {\n            self.route.append(here.name);\n        }\n"}], "id": "c37"}
+{"source": "source-negative", "op": "neg unsorted_hubs", "why": "hubs unsorted", "edits": [{"file": "tramway.jac", "offset": 1661, "old": "report sorted(self.hubs);", "new": "report self.hubs;"}], "id": "c38"}

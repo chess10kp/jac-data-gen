@@ -1,0 +1,3 @@
+This little project generates the daily call sheet for our shoot. It's split over three modules: `crew.jac` (crew + department prep times), `schedule.jac` (shoot days, scenes, assignments) and `callsheet.jac` (the `CallSheet` walker that works out everyone's call time).
+
+The 1st AD wants confidence that call times are right before we rely on it. Could you write a test suite in `callsheet_tests.jac` at the project root? It should cover the department prep times, the earliest-scene logic (and that other days don't leak in), the HH:MM formatting, the ordering of the sheet, and the `locations` count. No changes to the existing modules, please.

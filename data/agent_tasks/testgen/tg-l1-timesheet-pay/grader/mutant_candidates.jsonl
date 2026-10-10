@@ -1,0 +1,43 @@
+{"source": "mechanical", "op": "negate if", "line": 4, "edits": [{"file": "timesheet.jac", "offset": 85, "old": "len(t) != 5 or t[2] != \":\" or not t[:2].isdigit() or not t[3:].isdigit()", "new": "not (len(t) != 5 or t[2] != \":\" or not t[:2].isdigit() or not t[3:].isdigit())"}], "id": "c00"}
+{"source": "mechanical", "op": "cmp !=->==", "line": 4, "edits": [{"file": "timesheet.jac", "offset": 92, "old": "!=", "new": "=="}], "id": "c01"}
+{"source": "mechanical", "op": "bool or->and", "line": 4, "edits": [{"file": "timesheet.jac", "offset": 97, "old": "or", "new": "and"}], "id": "c02"}
+{"source": "mechanical", "op": "int 2->3", "line": 4, "edits": [{"file": "timesheet.jac", "offset": 102, "old": "2", "new": "3"}], "id": "c03"}
+{"source": "mechanical", "op": "cmp !=->==", "line": 4, "edits": [{"file": "timesheet.jac", "offset": 105, "old": "!=", "new": "=="}], "id": "c04"}
+{"source": "mechanical", "op": "bool or->and", "line": 4, "edits": [{"file": "timesheet.jac", "offset": 112, "old": "or", "new": "and"}], "id": "c05"}
+{"source": "mechanical", "op": "not-drop", "line": 4, "edits": [{"file": "timesheet.jac", "offset": 115, "old": "not ", "new": ""}], "id": "c06"}
+{"source": "mechanical", "op": "bool or->and", "line": 4, "edits": [{"file": "timesheet.jac", "offset": 135, "old": "or", "new": "and"}], "id": "c07"}
+{"source": "mechanical", "op": "not-drop", "line": 4, "edits": [{"file": "timesheet.jac", "offset": 138, "old": "not ", "new": ""}], "id": "c08"}
+{"source": "mechanical", "op": "int 3->2", "line": 4, "edits": [{"file": "timesheet.jac", "offset": 144, "old": "3", "new": "2"}], "id": "c09"}
+{"source": "mechanical", "op": "int 2->1", "line": 7, "edits": [{"file": "timesheet.jac", "offset": 224, "old": "2", "new": "1"}], "id": "c10"}
+{"source": "mechanical", "op": "negate if", "line": 9, "edits": [{"file": "timesheet.jac", "offset": 256, "old": "h > 23 or m > 59", "new": "not (h > 23 or m > 59)"}], "id": "c11"}
+{"source": "mechanical", "op": "cmp >->>=", "line": 9, "edits": [{"file": "timesheet.jac", "offset": 258, "old": ">", "new": ">="}], "id": "c12"}
+{"source": "mechanical", "op": "int 23->22", "line": 9, "edits": [{"file": "timesheet.jac", "offset": 260, "old": "23", "new": "22"}], "id": "c13"}
+{"source": "mechanical", "op": "int 23->24", "line": 9, "edits": [{"file": "timesheet.jac", "offset": 260, "old": "23", "new": "24"}], "id": "c14"}
+{"source": "mechanical", "op": "bool or->and", "line": 9, "edits": [{"file": "timesheet.jac", "offset": 263, "old": "or", "new": "and"}], "id": "c15"}
+{"source": "mechanical", "op": "cmp >->>=", "line": 9, "edits": [{"file": "timesheet.jac", "offset": 268, "old": ">", "new": ">="}], "id": "c16"}
+{"source": "mechanical", "op": "arith *->/", "line": 12, "edits": [{"file": "timesheet.jac", "offset": 337, "old": "*", "new": "/"}], "id": "c17"}
+{"source": "mechanical", "op": "arith +->-", "line": 12, "edits": [{"file": "timesheet.jac", "offset": 342, "old": "+", "new": "-"}], "id": "c18"}
+{"source": "mechanical", "op": "meth strip->lstrip", "line": 16, "edits": [{"file": "timesheet.jac", "offset": 402, "old": "strip", "new": "lstrip"}], "id": "c19"}
+{"source": "mechanical", "op": "negate if", "line": 17, "edits": [{"file": "timesheet.jac", "offset": 429, "old": "len(parts) != 2", "new": "not (len(parts) != 2)"}], "id": "c20"}
+{"source": "mechanical", "op": "cmp !=->==", "line": 17, "edits": [{"file": "timesheet.jac", "offset": 440, "old": "!=", "new": "=="}], "id": "c21"}
+{"source": "mechanical", "op": "meth strip->lstrip", "line": 20, "edits": [{"file": "timesheet.jac", "offset": 532, "old": "strip", "new": "lstrip"}], "id": "c22"}
+{"source": "mechanical", "op": "int 1->0", "line": 21, "edits": [{"file": "timesheet.jac", "offset": 570, "old": "1", "new": "0"}], "id": "c23"}
+{"source": "mechanical", "op": "meth strip->lstrip", "line": 21, "edits": [{"file": "timesheet.jac", "offset": 573, "old": "strip", "new": "lstrip"}], "id": "c24"}
+{"source": "mechanical", "op": "negate if", "line": 22, "edits": [{"file": "timesheet.jac", "offset": 590, "old": "end < start", "new": "not (end < start)"}], "id": "c25"}
+{"source": "mechanical", "op": "cmp <-><=", "line": 22, "edits": [{"file": "timesheet.jac", "offset": 594, "old": "<", "new": "<="}], "id": "c26"}
+{"source": "mechanical", "op": "stmt-del end", "line": 23, "edits": [{"file": "timesheet.jac", "offset": 612, "old": "end += 24 * 60;", "new": ""}], "id": "c27"}
+{"source": "mechanical", "op": "aug +=->-=", "line": 23, "edits": [{"file": "timesheet.jac", "offset": 616, "old": "+", "new": "-"}], "id": "c28"}
+{"source": "mechanical", "op": "int 24->25", "line": 23, "edits": [{"file": "timesheet.jac", "offset": 619, "old": "24", "new": "25"}], "id": "c29"}
+{"source": "mechanical", "op": "arith -->+", "line": 25, "edits": [{"file": "timesheet.jac", "offset": 649, "old": "-", "new": "+"}], "id": "c30"}
+{"source": "mechanical", "op": "arith /->*", "line": 38, "edits": [{"file": "timesheet.jac", "offset": 997, "old": "/", "new": "*"}], "id": "c31"}
+{"source": "mechanical", "op": "int 60->61", "line": 38, "edits": [{"file": "timesheet.jac", "offset": 999, "old": "60", "new": "61"}], "id": "c32"}
+{"source": "mechanical", "op": "call min->max", "line": 39, "edits": [{"file": "timesheet.jac", "offset": 1017, "old": "min", "new": "max"}], "id": "c33"}
+{"source": "mechanical", "op": "call max->min", "line": 40, "edits": [{"file": "timesheet.jac", "offset": 1050, "old": "max", "new": "min"}], "id": "c34"}
+{"source": "mechanical", "op": "arith -->+", "line": 40, "edits": [{"file": "timesheet.jac", "offset": 1065, "old": "-", "new": "+"}], "id": "c35"}
+{"source": "mechanical", "op": "arith *->/", "line": 41, "edits": [{"file": "timesheet.jac", "offset": 1099, "old": "*", "new": "/"}], "id": "c36"}
+{"source": "mechanical", "op": "arith +->-", "line": 41, "edits": [{"file": "timesheet.jac", "offset": 1106, "old": "+", "new": "-"}], "id": "c37"}
+{"source": "mechanical", "op": "arith *->/", "line": 41, "edits": [{"file": "timesheet.jac", "offset": 1117, "old": "*", "new": "/"}], "id": "c38"}
+{"source": "mechanical", "op": "arith *->/", "line": 41, "edits": [{"file": "timesheet.jac", "offset": 1124, "old": "*", "new": "/"}], "id": "c39"}
+{"source": "hand", "op": "hand h0", "why": "zero-length span becomes 24h", "edits": [{"file": "timesheet.jac", "offset": 587, "old": "if end < start {", "new": "if end <= start {"}], "id": "c40"}
+{"source": "hand", "op": "hand h1", "why": "double-time overtime", "edits": [{"file": "timesheet.jac", "offset": 1078, "old": "return round(regular * rate + overtime * rate * 1.5, 2);", "new": "return round(regular * rate + overtime * rate * 2.0, 2);"}], "id": "c41"}
+{"source": "hand", "op": "hand h2", "why": "accepts hour 24", "edits": [{"file": "timesheet.jac", "offset": 253, "old": "if h > 23 or m > 59 {", "new": "if h > 24 or m > 59 {"}], "id": "c42"}

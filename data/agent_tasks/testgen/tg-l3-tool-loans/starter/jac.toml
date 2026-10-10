@@ -1,0 +1,4 @@
+[project]
+name = "toollib"
+version = "0.1.0"
+entry-point = "toollib"

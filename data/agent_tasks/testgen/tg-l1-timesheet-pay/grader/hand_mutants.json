@@ -1,0 +1,35 @@
+[
+ {
+  "name": "h0",
+  "why": "zero-length span becomes 24h",
+  "edits": [
+   {
+    "file": "timesheet.jac",
+    "old": "if end < start {",
+    "new": "if end <= start {"
+   }
+  ]
+ },
+ {
+  "name": "h1",
+  "why": "double-time overtime",
+  "edits": [
+   {
+    "file": "timesheet.jac",
+    "old": "return round(regular * rate + overtime * rate * 1.5, 2);",
+    "new": "return round(regular * rate + overtime * rate * 2.0, 2);"
+   }
+  ]
+ },
+ {
+  "name": "h2",
+  "why": "accepts hour 24",
+  "edits": [
+   {
+    "file": "timesheet.jac",
+    "old": "if h > 23 or m > 59 {",
+    "new": "if h > 24 or m > 59 {"
+   }
+  ]
+ }
+]

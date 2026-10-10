@@ -1,0 +1,37 @@
+{
+  "id": "tg-l4-orchard-forecast",
+  "kind": "testgen",
+  "level": 4,
+  "source": "derived:native/nat-l4-orchard-forecast",
+  "gates": [
+    "check",
+    "mutation"
+  ],
+  "target_paths": [
+    "harvest_tests.jac"
+  ],
+  "jac_version": "0.37.25",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "mutation": {
+    "threshold": 0.8,
+    "code_files": [
+      "harvest.jac",
+      "model/orchard.jac",
+      "model/varieties.jac"
+    ],
+    "scope": null,
+    "n_candidates": 31,
+    "n_mechanical_sites": 26,
+    "n_source_negatives": 5,
+    "n_hand": 0
+  },
+  "provenance": {
+    "source_task": "native/nat-l4-orchard-forecast",
+    "source_hash": "11f583a257a67867",
+    "variant": "fresh",
+    "title": "Tests for orchard harvest",
+    "domain": "orchard harvest",
+    "author": "claude (testgen builder)",
+    "created": "2026-10-10"
+  }
+}

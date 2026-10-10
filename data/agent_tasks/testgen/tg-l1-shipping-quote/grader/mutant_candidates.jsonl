@@ -1,0 +1,43 @@
+{"source": "mechanical", "op": "call min->max", "line": 12, "edits": [{"file": "shipping.jac", "offset": 294, "old": "min", "new": "max"}], "id": "c00"}
+{"source": "mechanical", "op": "negate if", "line": 12, "edits": [{"file": "shipping.jac", "offset": 294, "old": "min(actual_kg, length_cm, width_cm, height_cm) <= 0", "new": "not (min(actual_kg, length_cm, width_cm, height_cm) <= 0)"}], "id": "c01"}
+{"source": "mechanical", "op": "cmp <=-><", "line": 12, "edits": [{"file": "shipping.jac", "offset": 341, "old": "<=", "new": "<"}], "id": "c02"}
+{"source": "mechanical", "op": "int 0->1", "line": 12, "edits": [{"file": "shipping.jac", "offset": 344, "old": "0", "new": "1"}], "id": "c03"}
+{"source": "mechanical", "op": "arith *->/", "line": 15, "edits": [{"file": "shipping.jac", "offset": 449, "old": "*", "new": "/"}], "id": "c04"}
+{"source": "mechanical", "op": "arith *->/", "line": 15, "edits": [{"file": "shipping.jac", "offset": 460, "old": "*", "new": "/"}], "id": "c05"}
+{"source": "mechanical", "op": "arith /->*", "line": 15, "edits": [{"file": "shipping.jac", "offset": 472, "old": "/", "new": "*"}], "id": "c06"}
+{"source": "mechanical", "op": "int 5000->4999", "line": 15, "edits": [{"file": "shipping.jac", "offset": 474, "old": "5000", "new": "4999"}], "id": "c07"}
+{"source": "mechanical", "op": "int 5000->5001", "line": 15, "edits": [{"file": "shipping.jac", "offset": 474, "old": "5000", "new": "5001"}], "id": "c08"}
+{"source": "mechanical", "op": "call max->min", "line": 16, "edits": [{"file": "shipping.jac", "offset": 488, "old": "max", "new": "min"}], "id": "c09"}
+{"source": "mechanical", "op": "arith *->/", "line": 17, "edits": [{"file": "shipping.jac", "offset": 545, "old": "*", "new": "/"}], "id": "c10"}
+{"source": "mechanical", "op": "int 2->3", "line": 17, "edits": [{"file": "shipping.jac", "offset": 547, "old": "2", "new": "3"}], "id": "c11"}
+{"source": "mechanical", "op": "int 9->8", "line": 17, "edits": [{"file": "shipping.jac", "offset": 550, "old": "9", "new": "8"}], "id": "c12"}
+{"source": "mechanical", "op": "arith /->*", "line": 17, "edits": [{"file": "shipping.jac", "offset": 554, "old": "/", "new": "*"}], "id": "c13"}
+{"source": "mechanical", "op": "int 2->1", "line": 17, "edits": [{"file": "shipping.jac", "offset": 556, "old": "2", "new": "1"}], "id": "c14"}
+{"source": "mechanical", "op": "negate if", "line": 21, "edits": [{"file": "shipping.jac", "offset": 619, "old": "zone not in RATES", "new": "not (zone not in RATES)"}], "id": "c15"}
+{"source": "mechanical", "op": "not-in->in", "line": 21, "edits": [{"file": "shipping.jac", "offset": 624, "old": "not in", "new": "in"}], "id": "c16"}
+{"source": "mechanical", "op": "negate if", "line": 24, "edits": [{"file": "shipping.jac", "offset": 702, "old": "weight_kg <= 0", "new": "not (weight_kg <= 0)"}], "id": "c17"}
+{"source": "mechanical", "op": "cmp <=-><", "line": 24, "edits": [{"file": "shipping.jac", "offset": 712, "old": "<=", "new": "<"}], "id": "c18"}
+{"source": "mechanical", "op": "int 0->1", "line": 24, "edits": [{"file": "shipping.jac", "offset": 715, "old": "0", "new": "1"}], "id": "c19"}
+{"source": "mechanical", "op": "arith +->-", "line": 28, "edits": [{"file": "shipping.jac", "offset": 834, "old": "+", "new": "-"}], "id": "c20"}
+{"source": "mechanical", "op": "call max->min", "line": 28, "edits": [{"file": "shipping.jac", "offset": 836, "old": "max", "new": "min"}], "id": "c21"}
+{"source": "mechanical", "op": "arith -->+", "line": 28, "edits": [{"file": "shipping.jac", "offset": 855, "old": "-", "new": "+"}], "id": "c22"}
+{"source": "mechanical", "op": "int 1->2", "line": 28, "edits": [{"file": "shipping.jac", "offset": 857, "old": "1", "new": "2"}], "id": "c23"}
+{"source": "mechanical", "op": "int 1->0", "line": 28, "edits": [{"file": "shipping.jac", "offset": 857, "old": "1", "new": "0"}], "id": "c24"}
+{"source": "mechanical", "op": "arith *->/", "line": 28, "edits": [{"file": "shipping.jac", "offset": 860, "old": "*", "new": "/"}], "id": "c25"}
+{"source": "mechanical", "op": "int 2->1", "line": 28, "edits": [{"file": "shipping.jac", "offset": 870, "old": "2", "new": "1"}], "id": "c26"}
+{"source": "mechanical", "op": "int 2->3", "line": 28, "edits": [{"file": "shipping.jac", "offset": 870, "old": "2", "new": "3"}], "id": "c27"}
+{"source": "mechanical", "op": "negate if", "line": 32, "edits": [{"file": "shipping.jac", "offset": 943, "old": "zone == \"domestic\"", "new": "not (zone == \"domestic\")"}], "id": "c28"}
+{"source": "mechanical", "op": "cmp ==->!=", "line": 32, "edits": [{"file": "shipping.jac", "offset": 948, "old": "==", "new": "!="}], "id": "c29"}
+{"source": "mechanical", "op": "cmp >=->>", "line": 33, "edits": [{"file": "shipping.jac", "offset": 991, "old": ">=", "new": ">"}], "id": "c30"}
+{"source": "mechanical", "op": "int 50->51", "line": 33, "edits": [{"file": "shipping.jac", "offset": 994, "old": "50", "new": "51"}], "id": "c31"}
+{"source": "mechanical", "op": "negate if", "line": 35, "edits": [{"file": "shipping.jac", "offset": 1011, "old": "zone == \"regional\"", "new": "not (zone == \"regional\")"}], "id": "c32"}
+{"source": "mechanical", "op": "cmp ==->!=", "line": 35, "edits": [{"file": "shipping.jac", "offset": 1016, "old": "==", "new": "!="}], "id": "c33"}
+{"source": "mechanical", "op": "cmp >=->>", "line": 36, "edits": [{"file": "shipping.jac", "offset": 1059, "old": ">=", "new": ">"}], "id": "c34"}
+{"source": "mechanical", "op": "int 100->101", "line": 36, "edits": [{"file": "shipping.jac", "offset": 1062, "old": "100", "new": "101"}], "id": "c35"}
+{"source": "mechanical", "op": "int 100->99", "line": 36, "edits": [{"file": "shipping.jac", "offset": 1062, "old": "100", "new": "99"}], "id": "c36"}
+{"source": "mechanical", "op": "negate if", "line": 38, "edits": [{"file": "shipping.jac", "offset": 1080, "old": "zone == \"international\"", "new": "not (zone == \"international\")"}], "id": "c37"}
+{"source": "mechanical", "op": "cmp ==->!=", "line": 38, "edits": [{"file": "shipping.jac", "offset": 1085, "old": "==", "new": "!="}], "id": "c38"}
+{"source": "mechanical", "op": "const False->True", "line": 39, "edits": [{"file": "shipping.jac", "offset": 1121, "old": "False", "new": "True"}], "id": "c39"}
+{"source": "hand", "op": "hand h0", "why": "wrong volumetric divisor", "edits": [{"file": "shipping.jac", "offset": 426, "old": "volumetric = length_cm * width_cm * height_cm / 5000;", "new": "volumetric = length_cm * width_cm * height_cm / 6000;"}], "id": "c40"}
+{"source": "hand", "op": "hand h1", "why": "rounds to nearest instead of up", "edits": [{"file": "shipping.jac", "offset": 520, "old": "return math.ceil(round(w * 2, 9)) / 2;", "new": "return round(w * 2) / 2;"}], "id": "c41"}
+{"source": "hand", "op": "hand h2", "why": "domestic threshold exclusive", "edits": [{"file": "shipping.jac", "offset": 972, "old": "return order_total >= 50;", "new": "return order_total > 50;"}], "id": "c42"}

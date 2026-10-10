@@ -1,0 +1,35 @@
+[
+ {
+  "name": "h0",
+  "why": "descendants sorted by name not birth",
+  "edits": [
+   {
+    "file": "family.jac",
+    "old": "pairs = sorted([(b, n) for (n, b) in self.found.items()]);",
+    "new": "pairs = sorted([(n, b) for (n, b) in self.found.items()]);"
+   }
+  ]
+ },
+ {
+  "name": "h1",
+  "why": "siblings listed as cousins",
+  "edits": [
+   {
+    "file": "family.jac",
+    "old": "cousins = {c.name for c in grandkids if c.name not in siblings and c.name != here.name};",
+    "new": "cousins = {c.name for c in grandkids if c.name != here.name};"
+   }
+  ]
+ },
+ {
+  "name": "h2",
+  "why": "ancestors follow only one parent",
+  "edits": [
+   {
+    "file": "family.jac",
+    "old": "        visit [here <-:ParentOf:<-];",
+    "new": "        visit [here <-:ParentOf:<-][:1];"
+   }
+  ]
+ }
+]

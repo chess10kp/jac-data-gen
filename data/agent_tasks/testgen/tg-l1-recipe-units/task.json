@@ -1,0 +1,35 @@
+{
+  "id": "tg-l1-recipe-units",
+  "kind": "testgen",
+  "level": 1,
+  "source": "derived:app/app-l1-recipe-scaler",
+  "gates": [
+    "check",
+    "mutation"
+  ],
+  "target_paths": [
+    "recipe_scale_tests.jac"
+  ],
+  "jac_version": "0.37.25",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "mutation": {
+    "threshold": 0.8,
+    "code_files": [
+      "recipe_scale.jac"
+    ],
+    "scope": null,
+    "n_candidates": 31,
+    "n_mechanical_sites": 28,
+    "n_source_negatives": 0,
+    "n_hand": 3
+  },
+  "provenance": {
+    "source_task": "app/app-l1-recipe-scaler",
+    "source_hash": "3fa37262d0456552",
+    "variant": "fresh",
+    "title": "Tests for recipe unit conversion",
+    "domain": "recipe unit conversion",
+    "author": "claude (testgen builder)",
+    "created": "2026-10-10"
+  }
+}

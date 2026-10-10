@@ -1,0 +1,35 @@
+{
+  "id": "tg-l1-kiln-yield",
+  "kind": "testgen",
+  "level": 1,
+  "source": "derived:native/nat-l1-kiln-cone-yield",
+  "gates": [
+    "check",
+    "mutation"
+  ],
+  "target_paths": [
+    "kiln_tests.jac"
+  ],
+  "jac_version": "0.37.25",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "mutation": {
+    "threshold": 0.8,
+    "code_files": [
+      "kiln.jac"
+    ],
+    "scope": null,
+    "n_candidates": 33,
+    "n_mechanical_sites": 28,
+    "n_source_negatives": 5,
+    "n_hand": 0
+  },
+  "provenance": {
+    "source_task": "native/nat-l1-kiln-cone-yield",
+    "source_hash": "8f5cf7841828bba6",
+    "variant": "fresh",
+    "title": "Tests for ceramics kiln log",
+    "domain": "ceramics kiln log",
+    "author": "claude (testgen builder)",
+    "created": "2026-10-10"
+  }
+}

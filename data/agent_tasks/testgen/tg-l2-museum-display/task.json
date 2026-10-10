@@ -1,0 +1,35 @@
+{
+  "id": "tg-l2-museum-display",
+  "kind": "testgen",
+  "level": 2,
+  "source": "derived:native/nat-l2-museum-loans",
+  "gates": [
+    "check",
+    "mutation"
+  ],
+  "target_paths": [
+    "collection_tests.jac"
+  ],
+  "jac_version": "0.37.25",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "mutation": {
+    "threshold": 0.8,
+    "code_files": [
+      "collection.jac"
+    ],
+    "scope": null,
+    "n_candidates": 22,
+    "n_mechanical_sites": 16,
+    "n_source_negatives": 6,
+    "n_hand": 0
+  },
+  "provenance": {
+    "source_task": "native/nat-l2-museum-loans",
+    "source_hash": "f1a16afafec3435a",
+    "variant": "fresh",
+    "title": "Tests for museum loans",
+    "domain": "museum loans",
+    "author": "claude (testgen builder)",
+    "created": "2026-10-10"
+  }
+}

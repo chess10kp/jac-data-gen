@@ -1,0 +1,35 @@
+{
+  "id": "tg-l2-disk-usage",
+  "kind": "testgen",
+  "level": 2,
+  "source": "derived:app/app-l2-disk-usage",
+  "gates": [
+    "check",
+    "mutation"
+  ],
+  "target_paths": [
+    "diskmap_tests.jac"
+  ],
+  "jac_version": "0.37.25",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "mutation": {
+    "threshold": 0.8,
+    "code_files": [
+      "diskmap.jac"
+    ],
+    "scope": null,
+    "n_candidates": 43,
+    "n_mechanical_sites": 40,
+    "n_source_negatives": 0,
+    "n_hand": 3
+  },
+  "provenance": {
+    "source_task": "app/app-l2-disk-usage",
+    "source_hash": "f7565811f8a47d41",
+    "variant": "fresh",
+    "title": "Tests for folder sizes",
+    "domain": "folder sizes",
+    "author": "claude (testgen builder)",
+    "created": "2026-10-10"
+  }
+}

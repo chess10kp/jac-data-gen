@@ -1,0 +1,3 @@
+We're about to port the bird survey module (`survey.jac`) to a new storage layout and I need a safety net first. There are three walkers: `LogSighting` (records a count of a species at a site on a given day), `SiteList` (species seen at a site, most-sighted first) and `Scarce` (species seen at no more than N distinct sites).
+
+Please write a comprehensive test suite in `survey_tests.jac` that passes on the current code. Things I care about: node/edge reuse when the same site or species is logged again, totals and `last_day` on the sighting edge, rejecting non-positive counts, ordering and tie-breaks in `SiteList`, and the boundary on `max_sites`. Don't modify `survey.jac`.

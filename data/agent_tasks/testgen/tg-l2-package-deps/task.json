@@ -1,0 +1,35 @@
+{
+  "id": "tg-l2-package-deps",
+  "kind": "testgen",
+  "level": 2,
+  "source": "derived:app/app-l2-package-deps",
+  "gates": [
+    "check",
+    "mutation"
+  ],
+  "target_paths": [
+    "deps_tests.jac"
+  ],
+  "jac_version": "0.37.25",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "mutation": {
+    "threshold": 0.8,
+    "code_files": [
+      "deps.jac"
+    ],
+    "scope": null,
+    "n_candidates": 32,
+    "n_mechanical_sites": 29,
+    "n_source_negatives": 0,
+    "n_hand": 3
+  },
+  "provenance": {
+    "source_task": "app/app-l2-package-deps",
+    "source_hash": "3ea498533251c29c",
+    "variant": "fresh",
+    "title": "Tests for package dependencies",
+    "domain": "package dependencies",
+    "author": "claude (testgen builder)",
+    "created": "2026-10-10"
+  }
+}

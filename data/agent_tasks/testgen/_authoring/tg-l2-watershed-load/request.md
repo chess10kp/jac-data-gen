@@ -1,0 +1,3 @@
+I started a test file for the catchment model (`watershed_tests.jac`) but only got one smoke test in before getting pulled onto something else. Could you finish it? The thing under test is `UpstreamLoad` in `watershed.jac`: spawned on a monitoring `Station`, it should total the pollutant load of the sampled reach plus everything upstream (following `FlowsInto` edges backwards), count braided channels only once, and in dry season ignore seasonal channels. It reports the sorted reach names and keeps `total_kg` on the walker.
+
+I'd like the suite to be good enough that a subtle traversal bug would be caught. Please don't edit `watershed.jac`.

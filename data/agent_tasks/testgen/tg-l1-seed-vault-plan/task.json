@@ -1,0 +1,40 @@
+{
+  "id": "tg-l1-seed-vault-plan",
+  "kind": "testgen",
+  "level": 1,
+  "source": "derived:native/nat-l1-seed-vault-regrow",
+  "gates": [
+    "check",
+    "mutation"
+  ],
+  "target_paths": [
+    "vault_tests.jac"
+  ],
+  "jac_version": "0.37.25",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "mutation": {
+    "threshold": 0.8,
+    "code_files": [
+      "vault.jac"
+    ],
+    "scope": [
+      {
+        "file": "vault.jac",
+        "header": "walker RegrowPlan"
+      }
+    ],
+    "n_candidates": 28,
+    "n_mechanical_sites": 22,
+    "n_source_negatives": 6,
+    "n_hand": 0
+  },
+  "provenance": {
+    "source_task": "native/nat-l1-seed-vault-regrow",
+    "source_hash": "098a61f7bd668b2a",
+    "variant": "fresh",
+    "title": "Tests for seed bank",
+    "domain": "seed bank",
+    "author": "claude (testgen builder)",
+    "created": "2026-10-10"
+  }
+}

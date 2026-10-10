@@ -1,0 +1,1 @@
+`shipping.jac` computes billable weight (actual vs volumetric, rounded up to the next half kilo), zone quotes, and free-shipping eligibility. Write a test suite for it in `shipping_tests.jac` — boundaries matter here (exact half-kilo weights, the 1 kg base, the free-shipping thresholds), and so do the ValueError cases. Use a float tolerance where needed. Don't change the module.

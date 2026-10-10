@@ -1,0 +1,44 @@
+{
+  "id": "tg-l3-greenhouse-due",
+  "kind": "testgen",
+  "level": 3,
+  "source": "derived:native/nat-l3-greenhouse-watering",
+  "gates": [
+    "check",
+    "mutation"
+  ],
+  "target_paths": [
+    "greenhouse_tests.jac"
+  ],
+  "jac_version": "0.37.25",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "mutation": {
+    "threshold": 0.8,
+    "code_files": [
+      "greenhouse.jac"
+    ],
+    "scope": [
+      {
+        "file": "greenhouse.jac",
+        "header": "walker WaterBed"
+      },
+      {
+        "file": "greenhouse.jac",
+        "header": "walker DueOn"
+      }
+    ],
+    "n_candidates": 21,
+    "n_mechanical_sites": 17,
+    "n_source_negatives": 4,
+    "n_hand": 0
+  },
+  "provenance": {
+    "source_task": "native/nat-l3-greenhouse-watering",
+    "source_hash": "cd5250f4509fa9e8",
+    "variant": "fresh",
+    "title": "Tests for greenhouse watering",
+    "domain": "greenhouse watering",
+    "author": "claude (testgen builder)",
+    "created": "2026-10-10"
+  }
+}

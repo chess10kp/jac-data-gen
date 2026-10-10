@@ -1,0 +1,3 @@
+`picking.jac` has the `PickRun` walker for our warehouse: it walks the aisle chain from root, pulls stock out of bins for an order (decrementing bin quantities), stops once the order is filled, and records shortages. `seed.jac` has a `build_warehouse` helper you can use to set things up; `layout.jac` defines the graph.
+
+We've had two picking bugs in production this quarter, so I want a really thorough `picking_tests.jac` (at the project root) for `PickRun` and `build_warehouse`. Pick lines, bin quantities after the run, early stopping, shortages, the `aisles_visited` count, and not mutating the caller's order dict — all of it. Don't change the code.

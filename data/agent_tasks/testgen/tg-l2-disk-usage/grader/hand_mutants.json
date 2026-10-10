@@ -1,0 +1,35 @@
+[
+ {
+  "name": "h0",
+  "why": "dotfiles get an extension",
+  "edits": [
+   {
+    "file": "diskmap.jac",
+    "old": "stem = name.lstrip(\".\");",
+    "new": "stem = name;"
+   }
+  ]
+ },
+ {
+  "name": "h1",
+  "why": "ascending size order",
+  "edits": [
+   {
+    "file": "diskmap.jac",
+    "old": "return (-t[0], t[1]);",
+    "new": "return (t[0], t[1]);"
+   }
+  ]
+ },
+ {
+  "name": "h2",
+  "why": "min_size exclusive",
+  "edits": [
+   {
+    "file": "diskmap.jac",
+    "old": "        if here.size >= self.min_size {",
+    "new": "        if here.size > self.min_size {"
+   }
+  ]
+ }
+]

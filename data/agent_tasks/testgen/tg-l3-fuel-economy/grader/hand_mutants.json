@@ -1,0 +1,35 @@
+[
+ {
+  "name": "h0",
+  "why": "first fill litres counted",
+  "edits": [
+   {
+    "file": "main.jac",
+    "old": "liters = sum([l for (_, l) in r[1:]]);",
+    "new": "liters = sum([l for (_, l) in r]);"
+   }
+  ]
+ },
+ {
+  "name": "h1",
+  "why": "equal odometer accepted",
+  "edits": [
+   {
+    "file": "main.jac",
+    "old": "if fills and self.odometer <= fills[-1].odometer {",
+    "new": "if fills and self.odometer < fills[-1].odometer {"
+   }
+  ]
+ },
+ {
+  "name": "h2",
+  "why": "duplicate vehicles",
+  "edits": [
+   {
+    "file": "main.jac",
+    "old": "report v if v is not None else here ++> Vehicle(plate=self.plate.upper());",
+    "new": "report here ++> Vehicle(plate=self.plate.upper());"
+   }
+  ]
+ }
+]

@@ -1,0 +1,24 @@
+[
+ {
+  "name": "h0",
+  "why": "headcount includes the manager",
+  "edits": [
+   {
+    "file": "orgchart.jac",
+    "old": "        if self.started {\n            self.count += 1;",
+    "new": "        if True {\n            self.count += 1;"
+   }
+  ]
+ },
+ {
+  "name": "h1",
+  "why": "chain stops after one step",
+  "edits": [
+   {
+    "file": "orgchart.jac",
+    "old": "        visit [here <-:Manages:<-];",
+    "new": "        visit [here <-:Manages:<-];\n        disengage;"
+   }
+  ]
+ }
+]

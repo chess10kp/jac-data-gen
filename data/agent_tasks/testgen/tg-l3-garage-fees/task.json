@@ -1,0 +1,35 @@
+{
+  "id": "tg-l3-garage-fees",
+  "kind": "testgen",
+  "level": 3,
+  "source": "derived:native/nat-l3-parking-garage",
+  "gates": [
+    "check",
+    "mutation"
+  ],
+  "target_paths": [
+    "garage_tests.jac"
+  ],
+  "jac_version": "0.37.25",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "mutation": {
+    "threshold": 0.8,
+    "code_files": [
+      "garage.jac"
+    ],
+    "scope": null,
+    "n_candidates": 46,
+    "n_mechanical_sites": 46,
+    "n_source_negatives": 6,
+    "n_hand": 0
+  },
+  "provenance": {
+    "source_task": "native/nat-l3-parking-garage",
+    "source_hash": "a2e5ce2303cbd57b",
+    "variant": "fresh",
+    "title": "Tests for car park fees",
+    "domain": "car park fees",
+    "author": "claude (testgen builder)",
+    "created": "2026-10-10"
+  }
+}

@@ -1,0 +1,43 @@
+{"source": "mechanical", "op": "cmp <=-><", "line": 33, "edits": [{"file": "survey.jac", "offset": 704, "old": "<=", "new": "<"}], "id": "c00"}
+{"source": "mechanical", "op": "const False->True", "line": 34, "edits": [{"file": "survey.jac", "offset": 730, "old": "False", "new": "True"}], "id": "c01"}
+{"source": "mechanical", "op": "aug +=->-=", "line": 42, "edits": [{"file": "survey.jac", "offset": 958, "old": "+", "new": "-"}], "id": "c02"}
+{"source": "mechanical", "op": "const True->False", "line": 47, "edits": [{"file": "survey.jac", "offset": 1142, "old": "True", "new": "False"}], "id": "c03"}
+{"source": "mechanical", "op": "neg-drop", "line": 62, "edits": [{"file": "survey.jac", "offset": 1478, "old": "-", "new": ""}], "id": "c04"}
+{"source": "mechanical", "op": "cmp <=-><", "line": 80, "edits": [{"file": "survey.jac", "offset": 1835, "old": "<=", "new": "<"}], "id": "c05"}
+{"source": "mechanical", "op": "int 0->1", "line": 12, "edits": [{"file": "survey.jac", "offset": 210, "old": "0", "new": "1"}], "id": "c06"}
+{"source": "mechanical", "op": "int 0->1", "line": 13, "edits": [{"file": "survey.jac", "offset": 237, "old": "0", "new": "1"}], "id": "c07"}
+{"source": "mechanical", "op": "int 0->1", "line": 18, "edits": [{"file": "survey.jac", "offset": 344, "old": "0", "new": "1"}], "id": "c08"}
+{"source": "mechanical", "op": "int 0->1", "line": 23, "edits": [{"file": "survey.jac", "offset": 501, "old": "0", "new": "1"}], "id": "c09"}
+{"source": "mechanical", "op": "int 0->1", "line": 33, "edits": [{"file": "survey.jac", "offset": 707, "old": "0", "new": "1"}], "id": "c10"}
+{"source": "mechanical", "op": "int 0->1", "line": 41, "edits": [{"file": "survey.jac", "offset": 931, "old": "0", "new": "1"}], "id": "c11"}
+{"source": "mechanical", "op": "negate if", "line": 18, "edits": [{"file": "survey.jac", "offset": 350, "old": "found else root ++> Site(name=label);\n}\n\ndef species_named(label: str) -> Species", "new": "not (found else root ++> Site(name=label);\n}\n\ndef species_named(label: str) -> Species)"}], "id": "c12"}
+{"source": "mechanical", "op": "negate if", "line": 23, "edits": [{"file": "survey.jac", "offset": 507, "old": "found else root ++> Species(name=label);\n}\n\nwalker LogSighting", "new": "not (found else root ++> Species(name=label);\n}\n\nwalker LogSighting)"}], "id": "c13"}
+{"source": "mechanical", "op": "negate if", "line": 33, "edits": [{"file": "survey.jac", "offset": 693, "old": "self.count <= 0", "new": "not (self.count <= 0)"}], "id": "c14"}
+{"source": "mechanical", "op": "negate if", "line": 40, "edits": [{"file": "survey.jac", "offset": 898, "old": "links", "new": "not (links)"}], "id": "c15"}
+{"source": "mechanical", "op": "negate if", "line": 80, "edits": [{"file": "survey.jac", "offset": 1809, "old": "len([here <-:Sighted:<-]) <= self.max_sites", "new": "not (len([here <-:Sighted:<-]) <= self.max_sites)"}], "id": "c16"}
+{"source": "mechanical", "op": "edge -->-><--", "line": 11, "edits": [{"file": "survey.jac", "offset": 175, "old": "-->", "new": "<--"}], "id": "c17"}
+{"source": "mechanical", "op": "edge -->-><--", "line": 17, "edits": [{"file": "survey.jac", "offset": 298, "old": "-->", "new": "<--"}], "id": "c18"}
+{"source": "mechanical", "op": "edge -->-><--", "line": 22, "edits": [{"file": "survey.jac", "offset": 452, "old": "-->", "new": "<--"}], "id": "c19"}
+{"source": "mechanical", "op": "edge -->-><--", "line": 56, "edits": [{"file": "survey.jac", "offset": 1284, "old": "-->", "new": "<--"}], "id": "c20"}
+{"source": "mechanical", "op": "edge -->-><--", "line": 76, "edits": [{"file": "survey.jac", "offset": 1739, "old": "-->", "new": "<--"}], "id": "c21"}
+{"source": "mechanical", "op": "connect ++>-><++", "line": 18, "edits": [{"file": "survey.jac", "offset": 366, "old": "++>", "new": "<++"}], "id": "c22"}
+{"source": "mechanical", "op": "connect ++>-><++", "line": 23, "edits": [{"file": "survey.jac", "offset": 523, "old": "++>", "new": "<++"}], "id": "c23"}
+{"source": "mechanical", "op": "call max->min", "line": 43, "edits": [{"file": "survey.jac", "offset": 1001, "old": "max", "new": "min"}], "id": "c24"}
+{"source": "mechanical", "op": "call sorted->list", "line": 67, "edits": [{"file": "survey.jac", "offset": 1591, "old": "sorted", "new": "list"}], "id": "c25"}
+{"source": "mechanical", "op": "call sorted->list", "line": 86, "edits": [{"file": "survey.jac", "offset": 1961, "old": "sorted", "new": "list"}], "id": "c26"}
+{"source": "mechanical", "op": "stmt-del report", "line": 34, "edits": [{"file": "survey.jac", "offset": 723, "old": "report False;", "new": ""}], "id": "c27"}
+{"source": "mechanical", "op": "stmt-del link.total", "line": 42, "edits": [{"file": "survey.jac", "offset": 947, "old": "link.total += self.count;", "new": ""}], "id": "c28"}
+{"source": "mechanical", "op": "stmt-del report", "line": 47, "edits": [{"file": "survey.jac", "offset": 1135, "old": "report True;", "new": ""}], "id": "c29"}
+{"source": "mechanical", "op": "stmt-del visit", "line": 56, "edits": [{"file": "survey.jac", "offset": 1277, "old": "visit [-->[?:Site, name == self.site]];", "new": ""}], "id": "c30"}
+{"source": "mechanical", "op": "stmt-del self.rows.append((-link.", "line": 62, "edits": [{"file": "survey.jac", "offset": 1460, "old": "self.rows.append((-link.total, sp.name));", "new": ""}], "id": "c31"}
+{"source": "mechanical", "op": "stmt-del report", "line": 67, "edits": [{"file": "survey.jac", "offset": 1559, "old": "report [name for (neg, name) in sorted(self.rows)];", "new": ""}], "id": "c32"}
+{"source": "mechanical", "op": "stmt-del visit", "line": 76, "edits": [{"file": "survey.jac", "offset": 1732, "old": "visit [-->[?:Species]];", "new": ""}], "id": "c33"}
+{"source": "mechanical", "op": "stmt-del self.names.append(here.n", "line": 81, "edits": [{"file": "survey.jac", "offset": 1867, "old": "self.names.append(here.name);", "new": ""}], "id": "c34"}
+{"source": "mechanical", "op": "stmt-del report", "line": 86, "edits": [{"file": "survey.jac", "offset": 1954, "old": "report sorted(self.names);", "new": ""}], "id": "c35"}
+{"source": "source-negative", "op": "neg duplicate_edges", "why": "always creates a new edge", "edits": [{"file": "survey.jac", "offset": 887, "old": "        if links {\n            link = links[0];", "new": "        if False {\n            link = links[0];"}], "id": "c36"}
+{"source": "source-negative", "op": "neg duplicate_species_nodes", "why": "species node per sighting", "edits": [{"file": "survey.jac", "offset": 484, "old": "    return found[0] if found else root ++> Species(name=label);", "new": "    return root ++> Species(name=label);"}], "id": "c37"}
+{"source": "source-negative", "op": "neg last_day_overwrite", "why": "last_day takes latest submission not latest day", "edits": [{"file": "survey.jac", "offset": 985, "old": "link.last_day = max(link.last_day, self.day);", "new": "link.last_day = self.day;"}], "id": "c38"}
+{"source": "source-negative", "op": "neg overwrite_total", "why": "overwrites total instead of adding", "edits": [{"file": "survey.jac", "offset": 947, "old": "link.total += self.count;", "new": "link.total = self.count;"}], "id": "c39"}
+{"source": "source-negative", "op": "neg scarce_strict", "why": "fewer than max_sites", "edits": [{"file": "survey.jac", "offset": 1806, "old": "if len([here <-:Sighted:<-]) <= self.max_sites {", "new": "if len([here <-:Sighted:<-]) < self.max_sites {"}], "id": "c40"}
+{"source": "source-negative", "op": "neg tie_break_desc", "why": "ties broken by name descending", "edits": [{"file": "survey.jac", "offset": 1460, "old": "self.rows.append((-link.total, sp.name));", "new": "self.rows.append((link.total, sp.name));"}, {"file": "survey.jac", "offset": 1559, "old": "report [name for (neg, name) in sorted(self.rows)];", "new": "report [name for (neg, name) in sorted(self.rows, reverse=True)];"}], "id": "c41"}
+{"source": "source-negative", "op": "neg zero_count_logged", "why": "count 0 accepted", "edits": [{"file": "survey.jac", "offset": 690, "old": "if self.count <= 0 {", "new": "if self.count < 0 {"}], "id": "c42"}

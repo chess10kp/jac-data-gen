@@ -1,0 +1,35 @@
+{
+  "id": "tg-l2-tram-runs",
+  "kind": "testgen",
+  "level": 2,
+  "source": "derived:native/nat-l2-tram-lines",
+  "gates": [
+    "check",
+    "mutation"
+  ],
+  "target_paths": [
+    "tramway_tests.jac"
+  ],
+  "jac_version": "0.37.25",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "mutation": {
+    "threshold": 0.8,
+    "code_files": [
+      "tramway.jac"
+    ],
+    "scope": null,
+    "n_candidates": 39,
+    "n_mechanical_sites": 33,
+    "n_source_negatives": 6,
+    "n_hand": 0
+  },
+  "provenance": {
+    "source_task": "native/nat-l2-tram-lines",
+    "source_hash": "8ec3503faa9f6058",
+    "variant": "fresh",
+    "title": "Tests for tram lines",
+    "domain": "tram lines",
+    "author": "claude (testgen builder)",
+    "created": "2026-10-10"
+  }
+}

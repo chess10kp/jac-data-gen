@@ -1,0 +1,35 @@
+[
+ {
+  "name": "h0",
+  "why": "numeric identifiers ranked above alphanumeric",
+  "edits": [
+   {
+    "file": "semver.jac",
+    "old": "        if x.isdigit() {\n            return -1;",
+    "new": "        if x.isdigit() {\n            return 1;"
+   }
+  ]
+ },
+ {
+  "name": "h1",
+  "why": "longer pre-release not ranked higher",
+  "edits": [
+   {
+    "file": "semver.jac",
+    "old": "return cmp_int(len(xs), len(ys));",
+    "new": "return 0;"
+   }
+  ]
+ },
+ {
+  "name": "h2",
+  "why": "max_satisfying accepts pre-releases",
+  "edits": [
+   {
+    "file": "semver.jac",
+    "old": "pv.pre != \"\" or ",
+    "new": ""
+   }
+  ]
+ }
+]

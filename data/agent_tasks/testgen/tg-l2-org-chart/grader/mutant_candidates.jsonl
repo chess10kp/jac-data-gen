@@ -1,0 +1,23 @@
+{"source": "mechanical", "op": "const False->True", "line": 13, "edits": [{"file": "orgchart.jac", "offset": 264, "old": "False", "new": "True"}], "id": "c00"}
+{"source": "mechanical", "op": "aug +=->-=", "line": 17, "edits": [{"file": "orgchart.jac", "offset": 357, "old": "+", "new": "-"}], "id": "c01"}
+{"source": "mechanical", "op": "const True->False", "line": 19, "edits": [{"file": "orgchart.jac", "offset": 396, "old": "True", "new": "False"}], "id": "c02"}
+{"source": "mechanical", "op": "aug +=->-=", "line": 32, "edits": [{"file": "orgchart.jac", "offset": 608, "old": "+", "new": "-"}], "id": "c03"}
+{"source": "mechanical", "op": "const False->True", "line": 43, "edits": [{"file": "orgchart.jac", "offset": 809, "old": "False", "new": "True"}], "id": "c04"}
+{"source": "mechanical", "op": "const True->False", "line": 49, "edits": [{"file": "orgchart.jac", "offset": 954, "old": "True", "new": "False"}], "id": "c05"}
+{"source": "mechanical", "op": "int 0->1", "line": 12, "edits": [{"file": "orgchart.jac", "offset": 237, "old": "0", "new": "1"}], "id": "c06"}
+{"source": "mechanical", "op": "int 1->2", "line": 17, "edits": [{"file": "orgchart.jac", "offset": 360, "old": "1", "new": "2"}], "id": "c07"}
+{"source": "mechanical", "op": "int 1->0", "line": 17, "edits": [{"file": "orgchart.jac", "offset": 360, "old": "1", "new": "0"}], "id": "c08"}
+{"source": "mechanical", "op": "int 0->1", "line": 29, "edits": [{"file": "orgchart.jac", "offset": 551, "old": "0", "new": "1"}], "id": "c09"}
+{"source": "mechanical", "op": "negate if", "line": 16, "edits": [{"file": "orgchart.jac", "offset": 319, "old": "self.started", "new": "not (self.started)"}], "id": "c10"}
+{"source": "mechanical", "op": "negate if", "line": 46, "edits": [{"file": "orgchart.jac", "offset": 864, "old": "self.started", "new": "not (self.started)"}], "id": "c11"}
+{"source": "mechanical", "op": "stmt-del self.count", "line": 17, "edits": [{"file": "orgchart.jac", "offset": 346, "old": "self.count += 1;", "new": ""}], "id": "c12"}
+{"source": "mechanical", "op": "stmt-del visit", "line": 20, "edits": [{"file": "orgchart.jac", "offset": 410, "old": "visit [here ->:Manages:->];", "new": ""}], "id": "c13"}
+{"source": "mechanical", "op": "stmt-del report", "line": 24, "edits": [{"file": "orgchart.jac", "offset": 480, "old": "report self.count;", "new": ""}], "id": "c14"}
+{"source": "mechanical", "op": "stmt-del self.total", "line": 32, "edits": [{"file": "orgchart.jac", "offset": 597, "old": "self.total += here.salary;", "new": ""}], "id": "c15"}
+{"source": "mechanical", "op": "stmt-del visit", "line": 33, "edits": [{"file": "orgchart.jac", "offset": 632, "old": "visit [here ->:Manages:->];", "new": ""}], "id": "c16"}
+{"source": "mechanical", "op": "stmt-del report", "line": 37, "edits": [{"file": "orgchart.jac", "offset": 702, "old": "report self.total;", "new": ""}], "id": "c17"}
+{"source": "mechanical", "op": "stmt-del self.names.append(here.n", "line": 47, "edits": [{"file": "orgchart.jac", "offset": 891, "old": "self.names.append(here.name);", "new": ""}], "id": "c18"}
+{"source": "mechanical", "op": "stmt-del visit", "line": 50, "edits": [{"file": "orgchart.jac", "offset": 968, "old": "visit [here <-:Manages:<-];", "new": ""}], "id": "c19"}
+{"source": "mechanical", "op": "stmt-del report", "line": 54, "edits": [{"file": "orgchart.jac", "offset": 1038, "old": "report self.names;", "new": ""}], "id": "c20"}
+{"source": "hand", "op": "hand h0", "why": "headcount includes the manager", "edits": [{"file": "orgchart.jac", "offset": 308, "old": "        if self.started {\n            self.count += 1;", "new": "        if True {\n            self.count += 1;"}], "id": "c21"}
+{"source": "hand", "op": "hand h1", "why": "chain stops after one step", "edits": [{"file": "orgchart.jac", "offset": 960, "old": "        visit [here <-:Manages:<-];", "new": "        visit [here <-:Manages:<-];\n        disengage;"}], "id": "c22"}

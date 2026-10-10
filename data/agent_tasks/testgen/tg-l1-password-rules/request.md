@@ -1,0 +1,1 @@
+we have a tiny password policy module, passcheck.jac (check_password + strength). no tests. write me a decent suite in passcheck_tests.jac that pins down every rule (length, upper/lower/digit/symbol, username containment, triple-repeat), the order violations come back in, and the strength buckets. don't touch passcheck.jac

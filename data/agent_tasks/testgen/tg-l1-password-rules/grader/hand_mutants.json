@@ -1,0 +1,35 @@
+[
+ {
+  "name": "h0",
+  "why": "username check case-sensitive",
+  "edits": [
+   {
+    "file": "passcheck.jac",
+    "old": "username.lower() in pw.lower()",
+    "new": "username in pw"
+   }
+  ]
+ },
+ {
+  "name": "h1",
+  "why": "misses a triple at the very end",
+  "edits": [
+   {
+    "file": "passcheck.jac",
+    "old": "for i in range(len(pw) - 2) {",
+    "new": "for i in range(len(pw) - 3) {"
+   }
+  ]
+ },
+ {
+  "name": "h2",
+  "why": "two issues counted as weak",
+  "edits": [
+   {
+    "file": "passcheck.jac",
+    "old": "return \"fair\" if n <= 2 else \"weak\";",
+    "new": "return \"fair\" if n <= 1 else \"weak\";"
+   }
+  ]
+ }
+]

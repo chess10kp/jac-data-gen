@@ -1,0 +1,43 @@
+{"source": "mechanical", "op": "arith *->/", "line": 15, "edits": [{"file": "main.jac", "offset": 264, "old": "*", "new": "/"}], "id": "c00"}
+{"source": "mechanical", "op": "arith +->-", "line": 15, "edits": [{"file": "main.jac", "offset": 269, "old": "+", "new": "-"}], "id": "c01"}
+{"source": "mechanical", "op": "arith /->*", "line": 15, "edits": [{"file": "main.jac", "offset": 281, "old": "/", "new": "*"}], "id": "c02"}
+{"source": "mechanical", "op": "cmp ==->!=", "line": 21, "edits": [{"file": "main.jac", "offset": 407, "old": "==", "new": "!="}], "id": "c03"}
+{"source": "mechanical", "op": "cmp >->>=", "line": 57, "edits": [{"file": "main.jac", "offset": 1196, "old": ">", "new": ">="}], "id": "c04"}
+{"source": "mechanical", "op": "bool or->and", "line": 57, "edits": [{"file": "main.jac", "offset": 1208, "old": "or", "new": "and"}], "id": "c05"}
+{"source": "mechanical", "op": "cmp ==->!=", "line": 57, "edits": [{"file": "main.jac", "offset": 1214, "old": "==", "new": "!="}], "id": "c06"}
+{"source": "mechanical", "op": "bool and->or", "line": 57, "edits": [{"file": "main.jac", "offset": 1227, "old": "and", "new": "or"}], "id": "c07"}
+{"source": "mechanical", "op": "cmp ==->!=", "line": 57, "edits": [{"file": "main.jac", "offset": 1247, "old": "==", "new": "!="}], "id": "c08"}
+{"source": "mechanical", "op": "bool or->and", "line": 57, "edits": [{"file": "main.jac", "offset": 1253, "old": "or", "new": "and"}], "id": "c09"}
+{"source": "mechanical", "op": "cmp <-><=", "line": 57, "edits": [{"file": "main.jac", "offset": 1266, "old": "<", "new": "<="}], "id": "c10"}
+{"source": "mechanical", "op": "cmp >=->>", "line": 81, "edits": [{"file": "main.jac", "offset": 1770, "old": ">=", "new": ">"}], "id": "c11"}
+{"source": "mechanical", "op": "aug +=->-=", "line": 82, "edits": [{"file": "main.jac", "offset": 1809, "old": "+", "new": "-"}], "id": "c12"}
+{"source": "mechanical", "op": "arith *->/", "line": 82, "edits": [{"file": "main.jac", "offset": 1824, "old": "*", "new": "/"}], "id": "c13"}
+{"source": "mechanical", "op": "int 1->2", "line": 15, "edits": [{"file": "main.jac", "offset": 267, "old": "1", "new": "2"}], "id": "c14"}
+{"source": "mechanical", "op": "int 1->0", "line": 15, "edits": [{"file": "main.jac", "offset": 267, "old": "1", "new": "0"}], "id": "c15"}
+{"source": "mechanical", "op": "int 30->31", "line": 15, "edits": [{"file": "main.jac", "offset": 283, "old": "30", "new": "31"}], "id": "c16"}
+{"source": "mechanical", "op": "int 30->29", "line": 15, "edits": [{"file": "main.jac", "offset": 283, "old": "30", "new": "29"}], "id": "c17"}
+{"source": "mechanical", "op": "int 1->2", "line": 15, "edits": [{"file": "main.jac", "offset": 288, "old": "1", "new": "2"}], "id": "c18"}
+{"source": "mechanical", "op": "int 1->0", "line": 15, "edits": [{"file": "main.jac", "offset": 288, "old": "1", "new": "0"}], "id": "c19"}
+{"source": "mechanical", "op": "negate if", "line": 21, "edits": [{"file": "main.jac", "offset": 400, "old": "e.name == name.lower()", "new": "not (e.name == name.lower())"}], "id": "c20"}
+{"source": "mechanical", "op": "negate if", "line": 36, "edits": [{"file": "main.jac", "offset": 668, "old": "ex is None", "new": "not (ex is None)"}], "id": "c21"}
+{"source": "mechanical", "op": "negate if", "line": 50, "edits": [{"file": "main.jac", "offset": 1048, "old": "ex is not None", "new": "not (ex is not None)"}], "id": "c22"}
+{"source": "mechanical", "op": "negate if", "line": 57, "edits": [{"file": "main.jac", "offset": 1194, "old": "v > self.best or (v == self.best and (self.best_date == \"\" or here.date < self.best_date))", "new": "not (v > self.best or (v == self.best and (self.best_date == \"\" or here.date < self.best_date)))"}], "id": "c23"}
+{"source": "mechanical", "op": "negate if", "line": 75, "edits": [{"file": "main.jac", "offset": 1641, "old": "ex is not None", "new": "not (ex is not None)"}], "id": "c24"}
+{"source": "mechanical", "op": "negate if", "line": 81, "edits": [{"file": "main.jac", "offset": 1760, "old": "here.date >= self.since", "new": "not (here.date >= self.since)"}], "id": "c25"}
+{"source": "mechanical", "op": "not-drop", "line": 50, "edits": [{"file": "main.jac", "offset": 1054, "old": "not ", "new": ""}], "id": "c26"}
+{"source": "mechanical", "op": "not-drop", "line": 75, "edits": [{"file": "main.jac", "offset": 1647, "old": "not ", "new": ""}], "id": "c27"}
+{"source": "mechanical", "op": "edge -->-><--", "line": 20, "edits": [{"file": "main.jac", "offset": 370, "old": "-->", "new": "<--"}], "id": "c28"}
+{"source": "mechanical", "op": "edge -->-><--", "line": 51, "edits": [{"file": "main.jac", "offset": 1087, "old": "-->", "new": "<--"}], "id": "c29"}
+{"source": "mechanical", "op": "edge -->-><--", "line": 76, "edits": [{"file": "main.jac", "offset": 1680, "old": "-->", "new": "<--"}], "id": "c30"}
+{"source": "mechanical", "op": "connect ++>-><++", "line": 37, "edits": [{"file": "main.jac", "offset": 703, "old": "++>", "new": "<++"}], "id": "c31"}
+{"source": "mechanical", "op": "connect ++>-><++", "line": 39, "edits": [{"file": "main.jac", "offset": 773, "old": "++>", "new": "<++"}], "id": "c32"}
+{"source": "mechanical", "op": "meth lower->upper", "line": 21, "edits": [{"file": "main.jac", "offset": 415, "old": "lower", "new": "upper"}], "id": "c33"}
+{"source": "mechanical", "op": "meth lower->upper", "line": 37, "edits": [{"file": "main.jac", "offset": 735, "old": "lower", "new": "upper"}], "id": "c34"}
+{"source": "mechanical", "op": "stmt-del report", "line": 39, "edits": [{"file": "main.jac", "offset": 763, "old": "report ex ++> SetEntry(date=self.date, weight=float(self.weight), reps=int(self.reps));", "new": ""}], "id": "c35"}
+{"source": "mechanical", "op": "stmt-del visit", "line": 51, "edits": [{"file": "main.jac", "offset": 1077, "old": "visit [ex -->[?:SetEntry]];", "new": ""}], "id": "c36"}
+{"source": "mechanical", "op": "stmt-del visit", "line": 76, "edits": [{"file": "main.jac", "offset": 1670, "old": "visit [ex -->[?:SetEntry]];", "new": ""}], "id": "c37"}
+{"source": "mechanical", "op": "stmt-del self.total", "line": 82, "edits": [{"file": "main.jac", "offset": 1798, "old": "self.total += here.weight * here.reps;", "new": ""}], "id": "c38"}
+{"source": "mechanical", "op": "stmt-del report", "line": 87, "edits": [{"file": "main.jac", "offset": 1889, "old": "report self.total;", "new": ""}], "id": "c39"}
+{"source": "hand", "op": "hand h0", "why": "e1rm rounded to integer", "edits": [{"file": "main.jac", "offset": 239, "old": "return round(self.weight * (1 + self.reps / 30), 1);", "new": "return round(self.weight * (1 + self.reps / 30), 0);"}], "id": "c40"}
+{"source": "hand", "op": "hand h1", "why": "tie goes to latest date", "edits": [{"file": "main.jac", "offset": 1231, "old": "(self.best_date == \"\" or here.date < self.best_date)", "new": "(self.best_date == \"\" or here.date > self.best_date)"}], "id": "c41"}
+{"source": "hand", "op": "hand h2", "why": "lookup case-sensitive", "edits": [{"file": "main.jac", "offset": 397, "old": "if e.name == name.lower() {", "new": "if e.name == name {"}], "id": "c42"}

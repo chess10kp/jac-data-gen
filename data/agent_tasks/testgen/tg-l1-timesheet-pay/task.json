@@ -1,0 +1,35 @@
+{
+  "id": "tg-l1-timesheet-pay",
+  "kind": "testgen",
+  "level": 1,
+  "source": "derived:app/app-l1-timesheet-hours",
+  "gates": [
+    "check",
+    "mutation"
+  ],
+  "target_paths": [
+    "timesheet_tests.jac"
+  ],
+  "jac_version": "0.37.25",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "mutation": {
+    "threshold": 0.8,
+    "code_files": [
+      "timesheet.jac"
+    ],
+    "scope": null,
+    "n_candidates": 43,
+    "n_mechanical_sites": 64,
+    "n_source_negatives": 0,
+    "n_hand": 3
+  },
+  "provenance": {
+    "source_task": "app/app-l1-timesheet-hours",
+    "source_hash": "127769cf1dae9245",
+    "variant": "extend",
+    "title": "Tests for timesheets",
+    "domain": "timesheets",
+    "author": "claude (testgen builder)",
+    "created": "2026-10-10"
+  }
+}

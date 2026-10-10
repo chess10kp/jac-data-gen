@@ -1,0 +1,60 @@
+{
+  "id": "tg-l3-bookmarks",
+  "kind": "testgen",
+  "level": 3,
+  "source": "derived:app/app-l3-tagged-bookmarks",
+  "gates": [
+    "check",
+    "mutation"
+  ],
+  "target_paths": [
+    "bookmarks_tests.jac"
+  ],
+  "jac_version": "0.37.25",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "mutation": {
+    "threshold": 0.8,
+    "code_files": [
+      "main.jac"
+    ],
+    "scope": [
+      {
+        "file": "main.jac",
+        "header": "def clean_tags"
+      },
+      {
+        "file": "main.jac",
+        "header": "def find_bookmark"
+      },
+      {
+        "file": "main.jac",
+        "header": "walker SaveBookmark"
+      },
+      {
+        "file": "main.jac",
+        "header": "walker FindByTag"
+      },
+      {
+        "file": "main.jac",
+        "header": "walker TagCounts"
+      },
+      {
+        "file": "main.jac",
+        "header": "walker DeleteBookmark"
+      }
+    ],
+    "n_candidates": 43,
+    "n_mechanical_sites": 42,
+    "n_source_negatives": 0,
+    "n_hand": 3
+  },
+  "provenance": {
+    "source_task": "app/app-l3-tagged-bookmarks",
+    "source_hash": "3bac2935a99f8105",
+    "variant": "extend",
+    "title": "Tests for bookmarks",
+    "domain": "bookmarks",
+    "author": "claude (testgen builder)",
+    "created": "2026-10-10"
+  }
+}

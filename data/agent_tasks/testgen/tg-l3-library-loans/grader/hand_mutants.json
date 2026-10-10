@@ -1,0 +1,35 @@
+[
+ {
+  "name": "h0",
+  "why": "13-day loans",
+  "edits": [
+   {
+    "file": "main.jac",
+    "old": "datetime.timedelta(days=14)",
+    "new": "datetime.timedelta(days=13)"
+   }
+  ]
+ },
+ {
+  "name": "h1",
+  "why": "due today counted overdue",
+  "edits": [
+   {
+    "file": "main.jac",
+    "old": "if e.due < self.date {",
+    "new": "if e.due <= self.date {"
+   }
+  ]
+ },
+ {
+  "name": "h2",
+  "why": "overdue sorted by member",
+  "edits": [
+   {
+    "file": "main.jac",
+    "old": "return (r[\"due\"], r[\"member\"]);",
+    "new": "return (r[\"member\"], r[\"due\"]);"
+   }
+  ]
+ }
+]

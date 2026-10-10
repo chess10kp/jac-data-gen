@@ -1,0 +1,31 @@
+{"source": "mechanical", "op": "cmp <=-><", "line": 15, "edits": [{"file": "recipe_scale.jac", "offset": 530, "old": "<=", "new": "<"}], "id": "c00"}
+{"source": "mechanical", "op": "bool or->and", "line": 15, "edits": [{"file": "recipe_scale.jac", "offset": 535, "old": "or", "new": "and"}], "id": "c01"}
+{"source": "mechanical", "op": "cmp <=-><", "line": 15, "edits": [{"file": "recipe_scale.jac", "offset": 550, "old": "<=", "new": "<"}], "id": "c02"}
+{"source": "mechanical", "op": "arith /->*", "line": 18, "edits": [{"file": "recipe_scale.jac", "offset": 643, "old": "/", "new": "*"}], "id": "c03"}
+{"source": "mechanical", "op": "arith *->/", "line": 19, "edits": [{"file": "recipe_scale.jac", "offset": 706, "old": "*", "new": "/"}], "id": "c04"}
+{"source": "mechanical", "op": "bool or->and", "line": 35, "edits": [{"file": "recipe_scale.jac", "offset": 1066, "old": "or", "new": "and"}], "id": "c05"}
+{"source": "mechanical", "op": "bool or->and", "line": 35, "edits": [{"file": "recipe_scale.jac", "offset": 1081, "old": "or", "new": "and"}], "id": "c06"}
+{"source": "mechanical", "op": "arith *->/", "line": 38, "edits": [{"file": "recipe_scale.jac", "offset": 1192, "old": "*", "new": "/"}], "id": "c07"}
+{"source": "mechanical", "op": "arith /->*", "line": 38, "edits": [{"file": "recipe_scale.jac", "offset": 1209, "old": "/", "new": "*"}], "id": "c08"}
+{"source": "mechanical", "op": "arith *->/", "line": 47, "edits": [{"file": "recipe_scale.jac", "offset": 1479, "old": "*", "new": "/"}], "id": "c09"}
+{"source": "mechanical", "op": "arith /->*", "line": 49, "edits": [{"file": "recipe_scale.jac", "offset": 1535, "old": "/", "new": "*"}], "id": "c10"}
+{"source": "mechanical", "op": "cmp >=->>", "line": 50, "edits": [{"file": "recipe_scale.jac", "offset": 1558, "old": ">=", "new": ">"}], "id": "c11"}
+{"source": "mechanical", "op": "arith -->+", "line": 50, "edits": [{"file": "recipe_scale.jac", "offset": 1563, "old": "-", "new": "+"}], "id": "c12"}
+{"source": "mechanical", "op": "arith -->+", "line": 50, "edits": [{"file": "recipe_scale.jac", "offset": 1567, "old": "-", "new": "+"}], "id": "c13"}
+{"source": "mechanical", "op": "int 0->1", "line": 15, "edits": [{"file": "recipe_scale.jac", "offset": 533, "old": "0", "new": "1"}], "id": "c14"}
+{"source": "mechanical", "op": "int 0->1", "line": 15, "edits": [{"file": "recipe_scale.jac", "offset": 553, "old": "0", "new": "1"}], "id": "c15"}
+{"source": "mechanical", "op": "int 1->2", "line": 50, "edits": [{"file": "recipe_scale.jac", "offset": 1561, "old": "1", "new": "2"}], "id": "c16"}
+{"source": "mechanical", "op": "int 1->0", "line": 50, "edits": [{"file": "recipe_scale.jac", "offset": 1561, "old": "1", "new": "0"}], "id": "c17"}
+{"source": "mechanical", "op": "int 9->10", "line": 50, "edits": [{"file": "recipe_scale.jac", "offset": 1568, "old": "9", "new": "10"}], "id": "c18"}
+{"source": "mechanical", "op": "int 9->8", "line": 50, "edits": [{"file": "recipe_scale.jac", "offset": 1568, "old": "9", "new": "8"}], "id": "c19"}
+{"source": "mechanical", "op": "negate if", "line": 15, "edits": [{"file": "recipe_scale.jac", "offset": 516, "old": "from_servings <= 0 or to_servings <= 0", "new": "not (from_servings <= 0 or to_servings <= 0)"}], "id": "c20"}
+{"source": "mechanical", "op": "negate if", "line": 23, "edits": [{"file": "recipe_scale.jac", "offset": 807, "old": "unit in VOLUME", "new": "not (unit in VOLUME)"}], "id": "c21"}
+{"source": "mechanical", "op": "negate if", "line": 26, "edits": [{"file": "recipe_scale.jac", "offset": 860, "old": "unit in WEIGHT", "new": "not (unit in WEIGHT)"}], "id": "c22"}
+{"source": "mechanical", "op": "negate if", "line": 35, "edits": [{"file": "recipe_scale.jac", "offset": 1054, "old": "src is None or dst is None or src is not dst", "new": "not (src is None or dst is None or src is not dst)"}], "id": "c23"}
+{"source": "mechanical", "op": "negate if", "line": 43, "edits": [{"file": "recipe_scale.jac", "offset": 1307, "old": "fam is None", "new": "not (fam is None)"}], "id": "c24"}
+{"source": "mechanical", "op": "negate if", "line": 46, "edits": [{"file": "recipe_scale.jac", "offset": 1427, "old": "fam is VOLUME else WEIGHT_TIDY;\n    base = item.qty * fam[item.unit];\n    for u in order", "new": "not (fam is VOLUME else WEIGHT_TIDY;\n    base = item.qty * fam[item.unit];\n    for u in order)"}], "id": "c25"}
+{"source": "mechanical", "op": "negate if", "line": 50, "edits": [{"file": "recipe_scale.jac", "offset": 1556, "old": "q >= 1 - 1e-9", "new": "not (q >= 1 - 1e-9)"}], "id": "c26"}
+{"source": "mechanical", "op": "not-drop", "line": 35, "edits": [{"file": "recipe_scale.jac", "offset": 1091, "old": "not ", "new": ""}], "id": "c27"}
+{"source": "hand", "op": "hand h0", "why": "tidy rejects exactly-one quantities", "edits": [{"file": "recipe_scale.jac", "offset": 1553, "old": "if q >= 1 - 1e-9 {", "new": "if q > 1 {"}], "id": "c28"}
+{"source": "hand", "op": "hand h1", "why": "tidy order wrong", "edits": [{"file": "recipe_scale.jac", "offset": 298, "old": "glob VOLUME_TIDY: list[str] = [\"l\", \"cup\", \"tbsp\", \"tsp\", \"ml\"];", "new": "glob VOLUME_TIDY: list[str] = [\"l\", \"tbsp\", \"cup\", \"tsp\", \"ml\"];"}], "id": "c29"}
+{"source": "hand", "op": "hand h2", "why": "scale mutates input", "edits": [{"file": "recipe_scale.jac", "offset": 664, "old": "return [Ingredient(name=i.name, qty=i.qty * factor, unit=i.unit) for i in items];", "new": "for i in items { i.qty = i.qty * factor; }\n    return items;"}], "id": "c30"}

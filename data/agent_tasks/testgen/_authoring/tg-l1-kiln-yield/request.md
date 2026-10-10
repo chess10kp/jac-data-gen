@@ -1,0 +1,1 @@
+we have zero tests on kiln.jac (the ConeYield walker that rolls up firing losses per cone). write a solid suite for it in kiln_tests.jac — pass on the current code, and actually catch regressions in the yield math, the cone grouping/order and the skipping of aborted/empty loads. don't touch kiln.jac.

@@ -1,0 +1,31 @@
+{"source": "mechanical", "op": "arith +->-", "line": 32, "edits": [{"file": "harvest.jac", "offset": 861, "old": "+", "new": "-"}], "id": "c00"}
+{"source": "mechanical", "op": "arith *->/", "line": 32, "edits": [{"file": "harvest.jac", "offset": 879, "old": "*", "new": "/"}], "id": "c01"}
+{"source": "mechanical", "op": "aug +=->-=", "line": 33, "edits": [{"file": "harvest.jac", "offset": 924, "old": "+", "new": "-"}], "id": "c02"}
+{"source": "mechanical", "op": "int 0->1", "line": 16, "edits": [{"file": "harvest.jac", "offset": 491, "old": "0", "new": "1"}], "id": "c03"}
+{"source": "mechanical", "op": "int 1->2", "line": 33, "edits": [{"file": "harvest.jac", "offset": 927, "old": "1", "new": "2"}], "id": "c04"}
+{"source": "mechanical", "op": "int 1->0", "line": 33, "edits": [{"file": "harvest.jac", "offset": 927, "old": "1", "new": "0"}], "id": "c05"}
+{"source": "mechanical", "op": "negate if", "line": 28, "edits": [{"file": "harvest.jac", "offset": 734, "old": "here.diseased", "new": "not (here.diseased)"}], "id": "c06"}
+{"source": "mechanical", "op": "stmt-del visit", "line": 20, "edits": [{"file": "harvest.jac", "offset": 579, "old": "visit [here ->:HasRow:->];", "new": ""}], "id": "c07"}
+{"source": "mechanical", "op": "stmt-del visit", "line": 24, "edits": [{"file": "harvest.jac", "offset": 656, "old": "visit [here ->:HasTree:->];", "new": ""}], "id": "c08"}
+{"source": "mechanical", "op": "stmt-del self.counted", "line": 33, "edits": [{"file": "harvest.jac", "offset": 911, "old": "self.counted += 1;", "new": ""}], "id": "c09"}
+{"source": "mechanical", "op": "const False->True", "line": 16, "edits": [{"file": "model/orchard.jac", "offset": 268, "old": "False", "new": "True"}], "id": "c10"}
+{"source": "mechanical", "op": "edge -->-><--", "line": 21, "edits": [{"file": "model/orchard.jac", "offset": 338, "old": "-->", "new": "<--"}], "id": "c11"}
+{"source": "mechanical", "op": "edge -->-><--", "line": 23, "edits": [{"file": "model/orchard.jac", "offset": 368, "old": "-->", "new": "<--"}], "id": "c12"}
+{"source": "mechanical", "op": "connect ++>-><++", "line": 27, "edits": [{"file": "model/orchard.jac", "offset": 559, "old": "++>", "new": "<++"}], "id": "c13"}
+{"source": "mechanical", "op": "cmp <-><=", "line": 22, "edits": [{"file": "model/varieties.jac", "offset": 533, "old": "<", "new": "<="}], "id": "c14"}
+{"source": "mechanical", "op": "cmp <-><=", "line": 25, "edits": [{"file": "model/varieties.jac", "offset": 576, "old": "<", "new": "<="}], "id": "c15"}
+{"source": "mechanical", "op": "cmp <=-><", "line": 28, "edits": [{"file": "model/varieties.jac", "offset": 619, "old": "<=", "new": "<"}], "id": "c16"}
+{"source": "mechanical", "op": "int 3->4", "line": 22, "edits": [{"file": "model/varieties.jac", "offset": 535, "old": "3", "new": "4"}], "id": "c17"}
+{"source": "mechanical", "op": "int 3->2", "line": 22, "edits": [{"file": "model/varieties.jac", "offset": 535, "old": "3", "new": "2"}], "id": "c18"}
+{"source": "mechanical", "op": "int 6->7", "line": 25, "edits": [{"file": "model/varieties.jac", "offset": 578, "old": "6", "new": "7"}], "id": "c19"}
+{"source": "mechanical", "op": "int 6->5", "line": 25, "edits": [{"file": "model/varieties.jac", "offset": 578, "old": "6", "new": "5"}], "id": "c20"}
+{"source": "mechanical", "op": "int 20->21", "line": 28, "edits": [{"file": "model/varieties.jac", "offset": 622, "old": "20", "new": "21"}], "id": "c21"}
+{"source": "mechanical", "op": "int 20->19", "line": 28, "edits": [{"file": "model/varieties.jac", "offset": 622, "old": "20", "new": "19"}], "id": "c22"}
+{"source": "mechanical", "op": "negate if", "line": 22, "edits": [{"file": "model/varieties.jac", "offset": 529, "old": "age < 3", "new": "not (age < 3)"}], "id": "c23"}
+{"source": "mechanical", "op": "negate if", "line": 25, "edits": [{"file": "model/varieties.jac", "offset": 572, "old": "age < 6", "new": "not (age < 6)"}], "id": "c24"}
+{"source": "mechanical", "op": "negate if", "line": 28, "edits": [{"file": "model/varieties.jac", "offset": 615, "old": "age <= 20", "new": "not (age <= 20)"}], "id": "c25"}
+{"source": "source-negative", "op": "neg counts_diseased", "why": "diseased trees counted with 0 kg", "edits": [{"file": "harvest.jac", "offset": 723, "old": "        if here.diseased {\n            return;\n        }\n        name = here.variety.name;\n        self.kg[name] = self.kg.get(name, 0.0) + MATURE_KG[name] * age_factor(here.age);", "new": "        name = here.variety.name;\n        f = 0.0 if here.diseased else age_factor(here.age);\n        self.kg[name] = self.kg.get(name, 0.0) + MATURE_KG[name] * f;"}], "id": "c26"}
+{"source": "source-negative", "op": "neg drops_zero_varieties", "why": "omits varieties whose kg is 0", "edits": [{"file": "harvest.jac", "offset": 1074, "old": "            by_variety=self.kg,", "new": "            by_variety={k: v for (k, v) in self.kg.items() if v > 0},"}], "id": "c27"}
+{"source": "source-negative", "op": "neg first_row_only", "why": "only walks the first row", "edits": [{"file": "harvest.jac", "offset": 571, "old": "        visit [here ->:HasRow:->];", "new": "        visit [here ->:HasRow:->][:1];"}], "id": "c28"}
+{"source": "source-negative", "op": "neg ignores_age", "why": "ignores the age curve", "edits": [{"file": "harvest.jac", "offset": 863, "old": "MATURE_KG[name] * age_factor(here.age)", "new": "MATURE_KG[name]"}], "id": "c29"}
+{"source": "source-negative", "op": "neg wrong_honeycrisp_yield", "why": "honeycrisp yield 35", "edits": [{"file": "model/varieties.jac", "offset": 386, "old": "    \"HONEYCRISP\": 30.0", "new": "    \"HONEYCRISP\": 35.0"}], "id": "c30"}

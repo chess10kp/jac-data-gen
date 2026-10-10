@@ -1,0 +1,46 @@
+{"source": "mechanical", "op": "edge -->-><--", "line": 13, "edits": [{"file": "garage.jac", "offset": 211, "old": "-->", "new": "<--"}], "id": "c00"}
+{"source": "mechanical", "op": "neg-drop", "line": 17, "edits": [{"file": "garage.jac", "offset": 275, "old": "-", "new": ""}], "id": "c01"}
+{"source": "mechanical", "op": "int 1->2", "line": 17, "edits": [{"file": "garage.jac", "offset": 276, "old": "1", "new": "2"}], "id": "c02"}
+{"source": "mechanical", "op": "int 1->0", "line": 17, "edits": [{"file": "garage.jac", "offset": 276, "old": "1", "new": "0"}], "id": "c03"}
+{"source": "mechanical", "op": "connect ++>-><++", "line": 26, "edits": [{"file": "garage.jac", "offset": 411, "old": "++>", "new": "<++"}], "id": "c04"}
+{"source": "mechanical", "op": "edge -->-><--", "line": 32, "edits": [{"file": "garage.jac", "offset": 560, "old": "-->", "new": "<--"}], "id": "c05"}
+{"source": "mechanical", "op": "negate if", "line": 45, "edits": [{"file": "garage.jac", "offset": 801, "old": "find_car(self.plate) is not None", "new": "not (find_car(self.plate) is not None)"}], "id": "c06"}
+{"source": "mechanical", "op": "not-drop", "line": 45, "edits": [{"file": "garage.jac", "offset": 825, "old": "not ", "new": ""}], "id": "c07"}
+{"source": "mechanical", "op": "stmt-del report", "line": 46, "edits": [{"file": "garage.jac", "offset": 848, "old": "report Ticket(ok=False, reason=\"already inside\");", "new": ""}], "id": "c08"}
+{"source": "mechanical", "op": "const False->True", "line": 46, "edits": [{"file": "garage.jac", "offset": 865, "old": "False", "new": "True"}], "id": "c09"}
+{"source": "mechanical", "op": "call sorted->list", "line": 49, "edits": [{"file": "garage.jac", "offset": 947, "old": "sorted", "new": "list"}], "id": "c10"}
+{"source": "mechanical", "op": "edge -->-><--", "line": 49, "edits": [{"file": "garage.jac", "offset": 960, "old": "-->", "new": "<--"}], "id": "c11"}
+{"source": "mechanical", "op": "negate if", "line": 50, "edits": [{"file": "garage.jac", "offset": 1029, "old": "len([lvl ->:ParkedOn:->]) < lvl.spots", "new": "not (len([lvl ->:ParkedOn:->]) < lvl.spots)"}], "id": "c12"}
+{"source": "mechanical", "op": "stmt-del report", "line": 52, "edits": [{"file": "garage.jac", "offset": 1169, "old": "report Ticket(ok=True, level=lvl.number);", "new": ""}], "id": "c13"}
+{"source": "mechanical", "op": "const True->False", "line": 52, "edits": [{"file": "garage.jac", "offset": 1186, "old": "True", "new": "False"}], "id": "c14"}
+{"source": "mechanical", "op": "stmt-del report", "line": 56, "edits": [{"file": "garage.jac", "offset": 1267, "old": "report Ticket(ok=False, reason=\"full\");", "new": ""}], "id": "c15"}
+{"source": "mechanical", "op": "const False->True", "line": 56, "edits": [{"file": "garage.jac", "offset": 1284, "old": "False", "new": "True"}], "id": "c16"}
+{"source": "mechanical", "op": "negate if", "line": 66, "edits": [{"file": "garage.jac", "offset": 1450, "old": "car is None", "new": "not (car is None)"}], "id": "c17"}
+{"source": "mechanical", "op": "stmt-del report", "line": 67, "edits": [{"file": "garage.jac", "offset": 1476, "old": "report -1;", "new": ""}], "id": "c18"}
+{"source": "mechanical", "op": "arith -->+", "line": 67, "edits": [{"file": "garage.jac", "offset": 1483, "old": "-", "new": "+"}], "id": "c19"}
+{"source": "mechanical", "op": "int 1->2", "line": 67, "edits": [{"file": "garage.jac", "offset": 1484, "old": "1", "new": "2"}], "id": "c20"}
+{"source": "mechanical", "op": "int 1->0", "line": 67, "edits": [{"file": "garage.jac", "offset": 1484, "old": "1", "new": "0"}], "id": "c21"}
+{"source": "mechanical", "op": "arith -->+", "line": 70, "edits": [{"file": "garage.jac", "offset": 1544, "old": "-", "new": "+"}], "id": "c22"}
+{"source": "mechanical", "op": "negate if", "line": 72, "edits": [{"file": "garage.jac", "offset": 1590, "old": "stay > 30", "new": "not (stay > 30)"}], "id": "c23"}
+{"source": "mechanical", "op": "cmp >->>=", "line": 72, "edits": [{"file": "garage.jac", "offset": 1595, "old": ">", "new": ">="}], "id": "c24"}
+{"source": "mechanical", "op": "int 30->29", "line": 72, "edits": [{"file": "garage.jac", "offset": 1597, "old": "30", "new": "29"}], "id": "c25"}
+{"source": "mechanical", "op": "int 3->2", "line": 73, "edits": [{"file": "garage.jac", "offset": 1620, "old": "3", "new": "2"}], "id": "c26"}
+{"source": "mechanical", "op": "int 3->4", "line": 73, "edits": [{"file": "garage.jac", "offset": 1620, "old": "3", "new": "4"}], "id": "c27"}
+{"source": "mechanical", "op": "arith *->/", "line": 73, "edits": [{"file": "garage.jac", "offset": 1622, "old": "*", "new": "/"}], "id": "c28"}
+{"source": "mechanical", "op": "arith +->-", "line": 73, "edits": [{"file": "garage.jac", "offset": 1631, "old": "+", "new": "-"}], "id": "c29"}
+{"source": "mechanical", "op": "int 59->58", "line": 73, "edits": [{"file": "garage.jac", "offset": 1633, "old": "59", "new": "58"}], "id": "c30"}
+{"source": "mechanical", "op": "arith //->/", "line": 73, "edits": [{"file": "garage.jac", "offset": 1637, "old": "//", "new": "/"}], "id": "c31"}
+{"source": "mechanical", "op": "int 60->59", "line": 73, "edits": [{"file": "garage.jac", "offset": 1640, "old": "60", "new": "59"}], "id": "c32"}
+{"source": "mechanical", "op": "stmt-del del", "line": 75, "edits": [{"file": "garage.jac", "offset": 1663, "old": "del car;", "new": ""}], "id": "c33"}
+{"source": "mechanical", "op": "stmt-del report", "line": 76, "edits": [{"file": "garage.jac", "offset": 1680, "old": "report fee;", "new": ""}], "id": "c34"}
+{"source": "mechanical", "op": "stmt-del visit", "line": 85, "edits": [{"file": "garage.jac", "offset": 1822, "old": "visit [-->[?:Level]];", "new": ""}], "id": "c35"}
+{"source": "mechanical", "op": "edge -->-><--", "line": 85, "edits": [{"file": "garage.jac", "offset": 1829, "old": "-->", "new": "<--"}], "id": "c36"}
+{"source": "mechanical", "op": "stmt-del self.total", "line": 91, "edits": [{"file": "garage.jac", "offset": 1970, "old": "self.total += n;", "new": ""}], "id": "c37"}
+{"source": "mechanical", "op": "aug +=->-=", "line": 91, "edits": [{"file": "garage.jac", "offset": 1981, "old": "+", "new": "-"}], "id": "c38"}
+{"source": "mechanical", "op": "stmt-del report", "line": 95, "edits": [{"file": "garage.jac", "offset": 2034, "old": "report self.counts;", "new": ""}], "id": "c39"}
+{"source": "source-negative", "op": "neg capacity_off_by_one", "why": "allows one car over capacity", "edits": [{"file": "garage.jac", "offset": 1026, "old": "if len([lvl ->:ParkedOn:->]) < lvl.spots {", "new": "if len([lvl ->:ParkedOn:->]) <= lvl.spots {"}], "id": "c40"}
+{"source": "source-negative", "op": "neg fee_floor_hours", "why": "charges completed hours instead of started hours", "edits": [{"file": "garage.jac", "offset": 1614, "old": "fee = 3 * ((stay + 59) // 60);", "new": "fee = 3 * max(1, stay // 60);"}], "id": "c41"}
+{"source": "source-negative", "op": "neg fee_free_boundary", "why": "31+ minutes boundary wrong (30 charged)", "edits": [{"file": "garage.jac", "offset": 1587, "old": "if stay > 30 {", "new": "if stay >= 30 {"}], "id": "c42"}
+{"source": "source-negative", "op": "neg first_level_in_insert_order", "why": "uses levels in creation order", "edits": [{"file": "garage.jac", "offset": 936, "old": "for lvl in sorted([root -->[?:Level]], key=lambda (l: Level) { l.number; }) {", "new": "for lvl in [root -->[?:Level]] {"}], "id": "c43"}
+{"source": "source-negative", "op": "neg leave_keeps_car", "why": "leave does not delete the car", "edits": [{"file": "garage.jac", "offset": 1655, "old": "        del car;\n", "new": ""}], "id": "c44"}
+{"source": "source-negative", "op": "neg no_dup_check", "why": "allows same plate twice", "edits": [{"file": "garage.jac", "offset": 790, "old": "        if find_car(self.plate) is not None {\n            report Ticket(ok=False, reason=\"already inside\");\n            return;\n        }\n", "new": ""}], "id": "c45"}

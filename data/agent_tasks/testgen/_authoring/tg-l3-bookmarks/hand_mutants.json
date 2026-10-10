@@ -1,0 +1,35 @@
+[
+ {
+  "name": "h0",
+  "why": "re-save keeps old title",
+  "edits": [
+   {
+    "file": "main.jac",
+    "old": "        } else {\n            bm.title = self.title;\n        }",
+    "new": "        }"
+   }
+  ]
+ },
+ {
+  "name": "h1",
+  "why": "delete removes shared tags",
+  "edits": [
+   {
+    "file": "main.jac",
+    "old": "            if len([t <-:Tagged:<-]) == 0 {\n                del t;",
+    "new": "            if len([t <-:Tagged:<-]) <= 1 {\n                del t;"
+   }
+  ]
+ },
+ {
+  "name": "h2",
+  "why": "lookup not normalised",
+  "edits": [
+   {
+    "file": "main.jac",
+    "old": "want = self.tag.strip().lower();",
+    "new": "want = self.tag;"
+   }
+  ]
+ }
+]

@@ -1,0 +1,64 @@
+{
+  "id": "tg-l3-library-loans",
+  "kind": "testgen",
+  "level": 3,
+  "source": "derived:app/app-l3-library-loans",
+  "gates": [
+    "check",
+    "mutation"
+  ],
+  "target_paths": [
+    "library_tests.jac"
+  ],
+  "jac_version": "0.37.25",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "mutation": {
+    "threshold": 0.8,
+    "code_files": [
+      "main.jac"
+    ],
+    "scope": [
+      {
+        "file": "main.jac",
+        "header": "def find_book"
+      },
+      {
+        "file": "main.jac",
+        "header": "def available_copies"
+      },
+      {
+        "file": "main.jac",
+        "header": "walker AddBook"
+      },
+      {
+        "file": "main.jac",
+        "header": "walker Checkout"
+      },
+      {
+        "file": "main.jac",
+        "header": "walker ReturnBook"
+      },
+      {
+        "file": "main.jac",
+        "header": "walker Available"
+      },
+      {
+        "file": "main.jac",
+        "header": "walker Overdue"
+      }
+    ],
+    "n_candidates": 43,
+    "n_mechanical_sites": 44,
+    "n_source_negatives": 0,
+    "n_hand": 3
+  },
+  "provenance": {
+    "source_task": "app/app-l3-library-loans",
+    "source_hash": "623816c9da0e1d2b",
+    "variant": "fresh",
+    "title": "Tests for lending library",
+    "domain": "lending library",
+    "author": "claude (testgen builder)",
+    "created": "2026-10-10"
+  }
+}

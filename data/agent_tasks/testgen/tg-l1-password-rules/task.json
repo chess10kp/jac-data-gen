@@ -1,0 +1,35 @@
+{
+  "id": "tg-l1-password-rules",
+  "kind": "testgen",
+  "level": 1,
+  "source": "derived:app/app-l1-password-policy",
+  "gates": [
+    "check",
+    "mutation"
+  ],
+  "target_paths": [
+    "passcheck_tests.jac"
+  ],
+  "jac_version": "0.37.25",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "mutation": {
+    "threshold": 0.8,
+    "code_files": [
+      "passcheck.jac"
+    ],
+    "scope": null,
+    "n_candidates": 43,
+    "n_mechanical_sites": 51,
+    "n_source_negatives": 0,
+    "n_hand": 3
+  },
+  "provenance": {
+    "source_task": "app/app-l1-password-policy",
+    "source_hash": "2b31ece22b4c3471",
+    "variant": "fresh",
+    "title": "Tests for password policy",
+    "domain": "password policy",
+    "author": "claude (testgen builder)",
+    "created": "2026-10-10"
+  }
+}

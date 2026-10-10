@@ -1,0 +1,35 @@
+[
+ {
+  "name": "h0",
+  "why": "initial ready set unsorted",
+  "edits": [
+   {
+    "file": "deps.jac",
+    "old": "ready = sorted([n for (n, k) in remaining.items() if k == 0]);",
+    "new": "ready = [n for (n, k) in remaining.items() if k == 0];"
+   }
+  ]
+ },
+ {
+  "name": "h1",
+  "why": "transitive deps include self",
+  "edits": [
+   {
+    "file": "deps.jac",
+    "old": "report sorted([p.name for p in self.pkgs[1:]]);",
+    "new": "report sorted([p.name for p in self.pkgs]);"
+   }
+  ]
+ },
+ {
+  "name": "h2",
+  "why": "LIFO instead of FIFO",
+  "edits": [
+   {
+    "file": "deps.jac",
+    "old": "            n = ready.pop(0);",
+    "new": "            n = ready.pop();"
+   }
+  ]
+ }
+]

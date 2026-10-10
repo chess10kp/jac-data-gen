@@ -1,0 +1,3 @@
+Our bike-share dock service (`app.jac`) exposes `add_station` / `add_bike` as public functions and `rent_bike`, `return_bike`, `network_status` as public walkers. There are no tests.
+
+Please write API-level tests in `app_tests.jac` — drive it through the HTTP endpoints with `JacTestClient` (from `jaclang.testing.testing`), registering a user and posting to `/function/...` and `/walker/...`, so we're testing what the mobile app actually sees. Cover which bike gets handed out (least km, then serial), all the error reasons for renting and returning, km accumulating on return, station capacity, and the network status rows. Don't modify `app.jac`.

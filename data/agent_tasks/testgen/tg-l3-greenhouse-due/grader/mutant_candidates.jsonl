@@ -1,0 +1,21 @@
+{"source": "mechanical", "op": "aug +=->-=", "line": 44, "edits": [{"file": "greenhouse.jac", "offset": 974, "old": "+", "new": "-"}], "id": "c00"}
+{"source": "mechanical", "op": "arith -->+", "line": 62, "edits": [{"file": "greenhouse.jac", "offset": 1279, "old": "-", "new": "+"}], "id": "c01"}
+{"source": "mechanical", "op": "cmp >=->>", "line": 62, "edits": [{"file": "greenhouse.jac", "offset": 1296, "old": ">=", "new": ">"}], "id": "c02"}
+{"source": "mechanical", "op": "int 0->1", "line": 32, "edits": [{"file": "greenhouse.jac", "offset": 719, "old": "0", "new": "1"}], "id": "c03"}
+{"source": "mechanical", "op": "int 1->2", "line": 44, "edits": [{"file": "greenhouse.jac", "offset": 977, "old": "1", "new": "2"}], "id": "c04"}
+{"source": "mechanical", "op": "int 1->0", "line": 44, "edits": [{"file": "greenhouse.jac", "offset": 977, "old": "1", "new": "0"}], "id": "c05"}
+{"source": "mechanical", "op": "negate if", "line": 62, "edits": [{"file": "greenhouse.jac", "offset": 1270, "old": "self.day - p.last_watered >= p.interval_days", "new": "not (self.day - p.last_watered >= p.interval_days)"}], "id": "c06"}
+{"source": "mechanical", "op": "edge -->-><--", "line": 35, "edits": [{"file": "greenhouse.jac", "offset": 769, "old": "-->", "new": "<--"}], "id": "c07"}
+{"source": "mechanical", "op": "edge -->-><--", "line": 57, "edits": [{"file": "greenhouse.jac", "offset": 1167, "old": "-->", "new": "<--"}], "id": "c08"}
+{"source": "mechanical", "op": "call sorted->list", "line": 69, "edits": [{"file": "greenhouse.jac", "offset": 1456, "old": "sorted", "new": "list"}], "id": "c09"}
+{"source": "mechanical", "op": "stmt-del visit", "line": 35, "edits": [{"file": "greenhouse.jac", "offset": 762, "old": "visit [-->[?:Bed, code == self.bed]];", "new": ""}], "id": "c10"}
+{"source": "mechanical", "op": "stmt-del visit", "line": 39, "edits": [{"file": "greenhouse.jac", "offset": 849, "old": "visit [here ->:Grows:->];", "new": ""}], "id": "c11"}
+{"source": "mechanical", "op": "stmt-del self.watered", "line": 44, "edits": [{"file": "greenhouse.jac", "offset": 961, "old": "self.watered += 1;", "new": ""}], "id": "c12"}
+{"source": "mechanical", "op": "stmt-del report", "line": 48, "edits": [{"file": "greenhouse.jac", "offset": 1027, "old": "report self.watered;", "new": ""}], "id": "c13"}
+{"source": "mechanical", "op": "stmt-del visit", "line": 57, "edits": [{"file": "greenhouse.jac", "offset": 1160, "old": "visit [-->[?:Bed]];", "new": ""}], "id": "c14"}
+{"source": "mechanical", "op": "stmt-del self.due.append(", "line": 63, "edits": [{"file": "greenhouse.jac", "offset": 1333, "old": "self.due.append(f\"{here.code}/{p.species}\");", "new": ""}], "id": "c15"}
+{"source": "mechanical", "op": "stmt-del report", "line": 69, "edits": [{"file": "greenhouse.jac", "offset": 1449, "old": "report sorted(self.due);", "new": ""}], "id": "c16"}
+{"source": "source-negative", "op": "neg dedup_due", "why": "dedups duplicate species", "edits": [{"file": "greenhouse.jac", "offset": 1449, "old": "report sorted(self.due);", "new": "report sorted(set(self.due));"}], "id": "c17"}
+{"source": "source-negative", "op": "neg due_strict", "why": "strict > interval", "edits": [{"file": "greenhouse.jac", "offset": 1267, "old": "if self.day - p.last_watered >= p.interval_days {", "new": "if self.day - p.last_watered > p.interval_days {"}], "id": "c18"}
+{"source": "source-negative", "op": "neg no_water_update", "why": "counts but does not update last_watered", "edits": [{"file": "greenhouse.jac", "offset": 915, "old": "        here.last_watered = self.day;\n", "new": ""}], "id": "c19"}
+{"source": "source-negative", "op": "neg water_all_beds", "why": "waters every bed", "edits": [{"file": "greenhouse.jac", "offset": 762, "old": "visit [-->[?:Bed, code == self.bed]];", "new": "visit [-->[?:Bed]];"}], "id": "c20"}

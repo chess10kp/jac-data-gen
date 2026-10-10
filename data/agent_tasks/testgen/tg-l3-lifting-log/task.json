@@ -1,0 +1,56 @@
+{
+  "id": "tg-l3-lifting-log",
+  "kind": "testgen",
+  "level": 3,
+  "source": "derived:app/app-l3-lifting-log",
+  "gates": [
+    "check",
+    "mutation"
+  ],
+  "target_paths": [
+    "lifting_tests.jac"
+  ],
+  "jac_version": "0.37.25",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "mutation": {
+    "threshold": 0.8,
+    "code_files": [
+      "main.jac"
+    ],
+    "scope": [
+      {
+        "file": "main.jac",
+        "header": "node SetEntry"
+      },
+      {
+        "file": "main.jac",
+        "header": "def find_exercise"
+      },
+      {
+        "file": "main.jac",
+        "header": "walker LogSet"
+      },
+      {
+        "file": "main.jac",
+        "header": "walker PersonalBest"
+      },
+      {
+        "file": "main.jac",
+        "header": "walker Volume"
+      }
+    ],
+    "n_candidates": 43,
+    "n_mechanical_sites": 40,
+    "n_source_negatives": 0,
+    "n_hand": 3
+  },
+  "provenance": {
+    "source_task": "app/app-l3-lifting-log",
+    "source_hash": "849b8cf89533f9cc",
+    "variant": "fresh",
+    "title": "Tests for gym lifting log",
+    "domain": "gym lifting log",
+    "author": "claude (testgen builder)",
+    "created": "2026-10-10"
+  }
+}

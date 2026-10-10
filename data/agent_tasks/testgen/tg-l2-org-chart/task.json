@@ -1,0 +1,48 @@
+{
+  "id": "tg-l2-org-chart",
+  "kind": "testgen",
+  "level": 2,
+  "source": "derived:app/app-l2-org-chart",
+  "gates": [
+    "check",
+    "mutation"
+  ],
+  "target_paths": [
+    "orgchart_tests.jac"
+  ],
+  "jac_version": "0.37.25",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "mutation": {
+    "threshold": 0.8,
+    "code_files": [
+      "orgchart.jac"
+    ],
+    "scope": [
+      {
+        "file": "orgchart.jac",
+        "header": "walker Headcount"
+      },
+      {
+        "file": "orgchart.jac",
+        "header": "walker PayrollTotal"
+      },
+      {
+        "file": "orgchart.jac",
+        "header": "walker ChainOfCommand"
+      }
+    ],
+    "n_candidates": 23,
+    "n_mechanical_sites": 21,
+    "n_source_negatives": 0,
+    "n_hand": 2
+  },
+  "provenance": {
+    "source_task": "app/app-l2-org-chart",
+    "source_hash": "c874242f28943c56",
+    "variant": "fresh",
+    "title": "Tests for org chart",
+    "domain": "org chart",
+    "author": "claude (testgen builder)",
+    "created": "2026-10-10"
+  }
+}

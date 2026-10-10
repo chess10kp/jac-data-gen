@@ -1,0 +1,35 @@
+{
+  "id": "tg-l3-tool-loans",
+  "kind": "testgen",
+  "level": 3,
+  "source": "derived:native/nat-l3-tool-library",
+  "gates": [
+    "check",
+    "mutation"
+  ],
+  "target_paths": [
+    "toollib_tests.jac"
+  ],
+  "jac_version": "0.37.25",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "mutation": {
+    "threshold": 0.8,
+    "code_files": [
+      "toollib.jac"
+    ],
+    "scope": null,
+    "n_candidates": 47,
+    "n_mechanical_sites": 48,
+    "n_source_negatives": 7,
+    "n_hand": 0
+  },
+  "provenance": {
+    "source_task": "native/nat-l3-tool-library",
+    "source_hash": "a3d97527dfda237e",
+    "variant": "fresh",
+    "title": "Tests for tool library",
+    "domain": "tool library",
+    "author": "claude (testgen builder)",
+    "created": "2026-10-10"
+  }
+}

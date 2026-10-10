@@ -1,0 +1,33 @@
+{"source": "mechanical", "op": "const False->True", "line": 9, "edits": [{"file": "kiln.jac", "offset": 274, "old": "False", "new": "True"}], "id": "c00"}
+{"source": "mechanical", "op": "bool or->and", "line": 31, "edits": [{"file": "kiln.jac", "offset": 787, "old": "or", "new": "and"}], "id": "c01"}
+{"source": "mechanical", "op": "cmp ==->!=", "line": 31, "edits": [{"file": "kiln.jac", "offset": 802, "old": "==", "new": "!="}], "id": "c02"}
+{"source": "mechanical", "op": "aug +=->-=", "line": 38, "edits": [{"file": "kiln.jac", "offset": 1046, "old": "+", "new": "-"}], "id": "c03"}
+{"source": "mechanical", "op": "aug +=->-=", "line": 39, "edits": [{"file": "kiln.jac", "offset": 1082, "old": "+", "new": "-"}], "id": "c04"}
+{"source": "mechanical", "op": "arith +->-", "line": 39, "edits": [{"file": "kiln.jac", "offset": 1098, "old": "+", "new": "-"}], "id": "c05"}
+{"source": "mechanical", "op": "arith -->+", "line": 46, "edits": [{"file": "kiln.jac", "offset": 1312, "old": "-", "new": "+"}], "id": "c06"}
+{"source": "mechanical", "op": "arith *->/", "line": 46, "edits": [{"file": "kiln.jac", "offset": 1324, "old": "*", "new": "/"}], "id": "c07"}
+{"source": "mechanical", "op": "arith //->/", "line": 46, "edits": [{"file": "kiln.jac", "offset": 1330, "old": "//", "new": "/"}], "id": "c08"}
+{"source": "mechanical", "op": "int 0->1", "line": 7, "edits": [{"file": "kiln.jac", "offset": 216, "old": "0", "new": "1"}], "id": "c09"}
+{"source": "mechanical", "op": "int 0->1", "line": 8, "edits": [{"file": "kiln.jac", "offset": 247, "old": "0", "new": "1"}], "id": "c10"}
+{"source": "mechanical", "op": "int 0->1", "line": 31, "edits": [{"file": "kiln.jac", "offset": 805, "old": "0", "new": "1"}], "id": "c11"}
+{"source": "mechanical", "op": "int 0->1", "line": 35, "edits": [{"file": "kiln.jac", "offset": 950, "old": "0", "new": "1"}], "id": "c12"}
+{"source": "mechanical", "op": "int 0->1", "line": 35, "edits": [{"file": "kiln.jac", "offset": 960, "old": "0", "new": "1"}], "id": "c13"}
+{"source": "mechanical", "op": "int 0->1", "line": 35, "edits": [{"file": "kiln.jac", "offset": 973, "old": "0", "new": "1"}], "id": "c14"}
+{"source": "mechanical", "op": "int 100->101", "line": 46, "edits": [{"file": "kiln.jac", "offset": 1326, "old": "100", "new": "101"}], "id": "c15"}
+{"source": "mechanical", "op": "int 100->99", "line": 46, "edits": [{"file": "kiln.jac", "offset": 1326, "old": "100", "new": "99"}], "id": "c16"}
+{"source": "mechanical", "op": "negate if", "line": 31, "edits": [{"file": "kiln.jac", "offset": 774, "old": "here.aborted or here.pieces == 0", "new": "not (here.aborted or here.pieces == 0)"}], "id": "c17"}
+{"source": "mechanical", "op": "negate if", "line": 34, "edits": [{"file": "kiln.jac", "offset": 850, "old": "here.cone not in self.totals", "new": "not (here.cone not in self.totals)"}], "id": "c18"}
+{"source": "mechanical", "op": "not-in->in", "line": 34, "edits": [{"file": "kiln.jac", "offset": 860, "old": "not in", "new": "in"}], "id": "c19"}
+{"source": "mechanical", "op": "edge -->-><--", "line": 27, "edits": [{"file": "kiln.jac", "offset": 706, "old": "-->", "new": "<--"}], "id": "c20"}
+{"source": "mechanical", "op": "connect ++>-><++", "line": 20, "edits": [{"file": "kiln.jac", "offset": 499, "old": "++>", "new": "<++"}], "id": "c21"}
+{"source": "mechanical", "op": "call sorted->list", "line": 44, "edits": [{"file": "kiln.jac", "offset": 1212, "old": "sorted", "new": "list"}], "id": "c22"}
+{"source": "mechanical", "op": "stmt-del visit", "line": 27, "edits": [{"file": "kiln.jac", "offset": 699, "old": "visit [-->[?:Firing]];", "new": ""}], "id": "c23"}
+{"source": "mechanical", "op": "stmt-del stat.pieces", "line": 38, "edits": [{"file": "kiln.jac", "offset": 1034, "old": "stat.pieces += here.pieces;", "new": ""}], "id": "c24"}
+{"source": "mechanical", "op": "stmt-del stat.losses", "line": 39, "edits": [{"file": "kiln.jac", "offset": 1070, "old": "stat.losses += here.cracked + here.glaze_faults;", "new": ""}], "id": "c25"}
+{"source": "mechanical", "op": "stmt-del out.append(s)", "line": 47, "edits": [{"file": "kiln.jac", "offset": 1355, "old": "out.append(s);", "new": ""}], "id": "c26"}
+{"source": "mechanical", "op": "stmt-del report", "line": 49, "edits": [{"file": "kiln.jac", "offset": 1388, "old": "report out;", "new": ""}], "id": "c27"}
+{"source": "source-negative", "op": "neg counts_aborted", "why": "counts aborted firings", "edits": [{"file": "kiln.jac", "offset": 771, "old": "if here.aborted or here.pieces == 0 {", "new": "if here.pieces == 0 {"}], "id": "c28"}
+{"source": "source-negative", "op": "neg loss_complement", "why": "yield as loss percentage", "edits": [{"file": "kiln.jac", "offset": 1288, "old": "s.yield_pct = (s.pieces - s.losses) * 100 // s.pieces;", "new": "s.yield_pct = 100 - s.losses * 100 // s.pieces;"}], "id": "c29"}
+{"source": "source-negative", "op": "neg no_glaze_faults", "why": "ignores glaze faults", "edits": [{"file": "kiln.jac", "offset": 1070, "old": "stat.losses += here.cracked + here.glaze_faults;", "new": "stat.losses += here.cracked;"}], "id": "c30"}
+{"source": "source-negative", "op": "neg rounds_yield", "why": "rounds instead of floor", "edits": [{"file": "kiln.jac", "offset": 1288, "old": "s.yield_pct = (s.pieces - s.losses) * 100 // s.pieces;", "new": "s.yield_pct = round((s.pieces - s.losses) * 100 / s.pieces);"}], "id": "c31"}
+{"source": "source-negative", "op": "neg unsorted_cones", "why": "cones in insertion order", "edits": [{"file": "kiln.jac", "offset": 1200, "old": "for cone in sorted(self.totals.keys()) {", "new": "for cone in self.totals.keys() {"}], "id": "c32"}

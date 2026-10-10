@@ -1,0 +1,35 @@
+{
+  "id": "tg-l5-bikeshare-api",
+  "kind": "testgen",
+  "level": 5,
+  "source": "derived:native/nat-l5-bikeshare-api",
+  "gates": [
+    "check",
+    "mutation"
+  ],
+  "target_paths": [
+    "app_tests.jac"
+  ],
+  "jac_version": "0.37.25",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "mutation": {
+    "threshold": 0.8,
+    "code_files": [
+      "app.jac"
+    ],
+    "scope": null,
+    "n_candidates": 47,
+    "n_mechanical_sites": 52,
+    "n_source_negatives": 7,
+    "n_hand": 0
+  },
+  "provenance": {
+    "source_task": "native/nat-l5-bikeshare-api",
+    "source_hash": "7fc0d8c3ccfc1a97",
+    "variant": "fresh",
+    "title": "Tests for bike share docks",
+    "domain": "bike share docks",
+    "author": "claude (testgen builder)",
+    "created": "2026-10-10"
+  }
+}

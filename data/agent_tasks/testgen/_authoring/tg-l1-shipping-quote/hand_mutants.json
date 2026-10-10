@@ -1,0 +1,35 @@
+[
+ {
+  "name": "h0",
+  "why": "wrong volumetric divisor",
+  "edits": [
+   {
+    "file": "shipping.jac",
+    "old": "volumetric = length_cm * width_cm * height_cm / 5000;",
+    "new": "volumetric = length_cm * width_cm * height_cm / 6000;"
+   }
+  ]
+ },
+ {
+  "name": "h1",
+  "why": "rounds to nearest instead of up",
+  "edits": [
+   {
+    "file": "shipping.jac",
+    "old": "return math.ceil(round(w * 2, 9)) / 2;",
+    "new": "return round(w * 2) / 2;"
+   }
+  ]
+ },
+ {
+  "name": "h2",
+  "why": "domestic threshold exclusive",
+  "edits": [
+   {
+    "file": "shipping.jac",
+    "old": "return order_total >= 50;",
+    "new": "return order_total > 50;"
+   }
+  ]
+ }
+]

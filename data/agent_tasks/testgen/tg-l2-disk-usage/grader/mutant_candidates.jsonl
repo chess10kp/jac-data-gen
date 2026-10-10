@@ -1,0 +1,43 @@
+{"source": "mechanical", "op": "aug +=->-=", "line": 20, "edits": [{"file": "diskmap.jac", "offset": 318, "old": "+", "new": "-"}], "id": "c00"}
+{"source": "mechanical", "op": "arith +->-", "line": 36, "edits": [{"file": "diskmap.jac", "offset": 711, "old": "+", "new": "-"}], "id": "c01"}
+{"source": "mechanical", "op": "arith +->-", "line": 36, "edits": [{"file": "diskmap.jac", "offset": 717, "old": "+", "new": "-"}], "id": "c02"}
+{"source": "mechanical", "op": "arith +->-", "line": 39, "edits": [{"file": "diskmap.jac", "offset": 822, "old": "+", "new": "-"}], "id": "c03"}
+{"source": "mechanical", "op": "arith +->-", "line": 39, "edits": [{"file": "diskmap.jac", "offset": 828, "old": "+", "new": "-"}], "id": "c04"}
+{"source": "mechanical", "op": "cmp >=->>", "line": 45, "edits": [{"file": "diskmap.jac", "offset": 929, "old": ">=", "new": ">"}], "id": "c05"}
+{"source": "mechanical", "op": "neg-drop", "line": 51, "edits": [{"file": "diskmap.jac", "offset": 1157, "old": "-", "new": ""}], "id": "c06"}
+{"source": "mechanical", "op": "arith +->-", "line": 73, "edits": [{"file": "diskmap.jac", "offset": 1634, "old": "+", "new": "-"}], "id": "c07"}
+{"source": "mechanical", "op": "int 0->1", "line": 9, "edits": [{"file": "diskmap.jac", "offset": 156, "old": "0", "new": "1"}], "id": "c08"}
+{"source": "mechanical", "op": "int 0->1", "line": 13, "edits": [{"file": "diskmap.jac", "offset": 202, "old": "0", "new": "1"}], "id": "c09"}
+{"source": "mechanical", "op": "int 0->1", "line": 29, "edits": [{"file": "diskmap.jac", "offset": 446, "old": "0", "new": "1"}], "id": "c10"}
+{"source": "mechanical", "op": "int 0->1", "line": 51, "edits": [{"file": "diskmap.jac", "offset": 1160, "old": "0", "new": "1"}], "id": "c11"}
+{"source": "mechanical", "op": "int 1->2", "line": 51, "edits": [{"file": "diskmap.jac", "offset": 1166, "old": "1", "new": "2"}], "id": "c12"}
+{"source": "mechanical", "op": "int 1->0", "line": 51, "edits": [{"file": "diskmap.jac", "offset": 1166, "old": "1", "new": "0"}], "id": "c13"}
+{"source": "mechanical", "op": "int 1->2", "line": 61, "edits": [{"file": "diskmap.jac", "offset": 1370, "old": "1", "new": "2"}], "id": "c14"}
+{"source": "mechanical", "op": "int 1->0", "line": 61, "edits": [{"file": "diskmap.jac", "offset": 1370, "old": "1", "new": "0"}], "id": "c15"}
+{"source": "mechanical", "op": "int 1->2", "line": 61, "edits": [{"file": "diskmap.jac", "offset": 1373, "old": "1", "new": "2"}], "id": "c16"}
+{"source": "mechanical", "op": "int 1->0", "line": 61, "edits": [{"file": "diskmap.jac", "offset": 1373, "old": "1", "new": "0"}], "id": "c17"}
+{"source": "mechanical", "op": "int 0->1", "line": 73, "edits": [{"file": "diskmap.jac", "offset": 1631, "old": "0", "new": "1"}], "id": "c18"}
+{"source": "mechanical", "op": "int 1->2", "line": 73, "edits": [{"file": "diskmap.jac", "offset": 1636, "old": "1", "new": "2"}], "id": "c19"}
+{"source": "mechanical", "op": "int 1->0", "line": 73, "edits": [{"file": "diskmap.jac", "offset": 1636, "old": "1", "new": "0"}], "id": "c20"}
+{"source": "mechanical", "op": "negate if", "line": 45, "edits": [{"file": "diskmap.jac", "offset": 919, "old": "here.size >= self.min_size", "new": "not (here.size >= self.min_size)"}], "id": "c21"}
+{"source": "mechanical", "op": "negate if", "line": 58, "edits": [{"file": "diskmap.jac", "offset": 1303, "old": "not in stem", "new": "not (not in stem)"}], "id": "c22"}
+{"source": "mechanical", "op": "not-in->in", "line": 58, "edits": [{"file": "diskmap.jac", "offset": 1303, "old": "not in", "new": "in"}], "id": "c23"}
+{"source": "mechanical", "op": "edge -->-><--", "line": 16, "edits": [{"file": "diskmap.jac", "offset": 254, "old": "-->", "new": "<--"}], "id": "c24"}
+{"source": "mechanical", "op": "edge -->-><--", "line": 35, "edits": [{"file": "diskmap.jac", "offset": 647, "old": "-->", "new": "<--"}], "id": "c25"}
+{"source": "mechanical", "op": "edge -->-><--", "line": 38, "edits": [{"file": "diskmap.jac", "offset": 764, "old": "-->", "new": "<--"}], "id": "c26"}
+{"source": "mechanical", "op": "edge -->-><--", "line": 41, "edits": [{"file": "diskmap.jac", "offset": 863, "old": "-->", "new": "<--"}], "id": "c27"}
+{"source": "mechanical", "op": "edge -->-><--", "line": 68, "edits": [{"file": "diskmap.jac", "offset": 1499, "old": "-->", "new": "<--"}], "id": "c28"}
+{"source": "mechanical", "op": "call sorted->list", "line": 51, "edits": [{"file": "diskmap.jac", "offset": 1077, "old": "sorted", "new": "list"}], "id": "c29"}
+{"source": "mechanical", "op": "meth lstrip->rstrip", "line": 57, "edits": [{"file": "diskmap.jac", "offset": 1279, "old": "lstrip", "new": "rstrip"}], "id": "c30"}
+{"source": "mechanical", "op": "meth lower->upper", "line": 61, "edits": [{"file": "diskmap.jac", "offset": 1376, "old": "lower", "new": "upper"}], "id": "c31"}
+{"source": "mechanical", "op": "stmt-del visit", "line": 16, "edits": [{"file": "diskmap.jac", "offset": 247, "old": "visit [-->];", "new": ""}], "id": "c32"}
+{"source": "mechanical", "op": "stmt-del self.total", "line": 20, "edits": [{"file": "diskmap.jac", "offset": 307, "old": "self.total += here.size;", "new": ""}], "id": "c33"}
+{"source": "mechanical", "op": "stmt-del report", "line": 24, "edits": [{"file": "diskmap.jac", "offset": 374, "old": "report self.total;", "new": ""}], "id": "c34"}
+{"source": "mechanical", "op": "stmt-del visit", "line": 41, "edits": [{"file": "diskmap.jac", "offset": 856, "old": "visit [-->];", "new": ""}], "id": "c35"}
+{"source": "mechanical", "op": "stmt-del self.found.append((here.", "line": 46, "edits": [{"file": "diskmap.jac", "offset": 960, "old": "self.found.append((here.size, self.paths[jid(here)]));", "new": ""}], "id": "c36"}
+{"source": "mechanical", "op": "stmt-del report", "line": 52, "edits": [{"file": "diskmap.jac", "offset": 1183, "old": "report [p for (_, p) in ordered];", "new": ""}], "id": "c37"}
+{"source": "mechanical", "op": "stmt-del visit", "line": 68, "edits": [{"file": "diskmap.jac", "offset": 1492, "old": "visit [-->];", "new": ""}], "id": "c38"}
+{"source": "mechanical", "op": "stmt-del report", "line": 77, "edits": [{"file": "diskmap.jac", "offset": 1681, "old": "report self.counts;", "new": ""}], "id": "c39"}
+{"source": "hand", "op": "hand h0", "why": "dotfiles get an extension", "edits": [{"file": "diskmap.jac", "offset": 1267, "old": "stem = name.lstrip(\".\");", "new": "stem = name;"}], "id": "c40"}
+{"source": "hand", "op": "hand h1", "why": "ascending size order", "edits": [{"file": "diskmap.jac", "offset": 1149, "old": "return (-t[0], t[1]);", "new": "return (t[0], t[1]);"}], "id": "c41"}
+{"source": "hand", "op": "hand h2", "why": "min_size exclusive", "edits": [{"file": "diskmap.jac", "offset": 908, "old": "        if here.size >= self.min_size {", "new": "        if here.size > self.min_size {"}], "id": "c42"}

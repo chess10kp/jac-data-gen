@@ -1,0 +1,56 @@
+{
+  "id": "tg-l3-fuel-economy",
+  "kind": "testgen",
+  "level": 3,
+  "source": "derived:app/app-l3-fuel-economy",
+  "gates": [
+    "check",
+    "mutation"
+  ],
+  "target_paths": [
+    "fuel_tests.jac"
+  ],
+  "jac_version": "0.37.25",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "mutation": {
+    "threshold": 0.8,
+    "code_files": [
+      "main.jac"
+    ],
+    "scope": [
+      {
+        "file": "main.jac",
+        "header": "def find_vehicle"
+      },
+      {
+        "file": "main.jac",
+        "header": "def fills_of"
+      },
+      {
+        "file": "main.jac",
+        "header": "walker AddVehicle"
+      },
+      {
+        "file": "main.jac",
+        "header": "walker RecordFill"
+      },
+      {
+        "file": "main.jac",
+        "header": "walker Economy"
+      }
+    ],
+    "n_candidates": 43,
+    "n_mechanical_sites": 49,
+    "n_source_negatives": 0,
+    "n_hand": 3
+  },
+  "provenance": {
+    "source_task": "app/app-l3-fuel-economy",
+    "source_hash": "820b4603ad85e664",
+    "variant": "fresh",
+    "title": "Tests for fleet fuel log",
+    "domain": "fleet fuel log",
+    "author": "claude (testgen builder)",
+    "created": "2026-10-10"
+  }
+}

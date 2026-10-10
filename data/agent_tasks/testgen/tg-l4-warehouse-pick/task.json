@@ -1,0 +1,47 @@
+{
+  "id": "tg-l4-warehouse-pick",
+  "kind": "testgen",
+  "level": 4,
+  "source": "derived:native/nat-l4-warehouse-picking",
+  "gates": [
+    "check",
+    "mutation"
+  ],
+  "target_paths": [
+    "picking_tests.jac"
+  ],
+  "jac_version": "0.37.25",
+  "license": "original-authored (jac_llm_data agent-task pool)",
+  "mutation": {
+    "threshold": 0.8,
+    "code_files": [
+      "layout.jac",
+      "main.jac",
+      "picking.jac",
+      "seed.jac"
+    ],
+    "scope": [
+      {
+        "file": "picking.jac",
+        "header": null
+      },
+      {
+        "file": "seed.jac",
+        "header": null
+      }
+    ],
+    "n_candidates": 38,
+    "n_mechanical_sites": 32,
+    "n_source_negatives": 6,
+    "n_hand": 0
+  },
+  "provenance": {
+    "source_task": "native/nat-l4-warehouse-picking",
+    "source_hash": "bb492c3db258b0c3",
+    "variant": "fresh",
+    "title": "Tests for warehouse picking",
+    "domain": "warehouse picking",
+    "author": "claude (testgen builder)",
+    "created": "2026-10-10"
+  }
+}

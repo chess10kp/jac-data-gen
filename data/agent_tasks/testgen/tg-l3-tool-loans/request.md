@@ -1,0 +1,3 @@
+We run a neighbourhood tool library and the logic is in `toollib.jac`. I'd like a solid test suite before we open it up to more volunteers who'll be editing the code.
+
+Please write `toollib_tests.jac` covering the four walkers — `RegisterTool`, `Checkout`, `Return`, `OverdueReport`. In particular: due-day calculation (default 7-day loans and custom ones), refusing unknown tools / tools already out / members at their two-tool limit, returns freeing both the tool and the member's slot, and the overdue report's ordering and strictness. Tests should pass on the current code (don't edit `toollib.jac`).
